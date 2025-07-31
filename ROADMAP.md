@@ -15,6 +15,7 @@ Build the simplest possible foundation for multi-agent systems, then let the com
 **Deliverables**:
 - [ ] WASM agent runtime with isolation guarantees  
 - [ ] Async message router with FIPA ACL support
+- [ ] FIPA Contract Net Protocol (CNP) implementation for task delegation
 - [ ] OpenTelemetry integration (traces, metrics, logs)
 - [ ] Structured logging with correlation IDs
 - [ ] Basic MCP tool integration
@@ -65,7 +66,7 @@ Build the simplest possible foundation for multi-agent systems, then let the com
 - Agent development possible in 4+ languages
 
 **Still NOT in scope**:
-- Distributed consensus
+- Infrastructure-level consensus (Raft, Paxos, PBFT)
 - Built-in workflow engine
 - Agent hierarchies
 - Automatic scaling
