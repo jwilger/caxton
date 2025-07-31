@@ -39,10 +39,56 @@ Union Square is a proxy/wire-tap service for making LLM calls and recording ever
 
 ### Communication Protocol
 
-Agents communicate using a shared workspace file (`WORK.md`) that is:
+Agents communicate using shared workspace files:
+
+**WORK.md** - For inter-agent discussions:
 - Reset when starting a new issue
 - Compacted if it grows too large during work
 - Used for all inter-agent discussions and consensus building
+
+**DIALOGUE.md** - For expert-to-user communication:
+- Used when experts need user input during work
+- Contains structured requests and responses
+- Cleared when starting new issues
+- Claude Code monitors and facilitates the exchange
+
+#### Bidirectional Communication Flow
+
+When expert agents need user input:
+
+1. **Experts identify need** during WORK.md discussions
+2. **Project Manager writes to DIALOGUE.md** with:
+   - Request type: `[BLOCKING]` or `[INFORMATIONAL]`
+   - Topic and context
+   - Specific numbered questions
+3. **Project Manager adds marker** in WORK.md: `**PM: User input requested in DIALOGUE.md**`
+4. **Claude Code detects marker** and:
+   - Reads questions from DIALOGUE.md
+   - Presents them to user in chat
+   - Captures user response
+   - Writes response back to DIALOGUE.md
+5. **Project Manager detects response** and continues expert discussion
+
+**Request Format in DIALOGUE.md:**
+```markdown
+## [BLOCKING|INFORMATIONAL] Request from Experts - [Timestamp]
+**Topic**: [Brief description]
+**Context**: [Why this information is needed]
+**Questions**:
+1. [Specific question 1]
+2. [Specific question 2]
+
+**Response Needed By**: [For BLOCKING only - timestamp]
+
+## User Response - [Timestamp]
+[User's response here]
+```
+
+**Claude Code Monitoring:**
+- Check WORK.md for PM marker after each agent task completion
+- Present BLOCKING requests immediately
+- Re-prompt for BLOCKING requests every 5 minutes if unanswered
+- Clear DIALOGUE.md when starting new issues
 
 ### Development Roles
 
@@ -245,20 +291,27 @@ When multiple experts are involved in a decision, these principles guide resolut
 
 ### Agent-Driven Development Process
 
-Agents collaborate through WORK.md with the Project Manager coordinating:
+**CRITICAL**: All expert agents must be launched as actual independent AI agents using the Task tool. The Project Manager MUST NOT simulate or impersonate other expert agents.
+
+#### How Claude Code Launches Expert Agents
+
+1. **Launch Multiple Agents Concurrently**: Use the Task tool to launch multiple expert agents in a single message
+2. **Each agent gets the same context**: Provide WORK.md contents and current task
+3. **Agents write their responses to WORK.md**: Each agent contributes independently
+4. **Project Manager synthesizes**: After all agents respond, Project Manager facilitates consensus
 
 #### Issue Selection Phase
 
-Project Manager launches 2-4 planning agents:
+Claude Code launches Project Manager + 2-4 planning agents CONCURRENTLY:
 - **Product/Business Focus**: Teresa Torres (`product-discovery-coach`), Jared Spool (`ux-research-expert`)
 - **Technical Planning**: Nicole Forsgren (`engineering-effectiveness-expert`), Martin Fowler (`refactoring-patterns-architect`)
 - **Domain Modeling**: Alberto Brandolini (`event-modeling-expert`), Greg Young (`event-sourcing-architect`)
 
-Agents discuss priorities in WORK.md until consensus.
+All agents discuss priorities in WORK.md until consensus.
 
 #### TDD Implementation Phase
 
-Project Manager launches ALL relevant expert agents who:
+Claude Code launches Project Manager + ALL relevant expert agents CONCURRENTLY who:
 1. **Plan each TDD step** - Specific test or implementation instruction
 2. **Review results** - Validate Claude Code's implementation
 3. **Reach consensus** - All must agree before next step
