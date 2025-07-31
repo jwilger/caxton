@@ -13,12 +13,12 @@ Build the simplest possible foundation for multi-agent systems, then let the com
 **Goal**: Ship the three essential primitives with baseline performance.
 
 **Deliverables**:
-- [ ] Event log with append-only semantics
-- [ ] WASM agent runner with isolation guarantees  
+- [ ] WASM agent runtime with isolation guarantees  
 - [ ] Async message router with FIPA ACL support
-- [ ] Time-travel debugging via event replay
-- [ ] PostgreSQL event store implementation
+- [ ] OpenTelemetry integration (traces, metrics, logs)
+- [ ] Structured logging with correlation IDs
 - [ ] Basic MCP tool integration
+- [ ] Health checks and readiness probes
 
 **Success Metrics**:
 - Time to first agent: < 10 minutes
@@ -41,13 +41,13 @@ Build the simplest possible foundation for multi-agent systems, then let the com
 **Deliverables**:
 - [ ] Example pattern library:
   - Request-reply patterns
-  - Pub-sub via projections
-  - Basic saga orchestration
+  - Pub-sub patterns
+  - Basic workflow orchestration
   - Circuit breakers
 - [ ] Performance improvements:
   - WASM instance pooling
   - Zero-copy optimizations
-  - Event batching strategies
+  - Message batching strategies
   - Parallel message processing
 - [ ] Developer experience:
   - Agent testing framework
@@ -77,12 +77,12 @@ Build the simplest possible foundation for multi-agent systems, then let the com
 **Deliverables**:
 - [ ] Clustering support (as optional module):
   - Node discovery
-  - Event log partitioning
+  - Message routing across nodes
   - Cross-node messaging
 - [ ] Advanced patterns:
-  - Distributed sagas
-  - Event sourcing projections
-  - CQRS helpers
+  - Distributed workflows
+  - State management patterns
+  - Persistence adapters
 - [ ] Ecosystem tools:
   - Cloud-native operators
   - Monitoring integrations
@@ -129,7 +129,7 @@ We will **NEVER** add these to Caxton core:
 ## How to Contribute
 
 ### Phase 1 Priorities
-1. **Event store optimizations** - Help us hit performance targets
+1. **Performance optimizations** - Help us hit throughput targets
 2. **WASM security** - Ensure true isolation
 3. **Documentation** - Examples and tutorials
 4. **Testing** - Chaos testing, benchmarks
@@ -137,7 +137,7 @@ We will **NEVER** add these to Caxton core:
 ### Phase 2 Opportunities  
 1. **Pattern development** - Share your agent patterns
 2. **Language bindings** - Make agents easy to build
-3. **Debugging tools** - Visualize event streams
+3. **Debugging tools** - Trace visualization and analysis
 4. **Performance** - Profile and optimize
 
 ### Phase 3 Challenges
