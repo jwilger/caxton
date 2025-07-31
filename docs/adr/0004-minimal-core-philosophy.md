@@ -26,7 +26,7 @@ This feature creep leads to:
 Caxton will maintain a strictly minimal core, providing only three primitives:
 
 1. **Agent Runtime**: WebAssembly-based isolation and execution
-2. **Message Router**: FIPA protocol implementation for agent communication
+2. **Message Router**: FIPA protocol implementation including Contract Net Protocol (CNP) for agent coordination
 3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
 Everything else must be built as libraries on top of these primitives.
@@ -35,10 +35,24 @@ This means explicitly NOT including:
 - Workflow orchestration languages
 - Built-in agent hierarchies or permissions
 - Message transformation or routing rules
-- Distributed consensus protocols
+- Infrastructure-level consensus protocols (Raft, Paxos, PBFT) for distributed state agreement
 - State management or persistence layers
 - Retry/circuit breaker policies
 - Event storage or databases
+
+### Important Distinction: Agent Coordination vs Infrastructure Consensus
+
+Caxton DOES include FIPA agent coordination protocols like Contract Net Protocol (CNP) because:
+- CNP is about task delegation and negotiation between agents
+- It's essential for multi-agent coordination
+- It operates at the application/business logic layer
+- It doesn't require distributed state agreement
+
+Caxton does NOT include infrastructure consensus protocols because:
+- These solve distributed state agreement problems
+- They add operational complexity
+- They're better handled by specialized systems (etcd, Consul)
+- They operate at the infrastructure layer
 
 ## Consequences
 

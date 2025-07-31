@@ -175,11 +175,21 @@ let result = mcp_call("web_search", json!({
 
 ## What Caxton is NOT
 
+## What's In Scope
+
+Caxton provides:
+- **FIPA agent interaction protocols** including Contract Net Protocol (CNP) for task delegation
+- **Agent negotiation and coordination** through typed message passing
+- **Observable agent communications** with full tracing support
+- **WebAssembly isolation** for secure multi-tenant agent hosting
+
+## What's Out of Scope
+
 We're intentionally NOT building:
 - Complex orchestration languages
 - Built-in workflow engines  
 - Agent hierarchies or permissions systems
-- Distributed consensus protocols
+- **Infrastructure-level consensus protocols** (Raft, Paxos, PBFT) - use etcd/Consul for distributed state
 - Message transformation pipelines
 
 These can all be built as libraries on top of Caxton's simple primitives.
