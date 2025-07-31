@@ -1,0 +1,11 @@
+[package]
+name = "caxton"
+version = "0.1.0"
+edition = "2021"
+authors = ["John Wilger <john@johnwilger.com>"]
+license = "MIT"
+description = "A type-driven Rust project"
+
+[dependencies]
+
+[dev-dependencies]
