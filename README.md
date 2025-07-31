@@ -21,7 +21,7 @@ Most agent frameworks either:
 
 Caxton takes a different approach:
 - **Agent-agnostic**: Works with any agent implementation
-- **Observable by design**: Every interaction is recorded as an event
+- **Observable by design**: Comprehensive logging and OpenTelemetry tracing
 - **Minimal core**: Just enough to be useful, not enough to be constraining
 - **Progressive complexity**: Start simple, add sophistication as needed
 
@@ -29,9 +29,9 @@ Caxton takes a different approach:
 
 Caxton provides just three things:
 
-1. **Event Log**: Append-only record of what happened
-2. **Agent Runner**: Executes WASM modules in isolation  
-3. **Message Router**: Delivers messages between agents
+1. **Agent Runtime**: WebAssembly-based isolation and execution
+2. **Message Router**: FIPA protocol implementation for agent communication
+3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
 That's it. Everything else is a library built on top. We don't tell you how to use these primitives - that's your job.
 
@@ -58,11 +58,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     host.send_message(msg).await?;
     
-    // Watch events stream for debugging
-    let mut events = host.events();
-    while let Some(event) = events.next().await {
-        println!("Event: {:?}", event);
-    }
+    // Access traces for debugging
+    let trace_id = msg.trace_id();
+    println!("Message sent with trace_id: {}", trace_id);
+    
+    // Logs and traces are automatically collected via OpenTelemetry
     
     Ok(())
 }
@@ -85,27 +85,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                  │
                                  ▼
 ┌────────────────────────────────────────────────────────────────┐
-│                          Event Log                              │
-│              (Every message, decision, action)                  │
+│                     Observability Layer                         │
+│        (OpenTelemetry Traces, Metrics, Structured Logs)        │
 └─────────────────────────────────────────────────────────────────┘
                                  │
                                  ▼
-                        Time-Travel Debugging
+                        Debug with Your Favorite Tools
 ```
 
-## Event Sourcing for Observability
+## Built-in Observability
 
-Caxton records every agent interaction as an event, giving you complete visibility into your multi-agent systems. When something goes wrong (and it will), you can replay the entire conversation to understand exactly what happened.
+Caxton provides comprehensive observability through OpenTelemetry, giving you complete visibility into your multi-agent systems. Every message, tool invocation, and agent interaction is traced and logged with rich context.
 
 ```rust
-// Every interaction becomes a debuggable event
-enum AgentEvent {
-    MessageSent { from: AgentId, to: AgentId, content: FipaMessage },
-    MessageReceived { agent: AgentId, message: FipaMessage },
-    ToolInvoked { agent: AgentId, tool: McpTool, params: Value },
-    ToolCompleted { agent: AgentId, result: Result<Value, Error> },
-    AgentFailed { agent: AgentId, error: String },
-}
+// Rich context in every log entry
+info!(
+    agent_id = %agent.id,
+    message_type = "fipa.request",
+    correlation_id = %msg.correlation_id,
+    "Agent received message"
+);
+
+// Automatic distributed tracing
+let span = info_span!("agent.handle_message",
+    agent_id = %agent.id,
+    message_id = %msg.id
+);
 ```
 
 ## Type Safety Without Complexity

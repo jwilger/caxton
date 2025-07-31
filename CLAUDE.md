@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 
 - **🆕 Starting new work?** → [Development Workflow](#development-workflow), [GitHub Issues](#github-issues-workflow)
 - **🔧 Setting up environment?** → [Development Commands](#development-commands)
-- **💻 Writing code?** → [Type-Driven Development](#type-driven-development-philosophy), [EventCore Usage](#eventcore-library-usage)
+- **💻 Writing code?** → [Type-Driven Development](#type-driven-development-philosophy), [Platform Architecture](#platform-architecture)
 - **🤖 Need expert guidance?** → [Expert Agents](#expert-agent-coordination)
 - **📤 Making commits/PRs?** → [Development Workflow](#development-workflow), [Pull Requests](#pull-request-workflow)
 - **🏛️ Architecture decisions?** → [ADRs](#architecture-decision-records-adrs)
@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 
 ## Project Overview
 
-Union Square is a proxy/wire-tap service for making LLM calls and recording everything that happens in a session for later analysis and test-case extraction.
+Caxton is a foundational platform service for multi-agent orchestration, providing WebAssembly-based agent isolation, FIPA protocol messaging, and comprehensive observability through structured logging and OpenTelemetry integration.
 
 ## Agent-Based Development Model
 
@@ -203,8 +203,8 @@ This project follows type-driven development and functional architecture princip
 
 - **Type-Driven Development**: See `type-driven-development-expert` and `rust-type-system-expert`
 - **Functional Architecture**: See `functional-architecture-expert`
-- **Event Sourcing**: See `event-sourcing-architect` and `event-modeling-expert`
-- **Testing**: See `tdd-coach` and `event-sourcing-test-architect`
+- **Platform Design**: See `platform-systems-architect` and `observability-expert`
+- **Testing**: See `tdd-coach` and `testing-architecture-expert`
 
 ## Development Commands
 
@@ -246,13 +246,18 @@ cargo add nutype --features serde  # For type-safe newtypes
 
 [Project architecture to be defined]
 
-## EventCore Library
+## Platform Architecture
 
-**This project uses EventCore for event sourcing.** Full docs: https://docs.rs/eventcore/latest/eventcore/
+**Caxton is a storage-agnostic platform service.** Core components:
 
-For implementation details and patterns:
-- **Architecture**: See `event-sourcing-architect`
-- **Testing**: See `event-sourcing-test-architect`
+- **Agent Runtime**: WebAssembly-based isolation and execution
+- **Message Router**: FIPA protocol implementation for agent communication
+- **Observability Layer**: Structured logging and OpenTelemetry integration
+- **Tool Bridge**: MCP (Model Context Protocol) for external integrations
+
+For implementation guidance:
+- **Platform Design**: See `platform-systems-architect`
+- **Observability**: See `observability-expert`
 - **Type Safety**: See `rust-type-system-expert`
 
 ## Expert Agent Coordination
@@ -264,11 +269,11 @@ For implementation details and patterns:
 | Persona            | Agent Name                                                | Domain Expertise                                                           |
 | ------------------ | --------------------------------------------------------- | -------------------------------------------------------------------------- |
 | Simon Peyton Jones | `type-theory-reviewer`                                    | Type theory, functional programming, making illegal states unrepresentable |
-| Greg Young         | `event-sourcing-architect`                                | Event sourcing, CQRS, distributed systems                                  |
-| Alberto Brandolini | `event-modeling-expert`                                   | Event storming, domain discovery, bounded contexts                         |
+| Bryan Cantrill     | `platform-systems-architect`                              | Platform engineering, distributed systems, observability, DTrace           |
+| Charity Majors     | `observability-expert`                                    | Observability, OpenTelemetry, structured logging, debugging distributed systems |
 | Edwin Brady        | `type-driven-development-expert`                          | Type-driven development, dependent types, formal verification              |
 | Niko Matsakis      | `rust-type-system-expert`<br>`rust-type-safety-architect` | Rust type system, ownership, lifetimes, trait design                       |
-| Michael Feathers   | `event-sourcing-test-architect`                           | Testing event-sourced systems, characterization tests                      |
+| Michael Feathers   | `testing-architecture-expert`                             | Testing strategies, characterization tests, test architecture              |
 | Kent Beck          | `tdd-coach`                                               | Test-driven development, red-green-refactor cycle                          |
 | Rich Hickey        | `functional-architecture-expert`                          | Functional design, simplicity, immutability                                |
 | Nicole Forsgren    | `engineering-effectiveness-expert`                        | DORA metrics, development workflow optimization                            |
@@ -285,9 +290,10 @@ For implementation details and patterns:
 When multiple experts are involved in a decision, these principles guide resolution:
 
 1. **Type Safety First**: When conflicts arise, type system recommendations (Simon Peyton Jones/Niko Matsakis) take precedence
-2. **Event Sourcing is Non-Negotiable**: Greg Young's event patterns are foundational - other patterns must adapt to this
+2. **Observable by Design**: Bryan Cantrill and Charity Majors guide observability - structured logs, traces, and metrics from the start
 3. **TDD is the Process**: Kent Beck drives the implementation workflow - no code without tests
 4. **Functional Core, Imperative Shell**: Rich Hickey owns the boundary between pure and impure code
+5. **Platform Agnostic**: Storage and persistence decisions belong to users, not the framework
 
 ### Agent-Driven Development Process
 
@@ -322,12 +328,12 @@ Project Manager ensures smooth communication flow between experts and Claude Cod
 #### Key Agent Responsibilities
 
 - **Teresa Torres** (`product-discovery-coach`) → Ensures solution meets user outcomes
-- **Alberto Brandolini** (`event-modeling-expert`) → Models domain events and boundaries
+- **Bryan Cantrill** (`platform-systems-architect`) → Designs distributed platform architecture
+- **Charity Majors** (`observability-expert`) → Implements comprehensive observability strategy
 - **Edwin Brady** (`type-driven-development-expert`) → Drives type-first design
 - **Niko Matsakis** (`rust-type-system-expert`) → Implements Rust-specific type safety
-- **Michael Feathers** (`event-sourcing-test-architect`) → Ensures comprehensive test coverage
+- **Michael Feathers** (`testing-architecture-expert`) → Ensures comprehensive test coverage
 - **Kent Beck** (`tdd-coach`) → Enforces TDD practices
-- **Greg Young** (`event-sourcing-architect`) → Validates event sourcing patterns
 - **Rich Hickey** (`functional-architecture-expert`) → Maintains functional core principles
 - **Simon Peyton Jones** (`type-theory-reviewer`) → Reviews type system usage
 - **Yoshua Wuyts** (`async-rust-expert`) → Handles async/concurrent implementations
@@ -407,7 +413,7 @@ When working on this project:
 Create an ADR for:
 
 - Technology choices (databases, frameworks, libraries)
-- Architectural patterns (event sourcing, CQRS, etc.)
+- Architectural patterns (microservices, message passing, etc.)
 - API design decisions
 - Security approaches
 - Performance optimization strategies

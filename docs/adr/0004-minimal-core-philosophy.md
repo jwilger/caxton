@@ -25,9 +25,9 @@ This feature creep leads to:
 
 Caxton will maintain a strictly minimal core, providing only three primitives:
 
-1. **Event Log**: Append-only record of what happened
-2. **Agent Runner**: Executes WASM modules in isolation
-3. **Message Router**: Delivers messages between agents
+1. **Agent Runtime**: WebAssembly-based isolation and execution
+2. **Message Router**: FIPA protocol implementation for agent communication
+3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
 Everything else must be built as libraries on top of these primitives.
 
@@ -36,8 +36,9 @@ This means explicitly NOT including:
 - Built-in agent hierarchies or permissions
 - Message transformation or routing rules
 - Distributed consensus protocols
-- State management abstractions
+- State management or persistence layers
 - Retry/circuit breaker policies
+- Event storage or databases
 
 ## Consequences
 
