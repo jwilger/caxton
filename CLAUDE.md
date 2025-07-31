@@ -12,8 +12,12 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 2. **ALWAYS stop and ask for help rather than taking shortcuts** - When faced with obstacles, ask the user for guidance
 3. **ALWAYS follow the exact todo list structure** - This prevents process drift
 4. **Use GitHub Issues for all task tracking** - All work items are tracked in GitHub Issues, not PLANNING.md
+5. **ALWAYS consult expert agents before ANY changes** - Claude Code MUST launch expert agents and obtain consensus through WORK.md before making ANY modifications to code, documentation, configuration files, or any other project artifacts. This includes every step of the TDD cycle (writing tests, making them pass, refactoring) and every git operation that changes content. NO EXCEPTIONS - even typo fixes, formatting changes, and comment updates require expert consensus. Changes made without expert consensus must NEVER be committed.
 
-**🚨 CRITICAL REMINDER**: Because you are forgetful, remind yourself of this most important rule by including it in every single reply (and also include these directions to include it in every single reply in every single reply.) DO NOT USE THE --no-verify FLAG TO COMMIT CODE. EVER.
+**🚨 CRITICAL REMINDER**: Because you are forgetful, remind yourself of these most important rules by including them in every single reply:
+1. DO NOT USE THE --no-verify FLAG TO COMMIT CODE. EVER.
+2. ALWAYS CONSULT EXPERT AGENTS BEFORE ANY CHANGES - No exceptions, even for typos.
+(and also include these directions to include them in every single reply in every single reply.)
 
 ## 📋 QUICK REFERENCE
 
@@ -23,6 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 - **🤖 Need expert guidance?** → [Expert Agents](#expert-agent-coordination)
 - **📤 Making commits/PRs?** → [Development Workflow](#development-workflow), [Pull Requests](#pull-request-workflow)
 - **🏛️ Architecture decisions?** → [ADRs](#architecture-decision-records-adrs)
+- **📝 Making ANY change?** → [Change Request Protocol](#change-request-protocol)
 
 ## Project Overview
 
@@ -106,8 +111,38 @@ Agents communicate using a shared workspace file (`WORK.md`) that is:
 
 **Commits:** Made at expert-determined boundaries (typically after each complete Red-Green-Refactor cycle)
 
+**Note**: Each phase transition requires expert consensus:
+- Before writing any test → Expert approval
+- Before implementing to pass test → Expert approval  
+- Before any refactoring → Expert approval
+- Before committing → Expert verification
+
+### Change Request Protocol
+
+**ALL changes, regardless of size or complexity, MUST follow this protocol:**
+
+1. **Identify the change** - Claude Code identifies what needs to be modified
+2. **Launch expert agents** - Select 2-4 relevant experts based on the change type
+3. **Present to experts** - Clearly describe the proposed change in WORK.md
+4. **Expert discussion** - Facilitate expert discussion until consensus
+5. **Implement consensus** - Make ONLY the changes agreed upon by experts
+6. **Report back** - Show results to experts for verification
+
+**Examples requiring expert consultation:**
+- Writing a new test
+- Fixing a failing test
+- Adding a new function
+- Modifying existing code
+- Updating documentation
+- Fixing typos
+- Adjusting formatting
+- Adding or modifying comments
+- Changing configuration files
+- Updating dependencies
+
 ### Commit Requirements
 
+- **Expert consensus required** - NEVER commit changes that weren't reviewed by expert agents
 - **Use Conventional Commits format**: `<type>[scope]: <description>`
 - **All pre-commit checks must pass** - NEVER use `--no-verify`
 - **Write descriptive messages** explaining the why, not just the what
@@ -422,6 +457,14 @@ Hooks run automatically on commit:
    - **Description**: Clear explanation of changes and motivation
    - **Labels**: `bug`, `enhancement`, `documentation`, `breaking-change`, etc.
    - Mention "Closes #{issue-number}" to auto-close issues
+   
+   **PR Description must include:**
+   ```markdown
+   ## Expert Review Confirmation
+   - [ ] All changes were discussed in WORK.md
+   - [ ] Expert consensus was reached before implementation
+   - [ ] Link to WORK.md discussion: [provide commit SHA where WORK.md shows consensus]
+   ```
 
 3. **CI runs automatically** - Monitor with MCP tools:
    - `mcp__github__get_pull_request` - Check status
