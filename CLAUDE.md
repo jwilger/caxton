@@ -30,19 +30,34 @@ Union Square is a proxy/wire-tap service for making LLM calls and recording ever
 
 ## Agent-Based Development Model
 
-**IMPORTANT**: This project uses an agent-based development model where specialized AI agents collaborate to drive all development work. Claude Code acts as a facilitator, enabling multi-way conversations between agents who collectively:
+**IMPORTANT**: This project uses an agent-based development model where specialized AI agents collaborate to drive all development work through a structured TDD workflow.
 
-1. **Select work** - Agents review and prioritize GitHub issues
-2. **Plan solutions** - Agents collaborate on architecture and approach
-3. **Implement code** - Agents write code together, each contributing their expertise
-4. **Review quality** - Agents review each other's work continuously
-5. **Reach consensus** - Work continues until all agents agree the issue is complete
+### Communication Protocol
 
-The "team" refers to all available expert agents listed in this document. Claude Code's role is to:
-- Select appropriate agents for each phase
-- Facilitate conversations between agents
-- Execute the code and commands agents decide upon
-- Ensure agent consensus before proceeding
+Agents communicate using a shared workspace file (`WORK.md`) that is:
+- Reset when starting a new issue
+- Compacted if it grows too large during work
+- Used for all inter-agent discussions and consensus building
+
+### Development Roles
+
+**Expert Agents**: Specialized AI personas that:
+1. **Plan work** - Review and prioritize GitHub issues collaboratively
+2. **Design solutions** - Create TDD-appropriate incremental steps
+3. **Review implementation** - Validate each step meets requirements
+4. **Reach consensus** - All agents must agree before proceeding
+
+**Project Manager Agent**: Bridge between experts and Claude Code:
+- Monitors WORK.md for expert consensus
+- Communicates next TDD steps to Claude Code
+- Presents implementation results back to experts
+- Escalates if consensus isn't reached after 10 rounds
+
+**Claude Code**: Executes implementation:
+- Receives specific TDD instructions from Project Manager
+- Implements exactly what is requested (no more, no less)
+- Reports results back through Project Manager
+- Does NOT participate in planning discussions
 
 ## Development Workflow
 
@@ -51,36 +66,45 @@ The "team" refers to all available expert agents listed in this document. Claude
 ### Workflow Steps
 
 1. **Agent-Based Issue Selection**
-   - Claude Code selects 2-4 agents best suited for planning and prioritization
-   - Provide selected agents with current open GitHub issues via `mcp__github__list_issues`
-   - Facilitate multi-round conversation between agents until consensus on most important issue
+   - Launch Project Manager and 2-4 planning agents
+   - Agents discuss in WORK.md to select highest priority issue
+   - Project Manager presents consensus to Claude Code
    - User confirms the selected issue
 
 2. **Get assigned to selected issue** - Use `mcp__github__update_issue` to assign
 
 3. **Create feature branch** - Use `mcp__github__create_branch` with pattern: `issue-{number}-descriptive-name`
 
-4. **Agent-Based Implementation**
-   - Facilitate multi-way conversation between ALL relevant agents
-   - Agents collaborate through multiple rounds to implement the solution
-   - Make commits as needed during implementation (agents decide when)
-   - Continue until agents reach consensus that issue is complete
+4. **TDD Implementation Loop**
+   - Expert agents plan next TDD step in WORK.md
+   - Project Manager communicates step to Claude Code:
+     - "Write a test that asserts X"
+     - "Make minimal change to pass the test"
+     - "Refactor while keeping tests green"
+   - Claude Code implements and reports results
+   - Experts review results and plan next step
+   - Continue until issue is complete
 
-### Todo List Structure (Agent-Driven)
+### TDD Workflow Management
 
-**Agents drive the todo list creation and management:**
+**Implementation follows strict TDD cycles:**
 
-**During Implementation:**
-- Agents collaborate to create and update todo lists as needed
-- TodoWrite tool is used by agents to track their progress
-- Commits are made when agents determine work units are complete
-- No rigid structure - agents adapt based on the issue requirements
+**Red Phase (Test First):**
+- Experts specify exact test to write
+- Project Manager communicates to Claude Code
+- Claude Code writes failing test and reports output
 
-**PR Feedback:**
-- Agents review and address feedback collaboratively
-- Continue multi-way conversation until consensus on resolution
-- Make commits as agents complete feedback items
-- Push changes and verify PR status
+**Green Phase (Make It Pass):**
+- Experts analyze failure and plan minimal fix
+- Project Manager communicates implementation step
+- Claude Code implements and reports results
+
+**Refactor Phase (Improve Design):**
+- Experts review working code for improvements
+- Project Manager communicates refactoring steps
+- Claude Code refactors and verifies tests still pass
+
+**Commits:** Made at expert-determined boundaries (typically after each complete Red-Green-Refactor cycle)
 
 ### Commit Requirements
 
@@ -173,6 +197,7 @@ For implementation details and patterns:
 | Yoshua Wuyts       | `async-rust-expert`                                       | Async Rust, concurrent systems, performance optimization                   |
 | Martin Fowler      | `refactoring-patterns-architect`                          | Refactoring, design patterns, evolutionary architecture                    |
 | Prem Sichanugrist  | `git-workflow-architect`                                  | Git workflows, GitHub automation, version control strategies               |
+| Project Manager    | `project-manager`                                         | Expert team coordination, TDD workflow management, Claude Code communication |
 
 ### Core Architectural Principles
 
@@ -185,22 +210,26 @@ When multiple experts are involved in a decision, these principles guide resolut
 
 ### Agent-Driven Development Process
 
-Agents collaborate throughout the entire development lifecycle:
+Agents collaborate through WORK.md with the Project Manager coordinating:
 
-#### Issue Selection Phase (2-4 agents)
+#### Issue Selection Phase
 
-Claude Code selects agents based on available issues:
+Project Manager launches 2-4 planning agents:
 - **Product/Business Focus**: Teresa Torres (`product-discovery-coach`), Jared Spool (`ux-research-expert`)
 - **Technical Planning**: Nicole Forsgren (`engineering-effectiveness-expert`), Martin Fowler (`refactoring-patterns-architect`)
 - **Domain Modeling**: Alberto Brandolini (`event-modeling-expert`), Greg Young (`event-sourcing-architect`)
 
-#### Implementation Phase (ALL relevant agents)
+Agents discuss priorities in WORK.md until consensus.
 
-All agents participate in multi-way conversations to:
-1. **Plan the approach** - Architecture, types, events, testing strategy
-2. **Implement collaboratively** - Each agent contributes their expertise
-3. **Review continuously** - Agents review each other's suggestions
-4. **Reach consensus** - Implementation continues until all agents agree the issue is resolved
+#### TDD Implementation Phase
+
+Project Manager launches ALL relevant expert agents who:
+1. **Plan each TDD step** - Specific test or implementation instruction
+2. **Review results** - Validate Claude Code's implementation
+3. **Reach consensus** - All must agree before next step
+4. **Track progress** - Ensure incremental value delivery
+
+Project Manager ensures smooth communication flow between experts and Claude Code.
 
 #### Key Agent Responsibilities
 
@@ -219,35 +248,45 @@ All agents participate in multi-way conversations to:
 
 ### Agent Coordination
 
-When multiple agents are involved, Claude Code facilitates collaborative discussions. Agents work through disagreements by:
-- Presenting their perspectives
-- Finding common ground
-- Creating ADRs for significant decisions
-- Reaching consensus before proceeding
+The Project Manager facilitates expert collaboration through WORK.md:
 
-Conflict resolution happens within agent discussions, not through rigid hierarchies.
+**Consensus Building:**
+- Experts present perspectives in WORK.md
+- Discuss until convergence toward agreement
+- Maximum 10 rounds before escalation to user
+- Document significant decisions in ADRs
+
+**Communication Flow:**
+1. Experts discuss and reach consensus in WORK.md
+2. Project Manager translates consensus to Claude Code
+3. Claude Code implements and reports results
+4. Project Manager presents results to experts
+5. Cycle continues until feature complete
+
+**Escalation:** If no consensus after 10 rounds with diverging opinions, Project Manager escalates to user.
 
 ### Integration with Development Workflow
 
-Agents drive the entire workflow through collaborative conversations:
+**Issue Selection:**
+1. Claude Code launches Project Manager + planning agents
+2. Agents review GitHub issues in WORK.md
+3. Reach consensus on priority
+4. Project Manager communicates selection to Claude Code
+5. User confirms
 
-**Agent-Based Issue Selection:**
-- Claude Code selects 2-4 planning agents
-- Agents review all open GitHub issues
-- Multi-round discussion until consensus on priority
-- User confirms selected issue
+**TDD Implementation:**
+1. Claude Code launches Project Manager + ALL expert agents
+2. Experts plan next TDD step in WORK.md
+3. Project Manager instructs Claude Code
+4. Claude Code implements and reports
+5. Experts review and plan next step
+6. Repeat until issue complete
 
-**Agent-Based Implementation:**
-- ALL relevant agents participate
-- Continuous multi-way conversation
-- Agents create/update todo lists collaboratively
-- Commits made when agents agree work units are complete
-- Implementation continues until consensus that issue is resolved
-
-**Architectural Decisions:**
-- Relevant agents discuss and debate
-- Document significant decisions in ADRs
-- Continue implementation with agreed approach
+**Quality Gates:**
+- Every step requires expert consensus
+- Tests must pass before proceeding
+- Refactoring preserves all tests
+- Architecture decisions documented in ADRs
 
 
 ## Architecture Decision Records (ADRs)
@@ -401,14 +440,15 @@ Hooks run automatically on commit:
 
 ## Agent Collaboration Summary
 
-**Remember: Agents drive everything!**
+**Remember: TDD drives everything through expert consensus!**
 
-- **Issue Selection**: 2-4 agents collaborate to choose work
-- **Implementation**: ALL agents work together on the solution
-- **Quality**: Agents review each other continuously
-- **Completion**: Consensus required before moving on
+- **Communication**: All agents use WORK.md for discussions
+- **Coordination**: Project Manager bridges experts and Claude Code
+- **Implementation**: Claude Code executes only what Project Manager instructs
+- **Quality**: Every TDD step reviewed by all experts
+- **Consensus**: Required at each step before proceeding
 
-Claude Code facilitates these conversations but agents make the decisions.
+**Claude Code's Role**: Execute implementation steps exactly as instructed by Project Manager. Do not participate in planning or decision-making.
 
 ## 🔴 FINAL REMINDERS
 
