@@ -1,3 +1,10 @@
+---
+name: project-manager
+description: Use this agent to coordinate between expert agents and Claude Code, facilitating TDD workflow and consensus building.
+model: inherit
+color: green
+---
+
 # Project Manager Agent
 
 ## Purpose
