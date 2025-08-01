@@ -1,0 +1,186 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  # Automatic deployment on release
+  release:
+    types: [published]
+  
+  # Manual deployment option
+  workflow_dispatch:
+    inputs:
+      deploy_preview:
+        description: 'Deploy a preview version'
+        type: boolean
+        default: false
+      reason:
+        description: 'Reason for manual deployment'
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git info
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build Documentation
+        run: |
+          # Build rustdoc
+          cargo doc --no-deps --all-features
+          
+          # Copy rustdoc to site
+          mkdir -p _site
+          cp -r target/doc/* _site/
+          
+          # Build ADRs as standalone HTML using rustdoc
+          mkdir -p _site/adr
+          
+          # Process each ADR markdown file
+          for adr in docs/adr/*.md; do
+            if [ -f "$adr" ]; then
+              # Run rustdoc on the markdown file
+              rustdoc "$adr" --markdown-css ../caxton/rust.css --html-in-header <(echo '<base href="../">') -o _site/adr/
+            fi
+          done
+
+      - name: Build Website
+        run: |
+          # Copy static files (preserving rustdoc)
+          cp -r docs/site/* _site/
+          
+          # Create ADR index page
+          cat > _site/adr/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Caxton - Architecture Decision Records</title>
+              <link rel="stylesheet" href="../css/style.css">
+              <link rel="preconnect" href="https://fonts.googleapis.com">
+              <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+              <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+          </head>
+          <body>
+              <nav class="navbar">
+                  <div class="container">
+                      <div class="nav-content">
+                          <div class="nav-brand">
+                              <div class="logo-container">
+                                  <img src="../img/logo.svg" alt="Caxton Logo" class="logo">
+                              </div>
+                              <span class="brand-text">Caxton ADRs</span>
+                          </div>
+                          <div class="nav-links">
+                              <a href="../" class="nav-link">← Back to Home</a>
+                              <a href="https://github.com/jwilger/caxton" class="nav-link github-link">
+                                  <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.84 9.49.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.71-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.93 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85 0 1.34-.01 2.42-.01 2.75 0 .27.18.58.69.48C19.14 20.16 22 16.42 22 12c0-5.523-4.477-10-10-10z"/>
+                                  </svg>
+                                  GitHub
+                              </a>
+                          </div>
+                      </div>
+                  </div>
+              </nav>
+          
+              <section class="hero" style="min-height: auto; padding: calc(80px + 2rem) 0 2rem;">
+                  <div class="container">
+                      <h1 class="hero-title">Architecture Decision Records</h1>
+                      <p class="hero-subtitle">Understanding the why behind every architectural choice</p>
+                  </div>
+              </section>
+          
+              <section class="features">
+                  <div class="container">
+                      <div class="features-grid">
+                          <a href="0001-observability-first-architecture.html" class="feature-card">
+                              <h3>0001. Observability-First Architecture</h3>
+                              <p>Built-in observability using OpenTelemetry from day one</p>
+                          </a>
+                          <a href="0002-webassembly-for-agent-isolation.html" class="feature-card">
+                              <h3>0002. WebAssembly for Agent Isolation</h3>
+                              <p>Using WASM for lightweight, secure agent sandboxing</p>
+                          </a>
+                          <a href="0003-fipa-messaging-protocol.html" class="feature-card">
+                              <h3>0003. FIPA Messaging Protocol</h3>
+                              <p>Industry-standard agent communication protocols</p>
+                          </a>
+                          <a href="0004-minimal-core-philosophy.html" class="feature-card">
+                              <h3>0004. Minimal Core Philosophy</h3>
+                              <p>Storage-agnostic platform with pluggable persistence</p>
+                          </a>
+                          <a href="0005-mcp-for-external-tools.html" class="feature-card">
+                              <h3>0005. MCP for External Tools</h3>
+                              <p>Model Context Protocol for tool integration</p>
+                          </a>
+                      </div>
+                  </div>
+              </section>
+          
+              <footer class="footer">
+                  <div class="container">
+                      <div class="footer-content">
+                          <div class="footer-left">
+                              <img src="../img/logo.svg" alt="Caxton Logo" class="footer-logo">
+                              <p>MIT License</p>
+                          </div>
+                          <div class="footer-links">
+                              <a href="https://github.com/jwilger/caxton">GitHub</a>
+                              <a href="../">Home</a>
+                              <a href="https://github.com/jwilger/caxton/blob/main/CONTRIBUTING.md">Contributing</a>
+                          </div>
+                      </div>
+                  </div>
+              </footer>
+          </body>
+          </html>
+          EOF
+
+      - name: Generate Release Info
+        if: github.event_name == 'release'
+        run: |
+          # Extract release notes and generate JSON
+          cat > _site/release-info.json << EOF
+          {
+            "version": "${{ github.event.release.tag_name }}",
+            "date": "${{ github.event.release.published_at }}",
+            "name": "${{ github.event.release.name }}",
+            "notes": $(jq -Rs . <<< "${{ github.event.release.body }}")
+          }
+          EOF
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
