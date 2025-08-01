@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="logo.svg" alt="Caxton Logo" width="200" height="200">
+</div>
+
 # Caxton
 
 Observable multi-agent orchestration in Rust.
