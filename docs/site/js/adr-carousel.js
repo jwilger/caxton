@@ -6,18 +6,31 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initADRCarousel);
     } else {
-        initADRCarousel();
+        // Add a small delay to ensure DOM is fully parsed
+        setTimeout(initADRCarousel, 100);
     }
 
     function initADRCarousel() {
+        console.log('ADR Carousel: Initializing...');
+        
         // Transform ADR list into carousel if on index page
         const adrContent = document.querySelector('.adr-content');
-        if (!adrContent || !document.querySelector('h1')?.textContent.includes('Architecture Decision Records')) {
+        console.log('ADR Content found:', !!adrContent);
+        
+        const h1 = document.querySelector('h1');
+        console.log('H1 text:', h1?.textContent);
+        
+        if (!adrContent || !h1?.textContent.includes('Architecture Decision Records')) {
+            console.log('ADR Carousel: Not on ADR index page, skipping initialization');
             return;
         }
 
         const list = adrContent.querySelector('ul');
-        if (!list) return;
+        console.log('UL element found:', !!list);
+        if (!list) {
+            console.log('ADR Carousel: No UL element found, skipping initialization');
+            return;
+        }
 
         // Create carousel structure
         const container = document.createElement('div');
@@ -153,6 +166,8 @@
         // Initialize
         updateCarousel();
         startAutoPlay();
+        
+        console.log('ADR Carousel: Successfully initialized with', items.length, 'items');
     }
 
     function createADRCard(listItem, index) {
@@ -162,11 +177,28 @@
         
         // Extract link and content
         const link = listItem.querySelector('a');
-        const text = listItem.textContent;
-        const match = text.match(/(\d+)\.\s+(.+?)\s*-\s*(.+)/);
+        const linkText = link ? link.textContent : '';
+        const fullText = listItem.textContent;
         
-        if (match) {
-            const [, number, title, description] = match;
+        console.log('Processing item:', { linkText, fullText });
+        
+        // Updated regex to handle **0001. Title** format
+        // Try to match from the link text first (which contains the ADR number and title)
+        const linkMatch = linkText.match(/(\d+)\.\s+(.+)/);
+        
+        if (linkMatch) {
+            const [, number, title] = linkMatch;
+            
+            // Extract description - everything after the link in the list item
+            const descriptionStart = fullText.indexOf(linkText) + linkText.length;
+            let description = fullText.substring(descriptionStart).trim();
+            
+            // Remove leading dash if present
+            if (description.startsWith('-')) {
+                description = description.substring(1).trim();
+            }
+            
+            console.log('Parsed ADR:', { number, title, description });
             
             // ADR number badge
             const badge = document.createElement('div');
@@ -181,11 +213,14 @@
             card.appendChild(titleEl);
             
             // Description
-            const desc = document.createElement('p');
-            desc.className = 'adr-description';
-            desc.textContent = description;
-            card.appendChild(desc);
+            if (description) {
+                const desc = document.createElement('p');
+                desc.className = 'adr-description';
+                desc.textContent = description;
+                card.appendChild(desc);
+            }
         } else {
+            console.log('No match found, using fallback');
             // Fallback for non-matching format
             card.innerHTML = listItem.innerHTML;
         }
