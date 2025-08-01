@@ -57,6 +57,9 @@ jobs:
           # Build ADRs as HTML using pandoc
           mkdir -p _site/adr
           
+          # Copy the template to working directory for pandoc
+          cp docs/site/adr-template.html ./adr-template.html
+          
           # Process each ADR markdown file
           for adr in docs/adr/*.md; do
             if [ -f "$adr" ]; then
@@ -66,7 +69,7 @@ jobs:
               # Use pandoc to convert with our custom template
               pandoc "$adr" \
                 --standalone \
-                --template=docs/site/adr-template.html \
+                --template=./adr-template.html \
                 --metadata title="$title" \
                 --to=html5 \
                 -o "_site/adr/${filename}.html"
@@ -109,13 +112,14 @@ jobs:
           # Convert the markdown index to HTML using pandoc
           pandoc _site/adr/index.md \
             --standalone \
-            --template=docs/site/adr-template.html \
+            --template=./adr-template.html \
             --metadata title="Architecture Decision Records" \
             --to=html5 \
             -o _site/adr/index.html
           
           # Clean up the temporary markdown file
           rm _site/adr/index.md
+          rm ./adr-template.html
 
       - name: Generate Release Info
         if: github.event_name == 'release'
