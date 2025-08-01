@@ -88,18 +88,20 @@ jobs:
           
           EOF
           
-          # Add each ADR to the index
+          # Add each ADR to the index with data attributes for carousel
           for adr in docs/adr/*.md; do
             if [ -f "$adr" ]; then
               filename=$(basename "$adr" .md)
-              # Extract title from the first line
+              # Extract ADR number and title
               title=$(head -n1 "$adr" | sed 's/^# //')
               # Extract the first paragraph as description
-              description=$(awk '/^## Context/ {p=1; next} /^##/ {p=0} p && /[^[:space:]]/' "$adr" | head -n3 | tr '\n' ' ' | sed 's/  */ /g')
+              description=$(awk '/^## Context/ {p=1; next} /^##/ {p=0} p && /[^[:space:]]/' "$adr" | head -n3 | tr '\n' ' ' | sed 's/  */ /g' | sed 's/[[:space:]]*$//')
               if [ -z "$description" ]; then
                 description=$(awk '/^[^#]/ && /[^[:space:]]/' "$adr" | head -n1)
               fi
-              echo "- [**${title}**](./${filename}.html) - ${description}" >> _site/adr/index.md
+              # Truncate description to ~150 chars at word boundary
+              description=$(echo "$description" | cut -c1-150 | sed 's/\(.*\) .*/\1/')
+              echo "- [**${title}**](./${filename}.html) - ${description}..." >> _site/adr/index.md
               echo "" >> _site/adr/index.md
             fi
           done

@@ -79,6 +79,28 @@ body {
     overflow-x: hidden;
 }
 
+/* Global link styles */
+a:not(.btn):not(.nav-link):not(.link-card) {
+    color: var(--ctp-blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:not(.btn):not(.nav-link):not(.link-card):hover {
+    color: var(--ctp-sapphire);
+    text-decoration: underline;
+}
+
+a:not(.btn):not(.nav-link):not(.link-card):visited {
+    color: var(--ctp-mauve);
+}
+
+a:not(.btn):not(.nav-link):not(.link-card):focus {
+    outline: 2px solid var(--ctp-sky);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -909,5 +931,160 @@ body {
         flex-direction: column;
         gap: var(--spacing-md);
         text-align: center;
+    }
+}
+
+/* ADR Carousel Styles */
+.adr-carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: var(--spacing-lg) 0;
+}
+
+.adr-carousel {
+    display: flex;
+    gap: var(--spacing-lg);
+    transition: transform 0.5s ease;
+    padding: 0 var(--spacing-sm);
+}
+
+.adr-carousel-item {
+    flex: 0 0 350px;
+    background-color: var(--bg-surface);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    border: 1px solid var(--ctp-surface1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.adr-carousel-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: var(--accent-primary);
+}
+
+.adr-carousel-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-gradient-start), var(--accent-gradient-end));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.adr-carousel-item:hover::before {
+    opacity: 1;
+}
+
+.adr-number {
+    display: inline-block;
+    background-color: var(--accent-primary);
+    color: var(--bg-primary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.adr-title {
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.adr-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.adr-carousel-controls {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 var(--spacing-sm);
+    pointer-events: none;
+}
+
+.carousel-btn {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--ctp-surface1);
+    color: var(--text-primary);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    pointer-events: all;
+    opacity: 0.8;
+}
+
+.carousel-btn:hover {
+    background-color: var(--bg-surface-hover);
+    border-color: var(--accent-primary);
+    opacity: 1;
+}
+
+.carousel-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.adr-carousel-indicators {
+    display: flex;
+    gap: var(--spacing-xs);
+    justify-content: center;
+    margin-top: var(--spacing-lg);
+}
+
+.carousel-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--ctp-surface1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.carousel-indicator.active {
+    width: 24px;
+    border-radius: 4px;
+    background-color: var(--accent-primary);
+}
+
+/* Touch support */
+@media (pointer: coarse) {
+    .adr-carousel-controls {
+        display: none;
+    }
+    
+    .adr-carousel-container {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .adr-carousel-item {
+        scroll-snap-align: start;
     }
 }
