@@ -213,6 +213,17 @@
     letter-spacing: 0.05em;
 }
 
+.adr-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
 .status-proposed {
     background-color: var(--ctp-yellow);
     color: var(--ctp-base);
@@ -540,8 +551,9 @@
 
 .adr-card-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
     margin-bottom: var(--spacing-md);
 }
 
@@ -579,15 +591,9 @@
     margin-bottom: var(--spacing-sm);
 }
 
-.adr-meta {
-    display: flex;
-    gap: var(--spacing-sm);
-    align-items: center;
-    font-size: 0.875rem;
-}
-
-.adr-meta time {
+.adr-card-header time {
     color: var(--text-muted);
+    font-size: 0.875rem;
 }
 
 .adr-categories {

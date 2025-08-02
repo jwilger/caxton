@@ -17,6 +17,9 @@
 </footer>
 
 <script src="{{ '/assets/js/caxton.js' | relative_url }}"></script>
+{% comment %}
+Disabled adr-carousel.js to prevent ADR duplication on index page
 {% if page.layout == 'adr-index' or page.layout == 'adr' %}
 <script src="{{ '/assets/js/adr-carousel.js' | relative_url }}"></script>
 {% endif %}
+{% endcomment %}

@@ -1,7 +1,5 @@
 ---
 layout: default
-extra_js:
-  - /assets/js/adr-search.js
 ---
 
 <div class="adr-index-layout">
@@ -94,34 +92,33 @@ extra_js:
                                 {% assign adr_num = adr.title | split: '.' | first | split: ' ' | last %}
                                 ADR {{ adr_num }}
                             </div>
+                            {% if adr.date %}
+                                <time datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: "%b %d, %Y" }}</time>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="adr-card-content">
                             {% if adr.status %}
                                 <div class="adr-status status-{{ adr.status | downcase }}">
                                     {{ adr.status | capitalize }}
                                 </div>
                             {% endif %}
-                        </div>
-                        
-                        <div class="adr-card-content">
+                            
                             <h3 class="adr-title">
                                 <a href="{{ adr.url | relative_url }}">{{ adr.title | split: '. ' | last }}</a>
                             </h3>
                             
+                            {% if adr.categories %}
+                                <div class="adr-categories">
+                                    {% for category in adr.categories %}
+                                        <span class="category">{{ category }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
                             {% if adr.excerpt %}
                                 <p class="adr-excerpt">{{ adr.excerpt | strip_html | truncate: 150 }}</p>
                             {% endif %}
-                            
-                            <div class="adr-meta">
-                                {% if adr.date %}
-                                    <time datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: "%b %d, %Y" }}</time>
-                                {% endif %}
-                                {% if adr.categories %}
-                                    <div class="adr-categories">
-                                        {% for category in adr.categories %}
-                                            <span class="category">{{ category }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
                         </div>
                         
                         <div class="adr-card-footer">
