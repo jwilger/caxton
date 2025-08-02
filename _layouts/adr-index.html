@@ -87,6 +87,12 @@ layout: default
                     <article class="adr-card" 
                              data-status="{{ adr.status | downcase }}"
                              {% if adr.categories %}data-categories="{{ adr.categories | join: ',' | downcase }}"{% endif %}>
+                        {% if adr.status %}
+                            <div class="adr-status status-{{ adr.status | downcase }}">
+                                {{ adr.status | capitalize }}
+                            </div>
+                        {% endif %}
+                        
                         <div class="adr-card-header">
                             <div class="adr-number">
                                 {% assign adr_num = adr.title | split: '.' | first | split: ' ' | last %}
@@ -98,12 +104,6 @@ layout: default
                         </div>
                         
                         <div class="adr-card-content">
-                            {% if adr.status %}
-                                <div class="adr-status status-{{ adr.status | downcase }}">
-                                    {{ adr.status | capitalize }}
-                                </div>
-                            {% endif %}
-                            
                             <h3 class="adr-title">
                                 <a href="{{ adr.url | relative_url }}">{{ adr.title | split: '. ' | last }}</a>
                             </h3>
@@ -116,8 +116,13 @@ layout: default
                                 </div>
                             {% endif %}
                             
-                            {% if adr.excerpt %}
+                            {% if adr.excerpt and adr.excerpt != '' %}
                                 <p class="adr-excerpt">{{ adr.excerpt | strip_html | truncate: 150 }}</p>
+                            {% elsif adr.content %}
+                                {% assign content_preview = adr.content | strip_html | strip_newlines | truncatewords: 30 %}
+                                {% unless content_preview contains adr.title %}
+                                    <p class="adr-excerpt">{{ content_preview }}</p>
+                                {% endunless %}
                             {% endif %}
                         </div>
                         
