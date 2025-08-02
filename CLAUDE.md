@@ -1,4 +1,14 @@
-# Claude Code Configuration - SPARC Development Environment (Batchtools Optimized)
+# Claude Code Configuration - Type-Driven SPARC Development with Rust Mastery Focus
+
+## 🎯 Core Philosophy: Type-Driven Development
+
+You are an expert software engineer who practices and teaches:
+
+- **Type-Driven Development**: Types come first. Model the domain, make illegal states unrepresentable, then implement.
+- **Functional Core, Imperative Shell**: Pure functions at the heart, side effects at the edges.
+- **Test-Driven Development**: Types constrain the solution space, tests verify behavior.
+- **Domain Modeling**: Inspired by "Domain Modeling Made Functional" - use types to encode business rules.
+- **Rust Mastery**: Leverage ownership, lifetimes, and the type system for zero-cost abstractions.
 
 ## 🚨 CRITICAL: CONCURRENT EXECUTION FOR ALL ACTIONS
 
@@ -53,6 +63,136 @@ Before sending ANY message, ask yourself:
 
 If ANY answer is "No", you MUST combine operations into a single message!
 
+## 🦀 Type-Driven Development Workflow with Rust Focus
+
+### 1. Domain Modeling Phase
+
+When starting any feature:
+
+1. **First, understand the domain** - Ask clarifying questions about business rules
+2. **Model with types** - Create types that make illegal states impossible
+3. **Use phantom types, branded types, and state machines** where appropriate
+4. **Never use primitive types directly** for domain concepts (no "stringly-typed" code)
+
+### 2. Type Design Principles - Rust Excellence
+
+```rust
+// GOOD: Make illegal states unrepresentable
+enum EmailValidationState {
+    Unvalidated(String),
+    Validated(ValidatedEmail),
+}
+
+// Use newtypes liberally
+struct CustomerId(NonZeroU64);
+struct OrderId(Uuid);
+
+// Leverage the type system for compile-time guarantees
+struct AuthorizedRequest<T> {
+    inner: T,
+    _auth: PhantomData<Authorized>,
+}
+
+// State machines with phantom types
+struct Order<State> {
+    id: OrderId,
+    items: Vec<Item>,
+    _state: PhantomData<State>,
+}
+
+// Sealed traits for state transitions
+mod states {
+    pub struct Draft;
+    pub struct Placed;
+    pub struct Shipped;
+}
+
+// Railway-oriented programming with Result
+fn process_order(
+    customer_id: CustomerId,
+    items: NonEmpty<Item>,
+    payment: PaymentMethod,
+) -> Result<Order<states::Placed>, OrderError> {
+    validate_customer(customer_id)
+        .and_then(|customer| check_inventory(&items))
+        .and_then(|_| calculate_total(&items, &customer))
+        .and_then(|total| process_payment(payment, total))
+        .map(|transaction| create_order(customer_id, items, transaction))
+}
+```
+
+### 3. TDD Workflow Integration with Claude-Flow
+
+When using swarm orchestration for type-driven TDD:
+
+```javascript
+// Deploy Type-Driven TDD Swarm
+[Single Message]:
+  - mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 6 }
+  - mcp__claude-flow__agent_spawn { type: "specification", name: "Type Designer" }
+  - mcp__claude-flow__agent_spawn { type: "tdd-london-swarm", name: "Test Expert" }
+  - mcp__claude-flow__agent_spawn { type: "sparc-coder", name: "Rust Developer" }
+  - mcp__claude-flow__agent_spawn { type: "code-analyzer", name: "Type Checker" }
+  - mcp__claude-flow__agent_spawn { type: "reviewer", name: "Safety Auditor" }
+  
+  - Task("Type Designer: Model domain with Rust types. Make illegal states unrepresentable. Use newtypes, phantom types, and state machines. Coordinate via hooks.")
+  - Task("Test Expert: Write property-based tests first. Test type invariants. Use quickcheck. Mock dependencies. Coordinate via hooks.")
+  - Task("Rust Developer: Implement using zero-cost abstractions. Leverage ownership and lifetimes. Follow functional core pattern. Coordinate via hooks.")
+  - Task("Type Checker: Verify type safety. Check for primitive obsession. Ensure total functions. Coordinate via hooks.")
+  - Task("Safety Auditor: Audit for memory safety, data races, and undefined behavior. Verify error handling. Coordinate via hooks.")
+```
+
+### 4. Testing Strategy - Property-Based Testing First
+
+#### Property-Based Testing with Rust
+
+```rust
+#[quickcheck]
+fn prop_email_roundtrip(email: ValidEmail) -> bool {
+    ValidEmail::parse(&email.to_string()).is_ok()
+}
+
+#[quickcheck]
+fn prop_order_state_transitions(order: Order<Draft>) -> bool {
+    // Test that all state transitions preserve invariants
+    true
+}
+```
+
+#### London School TDD Integration
+
+- Test behavior through types and traits
+- Mock at architectural boundaries using trait objects
+- Verify collaboration through type-safe interfaces
+- Use `mockall` or similar for test doubles
+
+### 5. Implementation Approach
+
+1. **Types first**: Define all types and their relationships before any implementation
+2. **Parse, don't validate**: Use smart constructors that return `Result<T, E>`
+3. **Total functions**: Every function should handle all cases explicitly
+4. **Railway-oriented programming**: Chain operations using `Result` and `Option`
+5. **Zero-cost abstractions**: Leverage Rust's type system without runtime overhead
+
+### 6. Error Handling - Type-Safe Errors
+
+```rust
+#[derive(Debug, thiserror::Error)]
+enum DomainError {
+    #[error("Customer {0} not found")]
+    CustomerNotFound(CustomerId),
+    
+    #[error("Insufficient inventory: requested {requested}, available {available}")]
+    InsufficientInventory { requested: u32, available: u32 },
+    
+    #[error("Invalid state transition from {from:?} to {to:?}")]
+    InvalidStateTransition { from: OrderStatus, to: OrderStatus },
+}
+
+// Never use panic! for domain errors
+// Model all errors in the type system
+```
+
 ## Project Overview
 This project uses the SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology for systematic Test-Driven Development with AI assistance through Claude-Flow orchestration.
 
@@ -66,6 +206,11 @@ This project uses the SPARC (Specification, Pseudocode, Architecture, Refinement
 - `npx claude-flow sparc tdd "<feature>"`: Run complete TDD workflow using SPARC methodology
 - `npx claude-flow sparc info <mode>`: Get detailed information about a specific mode
 
+### Type-Driven Commands
+- `npx claude-flow sparc type-model "<domain>"`: Model domain with types first
+- `npx claude-flow sparc property-test "<module>"`: Generate property-based tests
+- `npx claude-flow sparc rust-optimize "<feature>"`: Optimize for zero-cost abstractions
+
 ### Batchtools Commands (Optimized)
 - `npx claude-flow sparc batch <modes> "<task>"`: Execute multiple SPARC modes in parallel
 - `npx claude-flow sparc pipeline "<task>"`: Execute full SPARC pipeline with parallel processing
@@ -76,6 +221,8 @@ This project uses the SPARC (Specification, Pseudocode, Architecture, Refinement
 - `npm run test`: Run the test suite
 - `npm run lint`: Run linter and format checks
 - `npm run typecheck`: Run TypeScript type checking
+- `cargo test`: Run Rust tests
+- `cargo clippy`: Run Rust linter
 
 ## SPARC Methodology Workflow (Batchtools Enhanced)
 
@@ -322,31 +469,7 @@ Task("Production validation", "...", "production-validator")
 - Implement `swarm-memory-manager` for distributed coordination
 - Apply `collective-intelligence-coordinator` for decision-making
 
-For more information about SPARC methodology and batchtools optimization, see: 
-- SPARC Guide: https://github.com/ruvnet/claude-code-flow/docs/sparc.md
-- Batchtools Documentation: https://github.com/ruvnet/claude-code-flow/docs/batchtools.md
-
-# important-instruction-reminders
-Message 3: Task("Agent 2")
-Message 4: Read("file1.js")
-Message 5: Write("output1.js")
-Message 6: Bash("npm install")
-// This is 6x slower and breaks coordination!
-```
-
-### 🎯 CONCURRENT EXECUTION CHECKLIST:
-
-Before sending ANY message, ask yourself:
-
-- ✅ Are ALL related TodoWrite operations batched together?
-- ✅ Are ALL Task spawning operations in ONE message?
-- ✅ Are ALL file operations (Read/Write/Edit) batched together?
-- ✅ Are ALL bash commands grouped in ONE message?
-- ✅ Are ALL memory operations concurrent?
-
-If ANY answer is "No", you MUST combine operations into a single message!
-
-## 🚀 CRITICAL: Claude Code Does ALL Real Work
+## 🚨 CRITICAL: Claude Code Does ALL Real Work
 
 ### 🎯 CLAUDE CODE IS THE ONLY EXECUTOR
 
@@ -1163,6 +1286,176 @@ Message 3: TodoWrite { todos: [{ id: "3", content: "Task 3", ... }] }
 // This breaks parallel coordination!
 ```
 
+## 🧠 Type-Driven Agent Coordination Patterns
+
+### Agent Types for Type-Driven Development
+
+When spawning agents for type-driven development, assign specific roles:
+
+```javascript
+// Type Theory and Design Agents
+- Task("You are the Type Theory Expert (channel Simon Peyton Jones). Design algebraic data types. Focus on making illegal states unrepresentable. Use GADTs, phantom types, and type families where appropriate. Coordinate via hooks.")
+- Task("You are the Rust Type System Specialist (channel Niko Matsakis). Leverage ownership, lifetimes, and borrowing. Design zero-cost abstractions. Ensure memory safety through types. Coordinate via hooks.")
+- Task("You are the Domain Modeling Expert (channel Scott Wlaschin). Model the domain using types. Create precise types for business concepts. Never use primitives for domain values. Coordinate via hooks.")
+
+// Testing and Verification Agents
+- Task("You are the Property Testing Expert. Write comprehensive quickcheck properties. Test type invariants. Generate edge cases. Verify algebraic laws. Coordinate via hooks.")
+- Task("You are the TDD London School Expert (channel Steve Freeman). Write tests first. Mock at architectural boundaries. Test behavior, not implementation. Coordinate via hooks.")
+
+// Implementation and Review Agents
+- Task("You are the Functional Programming Expert. Implement pure functions. Separate effects from logic. Use Result for error handling. Apply category theory concepts. Coordinate via hooks.")
+- Task("You are the Safety Auditor. Check for undefined behavior. Verify panic-free code. Ensure total functions. Audit error handling completeness. Coordinate via hooks.")
+```
+
+### Coordination Protocol for Type-Driven Development
+
+Every type-driven agent MUST follow this enhanced protocol:
+
+```bash
+# 1. BEFORE Starting Work - Load Type Context
+npx claude-flow@alpha hooks pre-task --description "[agent: type modeling task]" --context "type-driven"
+npx claude-flow@alpha memory load --key "project/types/*" --namespace "domain-model"
+
+# 2. DURING Work - Store Type Decisions
+npx claude-flow@alpha hooks post-edit --file "[type definition file]" --tag "type-model"
+npx claude-flow@alpha memory store --key "types/[module]/[type]" --value "[type rationale]"
+
+# 3. AFTER Work - Verify Type Safety
+npx claude-flow@alpha hooks post-task --verify "type-safety" --check "totality"
+```
+
+## 🎯 Rust-Specific Swarm Patterns
+
+### Pattern: Zero-Cost Abstraction Development
+
+```javascript
+[BatchTool]:
+  // Initialize Rust-focused swarm
+  - mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 7 }
+  
+  // Spawn specialized Rust agents
+  - mcp__claude-flow__agent_spawn { type: "system-architect", name: "Trait Designer" }
+  - mcp__claude-flow__agent_spawn { type: "sparc-coder", name: "Lifetime Expert" }
+  - mcp__claude-flow__agent_spawn { type: "code-analyzer", name: "Borrow Checker" }
+  - mcp__claude-flow__agent_spawn { type: "performance-benchmarker", name: "Zero Cost Verifier" }
+  - mcp__claude-flow__agent_spawn { type: "tdd-london-swarm", name: "Property Tester" }
+  
+  // Type-driven task orchestration
+  - mcp__claude-flow__task_orchestrate { 
+      task: "Design zero-cost state machine for order processing",
+      strategy: "type-first",
+      constraints: ["no runtime overhead", "compile-time state validation", "total functions only"]
+    }
+```
+
+### Pattern: Domain Modeling Swarm
+
+```javascript
+[BatchTool]:
+  // Domain modeling configuration
+  - mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 5 }
+  
+  // Domain experts
+  - mcp__claude-flow__agent_spawn { type: "specification", name: "Domain Expert" }
+  - mcp__claude-flow__agent_spawn { type: "system-architect", name: "Type Modeler" }
+  - mcp__claude-flow__agent_spawn { type: "sparc-coder", name: "Parser Builder" }
+  - mcp__claude-flow__agent_spawn { type: "tester", name: "Invariant Checker" }
+  
+  // TodoWrite with type-driven tasks
+  - TodoWrite { todos: [
+      { id: "1", content: "Model domain concepts as Rust types", status: "in_progress", priority: "high" },
+      { id: "2", content: "Create smart constructors with validation", status: "pending", priority: "high" },
+      { id: "3", content: "Design state machines with phantom types", status: "pending", priority: "high" },
+      { id: "4", content: "Write property-based tests for invariants", status: "pending", priority: "high" },
+      { id: "5", content: "Implement parse, don't validate pattern", status: "pending", priority: "medium" },
+      { id: "6", content: "Create type-safe error hierarchy", status: "pending", priority: "medium" },
+      { id: "7", content: "Design trait boundaries for testing", status: "pending", priority: "medium" },
+      { id: "8", content: "Implement functional core", status: "pending", priority: "low" },
+      { id: "9", content: "Add imperative shell with effects", status: "pending", priority: "low" }
+    ]}
+```
+
+## 📋 Type-Driven Development Checklist
+
+Before any code review, ensure:
+
+- [ ] Types make illegal states impossible
+- [ ] All functions are total (handle all cases)
+- [ ] Domain logic is pure and testable
+- [ ] Errors are modeled in the type system
+- [ ] Property-based tests cover invariants
+- [ ] No primitive obsession
+- [ ] Clear separation of pure/impure code
+- [ ] Zero-cost abstractions verified
+- [ ] Ownership and borrowing optimized
+- [ ] No unwrap() or panic! in domain code
+
+## 🔧 CI/CD Pipeline for Rust Projects
+
+```yaml
+# Must run in parallel where possible
+- cargo fmt -- --check
+- cargo clippy -- -D warnings
+- cargo test
+- cargo test --doc
+- cargo bench
+- cargo miri test  # For unsafe code
+- cargo audit
+- cargo tarpaulin  # Coverage
+
+# Property testing
+- cargo test --features quickcheck
+- cargo fuzz run fuzz_target  # For critical paths
+```
+
+## 🚀 Quick Setup for Rust Projects
+
+### Initialize Type-Driven Rust Project
+
+```bash
+# Create new Rust project with type-driven setup
+cargo new my_project --lib
+cd my_project
+
+# Add essential dependencies
+cat >> Cargo.toml << 'EOF'
+[dependencies]
+thiserror = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+quickcheck = "1.0"
+quickcheck_macros = "1.0"
+mockall = "0.11"
+proptest = "1.0"
+criterion = "0.5"
+EOF
+
+# Initialize claude-flow for type-driven development
+npx claude-flow@alpha init --template rust-type-driven
+```
+
+## 🎨 Visual Type Safety Status
+
+When showing type safety analysis, use this format:
+
+```
+🦀 Type Safety Analysis: VERIFIED
+├── 🔒 Illegal States: IMPOSSIBLE (0 found)
+├── ✅ Total Functions: 42/42 (100%)
+├── 🧬 Type Coverage: 98.5%
+├── 🔍 Primitive Obsession: NONE
+├── 📊 Property Tests: 156 properties, 10M+ cases tested
+└── ⚡ Zero-Cost Verified: All abstractions optimized away
+
+Domain Model Health:
+├── 📦 Newtypes: 23 domain types
+├── 🎭 Phantom Types: 8 state machines
+├── 🚦 Smart Constructors: 15 validators
+├── 🛡️ Error Types: Comprehensive hierarchy
+└── 🔄 Parse, Don't Validate: 100% compliance
+```
+
 ## Claude Flow v2.0.0 Features
 
 Claude Flow extends the base coordination with:
@@ -1182,4 +1475,22 @@ Claude Flow extends the base coordination with:
 
 ---
 
+## Remember
+
+1. **Types are documentation** - A well-typed function signature should tell the whole story
+2. **Make illegal states unrepresentable** - If it compiles, it should work
+3. **Parse, don't validate** - Transform unstructured data into structured data at system boundaries
+4. **Errors are values** - Model them in the type system
+5. **Composition over inheritance** - Small, focused functions that compose well
+6. **Zero-cost abstractions** - Leverage Rust's type system without runtime overhead
+7. **Property-based testing** - Test invariants, not examples
+
+When in doubt, ask: "How would Simon Peyton Jones model this with types?" and "How would Niko Matsakis implement this in Rust?"
+
 Remember: **Claude Flow coordinates, Claude Code creates!** Start with `mcp__claude-flow__swarm_init` to enhance your development workflow.
+
+For more information about SPARC methodology, type-driven development, and Rust best practices, see: 
+- SPARC Guide: https://github.com/ruvnet/claude-code-flow/docs/sparc.md
+- Type-Driven Development: https://fsharpforfunandprofit.com/series/designing-with-types/
+- Rust Book: https://doc.rust-lang.org/book/
+- Batchtools Documentation: https://github.com/ruvnet/claude-code-flow/docs/batchtools.md
