@@ -81,6 +81,9 @@ jobs:
           # Copy static files (preserving rustdoc)
           cp -r docs/site/* _site/
           
+          # Copy the template again for the index generation
+          cp docs/site/adr-template.html ./adr-template.html
+          
           # Generate ADR index page dynamically
           cat > _site/adr/index.md << 'EOF'
           # Architecture Decision Records
@@ -110,12 +113,18 @@ jobs:
           done
           
           # Convert the markdown index to HTML using pandoc
+          echo "Converting ADR index with pandoc..."
+          ls -la ./adr-template.html || echo "Template file not found!"
           pandoc _site/adr/index.md \
             --standalone \
             --template=./adr-template.html \
             --metadata title="Architecture Decision Records" \
             --to=html5 \
             -o _site/adr/index.html
+          
+          # Verify the output
+          echo "Checking if carousel script is in the generated index..."
+          grep -q "adr-carousel.js" _site/adr/index.html && echo "✓ Carousel script found!" || echo "✗ Carousel script NOT found!"
           
           # Clean up the temporary markdown file
           rm _site/adr/index.md
