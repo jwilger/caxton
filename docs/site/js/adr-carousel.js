@@ -20,7 +20,11 @@
         const h1 = document.querySelector('h1');
         console.log('H1 text:', h1?.textContent);
         
-        if (!adrContent || !h1?.textContent.includes('Architecture Decision Records')) {
+        // Normalize whitespace in H1 text to handle multi-line titles
+        const h1Text = h1?.textContent.replace(/\s+/g, ' ').trim();
+        console.log('H1 normalized text:', h1Text);
+        
+        if (!adrContent || !h1Text?.includes('Architecture Decision Records')) {
             console.log('ADR Carousel: Not on ADR index page, skipping initialization');
             return;
         }
