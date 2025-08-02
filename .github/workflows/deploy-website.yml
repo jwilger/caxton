@@ -80,6 +80,8 @@ jobs:
         run: |
           # Copy static files (preserving rustdoc)
           cp -r docs/site/* _site/
+          # Also copy hidden files like .nojekyll
+          cp -r docs/site/.* _site/ 2>/dev/null || true
           
           # Copy the template again for the index generation
           cp docs/site/adr-template.html ./adr-template.html
