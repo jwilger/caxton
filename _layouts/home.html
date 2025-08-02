@@ -1,0 +1,341 @@
+---
+layout: default
+---
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    <span class="title-line">Build Multi-Agent Systems</span>
+                    <span class="title-line gradient-text">That Don't Wake You Up</span>
+                </h1>
+                <p class="hero-subtitle">
+                    WebAssembly isolation. Observable by design. Production-ready from day one.
+                    Build resilient multi-agent systems with <span class="highlight">< 50μs overhead</span>.
+                </p>
+                <div class="hero-actions">
+                    <a href="#getting-started" class="btn btn-primary">Get Started</a>
+                    <a href="#architecture" class="btn btn-secondary">View Architecture</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="floating-card">
+                    <img src="{{ '/assets/img/logo.svg' | relative_url }}" alt="Caxton Logo" class="hero-logo">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{ content }}
+
+<!-- Problem/Solution Section -->
+<section id="problem-solution" class="problem-solution">
+    <div class="container">
+        <h2 class="section-title">Why Caxton Exists</h2>
+        <div class="problem-grid">
+            <div class="problem-card">
+                <h3 class="problem-title">Current Pain Points</h3>
+                <ul class="problem-list">
+                    <li>Debugging distributed agent state is a nightmare</li>
+                    <li>Agent crashes affect the entire system</li>
+                    <li>No standard communication protocols</li>
+                    <li>Observability is an afterthought</li>
+                </ul>
+            </div>
+            <div class="solution-card">
+                <h3 class="solution-title">How Caxton Solves Them</h3>
+                <ul class="solution-list">
+                    <li>Built-in distributed tracing for every message</li>
+                    <li>WebAssembly isolation with zero blast radius</li>
+                    <li>FIPA standard protocols out of the box</li>
+                    <li>OpenTelemetry from day one</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features">
+    <div class="container">
+        <h2 class="section-title">Core Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>WebAssembly Agent Isolation</h3>
+                <p>Each agent runs in its own WebAssembly sandbox. When an agent crashes, the blast radius is zero. Like containers but 100x lighter.</p>
+                <div class="feature-metrics">
+                    <span class="metric">45μs spawn time</span>
+                    <span class="metric">2MB baseline memory</span>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>FIPA Protocol Messaging</h3>
+                <p>Industry-standard agent communication protocols. Not just another message bus - semantic protocols with state machines.</p>
+                <div class="feature-protocols">
+                    <span class="protocol">Contract Net</span>
+                    <span class="protocol">Request/Reply</span>
+                    <span class="protocol">Subscribe/Notify</span>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Observable by Design</h3>
+                <p>Built-in OpenTelemetry from day one. Every message traced, every decision logged, every metric captured.</p>
+                <div class="feature-observability">
+                    <span class="observable">Distributed Tracing</span>
+                    <span class="observable">Structured Logs</span>
+                    <span class="observable">Real Metrics</span>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Production Performance</h3>
+                <p>Designed for real workloads, not demos. Microsecond latencies, predictable resource usage, graceful degradation.</p>
+                <div class="feature-performance">
+                    <span class="perf">12μs p50 latency</span>
+                    <span class="perf">67μs p99 latency</span>
+                    <span class="perf">10k agents/core</span>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <h3>Debugging Tools</h3>
+                <p>Purpose-built tools for 3 AM debugging. Trace conversations, replay events, inspect agent state, all without restarts.</p>
+                <div class="feature-tools">
+                    <code>caxton trace</code>
+                    <code>caxton top</code>
+                    <code>caxton replay</code>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔌</div>
+                <h3>Tool Integration</h3>
+                <p>MCP (Model Context Protocol) bridges to external tools. Connect your agents to databases, APIs, and services.</p>
+                <div class="feature-integrations">
+                    <span class="integration">Database Tools</span>
+                    <span class="integration">HTTP APIs</span>
+                    <span class="integration">File Systems</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Three AM Test Section -->
+<section id="three-am-test" class="three-am-test">
+    <div class="container">
+        <h2 class="section-title">The 3 AM Test</h2>
+        <p class="section-subtitle">Every feature designed to be debugged in production</p>
+        <div class="debugging-scenario">
+            <h3>Real Debugging Scenario: Agent Conversation Timeout</h3>
+            <div class="debug-steps">
+                <div class="debug-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Alert fires: "Agent conversation timeout"</h4>
+                        <pre><code>$ caxton trace --conversation-id abc123 --last 5m</code></pre>
+                    </div>
+                </div>
+                <div class="debug-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>See exactly where conversation stalled</h4>
+                        <pre><code>[03:23:45.123] agent="OrderProcessor" message="propose" status="sent"
+[03:23:45.567] agent="InventoryChecker" message="propose" status="received"
+[03:23:50.568] agent="InventoryChecker" error="tool timeout" tool="database_query"</code></pre>
+                    </div>
+                </div>
+                <div class="debug-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Root cause: Agent had a slow tool call</h4>
+                        <pre><code>$ caxton debug agent InventoryChecker --show-metrics
+Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code></pre>
+                    </div>
+                </div>
+                <div class="debug-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Fix: Adjust circuit breaker configuration</h4>
+                        <pre><code>$ caxton config set --agent InventoryChecker \
+  --circuit-breaker.timeout=10s \
+  --circuit-breaker.threshold=3</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Architecture Section -->
+<section id="architecture" class="architecture">
+    <div class="container">
+        <h2 class="section-title">Architecture</h2>
+        <div class="architecture-content">
+            <div class="architecture-text">
+                <h3>Built for Production</h3>
+                <p>Caxton follows type-driven development with a functional core and imperative shell architecture. Every architectural decision prioritizes debuggability and operational excellence.</p>
+                <ul>
+                    <li><strong>Agent Runtime</strong> - WebAssembly-based isolation and execution</li>
+                    <li><strong>Message Router</strong> - FIPA protocol implementation with full tracing</li>
+                    <li><strong>Observability Layer</strong> - OpenTelemetry integration from the ground up</li>
+                    <li><strong>Tool Bridge</strong> - MCP protocol for external integrations</li>
+                </ul>
+                <div class="architecture-links">
+                    <a href="{{ '/adr/' | relative_url }}" class="link-card">
+                        <span class="link-icon">📚</span>
+                        <span>View Architecture Decision Records</span>
+                    </a>
+                </div>
+            </div>
+            <div class="architecture-visual">
+                <div class="architecture-views">
+                    <h4>Three Views of the System</h4>
+                    <div class="view-tabs">
+                        <button class="view-tab active" data-view="logical">Logical View</button>
+                        <button class="view-tab" data-view="physical">Physical View</button>
+                        <button class="view-tab" data-view="failure">Failure View</button>
+                    </div>
+                    <div class="view-content">
+                        <div class="view-pane active" id="logical-view">
+                            <p>How developers think about it: Agents as circles, messages as arrows, clean conceptual model.</p>
+                        </div>
+                        <div class="view-pane" id="physical-view">
+                            <p>How it actually runs: WebAssembly instances, message queues, event store, real boxes and wires.</p>
+                        </div>
+                        <div class="view-pane" id="failure-view">
+                            <p>What happens when things break: Isolation boundaries, supervisor hierarchy, circuit breakers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Getting Started Section -->
+<section id="getting-started" class="getting-started">
+    <div class="container">
+        <h2 class="section-title">Getting Started</h2>
+        <p class="section-subtitle">From zero to multi-agent system in 5 minutes</p>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Install Caxton</h3>
+                <div class="code-snippet">
+                    <pre><code># Install with observability stack included
+curl -sSL https://caxton.dev/install.sh | sh
+caxton init my-system --with-observability</code></pre>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Create Your First Agent</h3>
+                <div class="code-snippet">
+                    <pre><code># Create an agent from template
+caxton agent create order-processor \
+  --template request-handler \
+  --capability order-processing</code></pre>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Deploy and Monitor</h3>
+                <div class="code-snippet">
+                    <pre><code># Start with full observability
+docker-compose up  # Includes Jaeger, Prometheus
+caxton deploy
+caxton monitor --dashboard</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="quick-example">
+            <h3>Simple Multi-Agent Example</h3>
+            <pre><code class="language-rust">use caxton::prelude::*;
+
+#[agent]
+struct OrderProcessor;
+
+impl Agent for OrderProcessor {
+    async fn handle(&self, msg: Message) -> Result<Response> {
+        match msg {
+            Message::ProcessOrder(order) => {
+                // Automatic distributed tracing
+                let inventory = self.request("inventory-checker", 
+                    CheckInventory { items: order.items }).await?;
+                
+                // Type-safe contract negotiation
+                let shipping = self.negotiate_contract(
+                    ShippingRequest { items: order.items, 
+                                     address: order.address }).await?;
+                
+                Ok(Response::OrderConfirmed { 
+                    tracking: shipping.tracking_number 
+                })
+            }
+        }
+    }
+}</code></pre>
+        </div>
+    </div>
+</section>
+
+<!-- Resources Section -->
+<section id="resources" class="resources">
+    <div class="container">
+        <h2 class="section-title">Resources</h2>
+        <div class="resources-grid">
+            <a href="{{ '/caxton/' | relative_url }}" class="resource-card">
+                <div class="resource-icon">📖</div>
+                <h3>API Documentation</h3>
+                <p>Full rustdoc API reference and guides</p>
+            </a>
+            <a href="{{ '/adr/' | relative_url }}" class="resource-card">
+                <div class="resource-icon">🏛️</div>
+                <h3>Architecture Decisions</h3>
+                <p>Understand the why behind every architectural choice</p>
+            </a>
+            <a href="#releases" class="resource-card">
+                <div class="resource-icon">📦</div>
+                <h3>Releases</h3>
+                <p>Latest updates, changelog, and roadmap</p>
+            </a>
+            <a href="{{ site.social.github }}/discussions" target="_blank" rel="noopener" class="resource-card">
+                <div class="resource-icon">💬</div>
+                <h3>Community</h3>
+                <p>Join discussions, get help, contribute</p>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Releases Section -->
+<section id="releases" class="releases">
+    <div class="container">
+        <h2 class="section-title">Latest Release</h2>
+        <div class="release-card">
+            <div class="release-status">
+                <span class="status-badge">Early Development</span>
+                <span class="release-date">Project Status</span>
+            </div>
+            <h3 class="release-title">Foundation Phase</h3>
+            <p class="release-description">
+                Caxton is currently in early development. Core architecture is being implemented with a focus on 
+                getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+            </p>
+            <div class="release-actions">
+                <a href="{{ site.social.github }}/releases" target="_blank" rel="noopener" class="btn btn-outline">
+                    View All Releases
+                </a>
+                <a href="{{ site.social.github }}/blob/main/ROADMAP.md" target="_blank" rel="noopener" class="btn btn-outline">
+                    View Roadmap
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

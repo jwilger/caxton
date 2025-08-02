@@ -1,0 +1,136 @@
+---
+layout: default
+extra_css:
+  - /assets/css/adr.css
+extra_js:
+  - /assets/js/adr-timeline.js
+  - /assets/js/adr-search.js
+---
+
+<div class="adr-layout">
+    <!-- ADR Sidebar with Timeline Navigation -->
+    <aside class="adr-sidebar">
+        <div class="adr-sidebar-header">
+            <h3><a href="{{ '/adr/' | relative_url }}">Architecture Decisions</a></h3>
+            {% if site.adr.search.enabled %}
+                <div class="adr-search">
+                    <input type="search" id="adr-search" placeholder="{{ site.adr.search.placeholder | default: 'Search ADRs...' }}" aria-label="Search ADRs">
+                    <div id="search-results" class="search-results"></div>
+                </div>
+            {% endif %}
+        </div>
+        
+        {% if site.adr.timeline.enabled %}
+            <nav class="adr-timeline" aria-label="ADR Timeline">
+                <h4>Timeline</h4>
+                <ul class="timeline-list">
+                    {% assign sorted_adrs = site.adrs | sort: 'date' | reverse %}
+                    {% for adr in sorted_adrs %}
+                        <li class="timeline-item {% if page.url == adr.url %}current{% endif %}">
+                            <div class="timeline-marker">
+                                <span class="timeline-number">{{ adr.title | split: '.' | first | split: ' ' | last }}</span>
+                            </div>
+                            <div class="timeline-content">
+                                <a href="{{ adr.url | relative_url }}" class="timeline-link">
+                                    <h5>{{ adr.title | split: '. ' | last }}</h5>
+                                    <div class="timeline-meta">
+                                        {% if adr.date %}<time datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: "%b %d, %Y" }}</time>{% endif %}
+                                        {% if adr.status %}<span class="status status-{{ adr.status | downcase }}">{{ adr.status | capitalize }}</span>{% endif %}
+                                    </div>
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+        
+        <!-- Quick Navigation -->
+        <div class="adr-quick-nav">
+            <h4>Quick Navigation</h4>
+            <ul>
+                <li><a href="{{ '/' | relative_url }}">← Back to Home</a></li>
+                <li><a href="{{ '/adr/' | relative_url }}">All ADRs</a></li>
+                {% if site.social.github %}
+                    <li><a href="{{ site.social.github }}/tree/main/docs/adr" target="_blank" rel="noopener">View Source</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main ADR Content -->
+    <main class="adr-main">
+        <article class="adr-content">
+            {% if page.date %}
+                <div class="adr-metadata">
+                    <time datetime="{{ page.date | date_to_xmlschema }}">Date: {{ page.date | date: "%B %d, %Y" }}</time>
+                    {% if page.status %}
+                        <span class="adr-status status-{{ page.status | downcase }}">{{ page.status | capitalize }}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            {% if page.title %}
+                <header class="adr-header">
+                    <h1>{{ page.title }}</h1>
+                </header>
+            {% endif %}
+            
+            <div class="adr-body">
+                {{ content }}
+            </div>
+            
+            {% if page.tags or page.categories %}
+                <footer class="adr-footer">
+                    {% if page.tags and page.tags.size > 0 %}
+                        <div class="adr-tags">
+                            <h4>Tags:</h4>
+                            {% for tag in page.tags %}
+                                <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if page.categories and page.categories.size > 0 %}
+                        <div class="adr-categories">
+                            <h4>Categories:</h4>
+                            {% for category in page.categories %}
+                                <span class="category">{{ category }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </footer>
+            {% endif %}
+        </article>
+        
+        <!-- ADR Navigation -->
+        <nav class="adr-pagination">
+            {% assign sorted_adrs = site.adrs | sort: 'date' %}
+            {% assign current_index = sorted_adrs | map: 'url' | find_exp: 'item', 'item == page.url' %}
+            {% for adr in sorted_adrs %}
+                {% if adr.url == page.url %}
+                    {% assign current_index = forloop.index0 %}
+                    {% break %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if current_index > 0 %}
+                {% assign prev_index = current_index | minus: 1 %}
+                {% assign prev_adr = sorted_adrs[prev_index] %}
+                <a href="{{ prev_adr.url | relative_url }}" class="pagination-link prev-link">
+                    <span class="pagination-label">← Previous</span>
+                    <span class="pagination-title">{{ prev_adr.title | split: '. ' | last | truncate: 40 }}</span>
+                </a>
+            {% endif %}
+            
+            {% assign next_index = current_index | plus: 1 %}
+            {% if next_index < sorted_adrs.size %}
+                {% assign next_adr = sorted_adrs[next_index] %}
+                <a href="{{ next_adr.url | relative_url }}" class="pagination-link next-link">
+                    <span class="pagination-label">Next →</span>
+                    <span class="pagination-title">{{ next_adr.title | split: '. ' | last | truncate: 40 }}</span>
+                </a>
+            {% endif %}
+        </nav>
+    </main>
+</div>
