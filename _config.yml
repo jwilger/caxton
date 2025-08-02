@@ -82,9 +82,8 @@ exclude:
   - DIALOGUE.md
   - WORK.md
 
-# Include files that would normally be excluded
-include:
-  - .nojekyll
+# Include files that would normally be excluded  
+include: []
 
 # Pagination configuration for ADRs
 pagination:
