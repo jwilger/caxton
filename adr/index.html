@@ -1,0 +1,58 @@
+---
+layout: adr-index
+title: "Architecture Decision Records"
+description: "All architectural decisions for the Caxton multi-agent framework"
+permalink: /adr/
+---
+
+<h1>Architecture Decision Records</h1>
+
+<p>This project uses Architecture Decision Records (ADRs) to document significant architectural decisions. ADRs help future developers understand not just what decisions were made, but why they were made and what alternatives were considered.</p>
+
+<div id="empty-state" class="empty-state" style="display: none;">
+    <h3>No ADRs found</h3>
+    <p>Try adjusting your search terms or filter criteria.</p>
+</div>
+
+<div id="adr-grid" class="adr-grid">
+    {% assign sorted_adrs = site.adrs | sort: 'date' | reverse %}
+    {% for adr in sorted_adrs %}
+        <article class="adr-card" data-status="{{ adr.status | downcase }}" data-categories="{{ adr.categories | join: ',' | downcase }}">
+            <header class="adr-card-header">
+                <h3 class="adr-title">
+                    <a href="{{ adr.url | relative_url }}">{{ adr.title }}</a>
+                </h3>
+                <div class="adr-meta">
+                    <span class="adr-status status-{{ adr.status | downcase }}">{{ adr.status | capitalize }}</span>
+                    <time class="adr-date" datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: '%B %d, %Y' }}</time>
+                </div>
+            </header>
+            
+            {% if adr.categories and adr.categories.size > 0 %}
+                <div class="adr-categories">
+                    {% for category in adr.categories %}
+                        <span class="category-tag">{{ category }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if adr.tags and adr.tags.size > 0 %}
+                <div class="adr-tags">
+                    {% for tag in adr.tags %}
+                        <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if adr.excerpt or adr.description %}
+                <div class="adr-excerpt">
+                    {{ adr.excerpt | default: adr.description | strip_html | truncatewords: 30 }}
+                </div>
+            {% endif %}
+            
+            <footer class="adr-card-footer">
+                <a href="{{ adr.url | relative_url }}" class="read-more">Read More →</a>
+            </footer>
+        </article>
+    {% endfor %}
+</div>
