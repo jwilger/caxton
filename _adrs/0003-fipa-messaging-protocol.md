@@ -1,7 +1,7 @@
 ---
 layout: adr
 title: "0003. FIPA Messaging Protocol"
-date: 2025-01-31
+date: 2025-01-31T00:00:00Z
 status: proposed
 categories: [Architecture, Protocol]
 tags: [fipa, messaging, communication, standards]

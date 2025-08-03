@@ -1,7 +1,7 @@
 ---
 layout: adr
 title: "0002. WebAssembly for Agent Isolation"
-date: 2025-01-31
+date: 2025-01-31T00:00:00Z
 status: proposed
 categories: [Architecture, Security]
 tags: [webassembly, isolation, sandboxing, performance]

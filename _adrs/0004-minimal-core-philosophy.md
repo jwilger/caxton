@@ -1,7 +1,7 @@
 ---
 layout: adr
 title: "0004. Minimal Core Philosophy"
-date: 2025-01-31
+date: 2025-01-31T00:00:00Z
 status: proposed
 categories: [Architecture, Philosophy]
 tags: [minimalism, modularity, extensibility]
