@@ -203,13 +203,136 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                     </div>
                     <div class="view-content">
                         <div class="view-pane active" id="logical-view">
-                            <p>How developers think about it: Agents as circles, messages as arrows, clean conceptual model.</p>
+                            <div class="architecture-diagram logical-view">
+                                <div class="api-layer">
+                                    <h5>External API</h5>
+                                    <div class="api-endpoint grpc">gRPC API<br><small>:50051</small></div>
+                                    <div class="api-endpoint rest">REST Gateway<br><small>:8080</small></div>
+                                </div>
+                                <div class="agent-layer">
+                                    <h5>Deployed Agents</h5>
+                                    <div class="agents-container">
+                                        <div class="agent hexagon healthy">
+                                            <span class="agent-name">Order<br>Processor</span>
+                                        </div>
+                                        <div class="agent hexagon healthy">
+                                            <span class="agent-name">Inventory<br>Checker</span>
+                                        </div>
+                                        <div class="agent hexagon initializing">
+                                            <span class="agent-name">Payment<br>Handler</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="message-flow">
+                                    <div class="message fipa">
+                                        <span class="message-type">FIPA: propose</span>
+                                        <span class="correlation-id">correlation: abc123</span>
+                                    </div>
+                                </div>
+                                <div class="tool-layer">
+                                    <h5>MCP Tool Bridge</h5>
+                                    <div class="tools-container">
+                                        <div class="mcp-tool">Database</div>
+                                        <div class="mcp-tool">External API</div>
+                                        <div class="mcp-tool">File System</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="view-pane" id="physical-view">
-                            <p>How it actually runs: WebAssembly instances, message queues, event store, real boxes and wires.</p>
+                            <div class="architecture-diagram physical-view">
+                                <div class="system-boundary">
+                                    <h4>caxton-server (systemd service)</h4>
+                                    <div class="components">
+                                        <div class="component api-gateway">
+                                            <strong>API Gateway</strong><br>
+                                            <small>:8080 (REST)<br>:50051 (gRPC)</small>
+                                        </div>
+                                        <div class="component actor-system">
+                                            <strong>Actor System</strong><br>
+                                            <small>tokio runtime<br>message routing</small>
+                                        </div>
+                                        <div class="component wasm-pool">
+                                            <strong>WASM Runtime</strong><br>
+                                            <small>wasmtime<br>512MB/instance</small>
+                                        </div>
+                                    </div>
+                                    <div class="data-layer">
+                                        <h5>Persistence Layer</h5>
+                                        <div class="data-stores">
+                                            <div class="store">Event Store<br><small>PostgreSQL</small></div>
+                                            <div class="store">Agent State<br><small>RocksDB</small></div>
+                                            <div class="store">Configuration<br><small>TOML files</small></div>
+                                        </div>
+                                    </div>
+                                    <div class="observability">
+                                        <h5>Observability Exports</h5>
+                                        <div class="exports">
+                                            <div class="export">Prometheus<br><small>:9090</small></div>
+                                            <div class="export">OTLP<br><small>:4317</small></div>
+                                            <div class="export">Health<br><small>:8081</small></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="view-pane" id="failure-view">
-                            <p>What happens when things break: Isolation boundaries, supervisor hierarchy, circuit breakers.</p>
+                            <div class="architecture-diagram failure-view">
+                                <div class="failure-zones">
+                                    <div class="isolation-boundary">
+                                        <h5>WebAssembly Isolation</h5>
+                                        <div class="agent-failure crashed">
+                                            <div class="crashed-agent">
+                                                <span class="agent-name">Failed Agent</span>
+                                                <span class="crash-icon">💥</span>
+                                            </div>
+                                            <div class="impact-indicator">
+                                                <span class="impact-label">Blast Radius:</span>
+                                                <span class="impact-value">ZERO</span>
+                                            </div>
+                                        </div>
+                                        <div class="healthy-agents">
+                                            <div class="agent-ok">Other Agent ✓</div>
+                                            <div class="agent-ok">Other Agent ✓</div>
+                                        </div>
+                                    </div>
+                                    <div class="recovery-mechanisms">
+                                        <h5>Recovery Hierarchy</h5>
+                                        <div class="supervision-tree">
+                                            <div class="supervisor root">Root Supervisor</div>
+                                            <div class="supervisor-arrow">↓</div>
+                                            <div class="supervisor agent">Agent Supervisor</div>
+                                            <div class="supervisor-arrow">↓</div>
+                                            <div class="restart-policy">
+                                                <span>Restart Policy:</span>
+                                                <span>Max 3 restarts/min</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="protection-layer">
+                                        <h5>Circuit Breakers</h5>
+                                        <div class="circuit-breakers">
+                                            <div class="breaker open">
+                                                <span class="breaker-name">External API</span>
+                                                <span class="breaker-state">OPEN</span>
+                                            </div>
+                                            <div class="breaker closed">
+                                                <span class="breaker-name">Database</span>
+                                                <span class="breaker-state">CLOSED</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="debug-layer">
+                                        <h5>Debug Points</h5>
+                                        <div class="debug-points">
+                                            <div class="debug-point">Distributed Traces</div>
+                                            <div class="debug-point">Structured Logs</div>
+                                            <div class="debug-point">Metrics & Alerts</div>
+                                            <div class="debug-point">Health Endpoints</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -256,31 +379,46 @@ caxton monitor --dashboard</code></pre>
         </div>
         <div class="quick-example">
             <h3>Simple Multi-Agent Example</h3>
-            <pre><code class="language-rust">use caxton::prelude::*;
+            <div class="example-tabs">
+                <div class="tab-content">
+                    <h4>1. Define Your Agent Configuration</h4>
+                    <pre><code class="language-yaml"># agent-config.yaml
+name: order-processor
+version: 1.0.0
+runtime: wasm
+capabilities:
+  - order-processing
+  - inventory-checking
+resources:
+  memory: 128MB
+  timeout: 30s</code></pre>
+                </div>
+                <div class="tab-content">
+                    <h4>2. Deploy to Caxton Server</h4>
+                    <pre><code class="language-bash"># Deploy your compiled WebAssembly agent
+caxton agent deploy order-processor.wasm \
+  --config agent-config.yaml \
+  --replicas 3
 
-#[agent]
-struct OrderProcessor;
+# Verify deployment
+caxton agent status order-processor
+✓ Running (3/3 instances healthy)</code></pre>
+                </div>
+                <div class="tab-content">
+                    <h4>3. Invoke Your Agent</h4>
+                    <pre><code class="language-javascript">// Using any language with the Caxton client
+const client = new CaxtonClient('https://caxton.local');
 
-impl Agent for OrderProcessor {
-    async fn handle(&self, msg: Message) -> Result<Response> {
-        match msg {
-            Message::ProcessOrder(order) => {
-                // Automatic distributed tracing
-                let inventory = self.request("inventory-checker", 
-                    CheckInventory { items: order.items }).await?;
-                
-                // Type-safe contract negotiation
-                let shipping = self.negotiate_contract(
-                    ShippingRequest { items: order.items, 
-                                     address: order.address }).await?;
-                
-                Ok(Response::OrderConfirmed { 
-                    tracking: shipping.tracking_number 
-                })
-            }
-        }
-    }
-}</code></pre>
+const result = await client.invoke('order-processor', {
+  order: {
+    items: ['item-123', 'item-456'],
+    address: { street: '123 Main St', ... }
+  }
+});
+
+console.log(result.tracking_number);</code></pre>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -290,10 +428,10 @@ impl Agent for OrderProcessor {
     <div class="container">
         <h2 class="section-title">Resources</h2>
         <div class="resources-grid">
-            <a href="{{ '/caxton/' | relative_url }}" class="resource-card">
+            <a href="/api/" class="resource-card">
                 <div class="resource-icon">📖</div>
-                <h3>API Documentation</h3>
-                <p>Full rustdoc API reference and guides</p>
+                <h3>Management API Reference</h3>
+                <p>REST and gRPC API documentation for server operations</p>
             </a>
             <a href="{{ '/adr/' | relative_url }}" class="resource-card">
                 <div class="resource-icon">🏛️</div>

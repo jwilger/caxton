@@ -1,6 +1,6 @@
 ---
 layout: home
-title: "Caxton - Multi-Agent Framework for WebAssembly"
-description: "A high-performance, secure multi-agent system built on WebAssembly, FIPA standards, and MCP integration"
+title: "Caxton - Multi-Agent Application Server"
+description: "Production-ready application server for multi-agent systems. Deploy agents, route messages, debug with confidence."
 permalink: /
 ---
