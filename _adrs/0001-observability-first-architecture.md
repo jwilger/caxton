@@ -1,7 +1,7 @@
 ---
 layout: adr
 title: "0001. Observability-First Architecture"
-date: 2025-01-31
+date: 2025-01-31T00:00:00Z
 status: proposed
 categories: [Architecture, Observability]
 tags: [opentelemetry, tracing, logging, metrics]

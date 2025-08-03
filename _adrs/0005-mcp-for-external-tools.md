@@ -1,7 +1,7 @@
 ---
 layout: adr
 title: "0005. MCP for External Tools"
-date: 2025-01-31
+date: 2025-01-31T00:00:00Z
 status: proposed
 categories: [Architecture, Integration]
 tags: [mcp, tools, integration, external-systems]
