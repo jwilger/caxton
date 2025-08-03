@@ -1104,3 +1104,348 @@ a:not(.btn):not(.nav-link):not(.link-card):focus {
         scroll-snap-align: start;
     }
 }
+
+/* Architecture Diagram Styles */
+.architecture-diagram {
+    background: var(--ctp-base);
+    border: 1px solid var(--ctp-surface1);
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 1rem 0;
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+}
+
+.architecture-diagram h4,
+.architecture-diagram h5 {
+    color: var(--ctp-text);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* Hexagonal Agent Shapes */
+.agent.hexagon {
+    width: 100px;
+    height: 57px;
+    background: var(--ctp-surface0);
+    position: relative;
+    margin: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--ctp-text);
+}
+
+.agent.hexagon:before,
+.agent.hexagon:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 50px solid transparent;
+    border-right: 50px solid transparent;
+}
+
+.agent.hexagon:before {
+    bottom: 100%;
+    border-bottom: 28.87px solid var(--ctp-surface0);
+}
+
+.agent.hexagon:after {
+    top: 100%;
+    border-top: 28.87px solid var(--ctp-surface0);
+}
+
+.agent.healthy {
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-green);
+}
+
+.agent.healthy:before {
+    border-bottom-color: var(--ctp-green);
+}
+
+.agent.healthy:after {
+    border-top-color: var(--ctp-green);
+}
+
+.agent.initializing {
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-yellow);
+}
+
+.agent.initializing:before {
+    border-bottom-color: var(--ctp-yellow);
+}
+
+.agent.initializing:after {
+    border-top-color: var(--ctp-yellow);
+}
+
+.agent.unhealthy {
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-red);
+}
+
+/* API Endpoints */
+.api-layer, .agent-layer, .tool-layer, .message-flow {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.api-endpoint {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--ctp-blue);
+    border-radius: 4px;
+    display: inline-block;
+    margin: 0.5rem;
+    background: var(--ctp-surface0);
+    color: var(--ctp-text);
+}
+
+.api-endpoint.grpc {
+    border-color: var(--ctp-sapphire);
+}
+
+.api-endpoint.rest {
+    border-color: var(--ctp-sky);
+}
+
+/* System Boundary */
+.system-boundary {
+    border: 2px dashed var(--ctp-surface2);
+    padding: 1.5rem;
+    border-radius: 8px;
+    background: rgba(24, 24, 37, 0.5);
+}
+
+.components, .data-stores, .exports, .agents-container, .tools-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.component, .store, .export {
+    background: var(--ctp-surface0);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+    flex: 1;
+    min-width: 150px;
+    border: 1px solid var(--ctp-surface1);
+}
+
+/* Message Flow */
+.message {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-mauve);
+    border-radius: 4px;
+    margin: 0.5rem;
+}
+
+.message-type {
+    display: block;
+    font-weight: bold;
+}
+
+.correlation-id {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--ctp-subtext0);
+}
+
+/* MCP Tools */
+.mcp-tool {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-teal);
+    border-radius: 4px;
+    margin: 0.25rem;
+}
+
+/* Failure View Specific */
+.failure-zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.isolation-boundary {
+    border: 3px solid var(--ctp-red);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    background: rgba(243, 139, 168, 0.1);
+}
+
+.agent-failure {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.crashed-agent {
+    display: inline-block;
+    padding: 1rem;
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-red);
+    border-radius: 4px;
+}
+
+.impact-indicator {
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+.impact-label {
+    color: var(--ctp-text);
+}
+
+.impact-value {
+    color: var(--ctp-green);
+    font-size: 1.25rem;
+}
+
+.healthy-agents {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.agent-ok {
+    padding: 0.5rem 1rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-green);
+    border-radius: 4px;
+    color: var(--ctp-green);
+}
+
+/* Circuit Breakers */
+.circuit-breakers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.breaker {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.breaker.open {
+    background: rgba(243, 139, 168, 0.2);
+    border: 1px solid var(--ctp-red);
+}
+
+.breaker.closed {
+    background: rgba(166, 227, 161, 0.2);
+    border: 1px solid var(--ctp-green);
+}
+
+.breaker-name {
+    font-weight: 500;
+}
+
+.breaker-state {
+    font-weight: bold;
+    color: inherit;
+}
+
+/* Debug Points */
+.debug-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.debug-point {
+    padding: 0.5rem 1rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-blue);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+/* Supervision Tree */
+.supervision-tree {
+    text-align: center;
+}
+
+.supervisor {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-mauve);
+    border-radius: 4px;
+    margin: 0.5rem;
+}
+
+.supervisor.root {
+    border-color: var(--ctp-pink);
+    font-weight: bold;
+}
+
+.supervisor-arrow {
+    font-size: 1.5rem;
+    color: var(--ctp-subtext0);
+    margin: 0.5rem 0;
+}
+
+.restart-policy {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-surface2);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.restart-policy span:first-child {
+    font-weight: bold;
+}
+
+/* Tab functionality for examples */
+.example-tabs {
+    margin-top: 1rem;
+}
+
+.tab-content {
+    margin-bottom: 1.5rem;
+}
+
+.tab-content h4 {
+    color: var(--ctp-green);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Additional layout styles */
+.agent-name {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.crash-icon {
+    font-size: 1.5rem;
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.data-layer, .protection-layer, .debug-layer {
+    margin: 1.5rem 0;
+}
+
+.recovery-mechanisms {
+    text-align: center;
+}
