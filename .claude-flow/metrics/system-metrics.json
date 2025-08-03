@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": 1754263424515,
+    "memoryTotal": 50427543552,
+    "memoryUsed": 12930752512,
+    "memoryFree": 37496791040,
+    "memoryUsagePercent": 25.64224152355554,
+    "memoryEfficiency": 74.35775847644446,
+    "cpuCount": 16,
+    "cpuLoad": 0.10125,
+    "platform": "linux",
+    "uptime": 2393373.29
+  }
+]
