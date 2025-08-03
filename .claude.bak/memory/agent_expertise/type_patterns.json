@@ -1,0 +1,50 @@
+{
+  "type_safety_patterns": [
+    {
+      "pattern": "Newtype Pattern",
+      "description": "Wrap primitive types to prevent misuse",
+      "example": "struct CustomerId(NonZeroU64);",
+      "benefits": ["Type safety", "Domain modeling", "Prevents primitive obsession"]
+    },
+    {
+      "pattern": "State Machine Types",
+      "description": "Encode valid state transitions in the type system",
+      "example": "enum OrderState { Draft, Placed, Shipped }",
+      "benefits": ["Illegal states unrepresentable", "Clear business logic"]
+    },
+    {
+      "pattern": "Smart Constructors",
+      "description": "Validation at construction time via parse functions",
+      "example": "impl EmailAddress { pub fn parse(s: &str) -> Result<Self, EmailError> }",
+      "benefits": ["Parse don't validate", "Guaranteed invariants"]
+    }
+  ],
+  "rust_specific_patterns": [
+    {
+      "pattern": "Phantom Types",
+      "description": "Compile-time guarantees without runtime cost",
+      "example": "struct Id<T> { value: Uuid, _phantom: PhantomData<T> }",
+      "benefits": ["Zero-cost abstractions", "Type-level programming"]
+    },
+    {
+      "pattern": "Builder Pattern with Type States",
+      "description": "Enforce required fields at compile time",
+      "example": "ConfigBuilder<WithHost, WithPort>",
+      "benefits": ["Required field checking", "Fluent API design"]
+    }
+  ],
+  "anti_patterns": [
+    {
+      "pattern": "Stringly Typed",
+      "description": "Using strings for domain concepts",
+      "problem": "String types don't encode domain rules",
+      "solution": "Use newtypes and smart constructors"
+    },
+    {
+      "pattern": "Boolean Parameters",
+      "description": "Functions with multiple boolean flags",
+      "problem": "Unclear call sites, easy to mix up arguments",
+      "solution": "Use enums for clear intent"
+    }
+  ]
+}

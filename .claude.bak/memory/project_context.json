@@ -1,0 +1,40 @@
+{
+  "project_name": "Caxton",
+  "project_overview": "Foundational platform service for multi-agent orchestration, providing WebAssembly-based agent isolation, FIPA protocol messaging, and comprehensive observability",
+  "core_principles": [
+    "Type Safety First - Type system recommendations take precedence",
+    "Observable by Design - Structured logs, traces, and metrics from the start", 
+    "TDD is the Process - No code without tests",
+    "Functional Core, Imperative Shell - Pure functions at heart, side effects at edges",
+    "Platform Agnostic - Storage and persistence decisions belong to users"
+  ],
+  "architectural_decisions": [
+    {
+      "decision": "Type-driven development with Rust",
+      "rationale": "Make illegal states unrepresentable at compile time",
+      "status": "active"
+    },
+    {
+      "decision": "Agent-based development model",
+      "rationale": "Specialized AI agents collaborate through structured TDD workflow",
+      "status": "active"
+    },
+    {
+      "decision": "WebAssembly-based agent isolation",
+      "rationale": "Secure sandboxing for multi-agent orchestration",
+      "status": "active"
+    }
+  ],
+  "technical_constraints": [
+    "NEVER use --no-verify flag when committing",
+    "ALL changes require expert agent consensus",
+    "Follow Conventional Commits format",
+    "Pre-commit hooks must pass"
+  ],
+  "active_patterns": [
+    "Smart constructors with validation",
+    "State machines for workflows", 
+    "Phantom types for compile-time guarantees",
+    "Parse don't validate pattern"
+  ]
+}
