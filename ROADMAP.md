@@ -16,6 +16,9 @@ Build the simplest possible server for multi-agent systems, then let the communi
 - [ ] WASM agent runtime with isolation guarantees  
 - [ ] Async message router with FIPA ACL support
 - [ ] FIPA Contract Net Protocol (CNP) implementation for task delegation
+- [ ] External agent routing API (gRPC + REST gateway)
+- [ ] Management API for server operations
+- [ ] CLI tool for agent deployment and management
 - [ ] OpenTelemetry integration (traces, metrics, logs)
 - [ ] Structured logging with correlation IDs
 - [ ] Basic MCP tool integration
@@ -23,10 +26,11 @@ Build the simplest possible server for multi-agent systems, then let the communi
 
 **Success Metrics**:
 - Time to first agent: < 10 minutes
-- Core API surface: < 10 public types
+- External API latency: < 1ms overhead for local calls
 - Message throughput: 100K/sec minimum
 - Memory per agent: < 10MB
 - Zero message loss under normal operation
+- API error responses include actionable debugging information
 
 **Explicitly NOT in V1**:
 - Distributed clustering
@@ -40,6 +44,11 @@ Build the simplest possible server for multi-agent systems, then let the communi
 **Goal**: Double performance and provide pattern libraries (not in core).
 
 **Deliverables**:
+- [ ] Advanced external API features:
+  - Streaming agent invocation patterns
+  - Batch job processing
+  - mTLS and RBAC authorization
+  - Advanced rate limiting and quotas
 - [ ] Example pattern library:
   - Request-reply patterns
   - Pub-sub patterns
@@ -62,8 +71,10 @@ Build the simplest possible server for multi-agent systems, then let the communi
 **Success Metrics**:
 - 2x performance improvement (200K messages/sec)
 - 50% reduction in memory usage
+- External API supports streaming and batch patterns
 - Pattern library covers 80% of use cases
 - Agent development possible in 4+ languages
+- Production-ready security and auth integrations
 
 **Still NOT in scope**:
 - Infrastructure-level consensus (Raft, Paxos, PBFT)
@@ -152,7 +163,7 @@ We will **NEVER** add these to Caxton core:
 1. **Simplicity wins** - Every feature must pay for its complexity
 2. **Performance matters** - Fast by default, optimize later
 3. **Observability first** - If you can't debug it, it's broken
-4. **Composition over features** - Primitives that combine well
+4. **Composition over features** - Simple capabilities that combine well
 5. **Honest about tradeoffs** - No distributed systems magic
 
 ## Questions?
@@ -162,4 +173,4 @@ Join our discussions:
 - Discord for real-time chat
 - Monthly community calls
 
-Remember: The best framework is one that gets out of your way. Let's build that together.
+Remember: The best server is one that gets out of your way. Let's build that together.
