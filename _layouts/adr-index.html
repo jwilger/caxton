@@ -80,6 +80,25 @@ layout: default
                 </header>
             {% endif %}
             
+            <!-- DEBUG: ADR Collection Information -->
+            <div class="debug-info" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;">
+                <h4>🐛 DEBUG: ADR Collection Status</h4>
+                <p><strong>site.adrs size:</strong> {{ site.adrs.size }}</p>
+                <p><strong>Collections available:</strong> {{ site.collections | map: 'label' | join: ', ' }}</p>
+                {% if site.adrs.size > 0 %}
+                    <p><strong>First ADR title:</strong> {{ site.adrs.first.title }}</p>
+                    <p><strong>First ADR path:</strong> {{ site.adrs.first.path }}</p>
+                {% endif %}
+                <p><strong>Current working directory files:</strong></p>
+                <ul>
+                    {% for file in site.static_files %}
+                        {% if file.path contains '_adrs' %}
+                            <li>{{ file.path }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+
             <!-- ADR Grid/List -->
             <div class="adr-grid" id="adr-grid">
                 {% assign sorted_adrs = site.adrs | sort: 'date' | reverse %}

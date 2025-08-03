@@ -83,7 +83,7 @@ exclude:
   - WORK.md
 
 # Include files that would normally be excluded  
-include: []
+include: [_adrs/]
 
 # Pagination configuration for ADRs
 pagination:
