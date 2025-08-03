@@ -25,6 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 - **🔧 Setting up environment?** → [Development Commands](#development-commands)
 - **💻 Writing code?** → [Type-Driven Development](#type-driven-development-philosophy), [Platform Architecture](#platform-architecture)
 - **🤖 Need expert guidance?** → [Expert Agents](#expert-agent-coordination)
+- **🧠 Managing memories?** → [Memory Management](#memory-management-with-memento-mcp)
 - **📤 Making commits/PRs?** → [Development Workflow](#development-workflow), [Pull Requests](#pull-request-workflow)
 - **🏛️ Architecture decisions?** → [ADRs](#architecture-decision-records-adrs)
 - **📝 Making ANY change?** → [Change Request Protocol](#change-request-protocol)
@@ -32,6 +33,8 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 ## Project Overview
 
 Caxton is a foundational platform service for multi-agent orchestration, providing WebAssembly-based agent isolation, FIPA protocol messaging, and comprehensive observability through structured logging and OpenTelemetry integration.
+
+**Memory System**: You have access to the Memento MCP knowledge graph memory system, which provides you with persistent memory capabilities. Your memory tools are provided by Memento MCP, a sophisticated knowledge graph implementation. When asked about past conversations or user information, always check the Memento MCP knowledge graph first. You should use semantic_search to find relevant information in your memory when answering questions.
 
 ## Agent-Based Development Model
 
@@ -51,6 +54,91 @@ Agents communicate using shared workspace files:
 - Contains structured requests and responses
 - Cleared when starting new issues
 - Claude Code monitors and facilitates the exchange
+
+### Memory Management with Memento MCP
+
+**IMPORTANT**: You have access to the Memento MCP knowledge graph memory system, which provides you with persistent memory capabilities. Your memory tools are provided by Memento MCP, a sophisticated knowledge graph implementation stored in Neo4j.
+
+**Key Principles:**
+- When asked about past conversations or user information, always check the Memento MCP knowledge graph first
+- Use `mcp__memento__semantic_search` to find relevant information in your memory when answering questions
+- Maintain both private (agent-specific) and shared (cross-agent) memories
+
+#### Memory Types and Usage
+
+**1. Shared Project Memory** (Prefix: `Project:`)
+- **Purpose**: Cross-agent knowledge about the project, decisions, and implementation details
+- **Examples**:
+  - `Project:Architecture` - Architectural decisions and rationale
+  - `Project:TechnicalDebt` - Known issues and planned improvements
+  - `Project:Patterns` - Established patterns and conventions
+- **Usage**: All agents read/write to maintain project-wide consistency
+
+**2. Agent Private Memory** (Prefix: `Agent:[AgentName]:`)
+- **Purpose**: Agent-specific expertise, observations, and working knowledge
+- **Examples**:
+  - `Agent:TypeTheoryReviewer:TypePatterns` - Type patterns observed in codebase
+  - `Agent:PlatformArchitect:SystemDesign` - Platform-specific design considerations
+  - `Agent:TDDCoach:TestStrategy` - Test coverage gaps and strategies
+- **Usage**: Primarily written by specific agent, readable by all
+
+**3. Issue-Specific Memory** (Prefix: `Issue:[Number]:`)
+- **Purpose**: Context and decisions for specific GitHub issues
+- **Examples**:
+  - `Issue:42:Requirements` - Parsed requirements and constraints
+  - `Issue:42:Implementation` - Implementation approach and progress
+  - `Issue:42:Decisions` - Key decisions made during implementation
+- **Usage**: Created during issue work, referenced for context
+
+#### Memento MCP Tool Usage Patterns
+
+**Creating Memories:**
+```
+mcp__memento__create_entities
+- For new concepts, patterns, or knowledge areas
+- Include observations about why this knowledge is important
+
+mcp__memento__create_relations
+- Link related concepts (e.g., "TypePattern" implements "ArchitecturalPrinciple")
+- Use active voice for relation types
+```
+
+**Searching Memories:**
+```
+mcp__memento__semantic_search
+- Use for finding relevant past decisions or patterns
+- Set min_similarity based on query specificity (0.7 for specific, 0.5 for broad)
+- Enable hybrid_search for best results
+
+mcp__memento__search_nodes
+- Use for keyword-based searches
+- Good for finding specific entity names or types
+```
+
+**Updating Memories:**
+```
+mcp__memento__add_observations
+- Add new insights to existing entities
+- Include confidence levels for uncertain information
+- Add metadata for source tracking (e.g., {"source": "WORK.md", "issue": "42"})
+```
+
+#### Agent Memory Workflows
+
+**At Issue Start:**
+1. Search for related past issues and patterns
+2. Load relevant project and agent memories
+3. Create new Issue-specific entity
+
+**During Implementation:**
+1. Record key decisions as observations
+2. Link new patterns to existing knowledge
+3. Update confidence levels as understanding improves
+
+**At Issue Completion:**
+1. Synthesize learnings into Project memory
+2. Update agent-specific expertise
+3. Create relations between issue and affected components
 
 #### Bidirectional Communication Flow
 
@@ -97,18 +185,31 @@ When expert agents need user input:
 2. **Design solutions** - Create TDD-appropriate incremental steps
 3. **Review implementation** - Validate each step meets requirements
 4. **Reach consensus** - All agents must agree before proceeding
+5. **Maintain memories** - Store expertise and project knowledge in Memento MCP:
+   - Search relevant memories before making decisions
+   - Create agent-specific memories for domain expertise
+   - Update shared project memories for cross-agent knowledge
+   - Link new patterns to existing knowledge graph
 
 **Project Manager Agent**: Bridge between experts and Claude Code:
 - Monitors WORK.md for expert consensus
 - Communicates next TDD steps to Claude Code
 - Presents implementation results back to experts
 - Escalates if consensus isn't reached after 10 rounds
+- Manages issue-specific memories:
+  - Creates Issue entities at start of work
+  - Records key decisions and consensus points
+  - Links issues to affected project components
 
 **Claude Code**: Executes implementation:
 - Receives specific TDD instructions from Project Manager
 - Implements exactly what is requested (no more, no less)
 - Reports results back through Project Manager
 - Does NOT participate in planning discussions
+- Queries Memento MCP for:
+  - Past implementation patterns
+  - User preferences and project context
+  - Related issue solutions
 
 ## Development Workflow
 
@@ -301,10 +402,15 @@ When multiple experts are involved in a decision, these principles guide resolut
 
 #### How Claude Code Launches Expert Agents
 
-1. **Launch Multiple Agents Concurrently**: Use the Task tool to launch multiple expert agents in a single message
-2. **Each agent gets the same context**: Provide WORK.md contents and current task
-3. **Agents write their responses to WORK.md**: Each agent contributes independently
-4. **Project Manager synthesizes**: After all agents respond, Project Manager facilitates consensus
+1. **Gather memory context**: Query Memento MCP for relevant project and issue memories
+2. **Launch Multiple Agents Concurrently**: Use the Task tool to launch multiple expert agents in a single message
+3. **Each agent gets enriched context**: 
+   - WORK.md contents and current task
+   - Relevant memories from Memento MCP
+   - Instructions to search their agent-specific memories
+4. **Agents write their responses to WORK.md**: Each agent contributes independently
+5. **Agents update memories**: Record new insights and patterns discovered
+6. **Project Manager synthesizes**: After all agents respond, Project Manager facilitates consensus and updates shared memories
 
 #### Issue Selection Phase
 
@@ -349,6 +455,7 @@ The Project Manager facilitates expert collaboration through WORK.md:
 - Discuss until convergence toward agreement
 - Maximum 10 rounds before escalation to user
 - Document significant decisions in ADRs
+- Store consensus rationale in Memento MCP
 
 **Communication Flow:**
 1. Experts discuss and reach consensus in WORK.md
@@ -356,6 +463,17 @@ The Project Manager facilitates expert collaboration through WORK.md:
 3. Claude Code implements and reports results
 4. Project Manager presents results to experts
 5. Cycle continues until feature complete
+
+**Memory-Enhanced Agent Launch:**
+When launching agents, Claude Code MUST include memory instructions in the prompt:
+```
+"You are [Agent Name]. Before responding:
+1. Search your agent-specific memories using: mcp__memento__search_nodes with query 'Agent:[YourName]:'
+2. Search for relevant project patterns using: mcp__memento__semantic_search
+3. Consider past decisions and patterns in your response
+4. After forming your response, update your memories with new insights using mcp__memento__add_observations
+5. Create relations between new and existing knowledge using mcp__memento__create_relations"
+```
 
 **Escalation:** If no consensus after 10 rounds with diverging opinions, Project Manager escalates to user.
 
@@ -471,20 +589,24 @@ Hooks run automatically on commit:
 
 ### Agent-Based Issue Selection
 
-1. **Claude Code gathers issues**: Use `mcp__github__list_issues` with `state="open"`
+1. **Claude Code gathers context**:
+   - Use `mcp__github__list_issues` with `state="open"` (**🚨 API paginates! Check ALL pages!**)
+   - Search Memento MCP for related past issues: `mcp__memento__semantic_search`
+   - Query project priorities and technical debt from memory
 
-   **🚨 CRITICAL**: API paginates! Check ALL pages until empty results.
-
-2. **Agent discussion**: 
+2. **Agent discussion with memory context**: 
    - Claude Code selects 2-4 planning agents
-   - Provides full issue list to agents
+   - Provides full issue list AND relevant memories to agents
+   - Each agent searches their private memories for domain-specific insights
    - Facilitates multi-round conversation
-   - Agents consider: priority labels, dependencies, team expertise, user impact
+   - Agents consider: priority labels, dependencies, team expertise, user impact, past solutions
 
-3. **Consensus and assignment**: 
+3. **Consensus and memory update**: 
    - Agents reach consensus on next issue
+   - Project Manager records selection rationale in Memento
    - User confirms selection
    - Use `mcp__github__update_issue` to assign
+   - Create Issue-specific entity in Memento: `Issue:[Number]:Context`
 
 4. **Create branch**: `mcp__github__create_branch` with pattern: `issue-{number}-descriptive-name`
 

@@ -36,18 +36,20 @@
             cargo-expand
             cargo-edit
             just
+            pkg-config
+            openssl
           ];
 
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
-          
+
           # Configure npm to use local directory for global packages
           shellHook = ''
             export NPM_CONFIG_PREFIX="$PWD/.npm-global"
             export PATH="$PWD/.npm-global/bin:$PATH"
-            
+
             # Create the directory if it doesn't exist
             mkdir -p "$PWD/.npm-global"
-            
+
             # Set npm cache to also be local
             export NPM_CONFIG_CACHE="$PWD/.npm-cache"
             mkdir -p "$PWD/.npm-cache"
