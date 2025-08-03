@@ -54,5 +54,4 @@ perf.data.old
 # Contains mutation testing data
 **/mutants.out*/
 
-# Claude mememto neo4j data volumes
-neo4j-data/
+.claude/memory/
