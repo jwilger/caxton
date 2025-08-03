@@ -4,16 +4,166 @@
 
 # Caxton
 
-Observable multi-agent orchestration in Rust.
+**Build production-ready multi-agent systems in minutes, not months.**
 
-## Why Caxton?
+Caxton is a production-ready server that orchestrates multi-agent systems. Deploy agents written in any WebAssembly-compatible language - JavaScript, Python, Go, or Rust - with built-in message routing, fault tolerance, and observability.
 
-- 🚀 **Fast**: 100K+ messages/second on a single core
-- 🔍 **Observable**: Debug any issue in < 5 minutes  
-- 📦 **Small**: < 10 public APIs to learn
-- 🛡️ **Safe**: Zero message loss guarantee
+> ⚠️ **Important**: Caxton is a standalone server application, not a Rust library. You install and run it like any other server (PostgreSQL, Redis, etc.) and interact with it via CLI or API.
 
-Caxton enables developers to build reliable, observable multi-agent systems by providing a minimal, composable framework that makes agent communication transparent and debuggable.
+## What is Caxton?
+
+Caxton is a multi-agent orchestration server - like Redis for caching or PostgreSQL for data, but for coordinating intelligent agents.
+
+You install Caxton, deploy your agents (written in any language), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
+
+✅ **Install in seconds** - Single binary, no dependencies  
+✅ **Deploy any language** - If it compiles to WebAssembly, it runs on Caxton  
+✅ **Production-ready** - Built-in observability, fault tolerance, and scaling  
+✅ **Zero boilerplate** - Message routing, state management, and coordination handled for you
+
+## Installation
+
+Caxton runs as a server on your infrastructure:
+
+**Quick Install (Linux/macOS):**
+```bash
+curl -sSL https://caxton.io/install.sh | sh
+```
+
+**Package Managers:**
+```bash
+# macOS
+brew install caxton
+
+# Ubuntu/Debian  
+sudo apt install caxton
+
+# Docker
+docker run -d -p 8080:8080 caxton/caxton:latest
+```
+
+**Verify Installation:**
+```bash
+caxton version
+caxton server status
+```
+
+## From Zero to Running Agents in 3 Minutes
+
+```bash
+# 1. Start the server (10 seconds)
+caxton server start
+# ✓ Server running at http://localhost:8080
+# ✓ Dashboard available at http://localhost:8080/dashboard
+
+# 2. Deploy agents that talk to each other (20 seconds)
+caxton deploy examples/ping.wasm --name ping
+caxton deploy examples/pong.wasm --name pong
+# ✓ Agent 'ping' deployed and healthy
+# ✓ Agent 'pong' deployed and healthy
+
+# 3. Watch them communicate (immediate gratification)
+caxton logs --agents ping,pong --follow
+# [ping] Sending ping to pong
+# [pong] Received ping, sending pong back
+# [ping] Received pong, sending ping to pong
+# ...
+
+# That's it! You have a working multi-agent system.
+# No configuration files. No infrastructure setup. No distributed systems PhD required.
+```
+
+## Architecture
+
+Caxton is a standalone application server that hosts and orchestrates WebAssembly agents:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Your Infrastructure                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐         ┌────────────────────────────┐   │
+│  │   CLI Tool  │         │   Management Dashboard    │   │
+│  │  (caxton)   │         │    (Web UI - Future)     │   │
+│  └──────┬──────┘         └──────────┬─────────────────┘   │
+│         │                           │                       │
+│         │         Network           │                       │
+│         └───────────┬───────────────┘                       │
+│                     │                                       │
+│  ┌──────────────────▼────────────────────────────────────┐ │
+│  │              Caxton Server Process                    │ │
+│  │  ┌─────────────────────────────────────────────────┐ │ │
+│  │  │          Management API Layer                   │ │ │
+│  │  │    • gRPC (primary) • REST (gateway)          │ │ │
+│  │  │    • Authentication • Authorization           │ │ │
+│  │  └────────────────┬────────────────────────────┘ │ │
+│  │                   │                                │ │
+│  │  ┌────────────────▼────────────────────────────┐  │ │
+│  │  │         Agent Runtime Environment           │  │ │
+│  │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐     │  │ │
+│  │  │  │ Agent A │ │ Agent B │ │ Agent C │ ... │  │ │
+│  │  │  │ (WASM)  │ │ (WASM)  │ │ (WASM)  │     │  │ │
+│  │  │  └────┬────┘ └────┬────┘ └────┬────┘     │  │ │
+│  │  │       └───────────┼───────────┘           │  │ │
+│  │  │                   │                        │  │ │
+│  │  │  ┌────────────────▼────────────────────┐  │  │ │
+│  │  │  │    FIPA Message Bus (Internal)      │  │  │ │
+│  │  │  └─────────────────────────────────────┘  │  │ │
+│  │  └─────────────────────────────────────────────┘  │ │
+│  │                                                    │ │
+│  │  ┌─────────────────────────────────────────────┐  │ │
+│  │  │         Observability Layer                │  │ │
+│  │  │  • Structured Logs • Metrics (Prometheus)  │  │ │
+│  │  │  • Distributed Traces (OpenTelemetry)      │  │ │
+│  │  └─────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+- **Server Process**: Runs as a system service (systemd, Docker, or Kubernetes)
+- **Agent Isolation**: Each agent runs in its own WebAssembly sandbox
+- **Message Passing**: Agents communicate via FIPA-compliant message bus
+- **Management API**: Control plane for deploying and managing agents
+- **Observable by Design**: Built-in logging, metrics, and distributed tracing
+
+Unlike traditional libraries, Caxton runs independently from your application code. You deploy agents to it and interact via API - no Rust knowledge required.
+
+## What Caxton Provides
+
+| Capability | Description |
+|------------|-------------|
+| **Agent Hosting** | Deploy and run WebAssembly agents from any language |
+| **Message Routing** | Automatic message delivery between agents |
+| **Fault Isolation** | Agent crashes don't affect other agents or the server |
+| **Resource Management** | CPU and memory limits per agent |
+| **Observability** | Logs, metrics, and traces out of the box |
+| **Hot Deployment** | Deploy/update agents without server restart |
+| **API Access** | Full control via gRPC/REST API |
+
+## Building Agents
+
+> 🚧 **Note**: The following sections are being updated to reflect Caxton's new application server architecture. Some code examples may still show the deprecated library approach.
+
+Agents are WebAssembly modules that can be written in any language that compiles to WASM. Here's the basic structure:
+
+```rust
+// Example agent (in any WASM-compatible language)
+// Full examples for JavaScript, Python, and Go coming soon!
+#[no_mangle]
+pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
+    // Your agent logic here
+}
+```
+
+## What's Next?
+
+Now that you have agents running:
+- 📝 [Write your first agent](docs/first-agent.md) in Python, JavaScript, or Go
+- 🔧 [Configure Caxton](docs/configuration.md) for your environment  
+- 📊 [Explore the dashboard](docs/dashboard.md) at http://localhost:8080
+- 🚀 [Deploy to production](docs/production.md) with Docker or Kubernetes
 
 ## The Problem
 
@@ -29,155 +179,26 @@ Caxton takes a different approach:
 - **Minimal core**: Just enough to be useful, not enough to be constraining
 - **Progressive complexity**: Start simple, add sophistication as needed
 
-## Core Concepts
+## What Caxton Does
 
-Caxton provides just three things:
+Caxton is a multi-agent orchestration server that handles:
 
-1. **Agent Runtime**: WebAssembly-based isolation and execution
-2. **Message Router**: FIPA protocol implementation for agent communication
-3. **Observability Layer**: Structured logging and OpenTelemetry integration
+1. **Agent Management**: Deploy, run, and monitor WebAssembly agents
+2. **Message Orchestration**: FIPA-compliant routing between agents
+3. **Production Observability**: Structured logging, tracing, and metrics
 
-That's it. Everything else is a library built on top. We don't tell you how to use these primitives - that's your job.
-
-## Quick Start
-
-```rust
-use caxton::{Caxton, AgentHost, FipaMessage};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a Caxton host
-    let host = Caxton::new().await?;
-    
-    // Load your agents (WebAssembly modules)
-    let alice = host.spawn_agent(include_bytes!("alice.wasm")).await?;
-    let bob = host.spawn_agent(include_bytes!("bob.wasm")).await?;
-    
-    // Send a message (using FIPA ACL format)
-    let msg = FipaMessage::request()
-        .sender(alice)
-        .receiver(bob)
-        .content("Hello, Bob!")
-        .build();
-    
-    host.send_message(msg).await?;
-    
-    // Access traces for debugging
-    let trace_id = msg.trace_id();
-    println!("Message sent with trace_id: {}", trace_id);
-    
-    // Logs and traces are automatically collected via OpenTelemetry
-    
-    Ok(())
-}
-```
-
-## Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Agent Alice   │     │   Agent Bob     │     │   Agent Carol   │
-│   (WASM)        │     │   (WASM)        │     │   (WASM)        │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         │     FIPA Messages     │                       │
-         ▼                       ▼                       ▼
-┌────────────────────────────────────────────────────────────────┐
-│                        Message Router                           │
-│                   (Async, Zero-Copy, Fast)                     │
-└────────────────────────────────┬───────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────────────────────────────────────┐
-│                     Observability Layer                         │
-│        (OpenTelemetry Traces, Metrics, Structured Logs)        │
-└─────────────────────────────────────────────────────────────────┘
-                                 │
-                                 ▼
-                        Debug with Your Favorite Tools
-```
-
-## Built-in Observability
-
-Caxton provides comprehensive observability through OpenTelemetry, giving you complete visibility into your multi-agent systems. Every message, tool invocation, and agent interaction is traced and logged with rich context.
-
-```rust
-// Rich context in every log entry
-info!(
-    agent_id = %agent.id,
-    message_type = "fipa.request",
-    correlation_id = %msg.correlation_id,
-    "Agent received message"
-);
-
-// Automatic distributed tracing
-let span = info_span!("agent.handle_message",
-    agent_id = %agent.id,
-    message_id = %msg.id
-);
-```
-
-## Type Safety Without Complexity
-
-Caxton uses Rust's type system to prevent common errors at compile time. Start with simple types and add sophistication as your agents grow more complex.
-
-```rust
-// Agent states encoded in types
-pub struct Agent<State> {
-    id: AgentId,
-    wasm_module: Module,
-    _state: PhantomData<State>,
-}
-
-// Only initialized agents can receive messages
-impl Agent<Initialized> {
-    pub fn receive(&mut self, msg: FipaMessage) -> Result<(), AgentError> {
-        // Type system ensures this is only called on ready agents
-    }
-}
-```
-
-## Performance
-
-Caxton is fast by default. The simple API hides a sophisticated async runtime that handles millions of messages without breaking a sweat:
-
-- Work-stealing executors for CPU efficiency
-- Bounded channels with automatic back-pressure
-- Zero-copy message passing where possible
-- WASM instance pooling for rapid agent spawning
-
-## Building Agents
-
-Agents are WebAssembly modules that implement a simple interface:
-
-```rust
-// Your agent code (compiled to WASM)
-#[no_mangle]
-pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
-    // Deserialize FIPA message
-    let message = FipaMessage::from_bytes(msg_ptr, msg_len);
-    
-    // Your agent logic here
-    match message.performative() {
-        Performative::Request => handle_request(message),
-        Performative::Inform => handle_inform(message),
-        _ => Ok(()),
-    }
-}
-```
+Caxton runs as a standalone server (like PostgreSQL or Redis) and manages all agent coordination for you.
 
 ## External Tools via MCP
 
 Agents can access external tools through the Model Context Protocol:
 
-```rust
-// In your agent
-let result = mcp_call("web_search", json!({
-    "query": "latest news on quantum computing"
-})).await?;
+```javascript
+// In your agent (JavaScript example)
+const result = await mcp_call("web_search", {
+    query: "latest news on quantum computing"
+});
 ```
-
-## What Caxton is NOT
 
 ## What's In Scope
 

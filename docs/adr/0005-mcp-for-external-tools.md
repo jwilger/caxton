@@ -38,7 +38,7 @@ Key aspects:
 
 - **Industry standard**: MCP is becoming the de facto standard for LLM tools
 - **Language agnostic**: Tools can be written in any language
-- **Rich ecosystem**: Growing library of MCP-compatible tools
+- **Rich ecosystem**: Growing collection of MCP-compatible tools
 - **Security model**: Clear boundary between agents and system resources
 - **Composability**: Tools can be shared across different agent systems
 

@@ -4,13 +4,13 @@ This document outlines the development phases for Caxton, with concrete mileston
 
 ## Vision
 
-Build the simplest possible foundation for multi-agent systems, then let the community build amazing things on top.
+Build the simplest possible server for multi-agent systems, then let the community build amazing agents and workflows.
 
 ## Development Phases
 
 ### Phase 1: Minimal Core (V1.0) - Q1 2025
 
-**Goal**: Ship the three essential primitives with baseline performance.
+**Goal**: Ship a production-ready orchestration server with baseline performance.
 
 **Deliverables**:
 - [ ] WASM agent runtime with isolation guarantees  
@@ -107,7 +107,7 @@ We will **NEVER** add these to Caxton core:
 - ❌ Workflow definition languages
 - ❌ BPMN/BPEL support
 - ❌ Visual flow designers
-- ✅ Users can build these on top
+- ✅ Users can implement these as agents
 
 ### Agent Management
 - ❌ Built-in permission systems

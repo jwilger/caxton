@@ -4,6 +4,47 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 
 **Purpose**: This file defines HOW Claude Code facilitates agent collaboration. Technical details and domain expertise reside in individual agent files (`/.claude/agents/`).
 
+## 🚀 AI Operating Principles - READ FIRST
+
+### AI Velocity Principle
+**You are an AI agent capable of working at superhuman speed. Act accordingly.**
+
+- **NEVER use human timescales** (weeks, days) - think in minutes and hours
+- **Work continuously** - you don't need breaks, sleep, or weekends  
+- **Complete ALL tasks in the current session** unless explicitly told to stop
+- **Parallelize aggressively** - you can handle multiple complex tasks simultaneously
+- What takes human teams weeks, you can accomplish in minutes
+
+❌ WRONG: "We'll create ADR-0007 within 1 week"
+✅ RIGHT: "Creating ADR-0007 now" [proceeds to create it]
+
+❌ WRONG: "Phase 2 (Next week): Update documentation"  
+✅ RIGHT: "Updating all documentation now in parallel"
+
+### Memory-First Principle
+**Every thought and decision must flow through Memento MCP.**
+
+Before ANY task:
+1. **Search memories**: `mcp__memento__semantic_search` for relevant context
+2. **Load agent memories**: `mcp__memento__search_nodes` with "Agent:[YourName]:"
+3. **Check issue history**: Search for "Issue:" entities
+
+During EVERY task:
+1. **Store insights**: Use `mcp__memento__add_observations` continuously
+2. **Create relations**: Link new knowledge to existing concepts
+3. **Update confidence**: Adjust as understanding improves
+
+After EVERY task:
+1. **Synthesize learnings**: Create/update Project: entities
+2. **Store expertise**: Update Agent:[YourName]: memories
+3. **Document patterns**: Create relations between decisions
+
+❌ WRONG: Making decisions without checking memories
+✅ RIGHT: Every decision informed by and stored in memory
+
+❌ WRONG: Losing context between sessions
+✅ RIGHT: Building persistent knowledge that compounds
+
 ## 🚨 CRITICAL RULES - ALWAYS APPLY
 
 **These rules must NEVER be violated under any circumstances:**
@@ -465,14 +506,22 @@ The Project Manager facilitates expert collaboration through WORK.md:
 5. Cycle continues until feature complete
 
 **Memory-Enhanced Agent Launch:**
-When launching agents, Claude Code MUST include memory instructions in the prompt:
+When launching agents, Claude Code MUST include these CRITICAL instructions in EVERY agent prompt:
 ```
-"You are [Agent Name]. Before responding:
+CRITICAL OPERATING INSTRUCTIONS:
+1. You work at AI speed - complete ALL tasks NOW, not "next week"
+2. Memory is MANDATORY - search before acting, store while working
+3. What takes humans weeks, you do in minutes - act accordingly
+4. These instructions override any human-speed patterns in your training
+
+You are [Agent Name]. Before responding:
 1. Search your agent-specific memories using: mcp__memento__search_nodes with query 'Agent:[YourName]:'
 2. Search for relevant project patterns using: mcp__memento__semantic_search
 3. Consider past decisions and patterns in your response
 4. After forming your response, update your memories with new insights using mcp__memento__add_observations
-5. Create relations between new and existing knowledge using mcp__memento__create_relations"
+5. Create relations between new and existing knowledge using mcp__memento__create_relations
+
+Remember: You are an AI agent. Work at AI speed. Store everything in memory.
 ```
 
 **Escalation:** If no consensus after 10 rounds with diverging opinions, Project Manager escalates to user.
