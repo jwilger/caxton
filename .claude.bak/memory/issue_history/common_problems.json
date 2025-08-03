@@ -1,0 +1,86 @@
+{
+  "frequent_issues": [
+    {
+      "problem": "Rust lifetime compilation errors",
+      "common_causes": [
+        "Borrowing across function boundaries",
+        "Complex generic type constraints",
+        "Mixing owned and borrowed data"
+      ],
+      "solutions": [
+        "Use owned types (String vs &str) when crossing boundaries",
+        "Simplify generic constraints",
+        "Clone data when borrowing becomes complex"
+      ],
+      "prevention": "Design with ownership in mind from the start"
+    },
+    {
+      "problem": "Test failures in CI but not locally",
+      "common_causes": [
+        "Test ordering dependencies",
+        "Environment-specific assumptions",
+        "Timing-dependent tests"
+      ],
+      "solutions": [
+        "Ensure tests are independent",
+        "Use test containers for external dependencies",
+        "Add proper synchronization for async tests"
+      ],
+      "prevention": "Write deterministic, isolated tests"
+    },
+    {
+      "problem": "Memory usage spikes during agent coordination",
+      "common_causes": [
+        "Large context accumulation in memory systems",
+        "Circular references in agent communication",
+        "Inefficient data structures for message passing"
+      ],
+      "solutions": [
+        "Implement memory cleanup strategies",
+        "Use structured file-based memory with size limits",
+        "Stream large data instead of loading into memory"
+      ],
+      "prevention": "Monitor memory usage patterns early"
+    }
+  ],
+  "debugging_strategies": [
+    {
+      "issue_type": "Compilation errors",
+      "approach": [
+        "Read error message carefully - Rust errors are usually helpful",
+        "Start with the first error - later ones often cascade",
+        "Use cargo check for faster feedback than full compilation"
+      ]
+    },
+    {
+      "issue_type": "Runtime panics",
+      "approach": [
+        "Check backtrace with RUST_BACKTRACE=1",
+        "Add debug logging before panic points",
+        "Use Result types instead of unwrap() in production code"
+      ]
+    },
+    {
+      "issue_type": "Performance issues",
+      "approach": [
+        "Profile with cargo flamegraph or perf",
+        "Add timing measurements to identify bottlenecks",
+        "Consider algorithmic improvements before micro-optimizations"
+      ]
+    }
+  ],
+  "known_limitations": [
+    {
+      "area": "WebAssembly Integration",
+      "limitation": "Limited system call access from WASM modules",
+      "workaround": "Use host function imports for system operations",
+      "status": "design_constraint"
+    },
+    {
+      "area": "Agent Memory Management",
+      "limitation": "No persistent storage between process restarts",
+      "workaround": "File-based memory persistence for critical data",
+      "status": "addressed_by_design"
+    }
+  ]
+}
