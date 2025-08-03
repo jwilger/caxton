@@ -23,13 +23,13 @@ This feature creep leads to:
 
 ## Decision
 
-Caxton will maintain a strictly minimal core, providing only three primitives:
+Caxton will maintain a strictly minimal server design, providing only three core capabilities:
 
 1. **Agent Runtime**: WebAssembly-based isolation and execution
 2. **Message Router**: FIPA protocol implementation including Contract Net Protocol (CNP) for agent coordination
 3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
-Everything else must be built as libraries on top of these primitives.
+Everything else must be implemented as agents deployed to the server.
 
 This means explicitly NOT including:
 - Workflow orchestration languages
@@ -74,11 +74,11 @@ Caxton does NOT include infrastructure consensus protocols because:
 
 ### Mitigations
 
-- Provide official pattern libraries (but not in core)
-- Create comprehensive examples showing how to build common patterns
-- Foster community ecosystem for sharing solutions
+- Provide official example agents and patterns (deployed to server)
+- Create comprehensive examples showing agent development patterns
+- Foster community ecosystem for sharing agent implementations
 - Document architectural guidance without enforcing it
-- Make it easy to contribute and discover community libraries
+- Make it easy to contribute and discover community agents
 
 ## Alternatives Considered
 
@@ -103,15 +103,15 @@ Caxton does NOT include infrastructure consensus protocols because:
 This decision aligns with successful minimal systems:
 - **Unix philosophy**: Small tools that do one thing well
 - **Plan 9**: Everything is a file (everything is an event)
-- **Erlang/OTP**: Simple primitives, rich ecosystem
+- **Erlang/OTP**: Simple server model, rich ecosystem
 - **HTTP**: Simple protocol, endless applications
 
 ## Implementation Guidelines
 
 When evaluating new features, ask:
-1. Can this be built as a library on top of the three primitives?
+1. Can this be implemented as an agent using the server's capabilities?
 2. Would adding this prevent other valid use cases?
-3. Is this essential for the primitives to function?
+3. Is this essential for the server to function?
 
 If the answer to #1 is yes, it doesn't belong in core.
 
@@ -120,14 +120,14 @@ If the answer to #1 is yes, it doesn't belong in core.
 Users want workflow orchestration. Instead of building it into core:
 
 ```rust
-// This is a library, not core
+// This is an agent pattern, not core
 pub struct WorkflowEngine {
     caxton: Arc<dyn AgentHost>,
 }
 
 impl WorkflowEngine {
     pub async fn execute(&self, workflow: Workflow) {
-        // Uses Caxton's primitives to:
+        // Uses Caxton server APIs to:
         // - Spawn coordinator agent
         // - Route messages based on workflow
         // - Track state through events

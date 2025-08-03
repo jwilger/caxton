@@ -15,7 +15,7 @@ Multi-agent systems are inherently complex, distributed, and non-deterministic. 
 - Reproducing issues is nearly impossible without understanding the exact sequence of interactions
 - Performance bottlenecks are hard to identify without proper metrics
 
-We need a foundational approach that makes agent systems observable and debuggable by design, while remaining agnostic to how users choose to persist or analyze their data.
+We need a server approach that makes agent systems observable and debuggable by design, while remaining agnostic to how users choose to persist or analyze their data.
 
 ## Decision
 
