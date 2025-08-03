@@ -5,8 +5,6 @@ permalink: /adr/
 description: "A collection of Architecture Decision Records (ADRs) documenting key technical decisions in the Caxton project."
 ---
 
-# Architecture Decision Records
-
 Welcome to our collection of Architecture Decision Records (ADRs). These documents capture the important architectural decisions made during the development of Caxton, including the context, reasoning, and consequences of each decision.
 
 ## What are ADRs?
