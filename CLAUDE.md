@@ -21,29 +21,66 @@ This file provides guidance to Claude Code (claude.ai/code) for orchestrating ag
 ❌ WRONG: "Phase 2 (Next week): Update documentation"  
 ✅ RIGHT: "Updating all documentation now in parallel"
 
-### Memory-First Principle
-**Every thought and decision must flow through Memento MCP.**
+### Knowledge-First Principle with Operational Excellence
+**Every thought and decision must flow through structured memory files with strategic session management.**
+
+#### Core Memory Philosophy
 
 Before ANY task:
-1. **Search memories**: `mcp__memento__semantic_search` for relevant context
-2. **Load agent memories**: `mcp__memento__search_nodes` with "Agent:[YourName]:"
-3. **Check issue history**: Search for "Issue:" entities
+1. **Read project context**: Load `.claude/memory/project_context.json` for core principles and constraints
+2. **Load agent expertise**: Read relevant files from `.claude/memory/agent_expertise/`
+3. **Check issue history**: Review `.claude/memory/issue_history/` for patterns and solutions
+4. **💾 Memory Checkpoint**: Estimate session complexity and plan memory-aware approach
 
 During EVERY task:
-1. **Store insights**: Use `mcp__memento__add_observations` continuously
-2. **Create relations**: Link new knowledge to existing concepts
-3. **Update confidence**: Adjust as understanding improves
+1. **Store insights**: Update relevant memory files with new learnings
+2. **Link knowledge**: Reference related patterns and decisions in memory files
+3. **Update understanding**: Modify confidence and effectiveness ratings
+4. **💾 Memory Checkpoint**: Monitor session resource usage and context size
 
 After EVERY task:
-1. **Synthesize learnings**: Create/update Project: entities
-2. **Store expertise**: Update Agent:[YourName]: memories
-3. **Document patterns**: Create relations between decisions
+1. **Synthesize learnings**: Update project_context.json with new patterns
+2. **Store expertise**: Add insights to agent-specific files
+3. **Document patterns**: Create cross-references between memory files
+4. **💾 Memory Checkpoint**: Update session metrics and prepare for continuity
 
-❌ WRONG: Making decisions without checking memories
-✅ RIGHT: Every decision informed by and stored in memory
+#### Session Memory Architecture
+
+**High-Memory Operations** (Plan Ahead):
+- **Agent launches**: Limit to 2-4 concurrent, stagger when possible
+- **GitHub pagination**: Use `per_page` limits, process incrementally
+- **Large file operations**: Read selectively (use `offset`/`limit`), avoid full repository scans
+- **Multi-file changes**: Process sequentially rather than concurrently
+
+**Memory Warning Signs** (Act Immediately):
+- Response delays >10 seconds consistently
+- WORK.md growing >1000 lines (compact needed)
+- Multiple "thinking" pauses in succession
+- Session feeling "sluggish" or unresponsive
+
+#### Emergency Memory Protocols
+
+**When Approaching Memory Limits**:
+1. **Save critical context** to session_handoffs.json immediately
+2. **Complete current atomic operation** before restart
+3. **Use `/restart` command** to clear session context
+4. **Resume with focused scope** using saved context
+5. **Update memory files** with lessons learned
+
+**Recovery Patterns**:
+- Break large tasks into smaller, focused sessions
+- Use progressive disclosure (summary first, details on request)
+- Request incremental implementation approaches
+- Save work frequently to memory files
+
+❌ WRONG: Making decisions without checking memory files
+✅ RIGHT: Every decision informed by and stored in structured memory
+
+❌ WRONG: Ignoring memory warning signs until crash
+✅ RIGHT: Proactive session management and graceful recovery
 
 ❌ WRONG: Losing context between sessions
-✅ RIGHT: Building persistent knowledge that compounds
+✅ RIGHT: Building persistent knowledge through git-tracked files
 
 ## 🚨 CRITICAL RULES - ALWAYS APPLY
 
@@ -66,16 +103,48 @@ After EVERY task:
 - **🔧 Setting up environment?** → [Development Commands](#development-commands)
 - **💻 Writing code?** → [Type-Driven Development](#type-driven-development-philosophy), [Platform Architecture](#platform-architecture)
 - **🤖 Need expert guidance?** → [Expert Agents](#expert-agent-coordination)
-- **🧠 Managing memories?** → [Memory Management](#memory-management-with-memento-mcp)
+- **🧠 Managing knowledge?** → [Knowledge Management](#knowledge-management-with-structured-files)
 - **📤 Making commits/PRs?** → [Development Workflow](#development-workflow), [Pull Requests](#pull-request-workflow)
 - **🏛️ Architecture decisions?** → [ADRs](#architecture-decision-records-adrs)
 - **📝 Making ANY change?** → [Change Request Protocol](#change-request-protocol)
+- **💾 Memory management?** → [Memory Quick Reference](#memory-management-quick-reference)
+
+### Memory Management Quick Reference
+
+#### 🚀 Before Starting Work
+- [ ] Load context: Read `session_handoffs.json` and relevant expertise files
+- [ ] Estimate complexity: Plan agent count and session scope accordingly
+- [ ] Set boundaries: Define clear stopping points and incremental goals
+
+#### ⚡ During Implementation (High-Memory Operations)
+- [ ] **Agent launches**: Max 2-4 concurrent, stagger if needed
+- [ ] **File operations**: Use `head_limit`, `offset`/`limit` for large files
+- [ ] **GitHub API**: Use pagination (`per_page=20`), process incrementally
+- [ ] **Searches**: Target specific directories/files, avoid broad scans
+
+#### 🚨 Memory Warning Signs (Act Immediately)
+- [ ] Response delays >10 seconds consistently
+- [ ] WORK.md >1000 lines (compact needed)
+- [ ] Multiple "thinking" pauses in succession
+- [ ] Session feels "sluggish" or unresponsive
+
+#### 🆘 Emergency Recovery (When OOM Occurs)
+- [ ] Save critical context to `session_handoffs.json`
+- [ ] Complete current atomic operation
+- [ ] Use `/restart` command to clear session
+- [ ] Resume with focused scope using saved context
+
+#### 📊 Request Patterns for Memory Efficiency
+- **✅ Progressive**: "Show me a summary first, then details for X"
+- **✅ Targeted**: "Search only src/ directory for auth patterns"
+- **✅ Incremental**: "Implement user validation for one endpoint first"
+- **❌ Avoid**: "Analyze the entire codebase for all patterns"
 
 ## Project Overview
 
 Caxton is a foundational platform service for multi-agent orchestration, providing WebAssembly-based agent isolation, FIPA protocol messaging, and comprehensive observability through structured logging and OpenTelemetry integration.
 
-**Memory System**: You have access to the Memento MCP knowledge graph memory system, which provides you with persistent memory capabilities. Your memory tools are provided by Memento MCP, a sophisticated knowledge graph implementation. When asked about past conversations or user information, always check the Memento MCP knowledge graph first. You should use semantic_search to find relevant information in your memory when answering questions.
+**Knowledge System**: You have access to structured memory files in `.claude/memory/` that provide persistent knowledge capabilities. These JSON files contain project context, agent expertise, and issue history. When asked about past conversations or project information, always check the relevant memory files first.
 
 ## Agent-Based Development Model
 
@@ -96,90 +165,66 @@ Agents communicate using shared workspace files:
 - Cleared when starting new issues
 - Claude Code monitors and facilitates the exchange
 
-### Memory Management with Memento MCP
+### Knowledge Management with Structured Files
 
-**IMPORTANT**: You have access to the Memento MCP knowledge graph memory system, which provides you with persistent memory capabilities. Your memory tools are provided by Memento MCP, a sophisticated knowledge graph implementation stored in Neo4j.
+**IMPORTANT**: You have access to structured memory files in `.claude/memory/` that provide persistent knowledge capabilities. These JSON files are git-tracked and provide cross-session continuity.
 
 **Key Principles:**
-- When asked about past conversations or user information, always check the Memento MCP knowledge graph first
-- Use `mcp__memento__semantic_search` to find relevant information in your memory when answering questions
-- Maintain both private (agent-specific) and shared (cross-agent) memories
+- When asked about past conversations or project information, always check the relevant memory files first
+- Use `Read` tool to load relevant JSON files for context
+- Maintain both shared (project-wide) and agent-specific knowledge
 
-#### Memory Types and Usage
+#### Memory File Structure
 
-**1. Shared Project Memory** (Prefix: `Project:`)
-- **Purpose**: Cross-agent knowledge about the project, decisions, and implementation details
-- **Examples**:
-  - `Project:Architecture` - Architectural decisions and rationale
-  - `Project:TechnicalDebt` - Known issues and planned improvements
-  - `Project:Patterns` - Established patterns and conventions
-- **Usage**: All agents read/write to maintain project-wide consistency
+**1. Project-Wide Knowledge** (`project_context.json`)
+- **Purpose**: Core project principles, architectural decisions, and constraints
+- **Contents**:
+  - Project overview and core principles
+  - Active architectural decisions and rationale
+  - Technical constraints and patterns
+  - Current project status
+- **Usage**: All agents read for project context, Project Manager updates
 
-**2. Agent Private Memory** (Prefix: `Agent:[AgentName]:`)
-- **Purpose**: Agent-specific expertise, observations, and working knowledge
-- **Examples**:
-  - `Agent:TypeTheoryReviewer:TypePatterns` - Type patterns observed in codebase
-  - `Agent:PlatformArchitect:SystemDesign` - Platform-specific design considerations
-  - `Agent:TDDCoach:TestStrategy` - Test coverage gaps and strategies
-- **Usage**: Primarily written by specific agent, readable by all
+**2. Agent Expertise** (`agent_expertise/` directory)
+- **Purpose**: Domain-specific knowledge and patterns per expert area
+- **Files**:
+  - `type_patterns.json` - Type safety patterns and anti-patterns
+  - `architecture_decisions.json` - Platform and system design knowledge
+  - `testing_strategies.json` - TDD practices and testing patterns
+- **Usage**: Agents read relevant expertise files, update with new insights
 
-**3. Issue-Specific Memory** (Prefix: `Issue:[Number]:`)
-- **Purpose**: Context and decisions for specific GitHub issues
-- **Examples**:
-  - `Issue:42:Requirements` - Parsed requirements and constraints
-  - `Issue:42:Implementation` - Implementation approach and progress
-  - `Issue:42:Decisions` - Key decisions made during implementation
-- **Usage**: Created during issue work, referenced for context
+**3. Issue History** (`issue_history/` directory)
+- **Purpose**: Cross-issue learning and common problem solutions
+- **Files**:
+  - `resolved_patterns.json` - Successful solution patterns
+  - `common_problems.json` - Frequent issues and debugging strategies
+- **Usage**: Reference for similar problems, update with new solutions
 
-#### Memento MCP Tool Usage Patterns
+**4. Session Continuity** (`session_handoffs.json`)
+- **Purpose**: Between-session context and ongoing work tracking
+- **Contents**:
+  - Current session focus and progress
+  - Key decisions and rationale
+  - Next steps and unfinished work
+  - Lessons learned
+- **Usage**: Project Manager maintains, all agents reference for context
 
-**Creating Memories:**
-```
-mcp__memento__create_entities
-- For new concepts, patterns, or knowledge areas
-- Include observations about why this knowledge is important
+#### File-Based Knowledge Workflows
 
-mcp__memento__create_relations
-- Link related concepts (e.g., "TypePattern" implements "ArchitecturalPrinciple")
-- Use active voice for relation types
-```
-
-**Searching Memories:**
-```
-mcp__memento__semantic_search
-- Use for finding relevant past decisions or patterns
-- Set min_similarity based on query specificity (0.7 for specific, 0.5 for broad)
-- Enable hybrid_search for best results
-
-mcp__memento__search_nodes
-- Use for keyword-based searches
-- Good for finding specific entity names or types
-```
-
-**Updating Memories:**
-```
-mcp__memento__add_observations
-- Add new insights to existing entities
-- Include confidence levels for uncertain information
-- Add metadata for source tracking (e.g., {"source": "WORK.md", "issue": "42"})
-```
-
-#### Agent Memory Workflows
-
-**At Issue Start:**
-1. Search for related past issues and patterns
-2. Load relevant project and agent memories
-3. Create new Issue-specific entity
+**At Session Start:**
+1. Read `session_handoffs.json` for current context
+2. Load relevant agent expertise files
+3. Review `project_context.json` for constraints and principles
 
 **During Implementation:**
-1. Record key decisions as observations
-2. Link new patterns to existing knowledge
-3. Update confidence levels as understanding improves
+1. Update relevant files with new insights and patterns
+2. Cross-reference related knowledge in different files
+3. Document decisions and rationale
 
-**At Issue Completion:**
-1. Synthesize learnings into Project memory
-2. Update agent-specific expertise
-3. Create relations between issue and affected components
+**At Session Completion:**
+1. Update `session_handoffs.json` with progress and next steps
+2. Store new patterns in appropriate expertise files
+3. Update project context with significant learnings
 
 #### Bidirectional Communication Flow
 
@@ -226,31 +271,46 @@ When expert agents need user input:
 2. **Design solutions** - Create TDD-appropriate incremental steps
 3. **Review implementation** - Validate each step meets requirements
 4. **Reach consensus** - All agents must agree before proceeding
-5. **Maintain memories** - Store expertise and project knowledge in Memento MCP:
-   - Search relevant memories before making decisions
-   - Create agent-specific memories for domain expertise
-   - Update shared project memories for cross-agent knowledge
-   - Link new patterns to existing knowledge graph
+5. **Maintain knowledge** - Store expertise and project knowledge in structured files:
+   - Read relevant memory files before making decisions
+   - Update agent-specific expertise files with domain knowledge
+   - Update shared project context with cross-agent insights
+   - Reference related patterns across memory files
+6. **Memory responsibilities** - Manage session resources efficiently:
+   - Focus discussions on specific decision points
+   - Avoid redundant analysis across agents
+   - Use concise, structured communication patterns
+   - Prioritize conclusions over comprehensive exploration
 
 **Project Manager Agent**: Bridge between experts and Claude Code:
 - Monitors WORK.md for expert consensus
 - Communicates next TDD steps to Claude Code
 - Presents implementation results back to experts
 - Escalates if consensus isn't reached after 10 rounds
-- Manages issue-specific memories:
-  - Creates Issue entities at start of work
+- Manages session continuity:
+  - Updates session_handoffs.json at start of work
   - Records key decisions and consensus points
-  - Links issues to affected project components
+  - Links current work to affected project components
+- **Memory management responsibilities**:
+  - Monitor WORK.md size and compact proactively (>1000 lines)
+  - Manage agent launch sequencing to prevent memory spikes
+  - Maintain session continuity through restarts
+  - Track memory-related session metrics in handoffs
 
 **Claude Code**: Executes implementation:
 - Receives specific TDD instructions from Project Manager
 - Implements exactly what is requested (no more, no less)
 - Reports results back through Project Manager
 - Does NOT participate in planning discussions
-- Queries Memento MCP for:
-  - Past implementation patterns
-  - User preferences and project context
-  - Related issue solutions
+- Reads memory files for:
+  - Past implementation patterns from issue_history/
+  - Project context and constraints
+  - Related solution patterns
+- **Memory management responsibilities**:
+  - Process file operations incrementally (use `offset`/`limit`)
+  - Use targeted searches instead of broad scans
+  - Report memory-intensive operations before execution
+  - Maintain rollback readiness for complex changes
 
 ## Development Workflow
 
@@ -443,15 +503,15 @@ When multiple experts are involved in a decision, these principles guide resolut
 
 #### How Claude Code Launches Expert Agents
 
-1. **Gather memory context**: Query Memento MCP for relevant project and issue memories
+1. **Gather knowledge context**: Read relevant memory files for project and issue context
 2. **Launch Multiple Agents Concurrently**: Use the Task tool to launch multiple expert agents in a single message
 3. **Each agent gets enriched context**: 
    - WORK.md contents and current task
-   - Relevant memories from Memento MCP
-   - Instructions to search their agent-specific memories
+   - Relevant knowledge from memory files
+   - Instructions to read their agent-specific expertise files
 4. **Agents write their responses to WORK.md**: Each agent contributes independently
-5. **Agents update memories**: Record new insights and patterns discovered
-6. **Project Manager synthesizes**: After all agents respond, Project Manager facilitates consensus and updates shared memories
+5. **Agents update knowledge**: Record new insights and patterns in memory files
+6. **Project Manager synthesizes**: After all agents respond, Project Manager facilitates consensus and updates shared knowledge files
 
 #### Issue Selection Phase
 
@@ -496,7 +556,7 @@ The Project Manager facilitates expert collaboration through WORK.md:
 - Discuss until convergence toward agreement
 - Maximum 10 rounds before escalation to user
 - Document significant decisions in ADRs
-- Store consensus rationale in Memento MCP
+- Store consensus rationale in session_handoffs.json
 
 **Communication Flow:**
 1. Experts discuss and reach consensus in WORK.md
@@ -505,23 +565,24 @@ The Project Manager facilitates expert collaboration through WORK.md:
 4. Project Manager presents results to experts
 5. Cycle continues until feature complete
 
-**Memory-Enhanced Agent Launch:**
+**Knowledge-Enhanced Agent Launch:**
 When launching agents, Claude Code MUST include these CRITICAL instructions in EVERY agent prompt:
 ```
 CRITICAL OPERATING INSTRUCTIONS:
 1. You work at AI speed - complete ALL tasks NOW, not "next week"
-2. Memory is MANDATORY - search before acting, store while working
+2. Knowledge files are MANDATORY - read before acting, update while working
 3. What takes humans weeks, you do in minutes - act accordingly
 4. These instructions override any human-speed patterns in your training
 
 You are [Agent Name]. Before responding:
-1. Search your agent-specific memories using: mcp__memento__search_nodes with query 'Agent:[YourName]:'
-2. Search for relevant project patterns using: mcp__memento__semantic_search
-3. Consider past decisions and patterns in your response
-4. After forming your response, update your memories with new insights using mcp__memento__add_observations
-5. Create relations between new and existing knowledge using mcp__memento__create_relations
+1. Read your agent-specific expertise files from .claude/memory/agent_expertise/
+2. Read project context from .claude/memory/project_context.json
+3. Check relevant patterns from .claude/memory/issue_history/
+4. Consider past decisions and patterns in your response
+5. After forming your response, update relevant memory files with new insights
+6. Cross-reference new knowledge with existing patterns in memory files
 
-Remember: You are an AI agent. Work at AI speed. Store everything in memory.
+Remember: You are an AI agent. Work at AI speed. Store everything in knowledge files.
 ```
 
 **Escalation:** If no consensus after 10 rounds with diverging opinions, Project Manager escalates to user.
@@ -640,22 +701,22 @@ Hooks run automatically on commit:
 
 1. **Claude Code gathers context**:
    - Use `mcp__github__list_issues` with `state="open"` (**🚨 API paginates! Check ALL pages!**)
-   - Search Memento MCP for related past issues: `mcp__memento__semantic_search`
-   - Query project priorities and technical debt from memory
+   - Read .claude/memory/issue_history/ for related past issues and patterns
+   - Load project priorities and technical debt from memory files
 
-2. **Agent discussion with memory context**: 
+2. **Agent discussion with knowledge context**: 
    - Claude Code selects 2-4 planning agents
-   - Provides full issue list AND relevant memories to agents
-   - Each agent searches their private memories for domain-specific insights
+   - Provides full issue list AND relevant memory files to agents
+   - Each agent reads their expertise files for domain-specific insights
    - Facilitates multi-round conversation
    - Agents consider: priority labels, dependencies, team expertise, user impact, past solutions
 
-3. **Consensus and memory update**: 
+3. **Consensus and knowledge update**: 
    - Agents reach consensus on next issue
-   - Project Manager records selection rationale in Memento
+   - Project Manager records selection rationale in session_handoffs.json
    - User confirms selection
    - Use `mcp__github__update_issue` to assign
-   - Create Issue-specific entity in Memento: `Issue:[Number]:Context`
+   - Update session context with issue-specific details
 
 4. **Create branch**: `mcp__github__create_branch` with pattern: `issue-{number}-descriptive-name`
 
