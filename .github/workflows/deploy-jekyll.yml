@@ -41,6 +41,31 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
+      - name: Sync ADRs to Jekyll collection
+        run: |
+          echo "Syncing ADRs from docs/adr/ to _adrs/"
+          
+          # Create _adrs directory if it doesn't exist
+          mkdir -p _adrs
+          
+          # Copy all ADR files
+          cp docs/adr/*.md _adrs/ 2>/dev/null || true
+          
+          # Verify sync
+          SOURCE_COUNT=$(ls -1 docs/adr/*.md 2>/dev/null | wc -l)
+          JEKYLL_COUNT=$(ls -1 _adrs/*.md 2>/dev/null | grep -v README.md | wc -l)
+          
+          echo "Source ADRs: $SOURCE_COUNT"
+          echo "Jekyll ADRs: $JEKYLL_COUNT"
+          
+          if [ "$SOURCE_COUNT" -ne "$JEKYLL_COUNT" ]; then
+            echo "ERROR: ADR count mismatch!"
+            echo "Expected $SOURCE_COUNT ADRs in _adrs/, found $JEKYLL_COUNT"
+            exit 1
+          fi
+          
+          echo "✅ ADR sync completed successfully"
+
       - name: Setup Rust (for rustdoc)
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
