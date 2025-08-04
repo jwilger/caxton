@@ -60,13 +60,21 @@ pub mod performance;
 // ```
 
 // Re-export all public types and functions
-pub use crate::agent::*;
-pub use crate::core::*;
+// Explicitly import to avoid ambiguity
+pub use crate::agent::{
+    Agent, AgentConfig, AgentId, AgentMetadata, AgentRegistry, AgentState, AgentType,
+    HealthStatus, Loaded, Running, Unloaded,
+};
+// Skip re-exporting from core::agent to avoid conflicts
+// Skip core::fipa to avoid conflicts with fipa module
+pub use crate::core::observability::*;
+pub use crate::core::wasm::*;
 pub use crate::error::*;
 pub use crate::fipa::*;
 pub use crate::observability::*;
 pub use crate::runtime::*;
-pub use crate::wasm::*;
+// Re-export wasm types directly from core::wasm
+pub use crate::core::wasm::{WasmError, WasmModule, WasmRuntime};
 
 // Core modules
 pub mod agent;
