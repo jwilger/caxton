@@ -1,0 +1,27 @@
+name: "Caxton Security CodeQL Config"
+
+disable-default-queries: false
+
+queries:
+  - name: security-and-quality
+    uses: security-and-quality
+  - name: security-extended
+    uses: security-extended
+
+query-filters:
+  - exclude:
+      id: "rust/unused-value"
+      
+paths-ignore:
+  - "target/"
+  - "tests/fixtures/"
+  - "benches/"
+  - ".git/"
+
+paths:
+  - "src/"
+  
+# Security-focused query packs
+packs:
+  - "codeql/rust-queries:Security"
+  - "codeql/rust-queries:AlertSuppression"

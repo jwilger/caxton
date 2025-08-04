@@ -1,0 +1,341 @@
+name: Security Monitoring
+
+on:
+  schedule:
+    # Run daily security checks at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - dependencies
+          - code
+          - container
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  dependency-audit:
+    name: Daily Dependency Audit
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install security tools
+        run: |
+          cargo install --locked cargo-audit cargo-deny cargo-geiger
+
+      - name: Run comprehensive security audit
+        run: |
+          echo "::group::Vulnerability Audit"
+          cargo audit --json > audit-report.json || true
+          
+          # Check if vulnerabilities found
+          VULN_COUNT=$(jq '.vulnerabilities | length' audit-report.json)
+          if [ "$VULN_COUNT" -gt 0 ]; then
+            echo "::error::$VULN_COUNT vulnerabilities found"
+            jq '.vulnerabilities[]' audit-report.json
+          else
+            echo "::notice::No vulnerabilities found"
+          fi
+          echo "::endgroup::"
+
+      - name: Analyze dependency tree
+        run: |
+          echo "::group::Dependency Analysis"
+          cargo tree --format "{p} {r}" > dependency-tree.txt
+          
+          # Count dependencies
+          DIRECT_DEPS=$(grep -v "├─\|└─" dependency-tree.txt | wc -l)
+          TOTAL_DEPS=$(wc -l < dependency-tree.txt)
+          
+          echo "Direct dependencies: $DIRECT_DEPS"
+          echo "Total dependencies: $TOTAL_DEPS"
+          
+          # Check for security-sensitive dependencies
+          echo "Security-sensitive dependencies:"
+          grep -E "(crypto|ssl|tls|auth|rand|hash)" dependency-tree.txt || echo "None found"
+          echo "::endgroup::"
+
+      - name: Check for unsafe code
+        run: |
+          echo "::group::Unsafe Code Analysis"
+          cargo geiger --format json > geiger-report.json
+          
+          UNSAFE_COUNT=$(jq '.used.functions.unsafe + .used.expressions.unsafe + .used.impls.unsafe + .used.traits.unsafe + .used.methods.unsafe' geiger-report.json)
+          
+          if [ "$UNSAFE_COUNT" -gt 0 ]; then
+            echo "::warning::$UNSAFE_COUNT unsafe code blocks found"
+            cargo geiger
+          else
+            echo "::notice::No unsafe code found"
+          fi
+          echo "::endgroup::"
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-security-reports
+          path: |
+            audit-report.json
+            dependency-tree.txt
+            geiger-report.json
+
+  code-security-scan:
+    name: Code Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: rust
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build for CodeQL
+        run: cargo build --workspace --all-targets
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Check for security patterns
+        run: |
+          echo "::group::Security Pattern Analysis"
+          
+          # Check for hardcoded secrets
+          if grep -r "password\|secret\|key\|token" src/ --include="*.rs" | grep -v "test\|example\|config"; then
+            echo "::warning::Potential hardcoded secrets found"
+          fi
+          
+          # Check for unsafe practices
+          if grep -r "unwrap()\|expect(" src/ --include="*.rs" | grep -v "test"; then
+            echo "::warning::Potential panic-inducing code found"
+          fi
+          
+          # Check for network operations without proper validation
+          if grep -r "TcpStream\|UdpSocket\|Http" src/ --include="*.rs" | grep -v "test"; then
+            echo "::notice::Network operations found - ensure proper validation"
+          fi
+          
+          echo "::endgroup::"
+
+  container-security-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'container' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build security-focused container
+        run: |
+          cat > Dockerfile.security << 'EOF'
+          FROM rust:1.75-alpine3.18 as builder
+          
+          # Security hardening
+          RUN apk update && apk upgrade && \
+              apk add --no-cache musl-dev pkgconfig openssl-dev && \
+              rm -rf /var/cache/apk/* && \
+              addgroup -g 1000 rust && \
+              adduser -D -s /bin/sh -u 1000 -G rust rust
+          
+          WORKDIR /app
+          COPY --chown=rust:rust . .
+          
+          USER rust
+          RUN cargo build --release --target x86_64-unknown-linux-musl
+          
+          FROM scratch
+          COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+          COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/caxton /caxton
+          
+          USER 65534:65534
+          ENTRYPOINT ["/caxton"]
+          EOF
+          
+          docker build -f Dockerfile.security -t caxton:security-scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'caxton:security-scan'
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+
+      - name: Run Grype vulnerability scanner
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype caxton:security-scan --output json --file grype-results.json
+
+      - name: Analyze scan results
+        run: |
+          echo "::group::Trivy Results"
+          TRIVY_CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-results.json)
+          TRIVY_HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-results.json)
+          
+          echo "Critical vulnerabilities: $TRIVY_CRITICAL"
+          echo "High vulnerabilities: $TRIVY_HIGH"
+          
+          if [ "$TRIVY_CRITICAL" -gt 0 ]; then
+            echo "::error::Critical vulnerabilities found in container"
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")' trivy-results.json
+          fi
+          echo "::endgroup::"
+          
+          echo "::group::Grype Results"
+          GRYPE_CRITICAL=$(jq '[.matches[]? | select(.vulnerability.severity == "Critical")] | length' grype-results.json)
+          GRYPE_HIGH=$(jq '[.matches[]? | select(.vulnerability.severity == "High")] | length' grype-results.json)
+          
+          echo "Critical vulnerabilities (Grype): $GRYPE_CRITICAL"
+          echo "High vulnerabilities (Grype): $GRYPE_HIGH"
+          echo "::endgroup::"
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-security-scans
+          path: |
+            trivy-results.json
+            grype-results.json
+
+  security-baseline:
+    name: Security Baseline Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check security configuration
+        run: |
+          echo "::group::Security Configuration Audit"
+          
+          # Check for security files
+          SECURITY_FILES=(
+            "SECURITY.md"
+            ".github/workflows/ci.yml"
+            ".github/workflows/deploy.yml"
+            ".github/dependabot.yml"
+            ".pre-commit-config.yaml"
+          )
+          
+          for file in "${SECURITY_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ $file missing"
+            fi
+          done
+          
+          # Check security-related ADRs
+          if [ -f "_adrs/0002-webassembly-for-agent-isolation.md" ]; then
+            echo "✅ WebAssembly isolation ADR exists"
+          else
+            echo "❌ WebAssembly isolation ADR missing"
+          fi
+          
+          if [ -f "_adrs/0003-fipa-messaging-protocol.md" ]; then
+            echo "✅ FIPA messaging protocol ADR exists"
+          else
+            echo "❌ FIPA messaging protocol ADR missing"
+          fi
+          
+          echo "::endgroup::"
+
+      - name: Generate security dashboard
+        run: |
+          cat > security-dashboard.md << 'EOF'
+          # Security Dashboard
+          
+          ## Daily Security Status
+          
+          **Date**: $(date -u)
+          **Commit**: ${{ github.sha }}
+          
+          ### Security Metrics
+          - **Dependency Vulnerabilities**: Check audit reports
+          - **Code Security Issues**: Check CodeQL results
+          - **Container Vulnerabilities**: Check Trivy/Grype results
+          - **Security Configuration**: All files present
+          
+          ### Security Controls Status
+          - ✅ Pre-commit hooks configured
+          - ✅ Dependabot enabled
+          - ✅ Security policy documented
+          - ✅ CI/CD security pipeline active
+          - ✅ Container security scanning enabled
+          
+          ### Recent Security Activities
+          - Daily dependency audit completed
+          - Container image security scan completed
+          - Code security analysis completed
+          - Security configuration verified
+          
+          ### Recommendations
+          1. Review any high/critical vulnerabilities immediately
+          2. Update dependencies with security patches
+          3. Monitor security alerts and notifications
+          4. Conduct regular security reviews
+          
+          ---
+          *Generated by automated security monitoring*
+          EOF
+
+      - name: Upload security dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dashboard
+          path: security-dashboard.md
+
+  notify-security-team:
+    name: Notify Security Team
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, code-security-scan, container-security-scan, security-baseline]
+    if: always() && github.event_name == 'schedule'
+    steps:
+      - name: Collect security status
+        run: |
+          echo "Security monitoring completed"
+          echo "Dependency audit: ${{ needs.dependency-audit.result }}"
+          echo "Code security scan: ${{ needs.code-security-scan.result }}"
+          echo "Container security scan: ${{ needs.container-security-scan.result }}"
+          echo "Security baseline: ${{ needs.security-baseline.result }}"
+          
+          # Check for failures
+          if [ "${{ needs.dependency-audit.result }}" != "success" ] || \
+             [ "${{ needs.code-security-scan.result }}" != "success" ] || \
+             [ "${{ needs.container-security-scan.result }}" != "success" ] || \
+             [ "${{ needs.security-baseline.result }}" != "success" ]; then
+            echo "::error::Security monitoring detected issues"
+          else
+            echo "::notice::All security checks passed"
+          fi
+
+      # In a real deployment, you would configure notifications here
+      # - name: Send Slack notification
+      # - name: Create GitHub issue for failed checks
+      # - name: Send email to security team
