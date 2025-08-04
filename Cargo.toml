@@ -5,6 +5,24 @@ edition = "2021"
 authors = ["John Wilger <john@johnwilger.com>"]
 license = "MIT"
 description = "A type-driven multi-agent orchestration platform with WebAssembly isolation and FIPA messaging"
+documentation = "https://docs.rs/caxton"
+homepage = "https://jwilger.github.io/caxton/"
+repository = "https://github.com/jwilger/caxton"
+readme = "README.md"
+keywords = ["multi-agent", "webassembly", "fipa", "orchestration", "agents"]
+categories = ["concurrency", "web-programming", "wasm", "api-bindings"]
+rust-version = "1.70"
+exclude = [
+    "coordination/",
+    "memory/",
+    "claude-flow*",
+    "CLAUDE.md",
+    "DIALOGUE.md", 
+    "WORK.md",
+    "backupclaudemd.bak",
+    "*.log",
+    ".swarm/"
+]
 
 [dependencies]
 # Serialization and data handling
