@@ -4,8 +4,24 @@ version = "0.1.0"
 edition = "2021"
 authors = ["John Wilger <john@johnwilger.com>"]
 license = "MIT"
-description = "A type-driven Rust project"
+description = "A type-driven multi-agent orchestration platform with WebAssembly isolation and FIPA messaging"
 
 [dependencies]
+# Serialization and data handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Date and time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID generation and handling
+uuid = { version = "1.0", features = ["v4", "v5", "serde"] }
+
+# Error handling
+thiserror = "1.0"
 
 [dev-dependencies]
+# Property-based testing
+quickcheck = "1.0"
+quickcheck_macros = "1.0"
+proptest = "1.4"
