@@ -91,9 +91,9 @@ impl OptimizedObservabilitySystem {
         system.start_background_tasks();
 
         info!(
-            max_batch_size = config.max_batch_size,
-            flush_interval_ms = config.batch_flush_interval.as_millis(),
-            sampling_rate = config.sampling_rate,
+            max_batch_size = system.config.max_batch_size,
+            flush_interval_ms = system.config.batch_flush_interval.as_millis(),
+            sampling_rate = system.config.sampling_rate,
             "Optimized observability system initialized"
         );
 
@@ -129,7 +129,7 @@ impl OptimizedObservabilitySystem {
     pub async fn emit_events_batch(&self, events: Vec<ObservabilityEvent>) -> Result<Vec<Result<(), ObservabilityError>>, ObservabilityError> {
         let start_time = Instant::now();
         let batch_size = events.len();
-        
+
         let mut results = Vec::with_capacity(batch_size);
         let mut sampled_events = Vec::new();
 
@@ -232,7 +232,7 @@ impl EventBatchProcessor {
                         match event {
                             Some(event) => {
                                 batch.push(event);
-                                
+
                                 // Process batch if full
                                 if batch.len() >= max_batch_size {
                                     let batch_to_process = std::mem::replace(&mut batch, Vec::with_capacity(max_batch_size));
@@ -459,7 +459,7 @@ impl ObservabilityPerformanceMonitor {
 
     async fn record_event_emission(&self, duration: Duration) {
         let mut times = self.emission_times.write().await;
-        
+
         // Keep only the last 100 measurements for rolling statistics
         if times.len() >= 100 {
             times.remove(0);
@@ -490,12 +490,12 @@ impl ObservabilityPerformanceMonitor {
         } else {
             let sum: Duration = times.iter().sum();
             let avg = sum / times.len() as u32;
-            
+
             let mut sorted_times = times.clone();
             sorted_times.sort();
             let p95_index = (times.len() as f64 * 0.95) as usize;
             let p95 = sorted_times.get(p95_index).copied().unwrap_or(Duration::ZERO);
-            
+
             (avg, p95)
         };
 
@@ -646,13 +646,13 @@ struct MetricData {
 pub enum ObservabilityError {
     #[error("Event channel closed")]
     ChannelClosed,
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("Backend connection error: {0}")]
     BackendError(String),
-    
+
     #[error("Rate limiting exceeded")]
     RateLimitExceeded,
 }
@@ -671,7 +671,7 @@ mod tests {
     async fn test_observability_system_creation() {
         let config = ObservabilityConfig::default();
         let system = OptimizedObservabilitySystem::new(config);
-        
+
         let stats = system.get_performance_stats().await;
         assert_eq!(stats.processor_stats.batches_processed, 0);
     }
@@ -680,7 +680,7 @@ mod tests {
     async fn test_event_emission() {
         let config = ObservabilityConfig::default();
         let system = OptimizedObservabilitySystem::new(config);
-        
+
         let event = ObservabilityEvent {
             id: Uuid::new_v4(),
             timestamp: SystemTime::now(),
@@ -705,7 +705,7 @@ mod tests {
             ..Default::default()
         };
         let system = OptimizedObservabilitySystem::new(config);
-        
+
         let events: Vec<ObservabilityEvent> = (0..5)
             .map(|i| ObservabilityEvent {
                 id: Uuid::new_v4(),
@@ -723,7 +723,7 @@ mod tests {
 
         let results = system.emit_events_batch(events).await;
         assert!(results.is_ok());
-        
+
         let results = results.unwrap();
         assert_eq!(results.len(), 5);
         assert!(results.iter().all(|r| r.is_ok()));
