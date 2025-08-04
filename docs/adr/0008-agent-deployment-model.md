@@ -1,3 +1,11 @@
+---
+title: "0008. Agent Deployment Model"
+date: 2025-08-03
+status: proposed
+layout: adr
+categories: [Architecture]
+---
+
 # 0008. Agent Deployment Model
 
 Date: 2025-08-03
