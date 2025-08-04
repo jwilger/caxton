@@ -46,8 +46,8 @@ thiserror = "1.0"
 anyhow = "1.0"
 
 # WebAssembly runtime with optimizations
-wasmtime = { version = "24.0", features = ["async", "pooling-allocator", "component-model", "parallel-compilation"], optional = true }
-wasmtime-wasi = { version = "24.0", optional = true }
+wasmtime = { version = "35.0", features = ["async", "component-model", "parallel-compilation"], optional = true }
+wasmtime-wasi = { version = "35.0", optional = true }
 
 # Performance and monitoring
 tracing = "0.1"

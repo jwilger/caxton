@@ -4,9 +4,9 @@
 //! and performance metrics collection.
 
 use crate::*;
+use dashmap::DashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use dashmap::DashMap;
 
 /// Agent event types for observability
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,9 +97,13 @@ impl AgentMonitor {
                 self.update_message_metrics(&event.agent_id);
             }
             AgentEventType::HealthCheck { status } => {
-                self.health_status.insert(event.agent_id.clone(), status.clone());
+                self.health_status
+                    .insert(event.agent_id.clone(), status.clone());
             }
-            AgentEventType::ResourceUsage { memory_mb, cpu_percent } => {
+            AgentEventType::ResourceUsage {
+                memory_mb,
+                cpu_percent,
+            } => {
                 self.update_resource_metrics(&event.agent_id, *memory_mb, *cpu_percent);
             }
             AgentEventType::Crashed(reason) => {
@@ -111,7 +115,9 @@ impl AgentMonitor {
 
     /// Get performance metrics for an agent
     pub fn get_performance_metrics(&self, agent_id: &AgentId) -> Option<AgentPerformanceMetrics> {
-        self.performance_metrics.get(agent_id).map(|entry| entry.clone())
+        self.performance_metrics
+            .get(agent_id)
+            .map(|entry| entry.clone())
     }
 
     /// Get health status for an agent
@@ -139,7 +145,10 @@ impl AgentMonitor {
             healthy = false;
         } else {
             let status = health_status.unwrap();
-            details.insert("last_health_check".to_string(), status.timestamp.to_rfc3339());
+            details.insert(
+                "last_health_check".to_string(),
+                status.timestamp.to_rfc3339(),
+            );
             details.insert("healthy".to_string(), status.healthy.to_string());
 
             if !status.healthy {
@@ -152,18 +161,34 @@ impl AgentMonitor {
 
         // Check performance metrics
         if let Some(metrics) = performance_metrics {
-            details.insert("cpu_usage".to_string(), format!("{:.2}%", metrics.cpu_usage_percent));
-            details.insert("memory_usage".to_string(), format!("{} bytes", metrics.memory_usage_bytes));
-            details.insert("uptime".to_string(), format!("{} seconds", metrics.uptime_seconds));
-            details.insert("error_rate".to_string(), format!("{:.2}%", metrics.error_rate));
+            details.insert(
+                "cpu_usage".to_string(),
+                format!("{:.2}%", metrics.cpu_usage_percent),
+            );
+            details.insert(
+                "memory_usage".to_string(),
+                format!("{} bytes", metrics.memory_usage_bytes),
+            );
+            details.insert(
+                "uptime".to_string(),
+                format!("{} seconds", metrics.uptime_seconds),
+            );
+            details.insert(
+                "error_rate".to_string(),
+                format!("{:.2}%", metrics.error_rate),
+            );
 
             // Check for performance issues
             if metrics.cpu_usage_percent > 80.0 {
                 warnings.push(format!("High CPU usage: {:.2}%", metrics.cpu_usage_percent));
             }
 
-            if metrics.memory_usage_bytes > 100 * 1024 * 1024 { // 100MB
-                warnings.push(format!("High memory usage: {} MB", metrics.memory_usage_bytes / 1024 / 1024));
+            if metrics.memory_usage_bytes > 100 * 1024 * 1024 {
+                // 100MB
+                warnings.push(format!(
+                    "High memory usage: {} MB",
+                    metrics.memory_usage_bytes / 1024 / 1024
+                ));
             }
 
             if metrics.error_rate > 5.0 {
@@ -197,10 +222,17 @@ impl AgentMonitor {
     pub fn get_system_stats(&self) -> HashMap<String, String> {
         let mut stats = HashMap::new();
 
-        stats.insert("total_events".to_string(), self.event_counter.load(Ordering::Relaxed).to_string());
-        stats.insert("monitored_agents".to_string(), self.performance_metrics.len().to_string());
+        stats.insert(
+            "total_events".to_string(),
+            self.event_counter.load(Ordering::Relaxed).to_string(),
+        );
+        stats.insert(
+            "monitored_agents".to_string(),
+            self.performance_metrics.len().to_string(),
+        );
 
-        let healthy_agents = self.health_status
+        let healthy_agents = self
+            .health_status
             .iter()
             .filter(|entry| entry.value().healthy)
             .count();
@@ -210,7 +242,8 @@ impl AgentMonitor {
         stats.insert("unhealthy_agents".to_string(), unhealthy_agents.to_string());
 
         // Calculate average performance metrics
-        let total_cpu: f64 = self.performance_metrics
+        let total_cpu: f64 = self
+            .performance_metrics
             .iter()
             .map(|entry| entry.value().cpu_usage_percent)
             .sum();
@@ -221,11 +254,15 @@ impl AgentMonitor {
         };
         stats.insert("average_cpu_usage".to_string(), format!("{:.2}%", avg_cpu));
 
-        let total_memory: u64 = self.performance_metrics
+        let total_memory: u64 = self
+            .performance_metrics
             .iter()
             .map(|entry| entry.value().memory_usage_bytes)
             .sum();
-        stats.insert("total_memory_usage".to_string(), format!("{} MB", total_memory / 1024 / 1024));
+        stats.insert(
+            "total_memory_usage".to_string(),
+            format!("{} MB", total_memory / 1024 / 1024),
+        );
 
         stats
     }
@@ -238,7 +275,8 @@ impl AgentMonitor {
 
     /// Update message processing metrics
     fn update_message_metrics(&self, agent_id: &AgentId) {
-        let mut metrics = self.performance_metrics
+        let mut metrics = self
+            .performance_metrics
             .entry(agent_id.clone())
             .or_insert_with(AgentPerformanceMetrics::default);
 
@@ -249,7 +287,8 @@ impl AgentMonitor {
 
     /// Update resource usage metrics
     fn update_resource_metrics(&self, agent_id: &AgentId, memory_mb: u64, cpu_percent: f64) {
-        let mut metrics = self.performance_metrics
+        let mut metrics = self
+            .performance_metrics
             .entry(agent_id.clone())
             .or_insert_with(AgentPerformanceMetrics::default);
 
@@ -260,7 +299,8 @@ impl AgentMonitor {
 
     /// Record an error for an agent
     fn record_error(&self, agent_id: &AgentId, _reason: &str) {
-        let mut metrics = self.performance_metrics
+        let mut metrics = self
+            .performance_metrics
             .entry(agent_id.clone())
             .or_insert_with(AgentPerformanceMetrics::default);
 

@@ -62,38 +62,38 @@ pub mod performance;
 // Re-export all public types and functions
 pub use crate::agent::*;
 pub use crate::core::*;
-pub use crate::fipa::*;
-pub use crate::runtime::*;
-pub use crate::observability::*;
-pub use crate::wasm::*;
 pub use crate::error::*;
+pub use crate::fipa::*;
+pub use crate::observability::*;
+pub use crate::runtime::*;
+pub use crate::wasm::*;
 
 // Core modules
 pub mod agent;
-pub mod lifecycle;
 pub mod core;
 pub mod fipa;
-pub mod runtime;
+pub mod lifecycle;
 pub mod observability;
+pub mod runtime;
 
 // Test modules
 #[cfg(test)]
 pub mod tests {
     pub mod lifecycle_tests;
 }
-pub mod wasm;
 pub mod error;
+pub mod wasm;
 
 // Additional functionality
 pub mod mcp;
 pub mod utils;
 
 // Common imports
+pub use ::tracing::{debug, error, info, instrument, warn};
 pub use chrono::{DateTime, Utc};
 pub use serde::{Deserialize, Serialize};
 pub use std::collections::HashMap;
 pub use std::time::Duration;
 pub use thiserror::Error;
 pub use tokio::time::timeout;
-pub use tracing::{debug, error, info, instrument, warn};
 pub use uuid::Uuid;

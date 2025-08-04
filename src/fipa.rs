@@ -1,5 +1,5 @@
 //! FIPA messaging protocol implementation
-//! 
+//!
 //! Standards-compliant agent communication following FIPA specifications
 
 use crate::*;
@@ -26,18 +26,18 @@ pub enum FipaPerformative {
     // Query performatives
     QueryIf,
     QueryRef,
-    
+
     // Response performatives
     Inform,
     NotUnderstood,
     Refuse,
     Failure,
-    
+
     // Action performatives
     Request,
     Agree,
     Cancel,
-    
+
     // Contract net performatives
     Cfp, // Call for proposals
     Propose,
@@ -87,14 +87,14 @@ pub fn validate_fipa_message(message: &FipaMessage) -> Result<(), CaxtonError> {
     if message.sender.to_string().is_empty() {
         return Err(CaxtonError::InvalidMessage("Empty sender".to_string()));
     }
-    
+
     if message.receiver.to_string().is_empty() {
         return Err(CaxtonError::InvalidMessage("Empty receiver".to_string()));
     }
-    
+
     if message.content.is_null() {
         return Err(CaxtonError::InvalidMessage("Null content".to_string()));
     }
-    
+
     Ok(())
 }

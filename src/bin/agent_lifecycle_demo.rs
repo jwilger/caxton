@@ -3,16 +3,16 @@
 //! A standalone demonstration of the complete agent lifecycle implementation
 //! showing spawning, state management, resource tracking, and termination.
 
+use chrono::{DateTime, Utc};
+use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use dashmap::DashMap;
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::time::sleep;
-use tracing::{info, warn, debug, error};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 // ================================================================================================
@@ -154,7 +154,10 @@ pub struct CaxtonRuntime {
 
 impl CaxtonRuntime {
     pub async fn new(max_agents: usize) -> Self {
-        info!("🚀 Initializing Caxton Runtime with max {} agents", max_agents);
+        info!(
+            "🚀 Initializing Caxton Runtime with max {} agents",
+            max_agents
+        );
 
         Self {
             agents: Arc::new(DashMap::new()),
@@ -166,7 +169,8 @@ impl CaxtonRuntime {
     /// Spawn a new agent with complete lifecycle management
     pub async fn spawn_agent(&self, config: AgentConfig) -> Result<AgentId, DemoError> {
         // Acquire semaphore permit to limit concurrent agents
-        let _permit = self.spawn_semaphore
+        let _permit = self
+            .spawn_semaphore
             .acquire()
             .await
             .map_err(|_| DemoError::Runtime("Failed to acquire spawn permit".to_string()))?;
@@ -201,12 +205,9 @@ impl CaxtonRuntime {
         };
 
         // Start agent task
-        let agent_task = self.start_agent_task(
-            agent_id.clone(),
-            config,
-            message_rx,
-            shutdown_rx,
-        ).await?;
+        let agent_task = self
+            .start_agent_task(agent_id.clone(), config, message_rx, shutdown_rx)
+            .await?;
 
         // Create agent instance
         let agent_instance = AgentInstance {
@@ -231,11 +232,20 @@ impl CaxtonRuntime {
     }
 
     /// Terminate an agent with graceful shutdown
-    pub async fn terminate_agent(&self, agent_id: &AgentId, timeout: Duration) -> Result<(), DemoError> {
-        info!("🛑 Terminating agent: {} with timeout: {:?}", agent_id, timeout);
+    pub async fn terminate_agent(
+        &self,
+        agent_id: &AgentId,
+        timeout: Duration,
+    ) -> Result<(), DemoError> {
+        info!(
+            "🛑 Terminating agent: {} with timeout: {:?}",
+            agent_id, timeout
+        );
 
         // Get agent instance
-        let mut agent_instance = self.agents.get_mut(agent_id)
+        let mut agent_instance = self
+            .agents
+            .get_mut(agent_id)
             .ok_or_else(|| DemoError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         // Update state to terminating
@@ -270,31 +280,48 @@ impl CaxtonRuntime {
 
     /// Get current agent state
     pub fn get_agent_state(&self, agent_id: &AgentId) -> Result<AgentState, DemoError> {
-        let agent = self.agents.get(agent_id)
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| DemoError::Agent(format!("Agent not found: {}", agent_id)))?;
         Ok(agent.metadata.state.clone())
     }
 
     /// Get agent metadata and resource usage
-    pub fn get_agent_info(&self, agent_id: &AgentId) -> Result<(AgentMetadata, AgentResourceUsage), DemoError> {
-        let agent = self.agents.get(agent_id)
+    pub fn get_agent_info(
+        &self,
+        agent_id: &AgentId,
+    ) -> Result<(AgentMetadata, AgentResourceUsage), DemoError> {
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| DemoError::Agent(format!("Agent not found: {}", agent_id)))?;
         Ok((agent.metadata.clone(), agent.resource_usage.clone()))
     }
 
     /// List all agents with their capabilities
     pub fn list_agents(&self) -> Vec<(AgentId, Vec<String>)> {
-        self.agents.iter()
-            .map(|entry| (entry.key().clone(), entry.value().metadata.capabilities.clone()))
+        self.agents
+            .iter()
+            .map(|entry| {
+                (
+                    entry.key().clone(),
+                    entry.value().metadata.capabilities.clone(),
+                )
+            })
             .collect()
     }
 
     /// Simulate sending a message to an agent
     pub fn send_message(&self, agent_id: &AgentId, message: &str) -> Result<(), DemoError> {
-        let agent = self.agents.get(agent_id)
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| DemoError::Agent(format!("Agent not found: {}", agent_id)))?;
 
-        agent.message_tx.send(message.to_string())
+        agent
+            .message_tx
+            .send(message.to_string())
             .map_err(|_| DemoError::Runtime("Failed to send message to agent".to_string()))?;
 
         info!("📨 Message sent to agent {}: {}", agent_id, message);
@@ -304,13 +331,24 @@ impl CaxtonRuntime {
     /// Get runtime metrics
     pub fn get_metrics(&self) -> (usize, usize, u64, u64) {
         let total_agents = self.agents.len();
-        let active_agents = self.agents.iter()
-            .filter(|entry| matches!(entry.value().metadata.state, AgentState::Ready | AgentState::Processing))
+        let active_agents = self
+            .agents
+            .iter()
+            .filter(|entry| {
+                matches!(
+                    entry.value().metadata.state,
+                    AgentState::Ready | AgentState::Processing
+                )
+            })
             .count();
-        let total_messages: u64 = self.agents.iter()
+        let total_messages: u64 = self
+            .agents
+            .iter()
             .map(|entry| entry.value().resource_usage.message_count)
             .sum();
-        let total_memory: u64 = self.agents.iter()
+        let total_memory: u64 = self
+            .agents
+            .iter()
             .map(|entry| entry.value().resource_usage.memory_bytes)
             .sum();
 
@@ -322,7 +360,9 @@ impl CaxtonRuntime {
         info!("🛑 Shutting down Caxton runtime");
 
         // Collect all agent IDs
-        let agent_ids: Vec<AgentId> = self.agents.iter()
+        let agent_ids: Vec<AgentId> = self
+            .agents
+            .iter()
             .map(|entry| entry.key().clone())
             .collect();
 
@@ -412,13 +452,15 @@ async fn demonstrate_basic_lifecycle() -> Result<(), DemoError> {
     let runtime = CaxtonRuntime::new(10).await;
 
     // Spawn a worker agent
-    let worker_id = runtime.spawn_agent(AgentConfig {
-        name: "worker-001".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["compute".to_string(), "data-processing".to_string()],
-        max_memory: Some(64 * 1024 * 1024),
-        timeout: Some(Duration::from_secs(30)),
-    }).await?;
+    let worker_id = runtime
+        .spawn_agent(AgentConfig {
+            name: "worker-001".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["compute".to_string(), "data-processing".to_string()],
+            max_memory: Some(64 * 1024 * 1024),
+            timeout: Some(Duration::from_secs(30)),
+        })
+        .await?;
 
     println!("✅ Worker agent spawned: {}", worker_id);
 
@@ -439,10 +481,15 @@ async fn demonstrate_basic_lifecycle() -> Result<(), DemoError> {
     println!("   Messages processed: {}", resources.message_count);
     println!("   CPU time: {}ms", resources.cpu_time_ms);
     println!("   Memory usage: {} bytes", resources.memory_bytes);
-    println!("   Last activity: {}", resources.last_activity.format("%H:%M:%S%.3f"));
+    println!(
+        "   Last activity: {}",
+        resources.last_activity.format("%H:%M:%S%.3f")
+    );
 
     // Terminate agent
-    runtime.terminate_agent(&worker_id, Duration::from_secs(5)).await?;
+    runtime
+        .terminate_agent(&worker_id, Duration::from_secs(5))
+        .await?;
 
     let final_state = runtime.get_agent_state(&worker_id)?;
     println!("🏁 Final state: {:?}", final_state);
@@ -457,37 +504,48 @@ async fn demonstrate_multi_agent_coordination() -> Result<(), DemoError> {
     let runtime = CaxtonRuntime::new(10).await;
 
     // Spawn multiple agents with different roles
-    let coordinator_id = runtime.spawn_agent(AgentConfig {
-        name: "coordinator-alpha".to_string(),
-        agent_type: AgentType::Coordinator,
-        capabilities: vec!["task-distribution".to_string(), "load-balancing".to_string()],
-        max_memory: Some(32 * 1024 * 1024),
-        timeout: Some(Duration::from_secs(60)),
-    }).await?;
+    let coordinator_id = runtime
+        .spawn_agent(AgentConfig {
+            name: "coordinator-alpha".to_string(),
+            agent_type: AgentType::Coordinator,
+            capabilities: vec![
+                "task-distribution".to_string(),
+                "load-balancing".to_string(),
+            ],
+            max_memory: Some(32 * 1024 * 1024),
+            timeout: Some(Duration::from_secs(60)),
+        })
+        .await?;
 
-    let worker1_id = runtime.spawn_agent(AgentConfig {
-        name: "worker-001".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["compute".to_string(), "data-analysis".to_string()],
-        max_memory: Some(64 * 1024 * 1024),
-        timeout: Some(Duration::from_secs(30)),
-    }).await?;
+    let worker1_id = runtime
+        .spawn_agent(AgentConfig {
+            name: "worker-001".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["compute".to_string(), "data-analysis".to_string()],
+            max_memory: Some(64 * 1024 * 1024),
+            timeout: Some(Duration::from_secs(30)),
+        })
+        .await?;
 
-    let worker2_id = runtime.spawn_agent(AgentConfig {
-        name: "worker-002".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["compute".to_string(), "image-processing".to_string()],
-        max_memory: Some(64 * 1024 * 1024),
-        timeout: Some(Duration::from_secs(30)),
-    }).await?;
+    let worker2_id = runtime
+        .spawn_agent(AgentConfig {
+            name: "worker-002".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["compute".to_string(), "image-processing".to_string()],
+            max_memory: Some(64 * 1024 * 1024),
+            timeout: Some(Duration::from_secs(30)),
+        })
+        .await?;
 
-    let monitor_id = runtime.spawn_agent(AgentConfig {
-        name: "monitor-sentinel".to_string(),
-        agent_type: AgentType::Monitor,
-        capabilities: vec!["health-check".to_string(), "metrics-collection".to_string()],
-        max_memory: Some(16 * 1024 * 1024),
-        timeout: Some(Duration::from_secs(120)),
-    }).await?;
+    let monitor_id = runtime
+        .spawn_agent(AgentConfig {
+            name: "monitor-sentinel".to_string(),
+            agent_type: AgentType::Monitor,
+            capabilities: vec!["health-check".to_string(), "metrics-collection".to_string()],
+            max_memory: Some(16 * 1024 * 1024),
+            timeout: Some(Duration::from_secs(120)),
+        })
+        .await?;
 
     println!("✅ Multi-agent system deployed");
 
@@ -529,8 +587,12 @@ async fn demonstrate_multi_agent_coordination() -> Result<(), DemoError> {
         let (metadata, resources) = runtime.get_agent_info(agent_id)?;
         println!("   {} ({}):", agent_id, metadata.name);
         println!("     State: {:?}", metadata.state);
-        println!("     Messages: {}, CPU: {}ms, Memory: {} KB",
-                resources.message_count, resources.cpu_time_ms, resources.memory_bytes / 1024);
+        println!(
+            "     Messages: {}, CPU: {}ms, Memory: {} KB",
+            resources.message_count,
+            resources.cpu_time_ms,
+            resources.memory_bytes / 1024
+        );
     }
 
     // Graceful shutdown
@@ -550,21 +612,25 @@ async fn demonstrate_resource_limits() -> Result<(), DemoError> {
     // Spawn agents up to limit
     println!("📈 Testing agent spawning limits...");
 
-    let agent1 = runtime.spawn_agent(AgentConfig {
-        name: "agent-1".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["task-1".to_string()],
-        max_memory: None,
-        timeout: None,
-    }).await?;
+    let agent1 = runtime
+        .spawn_agent(AgentConfig {
+            name: "agent-1".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["task-1".to_string()],
+            max_memory: None,
+            timeout: None,
+        })
+        .await?;
 
-    let agent2 = runtime.spawn_agent(AgentConfig {
-        name: "agent-2".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["task-2".to_string()],
-        max_memory: None,
-        timeout: None,
-    }).await?;
+    let agent2 = runtime
+        .spawn_agent(AgentConfig {
+            name: "agent-2".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["task-2".to_string()],
+            max_memory: None,
+            timeout: None,
+        })
+        .await?;
 
     println!("✅ Spawned 2 agents (at capacity)");
 
@@ -586,22 +652,30 @@ async fn demonstrate_resource_limits() -> Result<(), DemoError> {
 
     // Terminate one agent to free up space
     println!("🔄 Terminating one agent to free capacity...");
-    runtime.terminate_agent(&agent1, Duration::from_secs(1)).await?;
+    runtime
+        .terminate_agent(&agent1, Duration::from_secs(1))
+        .await?;
 
     // Now third agent should be able to spawn
-    let agent3 = runtime.spawn_agent(AgentConfig {
-        name: "agent-3".to_string(),
-        agent_type: AgentType::Worker,
-        capabilities: vec!["task-3".to_string()],
-        max_memory: None,
-        timeout: None,
-    }).await?;
+    let agent3 = runtime
+        .spawn_agent(AgentConfig {
+            name: "agent-3".to_string(),
+            agent_type: AgentType::Worker,
+            capabilities: vec!["task-3".to_string()],
+            max_memory: None,
+            timeout: None,
+        })
+        .await?;
 
     println!("✅ Third agent spawned after freeing capacity");
 
     // Clean up
-    runtime.terminate_agent(&agent2, Duration::from_secs(1)).await?;
-    runtime.terminate_agent(&agent3, Duration::from_secs(1)).await?;
+    runtime
+        .terminate_agent(&agent2, Duration::from_secs(1))
+        .await?;
+    runtime
+        .terminate_agent(&agent3, Duration::from_secs(1))
+        .await?;
 
     Ok(())
 }
@@ -613,9 +687,7 @@ async fn demonstrate_resource_limits() -> Result<(), DemoError> {
 #[tokio::main]
 async fn main() {
     // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     println!("🚀 CAXTON AGENT LIFECYCLE MANAGEMENT DEMO");
     println!("=========================================");

@@ -1,6 +1,6 @@
 //! Performance benchmarking module
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tracing::{info, instrument};
 
 /// Simple benchmark runner

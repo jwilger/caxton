@@ -4,9 +4,9 @@
 //! to make illegal states unrepresentable at compile time.
 
 use crate::*;
+use dashmap::DashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
-use dashmap::DashMap;
 
 /// Unique identifier for agents
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -185,7 +185,8 @@ impl Agent<Loaded> {
         }
 
         self.metadata.set_state(AgentState::Processing);
-        self.metadata.set_property("started_at", &Utc::now().to_rfc3339());
+        self.metadata
+            .set_property("started_at", &Utc::now().to_rfc3339());
 
         Ok(Agent {
             id: self.id,
@@ -210,7 +211,8 @@ impl Agent<Loaded> {
 impl Agent<Running> {
     pub fn stop(mut self) -> Agent<Loaded> {
         self.metadata.set_state(AgentState::Ready); // Back to loaded state
-        self.metadata.set_property("stopped_at", &Utc::now().to_rfc3339());
+        self.metadata
+            .set_property("stopped_at", &Utc::now().to_rfc3339());
 
         Agent {
             id: self.id,
@@ -221,7 +223,8 @@ impl Agent<Running> {
 
     pub fn suspend(mut self) -> Agent<Loaded> {
         self.metadata.set_state(AgentState::Suspended);
-        self.metadata.set_property("suspended_at", &Utc::now().to_rfc3339());
+        self.metadata
+            .set_property("suspended_at", &Utc::now().to_rfc3339());
 
         Agent {
             id: self.id,
@@ -233,7 +236,8 @@ impl Agent<Running> {
     /// Terminate the agent permanently (transitions to final state)
     pub fn terminate(mut self) -> Result<(), CaxtonError> {
         self.metadata.set_state(AgentState::Terminated);
-        self.metadata.set_property("terminated_at", &Utc::now().to_rfc3339());
+        self.metadata
+            .set_property("terminated_at", &Utc::now().to_rfc3339());
 
         // Agent is consumed and cannot be used again
         Ok(())
@@ -242,7 +246,8 @@ impl Agent<Running> {
     /// Process a message (remains in Running state)
     pub fn process_message(&mut self, _message: &FipaMessage) -> Result<(), CaxtonError> {
         // In real implementation, this would invoke WASM to process the message
-        self.metadata.set_property("last_message_at", &Utc::now().to_rfc3339());
+        self.metadata
+            .set_property("last_message_at", &Utc::now().to_rfc3339());
         Ok(())
     }
 
@@ -258,8 +263,14 @@ impl Agent<Running> {
             metrics.insert("last_message_at".to_string(), last_message.clone());
         }
 
-        metrics.insert("capabilities_count".to_string(), self.metadata.capabilities.len().to_string());
-        metrics.insert("properties_count".to_string(), self.metadata.properties.len().to_string());
+        metrics.insert(
+            "capabilities_count".to_string(),
+            self.metadata.capabilities.len().to_string(),
+        );
+        metrics.insert(
+            "properties_count".to_string(),
+            self.metadata.properties.len().to_string(),
+        );
 
         metrics
     }
@@ -313,7 +324,11 @@ impl AgentRegistry {
     }
 
     /// Update agent metadata
-    pub fn update_metadata(&self, agent_id: &AgentId, metadata: AgentMetadata) -> Result<(), CaxtonError> {
+    pub fn update_metadata(
+        &self,
+        agent_id: &AgentId,
+        metadata: AgentMetadata,
+    ) -> Result<(), CaxtonError> {
         if let Some(mut entry) = self.agents.get_mut(agent_id) {
             *entry = metadata;
             Ok(())

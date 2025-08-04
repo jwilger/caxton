@@ -6,19 +6,18 @@
 //! - Memory management and resource limiting
 //! - Performance monitoring and profiling
 
-use wasmtime::{
-    Config, Engine, Linker, Module, Store, Instance, PoolingAllocationConfig,
-    ResourceLimiter, StoreLimits, StoreLimitsBuilder, AsContextMut,
-};
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore};
-use tracing::{instrument, debug, info, warn, error};
-use metrics::{counter, histogram, gauge};
-use smallvec::SmallVec;
-use ahash::HashMap;
 use crate::performance::PerformanceMonitor;
+use ahash::HashMap;
+use metrics::{counter, gauge, histogram};
+use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::{RwLock, Semaphore};
+use tracing::{debug, info, instrument, warn};
+use wasmtime::{
+    AsContextMut, Config, Engine, Instance, Linker, Module, PoolingAllocationConfig,
+    ResourceLimiter, Store, StoreLimitsBuilder,
+};
+use wasmtime_wasi::p2::{WasiCtx, WasiCtxBuilder};
 
 /// High-performance WebAssembly runtime optimized for agent execution
 #[derive(Debug)]
@@ -38,31 +37,33 @@ impl OptimizedWasmRuntime {
     #[instrument]
     pub fn new(performance_monitor: Arc<PerformanceMonitor>) -> wasmtime::Result<Self> {
         let mut config = Config::new();
-        
+
         // Enable optimizations for agent workloads
-        config.wasm_simd(true);  // Enable SIMD for computational agents
-        config.wasm_multi_value(true);  // Enable multi-value returns
-        config.wasm_bulk_memory(true);  // Enable bulk memory operations
-        config.wasm_reference_types(true);  // Enable reference types
-        config.cranelift_opt_level(wasmtime::OptLevel::Speed);  // Optimize for speed
-        
+        config.wasm_simd(true); // Enable SIMD for computational agents
+        config.wasm_multi_value(true); // Enable multi-value returns
+        config.wasm_bulk_memory(true); // Enable bulk memory operations
+        config.wasm_reference_types(true); // Enable reference types
+        config.cranelift_opt_level(wasmtime::OptLevel::Speed); // Optimize for speed
+
         // Configure async support for I/O bound agents
         config.async_support(true);
-        
+
         // Enable pooling allocation for reduced memory overhead
         let mut pooling_config = PoolingAllocationConfig::default();
-        pooling_config.total_component_instances(1000);  // Support up to 1000 agents
+        pooling_config.total_component_instances(1000); // Support up to 1000 agents
         pooling_config.total_core_instances(1000);
         pooling_config.total_memories(1000);
         pooling_config.total_tables(1000);
         pooling_config.max_memories_per_module(1);
         pooling_config.max_tables_per_module(1);
-        pooling_config.max_memory_size(64 * 1024 * 1024);  // 64MB per agent max
-        
-        config.allocation_strategy(wasmtime::InstanceAllocationStrategy::Pooling(pooling_config));
-        
+        pooling_config.max_memory_size(64 * 1024 * 1024); // 64MB per agent max
+
+        config.allocation_strategy(wasmtime::InstanceAllocationStrategy::Pooling(
+            pooling_config,
+        ));
+
         let engine = Engine::new(&config)?;
-        
+
         info!(
             simd_enabled = true,
             async_enabled = true,
@@ -82,9 +83,13 @@ impl OptimizedWasmRuntime {
 
     /// Load and cache a WASM module for fast instantiation
     #[instrument(skip(self, wasm_bytes))]
-    pub async fn load_module(&self, module_name: &str, wasm_bytes: &[u8]) -> wasmtime::Result<Arc<Module>> {
+    pub async fn load_module(
+        &self,
+        module_name: &str,
+        wasm_bytes: &[u8],
+    ) -> wasmtime::Result<Arc<Module>> {
         let start_time = Instant::now();
-        
+
         // Check cache first
         {
             let cache = self.module_cache.read().await;
@@ -93,21 +98,22 @@ impl OptimizedWasmRuntime {
                 return Ok(module.clone());
             }
         }
-        
+
         // Compile module
         let module = Module::new(&self.engine, wasm_bytes)?;
         let module = Arc::new(module);
-        
+
         // Cache for future use
         {
             let mut cache = self.module_cache.write().await;
             cache.insert(module_name.to_string(), module.clone());
         }
-        
+
         let duration = start_time.elapsed();
-        histogram!("caxton_wasm_module_compilation_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_wasm_modules_compiled_total", 1);
-        
+        histogram!("caxton_wasm_module_compilation_duration_seconds")
+            .record(duration.as_secs_f64());
+        counter!("caxton_wasm_modules_compiled_total");
+
         info!(
             module_name = module_name,
             compilation_time_ms = duration.as_millis(),
@@ -119,32 +125,38 @@ impl OptimizedWasmRuntime {
 
     /// Get a pre-warmed instance from the pool or create a new one
     #[instrument(skip(self, module))]
-    pub async fn get_instance(&self, module: &Arc<Module>, agent_type: &str) -> wasmtime::Result<PooledInstance> {
+    pub async fn get_instance(
+        &self,
+        module: &Arc<Module>,
+        agent_type: &str,
+    ) -> wasmtime::Result<PooledInstance> {
         let start_time = Instant::now();
-        
+
         // Try to get instance from pool first
         if let Some(instance) = self.instance_pool.get_instance(agent_type).await {
             let duration = start_time.elapsed();
-            histogram!("caxton_wasm_instance_acquisition_duration_seconds", duration.as_secs_f64());
-            counter!("caxton_wasm_instances_from_pool_total", 1);
-            
+            histogram!("caxton_wasm_instance_acquisition_duration_seconds")
+                .record(duration.as_secs_f64());
+            counter!("caxton_wasm_instances_from_pool_total");
+
             debug!(
                 agent_type = agent_type,
                 acquisition_time_us = duration.as_micros(),
                 source = "pool",
                 "WASM instance acquired"
             );
-            
+
             return Ok(instance);
         }
-        
+
         // Create new instance if pool is empty
         let instance = self.create_instance(module, agent_type).await?;
-        
+
         let duration = start_time.elapsed();
-        histogram!("caxton_wasm_instance_acquisition_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_wasm_instances_created_total", 1);
-        
+        histogram!("caxton_wasm_instance_acquisition_duration_seconds")
+            .record(duration.as_secs_f64());
+        counter!("caxton_wasm_instances_created_total");
+
         info!(
             agent_type = agent_type,
             acquisition_time_ms = duration.as_millis(),
@@ -157,39 +169,39 @@ impl OptimizedWasmRuntime {
 
     /// Create a new WASM instance with optimized configuration
     #[instrument(skip(self, module))]
-    async fn create_instance(&self, module: &Arc<Module>, agent_type: &str) -> wasmtime::Result<PooledInstance> {
+    async fn create_instance(
+        &self,
+        module: &Arc<Module>,
+        agent_type: &str,
+    ) -> wasmtime::Result<PooledInstance> {
         let mut store = Store::new(&self.engine, WasmRuntimeContext::new(agent_type));
-        
+
         // Configure resource limits
         let limits = StoreLimitsBuilder::new()
-            .memory_size(64 * 1024 * 1024)  // 64MB memory limit
-            .table_elements(10_000)          // 10K table elements
-            .instances(1)                    // Only 1 instance per store
-            .tables(10)                      // Max 10 tables
-            .memories(1)                     // Max 1 memory
+            .memory_size(64 * 1024 * 1024) // 64MB memory limit
+            .table_elements(10_000) // 10K table elements
+            .instances(1) // Only 1 instance per store
+            .tables(10) // Max 10 tables
+            .memories(1) // Max 1 memory
             .build();
         store.limiter(|ctx| &mut ctx.limiter);
         store.set_limits(limits);
-        
+
         // Set up WASI context
-        let wasi = WasiCtxBuilder::new()
-            .inherit_stdio()
-            .inherit_env()
-            .build();
+        let wasi = WasiCtxBuilder::new().inherit_stdio().inherit_env().build();
         store.data_mut().wasi = Some(wasi);
-        
+
         // Create linker with WASI imports
         let mut linker = Linker::new(&self.engine);
-        wasmtime_wasi::add_to_linker(&mut linker, |ctx: &mut WasmRuntimeContext| {
-            ctx.wasi.as_mut().unwrap()
-        })?;
-        
+        // TODO: Update to use proper wasmtime_wasi API when implementing full WASI support
+        // For now, skip WASI imports to avoid API compatibility issues
+
         // Instantiate the module
         let instance = linker.instantiate_async(&mut store, module).await?;
-        
-        counter!("caxton_wasm_instances_instantiated_total", 1);
-        gauge!("caxton_wasm_instances_active", 1.0);
-        
+
+        counter!("caxton_wasm_instances_instantiated_total");
+        gauge!("caxton_wasm_instances_active").increment(1.0);
+
         Ok(PooledInstance {
             store,
             instance,
@@ -202,7 +214,7 @@ impl OptimizedWasmRuntime {
     #[instrument(skip(self, instance))]
     pub async fn return_instance(&self, instance: PooledInstance) {
         let agent_type = instance.agent_type.clone();
-        
+
         // Reset instance state before returning to pool
         if let Err(e) = self.reset_instance_state(&instance).await {
             warn!(
@@ -212,11 +224,11 @@ impl OptimizedWasmRuntime {
             );
             return;
         }
-        
+
         // Return to pool
         self.instance_pool.return_instance(instance).await;
-        
-        counter!("caxton_wasm_instances_returned_to_pool_total", 1);
+
+        counter!("caxton_wasm_instances_returned_to_pool_total");
         debug!(agent_type = agent_type, "Instance returned to pool");
     }
 
@@ -224,13 +236,18 @@ impl OptimizedWasmRuntime {
     #[instrument(skip(self, instance))]
     async fn reset_instance_state(&self, instance: &PooledInstance) -> wasmtime::Result<()> {
         // Call reset function if available
-        if let Ok(reset_func) = instance.instance.get_typed_func::<(), ()>(instance.store.as_context_mut(), "reset") {
-            reset_func.call_async(instance.store.as_context_mut(), ()).await?;
+        if let Ok(reset_func) = instance
+            .instance
+            .get_typed_func::<(), ()>(instance.store.as_context_mut(), "reset")
+        {
+            reset_func
+                .call_async(instance.store.as_context_mut(), ())
+                .await?;
         }
-        
+
         // Clear any global state if needed
         // This would be agent-specific and might require custom reset logic
-        
+
         Ok(())
     }
 
@@ -239,7 +256,7 @@ impl OptimizedWasmRuntime {
     pub async fn get_performance_stats(&self) -> WasmRuntimeStats {
         let module_cache = self.module_cache.read().await;
         let pool_stats = self.instance_pool.get_stats().await;
-        
+
         WasmRuntimeStats {
             cached_modules: module_cache.len(),
             pooled_instances: pool_stats.total_pooled,
@@ -284,37 +301,55 @@ impl ResourceLimiterImpl {
 }
 
 impl ResourceLimiter for ResourceLimiterImpl {
-    fn memory_growing(&mut self, current: usize, desired: usize, maximum: Option<usize>) -> anyhow::Result<bool> {
+    fn memory_growing(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> anyhow::Result<bool> {
         if let Some(max) = maximum {
             if desired > max {
                 return Ok(false);
             }
         }
-        
+
         // Allow growth up to 64MB
         if desired > 64 * 1024 * 1024 {
-            warn!(current = current, desired = desired, "Memory growth rejected - exceeds limit");
+            warn!(
+                current = current,
+                desired = desired,
+                "Memory growth rejected - exceeds limit"
+            );
             return Ok(false);
         }
-        
+
         self.memory_used = desired;
         Ok(true)
     }
 
-    fn table_growing(&mut self, current: u32, desired: u32, maximum: Option<u32>) -> anyhow::Result<bool> {
+    fn table_growing(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> anyhow::Result<bool> {
         if let Some(max) = maximum {
             if desired > max {
                 return Ok(false);
             }
         }
-        
+
         // Allow up to 10K table elements
         if desired > 10_000 {
-            warn!(current = current, desired = desired, "Table growth rejected - exceeds limit");
+            warn!(
+                current = current,
+                desired = desired,
+                "Table growth rejected - exceeds limit"
+            );
             return Ok(false);
         }
-        
-        self.table_elements_used = desired as usize;
+
+        self.table_elements_used = desired;
         Ok(true)
     }
 }
@@ -348,7 +383,7 @@ impl InstancePool {
     async fn get_instance(&self, agent_type: &str) -> Option<PooledInstance> {
         let mut pools = self.pools.write().await;
         let pool = pools.get_mut(agent_type)?;
-        
+
         if let Some(instance) = pool.pop() {
             let mut stats = self.stats.write().await;
             stats.hits += 1;
@@ -364,12 +399,12 @@ impl InstancePool {
     async fn return_instance(&self, instance: PooledInstance) {
         let agent_type = instance.agent_type.clone();
         let mut pools = self.pools.write().await;
-        
+
         let pool = pools.entry(agent_type).or_insert_with(Vec::new);
-        
+
         if pool.len() < self.max_per_type {
             pool.push(instance);
-            
+
             let mut stats = self.stats.write().await;
             stats.total_active -= 1;
         }
@@ -398,14 +433,17 @@ impl PooledInstance {
         R: wasmtime::WasmResults,
     {
         let start_time = Instant::now();
-        
-        let func = self.instance.get_typed_func::<P, R>(&mut self.store, func_name)?;
+
+        let func = self
+            .instance
+            .get_typed_func::<P, R>(&mut self.store, func_name)?;
         let result = func.call_async(&mut self.store, params).await?;
-        
+
         let duration = start_time.elapsed();
-        histogram!("caxton_wasm_function_execution_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_wasm_function_calls_total", 1);
-        
+        histogram!("caxton_wasm_function_execution_duration_seconds")
+            .record(duration.as_secs_f64());
+        counter!("caxton_wasm_function_calls_total");
+
         debug!(
             function = func_name,
             agent_type = self.agent_type,
@@ -424,7 +462,7 @@ impl PooledInstance {
 
 impl Drop for PooledInstance {
     fn drop(&mut self) {
-        gauge!("caxton_wasm_instances_active", -1.0);
+        gauge!("caxton_wasm_instances_active").decrement(1.0);
     }
 }
 
@@ -466,7 +504,7 @@ mod tests {
         let monitor = Arc::new(PerformanceMonitor::new());
         let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
         let stats = runtime.get_performance_stats().await;
-        
+
         assert_eq!(stats.cached_modules, 0);
         assert_eq!(stats.pooled_instances, 0);
     }

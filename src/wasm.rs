@@ -3,17 +3,17 @@
 //! Provides secure, isolated execution environment for agents using WebAssembly.
 //! Implements type-driven approach with phantom types for compile-time safety.
 
+use crate::core::wasm::runtime::{WasmRuntimeConfig, WasmRuntimeEngine};
+use crate::performance::wasm_runtime::{OptimizedWasmRuntime, WasmRuntimeStats};
+use crate::performance::PerformanceMonitor;
 use crate::*;
+use ::tracing::{debug, error, info, instrument, warn};
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
-use wasmtime::{Engine, Module, Store, Instance, Linker, AsContextMut};
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
-use tracing::{instrument, debug, info, warn, error};
 use tokio::sync::RwLock;
-use crate::performance::wasm_runtime::{OptimizedWasmRuntime, WasmRuntimeStats};
-use crate::performance::PerformanceMonitor;
-use crate::core::wasm::runtime::{WasmRuntimeEngine, WasmRuntimeConfig};
+use wasmtime::{AsContextMut, Engine, Instance, Linker, Module, Store};
+use wasmtime_wasi::p2::{WasiCtx, WasiCtxBuilder};
 
 /// Agent lifecycle states with phantom types for compile-time guarantees
 pub struct Unloaded;
@@ -94,14 +94,14 @@ impl WasmRuntime {
         let performance_monitor = Arc::new(PerformanceMonitor::new());
         let optimized_runtime = Arc::new(
             OptimizedWasmRuntime::new(performance_monitor.clone())
-                .map_err(|e| CaxtonError::WasmRuntimeError(e.to_string()))?
+                .map_err(|e| CaxtonError::WasmRuntimeError(e.to_string()))?,
         );
 
         // Initialize core engine with secure configuration
         let core_config = WasmRuntimeConfig::default();
         let core_engine = Arc::new(
             WasmRuntimeEngine::new(core_config)
-                .map_err(|e| CaxtonError::WasmRuntimeError(e.to_string()))?
+                .map_err(|e| CaxtonError::WasmRuntimeError(e.to_string()))?,
         );
 
         info!("WASM runtime initialized with optimized configuration and core engine");
@@ -116,14 +116,18 @@ impl WasmRuntime {
 
     /// Load a WASM agent from unloaded to loaded state
     #[instrument(skip(self, agent))]
-    pub async fn load_agent(&self, agent: WasmAgent<Unloaded>) -> Result<WasmAgent<Loaded>, CaxtonError> {
+    pub async fn load_agent(
+        &self,
+        agent: WasmAgent<Unloaded>,
+    ) -> Result<WasmAgent<Loaded>, CaxtonError> {
         let module_name = format!("agent_{}", agent.id);
 
         // Use the core engine to load and validate the agent with security controls
         let loaded_agent = self.core_engine.load_agent(agent).await?;
 
         // Also load in optimized runtime for performance
-        let _module = self.optimized_runtime
+        let _module = self
+            .optimized_runtime
             .load_module(&module_name, &loaded_agent.config.wasm_module)
             .await
             .map_err(|e| CaxtonError::WasmRuntimeError(e.to_string()))?;
@@ -160,13 +164,15 @@ impl WasmRuntime {
         // Get agent metadata
         let metadata = {
             let agents = self.agents.read().await;
-            agents.get(&agent.id)
+            agents
+                .get(&agent.id)
                 .ok_or_else(|| CaxtonError::AgentNotFound(agent.id))?
                 .clone()
         };
 
         // Use the core engine to execute with proper resource limits and security
-        let result = self.core_engine
+        let result = self
+            .core_engine
             .execute_agent(agent, function_name, params)
             .await?;
 
@@ -225,7 +231,10 @@ impl WasmRuntime {
 
     /// Terminate an agent and clean up resources
     #[instrument(skip(self, agent))]
-    pub async fn terminate_agent(&self, agent: WasmAgent<Loaded>) -> Result<WasmAgent<Terminated>, CaxtonError> {
+    pub async fn terminate_agent(
+        &self,
+        agent: WasmAgent<Loaded>,
+    ) -> Result<WasmAgent<Terminated>, CaxtonError> {
         // Use core engine to properly terminate with resource cleanup
         let terminated_agent = self.core_engine.terminate_agent(agent).await?;
 

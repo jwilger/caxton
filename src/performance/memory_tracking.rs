@@ -7,16 +7,15 @@
 //! - Memory leak detection and reporting
 //! - WASM memory usage optimization
 
+use bytes::BytesMut;
+use metrics::{counter, gauge};
 use std::alloc::{GlobalAlloc, Layout, System};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::collections::HashMap;
 use tokio::sync::RwLock;
-use tracing::{instrument, debug, info, warn, error};
-use metrics::{counter, gauge, histogram};
-use smallvec::SmallVec;
-use bytes::{Bytes, BytesMut};
+use tracing::{debug, instrument, warn};
 
 /// Global memory allocator wrapper for tracking allocations
 pub struct TrackedAllocator {
@@ -69,50 +68,50 @@ impl TrackedAllocator {
 unsafe impl GlobalAlloc for TrackedAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr = self.inner.alloc(layout);
-        
+
         if !ptr.is_null() {
             let size = layout.size() as u64;
-            
+
             self.total_allocated.fetch_add(size, Ordering::Relaxed);
             self.allocation_count.fetch_add(1, Ordering::Relaxed);
-            
+
             let current = self.current_usage.fetch_add(size, Ordering::Relaxed) + size;
-            
+
             // Update peak usage
             let mut peak = self.peak_usage.load(Ordering::Relaxed);
             while current > peak {
                 match self.peak_usage.compare_exchange_weak(
-                    peak, 
-                    current, 
-                    Ordering::Relaxed, 
-                    Ordering::Relaxed
+                    peak,
+                    current,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
                 ) {
                     Ok(_) => break,
                     Err(x) => peak = x,
                 }
             }
-            
+
             // Update metrics
-            counter!("caxton_memory_allocations_total", 1);
-            counter!("caxton_memory_allocated_bytes_total", size);
-            gauge!("caxton_memory_current_usage_bytes", current as f64);
+            counter!("caxton_memory_allocations_total");
+            counter!("caxton_memory_allocated_bytes_total").increment(size as u64);
+            gauge!("caxton_memory_current_usage_bytes").set(current as f64);
         }
-        
+
         ptr
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         let size = layout.size() as u64;
-        
+
         self.total_deallocated.fetch_add(size, Ordering::Relaxed);
         self.deallocation_count.fetch_add(1, Ordering::Relaxed);
-        
+
         let current = self.current_usage.fetch_sub(size, Ordering::Relaxed) - size;
-        
-        counter!("caxton_memory_deallocations_total", 1);
-        counter!("caxton_memory_deallocated_bytes_total", size);
-        gauge!("caxton_memory_current_usage_bytes", current as f64);
-        
+
+        counter!("caxton_memory_deallocations_total");
+        counter!("caxton_memory_deallocated_bytes_total").increment(size as u64);
+        gauge!("caxton_memory_current_usage_bytes").set(current as f64);
+
         self.inner.dealloc(ptr, layout);
     }
 }
@@ -160,8 +159,7 @@ impl MemoryStats {
     pub fn potential_leak(&self) -> bool {
         // Simple heuristic: if current usage is > 90% of peak and we've done
         // significant allocations, there might be a leak
-        self.allocation_count > 1000 && 
-        self.current_usage as f64 > (self.peak_usage as f64 * 0.9)
+        self.allocation_count > 1000 && self.current_usage as f64 > (self.peak_usage as f64 * 0.9)
     }
 }
 
@@ -194,7 +192,7 @@ impl<T> MemoryPool<T> {
             let mut pool = self.pool.write().await;
             if let Some(item) = pool.pop() {
                 self.reused_count.fetch_add(1, Ordering::Relaxed);
-                counter!("caxton_memory_pool_reused_total", 1);
+                counter!("caxton_memory_pool_reused_total");
                 return item;
             }
         }
@@ -202,7 +200,7 @@ impl<T> MemoryPool<T> {
         // Create new item if pool is empty
         let item = factory();
         self.allocated_count.fetch_add(1, Ordering::Relaxed);
-        counter!("caxton_memory_pool_allocated_total", 1);
+        counter!("caxton_memory_pool_allocated_total");
         item
     }
 
@@ -211,7 +209,7 @@ impl<T> MemoryPool<T> {
         let mut pool = self.pool.write().await;
         if pool.len() < self.max_size {
             pool.push(item);
-            counter!("caxton_memory_pool_returned_total", 1);
+            counter!("caxton_memory_pool_returned_total");
         }
         // If pool is full, item is dropped
     }
@@ -302,9 +300,12 @@ impl MemoryMonitor {
     #[instrument(skip(self))]
     pub async fn track_allocation(&self, category: &str, size: u64) {
         let mut categories = self.categories.write().await;
-        
+
         if categories.len() >= self.config.max_categories && !categories.contains_key(category) {
-            warn!(category = category, "Maximum categories reached, ignoring new category");
+            warn!(
+                category = category,
+                "Maximum categories reached, ignoring new category"
+            );
             return;
         }
 
@@ -313,8 +314,9 @@ impl MemoryMonitor {
         stats.allocation_count += 1;
         stats.last_updated = Some(Instant::now());
 
-        gauge!(format!("caxton_memory_category_bytes_{}", category), stats.allocated_bytes as f64);
-        counter!(format!("caxton_memory_category_allocations_{}", category), 1);
+        gauge!(format!("caxton_memory_category_bytes_{}", category))
+            .set(stats.allocated_bytes as f64);
+        counter!(format!("caxton_memory_category_allocations_{}", category));
     }
 
     /// Get memory usage by category
@@ -371,7 +373,8 @@ impl MemoryMonitor {
         category_vec.sort_by(|a, b| b.1.allocated_bytes.cmp(&a.1.allocated_bytes));
 
         if let Some((category, stats)) = category_vec.first() {
-            if stats.allocated_bytes > 100_000_000 { // 100MB
+            if stats.allocated_bytes > 100_000_000 {
+                // 100MB
                 recommendations.push(MemoryOptimizationRecommendation {
                     title: format!("High Memory Usage in '{}'", category),
                     description: format!(
@@ -406,10 +409,10 @@ impl MemoryMonitor {
 
                 // Update global metrics
                 let stats = get_global_memory_stats();
-                gauge!("caxton_memory_total_allocated_bytes", stats.total_allocated as f64);
-                gauge!("caxton_memory_total_deallocated_bytes", stats.total_deallocated as f64);
-                gauge!("caxton_memory_peak_usage_bytes", stats.peak_usage as f64);
-                gauge!("caxton_memory_efficiency_ratio", stats.efficiency_ratio());
+                gauge!("caxton_memory_total_allocated_bytes").set(stats.total_allocated as f64);
+                gauge!("caxton_memory_total_deallocated_bytes").set(stats.total_deallocated as f64);
+                gauge!("caxton_memory_peak_usage_bytes").set(stats.peak_usage as f64);
+                gauge!("caxton_memory_efficiency_ratio").set(stats.efficiency_ratio());
 
                 // Check for memory leaks
                 leak_detector.check_for_leaks(stats).await;
@@ -442,12 +445,12 @@ impl MemoryLeakDetector {
 
     async fn check_for_leaks(&self, current_stats: MemoryStats) {
         let mut previous = self.previous_stats.write().await;
-        
+
         if let Some(prev_stats) = previous.as_ref() {
             // Check if memory usage is consistently growing
             let growth_rate = if prev_stats.current_usage > 0 {
-                (current_stats.current_usage as f64 - prev_stats.current_usage as f64) 
-                / prev_stats.current_usage as f64
+                (current_stats.current_usage as f64 - prev_stats.current_usage as f64)
+                    / prev_stats.current_usage as f64
             } else {
                 0.0
             };
@@ -455,7 +458,7 @@ impl MemoryLeakDetector {
             // If memory grew by more than 10% and efficiency is low, warn about potential leak
             if growth_rate > 0.1 && current_stats.efficiency_ratio() < 0.8 {
                 let warning_count = self.leak_warnings.fetch_add(1, Ordering::Relaxed) + 1;
-                
+
                 warn!(
                     growth_rate = growth_rate,
                     efficiency = current_stats.efficiency_ratio(),
@@ -463,10 +466,10 @@ impl MemoryLeakDetector {
                     "Potential memory leak detected"
                 );
 
-                counter!("caxton_memory_leak_warnings_total", 1);
+                counter!("caxton_memory_leak_warnings_total");
             }
         }
-        
+
         *previous = Some(current_stats);
     }
 }
@@ -498,15 +501,17 @@ pub struct CaxtonMemoryPools {
 impl CaxtonMemoryPools {
     pub fn new() -> Self {
         Self {
-            message_pool: MemoryPool::new(1000),     // Pool up to 1000 message buffers
-            agent_id_pool: MemoryPool::new(500),     // Pool up to 500 agent ID buffers
+            message_pool: MemoryPool::new(1000), // Pool up to 1000 message buffers
+            agent_id_pool: MemoryPool::new(500), // Pool up to 500 agent ID buffers
             conversation_pool: MemoryPool::new(200), // Pool up to 200 conversation maps
         }
     }
 
     /// Get a message buffer from the pool
     pub async fn get_message_buffer(&self) -> BytesMut {
-        self.message_pool.get(|| BytesMut::with_capacity(1024)).await
+        self.message_pool
+            .get(|| BytesMut::with_capacity(1024))
+            .await
     }
 
     /// Return a message buffer to the pool
@@ -518,11 +523,20 @@ impl CaxtonMemoryPools {
     /// Get performance statistics for all pools
     pub async fn get_all_pool_stats(&self) -> HashMap<String, PoolStats> {
         let mut stats = HashMap::new();
-        
-        stats.insert("message_pool".to_string(), self.message_pool.get_stats().await);
-        stats.insert("agent_id_pool".to_string(), self.agent_id_pool.get_stats().await);
-        stats.insert("conversation_pool".to_string(), self.conversation_pool.get_stats().await);
-        
+
+        stats.insert(
+            "message_pool".to_string(),
+            self.message_pool.get_stats().await,
+        );
+        stats.insert(
+            "agent_id_pool".to_string(),
+            self.agent_id_pool.get_stats().await,
+        );
+        stats.insert(
+            "conversation_pool".to_string(),
+            self.conversation_pool.get_stats().await,
+        );
+
         stats
     }
 }
@@ -556,18 +570,18 @@ mod tests {
     #[tokio::test]
     async fn test_memory_pool_basic_operations() {
         let pool = MemoryPool::new(10);
-        
+
         // Get item from empty pool (creates new)
         let item1 = pool.get(|| String::from("test")).await;
         assert_eq!(item1, "test");
-        
+
         // Return item to pool
         pool.return_item(item1).await;
-        
+
         // Get item from pool (reuses)
         let item2 = pool.get(|| String::from("should not be created")).await;
         assert_eq!(item2, "test"); // Reused the returned item
-        
+
         let stats = pool.get_stats().await;
         assert_eq!(stats.total_allocated, 1);
         assert_eq!(stats.total_reused, 1);
@@ -577,13 +591,13 @@ mod tests {
     async fn test_memory_monitor_category_tracking() {
         let config = MemoryMonitorConfig::default();
         let monitor = MemoryMonitor::new(config);
-        
+
         monitor.track_allocation("test_category", 1024).await;
         monitor.track_allocation("test_category", 512).await;
-        
+
         let stats = monitor.get_category_stats().await;
         let test_stats = stats.get("test_category").unwrap();
-        
+
         assert_eq!(test_stats.allocated_bytes, 1536);
         assert_eq!(test_stats.allocation_count, 2);
     }

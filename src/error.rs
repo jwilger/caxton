@@ -24,7 +24,7 @@ pub enum CaxtonError {
     WasmValidationError(String),
 
     #[error("Agent not found: {0}")]
-    AgentNotFound(crate::AgentId),
+    AgentNotFound(crate::core::agent::AgentId),
 
     #[error("Resource exhausted: {0}")]
     ResourceExhausted(String),

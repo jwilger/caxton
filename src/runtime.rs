@@ -7,7 +7,10 @@ use crate::*;
 use arc_swap::ArcSwap;
 use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
-use std::sync::{Arc, atomic::{AtomicU64, Ordering}};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::time::{interval, Duration as TokioDuration};
 // use futures::StreamExt; // Unused import removed
@@ -136,7 +139,9 @@ impl CaxtonRuntime {
         let runtime_clone = runtime.clone();
         let shutdown_clone = shutdown_signal.clone();
         tokio::spawn(async move {
-            runtime_clone.run_event_processor(event_rx, shutdown_clone).await;
+            runtime_clone
+                .run_event_processor(event_rx, shutdown_clone)
+                .await;
         });
 
         info!("Caxton runtime initialized successfully");
@@ -147,7 +152,8 @@ impl CaxtonRuntime {
     #[instrument(name = "spawn_agent", skip(self, config), fields(agent_name = %config.name))]
     pub async fn spawn_agent(&self, config: AgentConfig) -> Result<AgentId, CaxtonError> {
         // Acquire semaphore permit to limit concurrent agents
-        let _permit = self.spawn_semaphore
+        let _permit = self
+            .spawn_semaphore
             .acquire()
             .await
             .map_err(|_| CaxtonError::Runtime("Failed to acquire spawn permit".to_string()))?;
@@ -191,12 +197,9 @@ impl CaxtonRuntime {
         };
 
         // Start agent task
-        let agent_task = self.start_agent_task(
-            agent_id.clone(),
-            config,
-            message_rx,
-            shutdown_rx,
-        ).await?;
+        let agent_task = self
+            .start_agent_task(agent_id.clone(), config, message_rx, shutdown_rx)
+            .await?;
 
         // Update agent instance with task handle
         let mut agent_instance = agent_instance;
@@ -225,8 +228,12 @@ impl CaxtonRuntime {
         });
 
         // Update metrics
-        self.global_metrics.total_agents_spawned.fetch_add(1, Ordering::Relaxed);
-        self.global_metrics.active_agents.fetch_add(1, Ordering::Relaxed);
+        self.global_metrics
+            .total_agents_spawned
+            .fetch_add(1, Ordering::Relaxed);
+        self.global_metrics
+            .active_agents
+            .fetch_add(1, Ordering::Relaxed);
 
         info!(agent_id = %agent_id, "Agent spawned successfully");
         Ok(agent_id)
@@ -234,11 +241,17 @@ impl CaxtonRuntime {
 
     /// Terminate an agent with graceful shutdown
     #[instrument(name = "terminate_agent", skip(self), fields(agent_id = %agent_id))]
-    pub async fn terminate_agent(&self, agent_id: &AgentId, timeout: Duration) -> Result<(), CaxtonError> {
+    pub async fn terminate_agent(
+        &self,
+        agent_id: &AgentId,
+        timeout: Duration,
+    ) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Terminating agent with timeout: {:?}", timeout);
 
         // Get agent instance
-        let mut agent_instance = self.agents.get_mut(agent_id)
+        let mut agent_instance = self
+            .agents
+            .get_mut(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         // Update state to terminating
@@ -283,7 +296,9 @@ impl CaxtonRuntime {
         self.message_routes.remove(agent_id);
 
         // Update metrics
-        self.global_metrics.active_agents.fetch_sub(1, Ordering::Relaxed);
+        self.global_metrics
+            .active_agents
+            .fetch_sub(1, Ordering::Relaxed);
 
         info!(agent_id = %agent_id, "Agent termination complete");
         Ok(())
@@ -297,15 +312,21 @@ impl CaxtonRuntime {
         debug!("Sending message to agent: {}", message.receiver);
 
         // Find message route for target agent
-        let route = self.message_routes.get(&message.receiver)
+        let route = self
+            .message_routes
+            .get(&message.receiver)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", message.receiver)))?;
 
         // Send message to agent
-        route.message_tx.send(message.clone())
+        route
+            .message_tx
+            .send(message.clone())
             .map_err(|_| CaxtonError::Runtime("Failed to send message to agent".to_string()))?;
 
         // Update metrics
-        self.global_metrics.total_messages_processed.fetch_add(1, Ordering::Relaxed);
+        self.global_metrics
+            .total_messages_processed
+            .fetch_add(1, Ordering::Relaxed);
 
         // Update agent's last activity and message count
         if let Some(mut agent) = self.agents.get_mut(&message.receiver) {
@@ -343,7 +364,9 @@ impl CaxtonRuntime {
     /// Get current agent state and metadata
     #[instrument(name = "get_agent_state", skip(self), fields(agent_id = %agent_id))]
     pub async fn get_agent_state(&self, agent_id: &AgentId) -> Result<AgentState, CaxtonError> {
-        let agent = self.agents.get(agent_id)
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         Ok(agent.metadata.state.clone())
@@ -354,12 +377,17 @@ impl CaxtonRuntime {
     pub async fn suspend_agent(&self, agent_id: &AgentId) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Suspending agent");
 
-        let mut agent = self.agents.get_mut(agent_id)
+        let mut agent = self
+            .agents
+            .get_mut(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         let current_state = agent.metadata.state.clone();
         if current_state == AgentState::Terminated || current_state == AgentState::Terminating {
-            return Err(CaxtonError::Agent(format!("Cannot suspend agent in state: {:?}", current_state)));
+            return Err(CaxtonError::Agent(format!(
+                "Cannot suspend agent in state: {:?}",
+                current_state
+            )));
         }
 
         agent.metadata.set_state(AgentState::Suspended);
@@ -384,11 +412,16 @@ impl CaxtonRuntime {
     pub async fn resume_agent(&self, agent_id: &AgentId) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Resuming agent");
 
-        let mut agent = self.agents.get_mut(agent_id)
+        let mut agent = self
+            .agents
+            .get_mut(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         if agent.metadata.state != AgentState::Suspended {
-            return Err(CaxtonError::Agent(format!("Agent is not suspended: {:?}", agent.metadata.state)));
+            return Err(CaxtonError::Agent(format!(
+                "Agent is not suspended: {:?}",
+                agent.metadata.state
+            )));
         }
 
         agent.metadata.set_state(AgentState::Ready);
@@ -414,7 +447,9 @@ impl CaxtonRuntime {
         warn!(agent_id = %agent_id, "Force terminating agent (immediate shutdown)");
 
         // Get and remove agent instance immediately
-        let (_, mut agent_instance) = self.agents.remove(agent_id)
+        let (_, mut agent_instance) = self
+            .agents
+            .remove(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         // Force abort the task if it exists
@@ -440,7 +475,9 @@ impl CaxtonRuntime {
         self.message_routes.remove(agent_id);
 
         // Update metrics
-        self.global_metrics.active_agents.fetch_sub(1, Ordering::Relaxed);
+        self.global_metrics
+            .active_agents
+            .fetch_sub(1, Ordering::Relaxed);
 
         warn!(agent_id = %agent_id, "Agent force terminated");
         Ok(())
@@ -448,8 +485,13 @@ impl CaxtonRuntime {
 
     /// Get comprehensive resource usage for an agent
     #[instrument(name = "get_agent_resource_usage", skip(self), fields(agent_id = %agent_id))]
-    pub async fn get_agent_resource_usage(&self, agent_id: &AgentId) -> Result<AgentResourceUsage, CaxtonError> {
-        let agent = self.agents.get(agent_id)
+    pub async fn get_agent_resource_usage(
+        &self,
+        agent_id: &AgentId,
+    ) -> Result<AgentResourceUsage, CaxtonError> {
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         Ok(agent.resource_usage.clone())
@@ -465,15 +507,21 @@ impl CaxtonRuntime {
     ) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Updating agent resource limits");
 
-        let mut agent = self.agents.get_mut(agent_id)
+        let mut agent = self
+            .agents
+            .get_mut(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         if let Some(memory_limit) = max_memory {
-            agent.metadata.set_property("max_memory", &memory_limit.to_string());
+            agent
+                .metadata
+                .set_property("max_memory", &memory_limit.to_string());
         }
 
         if let Some(cpu_limit) = max_cpu_time {
-            agent.metadata.set_property("max_cpu_time_ms", &cpu_limit.as_millis().to_string());
+            agent
+                .metadata
+                .set_property("max_cpu_time_ms", &cpu_limit.as_millis().to_string());
         }
 
         info!(agent_id = %agent_id, "Agent limits updated successfully");
@@ -482,8 +530,13 @@ impl CaxtonRuntime {
 
     /// Perform health check on a specific agent
     #[instrument(name = "health_check_agent", skip(self), fields(agent_id = %agent_id))]
-    pub async fn health_check_agent(&self, agent_id: &AgentId) -> Result<HealthStatus, CaxtonError> {
-        let agent = self.agents.get(agent_id)
+    pub async fn health_check_agent(
+        &self,
+        agent_id: &AgentId,
+    ) -> Result<HealthStatus, CaxtonError> {
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         let now = Utc::now();
@@ -507,9 +560,18 @@ impl CaxtonRuntime {
         }
 
         let mut metrics = HashMap::new();
-        metrics.insert("memory_bytes".to_string(), agent.resource_usage.memory_bytes as f64);
-        metrics.insert("cpu_time_ms".to_string(), agent.resource_usage.cpu_time_ms as f64);
-        metrics.insert("message_count".to_string(), agent.resource_usage.message_count as f64);
+        metrics.insert(
+            "memory_bytes".to_string(),
+            agent.resource_usage.memory_bytes as f64,
+        );
+        metrics.insert(
+            "cpu_time_ms".to_string(),
+            agent.resource_usage.cpu_time_ms as f64,
+        );
+        metrics.insert(
+            "message_count".to_string(),
+            agent.resource_usage.message_count as f64,
+        );
         metrics.insert("inactive_seconds".to_string(), inactive_duration as f64);
 
         let health_status = HealthStatus {
@@ -534,8 +596,13 @@ impl CaxtonRuntime {
 
     /// Get agent metadata including resource usage
     #[instrument(name = "get_agent_metadata", skip(self), fields(agent_id = %agent_id))]
-    pub async fn get_agent_metadata(&self, agent_id: &AgentId) -> Result<(AgentMetadata, AgentResourceUsage), CaxtonError> {
-        let agent = self.agents.get(agent_id)
+    pub async fn get_agent_metadata(
+        &self,
+        agent_id: &AgentId,
+    ) -> Result<(AgentMetadata, AgentResourceUsage), CaxtonError> {
+        let agent = self
+            .agents
+            .get(agent_id)
             .ok_or_else(|| CaxtonError::Agent(format!("Agent not found: {}", agent_id)))?;
 
         Ok((agent.metadata.clone(), agent.resource_usage.clone()))
@@ -544,7 +611,8 @@ impl CaxtonRuntime {
     /// List all active agents with their capabilities
     #[instrument(name = "list_agents", skip(self))]
     pub async fn list_agents(&self) -> Vec<(AgentId, Vec<String>)> {
-        self.message_routes.iter()
+        self.message_routes
+            .iter()
             .map(|entry| (entry.key().clone(), entry.value().capabilities.clone()))
             .collect()
     }
@@ -552,10 +620,16 @@ impl CaxtonRuntime {
     /// Get global runtime metrics
     pub fn get_metrics(&self) -> (u64, u64, u64, u64) {
         (
-            self.global_metrics.total_agents_spawned.load(Ordering::Relaxed),
+            self.global_metrics
+                .total_agents_spawned
+                .load(Ordering::Relaxed),
             self.global_metrics.active_agents.load(Ordering::Relaxed),
-            self.global_metrics.total_messages_processed.load(Ordering::Relaxed),
-            self.global_metrics.total_memory_used.load(Ordering::Relaxed),
+            self.global_metrics
+                .total_messages_processed
+                .load(Ordering::Relaxed),
+            self.global_metrics
+                .total_memory_used
+                .load(Ordering::Relaxed),
         )
     }
 
@@ -568,7 +642,9 @@ impl CaxtonRuntime {
         self.shutdown_signal.store(Arc::new(true));
 
         // Collect all agent IDs
-        let agent_ids: Vec<AgentId> = self.agents.iter()
+        let agent_ids: Vec<AgentId> = self
+            .agents
+            .iter()
             .map(|entry| entry.key().clone())
             .collect();
 
@@ -677,8 +753,11 @@ impl CaxtonRuntime {
                 total_memory += estimated_memory;
 
                 // Check agent health based on activity
-                let inactive_duration = now.signed_duration_since(agent.resource_usage.last_activity).num_seconds();
-                if inactive_duration > 600 { // 10 minutes inactive
+                let inactive_duration = now
+                    .signed_duration_since(agent.resource_usage.last_activity)
+                    .num_seconds();
+                if inactive_duration > 600 {
+                    // 10 minutes inactive
                     unhealthy_agents += 1;
 
                     // Emit resource usage event
@@ -695,7 +774,9 @@ impl CaxtonRuntime {
             }
 
             // Update global metrics
-            self.global_metrics.total_memory_used.store(total_memory, Ordering::Relaxed);
+            self.global_metrics
+                .total_memory_used
+                .store(total_memory, Ordering::Relaxed);
 
             // Log comprehensive metrics
             let (spawned, active, messages, memory) = self.get_metrics();
