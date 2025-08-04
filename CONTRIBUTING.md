@@ -1,236 +1,147 @@
 # Contributing to Caxton
 
-Thank you for your interest in contributing to Caxton! This guide will help you get started with contributing to the Caxton application server.
-
-## Getting Started
-
-Caxton is an application server for multi-agent systems, not a library. Contributors work on the server implementation, CLI tools, and deployment infrastructure - not on end-user agent code.
-
-### Prerequisites
-
-- **Rust** (latest stable) - for server development
-- **Protocol Buffers compiler** - for API definitions
-- **Docker** - for running dependencies
-- **Nix** (optional) - for reproducible development environment
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/caxton.git
-cd caxton
-
-# Option 1: Use Nix for automatic setup
-nix develop
-
-# Option 2: Manual setup
-cargo install cargo-nextest cargo-watch
-docker-compose up -d  # PostgreSQL for development
-
-# Verify setup
-cargo test --workspace
-cargo run -- server --dev
-```
-
-## Architecture Overview
-
-Caxton follows a clear architectural pattern:
-
-```
-caxton/
-├── caxton-server/       # Main server binary
-├── caxton-cli/          # CLI tool
-├── caxton-api/          # gRPC API definitions
-├── caxton-runtime/      # WebAssembly runtime
-├── caxton-router/       # Message routing engine
-└── caxton-observability/# Logging, tracing, metrics
-```
-
-**Key Principles**:
-- **Type-driven development**: Types first, implementation second
-- **Test-driven development**: Write tests before implementation
-- **Observable by default**: Every operation must be traceable
-
-## Making Contributions
-
-### 1. Find Something to Work On
-
-- Check [GitHub Issues](https://github.com/yourusername/caxton/issues) for `good-first-issue` labels
-- Review the [ROADMAP.md](ROADMAP.md) for upcoming features
-- Join discussions about design decisions
-
-### 2. Design First
-
-Before implementing, discuss your approach:
-
-1. **Comment on the issue** with your proposed solution
-2. **Create an ADR** for significant changes (see `docs/adr/template.md`)
-3. **Get feedback** from maintainers
-
-### 3. Implementation Guidelines
-
-#### Type-Driven Development
-
-```rust
-// GOOD: Define types that make illegal states unrepresentable
-enum AgentState {
-    Initializing { started_at: Instant },
-    Running { capabilities: Vec<Capability> },
-    Failed { error: AgentError, failed_at: Instant },
-}
-
-// BAD: Stringly-typed, nullable fields
-struct Agent {
-    state: String,  // "init", "running", "failed"
-    error: Option<String>,
-    capabilities: Option<Vec<String>>,
-}
-```
-
-#### Test-Driven Development
-
-Follow the red-green-refactor cycle:
-
-```rust
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn agent_should_start_in_initializing_state() {
-        // Red: Write failing test first
-        let agent = Agent::new("test-agent");
-        assert!(matches!(agent.state(), AgentState::Initializing { .. }));
-    }
-}
-
-// Green: Implement minimal code to pass
-// Refactor: Improve design while keeping tests green
-```
-
-#### Observability
-
-Every operation must include:
-
-```rust
-#[instrument(skip(wasm_module))]
-async fn deploy_agent(
-    name: &str,
-    wasm_module: &[u8],
-) -> Result<AgentId, DeployError> {
-    info!("Deploying agent", agent_name = name);
-    
-    // Implementation with structured logging
-    let agent_id = AgentId::new();
-    
-    info!(
-        "Agent deployed successfully",
-        agent_id = %agent_id,
-        deployment_time_ms = timer.elapsed().as_millis()
-    );
-    
-    Ok(agent_id)
-}
-```
-
-### 4. Submitting Changes
-
-1. **Create a feature branch**: `git checkout -b issue-42-descriptive-name`
-2. **Write clear commits**: Follow [Conventional Commits](https://www.conventionalcommits.org/)
-3. **Run all checks**: `cargo test && cargo clippy && cargo fmt`
-4. **Update documentation**: Include any API or behavior changes
-5. **Submit PR**: Reference the issue and provide context
-
-#### PR Template
-
-```markdown
-## Summary
-Brief description of changes
-
-## Related Issue
-Closes #42
-
-## Changes
-- Added X to improve Y
-- Refactored Z for better performance
-
-## Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests pass
-- [ ] Manual testing completed
-
-## Documentation
-- [ ] API documentation updated
-- [ ] ADR created (if applicable)
-```
-
-## Code Review Process
-
-Expect feedback on:
-
-1. **Type safety**: Are illegal states prevented?
-2. **Test coverage**: Are edge cases tested?
-3. **Performance**: Any benchmarks for critical paths?
-4. **Observability**: Can we debug this in production?
-5. **API design**: Is it consistent with existing patterns?
-
-## Development Workflow
-
-### Running Tests
-
-```bash
-# All tests
-cargo nextest run --workspace
-
-# Specific module
-cargo nextest run -p caxton-runtime
-
-# With coverage
-cargo llvm-cov nextest --workspace
-```
-
-### Debugging
-
-```bash
-# Run with debug logging
-RUST_LOG=caxton=debug cargo run -- server
-
-# Trace specific operation
-RUST_LOG=caxton::router=trace cargo run
-```
-
-### Benchmarking
-
-```bash
-# Run benchmarks
-cargo bench
-
-# Profile with flamegraph
-cargo flamegraph --bench router_bench
-```
-
-## Release Process
-
-Releases follow semantic versioning:
-
-1. **Feature branches** merge to `main`
-2. **Release candidates** tagged as `v1.0.0-rc.1`
-3. **Final releases** tagged as `v1.0.0`
-4. **Binaries** built and published via GitHub Actions
-
-## Community
-
-- **Discord**: Real-time discussions
-- **GitHub Discussions**: Design decisions
-- **Monthly calls**: First Thursday of each month
+Thank you for your interest in contributing to Caxton! This document provides guidelines and instructions for contributing to the project.
 
 ## Code of Conduct
 
-We follow the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct). Be kind, considerate, and respectful.
+By participating in this project, you agree to abide by our Code of Conduct. Please read it before contributing.
+
+## How to Contribute
+
+### Reporting Issues
+
+- Check if the issue has already been reported
+- Use the issue templates when available
+- Provide a clear description of the problem
+- Include steps to reproduce the issue
+- Mention your environment (OS, Rust version, etc.)
+
+### Submitting Pull Requests
+
+1. **Fork the repository** and create your branch from `main`
+2. **Follow the code style** - Run `cargo fmt` and `cargo clippy`
+3. **Write tests** - Ensure your code has appropriate test coverage
+4. **Update documentation** - Keep docs in sync with code changes
+5. **Use conventional commits** - This is required for our release automation
+
+### Conventional Commit Format
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This enables automatic changelog generation and semantic versioning.
+
+Format: `<type>(<scope>): <subject>`
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Test additions or modifications
+- `build`: Build system changes
+- `ci`: CI/CD changes
+- `chore`: Other changes that don't modify src or test files
+- `revert`: Revert a previous commit
+
+**Examples:**
+```
+feat(agent): add WebAssembly instance pooling
+fix(fipa): correct message routing logic
+docs(api): update agent lifecycle documentation
+perf(runtime): optimize memory allocation
+```
+
+### Development Setup
+
+1. **Install Rust** (1.70.0 or later)
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+
+2. **Clone the repository**
+   ```bash
+   git clone https://github.com/jwilger/caxton.git
+   cd caxton
+   ```
+
+3. **Install development tools**
+   ```bash
+   cargo install cargo-nextest
+   cargo install cargo-watch
+   cargo install mdbook
+   ```
+
+4. **Run tests**
+   ```bash
+   cargo nextest run
+   cargo test --doc
+   ```
+
+5. **Run benchmarks**
+   ```bash
+   cargo bench
+   ```
+
+### Testing Guidelines
+
+- Write property-based tests for core domain logic
+- Use integration tests for system behavior
+- Aim for 80% code coverage on core modules
+- Test error paths and edge cases
+- Use `testcontainers` for external dependencies
+
+### Documentation
+
+- Update rustdoc comments for public APIs
+- Keep architectural decisions in `_adrs/` directory
+- Update user guides in `docs/` when adding features
+- Include examples in documentation
+
+## Release Process
+
+Releases are automated using [release-plz](https://release-plz.ieni.dev/):
+
+1. **Automatic PR Creation**: When commits land on `main`, release-plz creates/updates a PR with:
+   - Version bumps based on conventional commits
+   - Updated CHANGELOG.md
+   - Updated Cargo.toml versions
+
+2. **Review and Merge**: Maintainers review and merge the release PR
+
+3. **Automatic Release**: Upon merge, the system automatically:
+   - Creates git tags
+   - Publishes to crates.io
+   - Creates GitHub releases with binaries
+   - Updates documentation
+
+### Manual Release (Maintainers Only)
+
+If needed, maintainers can trigger a release manually:
+```bash
+cargo install release-plz
+release-plz release
+```
+
+## Architecture Guidelines
+
+- Follow type-driven development principles
+- Make illegal states unrepresentable
+- Use the type system for compile-time guarantees
+- Implement the functional core, imperative shell pattern
+- Ensure all code is observable with structured logging
+
+## Getting Help
+
+- Check the [documentation](https://jwilger.github.io/caxton/)
+- Ask questions in GitHub Discussions
+- Join our community chat (if available)
+- Review existing issues and PRs
 
 ## Recognition
 
-Contributors are recognized in:
+Contributors will be recognized in:
+- The project README
 - Release notes
-- Project README
-- Annual contributor spotlight
+- The contributors page in documentation
 
-Thank you for helping make Caxton better! 🚀
+Thank you for contributing to Caxton!

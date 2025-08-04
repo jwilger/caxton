@@ -1,6 +1,9 @@
+# Dependabot configuration for Caxton
+# Keep dependencies up to date automatically
+
 version: 2
 updates:
-  # Rust dependencies
+  # Rust/Cargo dependencies
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
@@ -10,33 +13,37 @@ updates:
     open-pull-requests-limit: 10
     reviewers:
       - "jwilger"
-    assignees:
-      - "jwilger"
     commit-message:
-      prefix: "security"
+      prefix: "deps"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "security"
-    allow:
-      - dependency-type: "direct"
-        update-type: "security"
-      - dependency-type: "indirect"
-        update-type: "security"
     groups:
       security-updates:
         patterns:
-          - "*"
+          - "*audit*"
+          - "*security*"
+          - "*crypto*"
+          - "*tls*"
+          - "*ssl*"
         update-types:
-          - "security"
-      minor-updates:
+          - "security-update"
+      dev-dependencies:
         patterns:
-          - "*"
+          - "quickcheck*"
+          - "proptest*"
+          - "criterion*"
+          - "cargo-*"
+        dependency-type: "development"
+      performance-deps:
+        patterns:
+          - "tokio*"
+          - "wasmtime*"
+          - "serde*"
+          - "tracing*"
         update-types:
           - "minor"
           - "patch"
 
-  # GitHub Actions
+  # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -46,17 +53,26 @@ updates:
     open-pull-requests-limit: 5
     reviewers:
       - "jwilger"
-    assignees:
-      - "jwilger"
     commit-message:
       prefix: "ci"
       include: "scope"
-    labels:
-      - "github-actions"
-      - "security"
 
-  # Docker
+  # Docker dependencies (if any Dockerfile exists)
   - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "jwilger"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+
+  # Ruby dependencies for Jekyll site
+  - package-ecosystem: "bundler"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -65,11 +81,6 @@ updates:
     open-pull-requests-limit: 5
     reviewers:
       - "jwilger"
-    assignees:
-      - "jwilger"
     commit-message:
-      prefix: "docker"
+      prefix: "deps"
       include: "scope"
-    labels:
-      - "docker"
-      - "security"

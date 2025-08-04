@@ -1,0 +1,55 @@
+# Caxton release-plz configuration
+
+# Workspace configuration
+release_always = true
+
+# Allow dirty working directory (for CI)
+allow_dirty = true
+
+# Dependencies update
+dependencies_update = true
+
+# Git configuration
+git_release_enable = true  # Create GitHub releases
+git_tag_enable = true      # Create git tags
+git_tag_name = "v{{ version }}"  # Tag format: v0.1.0
+
+# PR configuration
+pr_labels = ["release", "automated"]
+pr_draft = true  # Create release PRs as drafts
+
+# Changelog configuration
+changelog_update = true
+
+[changelog]
+# Use conventional commits for changelog generation
+# Group commits by type for better organization
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^style", group = "Style" },
+  { message = "^test", group = "Testing" },
+  { message = "^chore\\(release\\):", skip = true },
+  { message = "^chore\\(deps\\)", group = "Dependencies" },
+  { message = "^chore\\(deps-dev\\)", group = "Development Dependencies" },
+  { message = "^chore", group = "Miscellaneous Tasks" },
+  { message = "^build", group = "Build System" },
+  { message = "^ci", group = "Continuous Integration" },
+  { message = "^revert", group = "Reverts" },
+]
+
+# Sort commit groups in a logical order
+sort_commits = "oldest"
+
+# Use scope from conventional commits when present
+protect_breaking_commits = true
+
+# Package configuration
+[[package]]
+name = "caxton"
+release = true
+# Changelog path for the package
+changelog_path = "./CHANGELOG.md"
