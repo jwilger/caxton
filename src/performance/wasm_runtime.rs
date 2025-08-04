@@ -267,11 +267,20 @@ impl OptimizedWasmRuntime {
 }
 
 /// WebAssembly runtime context for each agent instance
-#[derive(Debug)]
 struct WasmRuntimeContext {
     agent_type: String,
     wasi: Option<WasiCtx>,
     limiter: ResourceLimiterImpl,
+}
+
+impl std::fmt::Debug for WasmRuntimeContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WasmRuntimeContext")
+            .field("agent_type", &self.agent_type)
+            .field("wasi", &"<WasiCtx>")
+            .field("limiter", &self.limiter)
+            .finish()
+    }
 }
 
 impl WasmRuntimeContext {
@@ -422,6 +431,17 @@ pub struct PooledInstance {
     instance: Instance,
     agent_type: String,
     pool: std::sync::Weak<InstancePool>,
+}
+
+impl std::fmt::Debug for PooledInstance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PooledInstance")
+            .field("agent_type", &self.agent_type)
+            .field("store", &"<Store>")
+            .field("instance", &"<Instance>")
+            .field("pool", &"<Weak<InstancePool>>")
+            .finish()
+    }
 }
 
 impl PooledInstance {
