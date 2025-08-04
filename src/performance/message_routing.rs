@@ -8,17 +8,15 @@
 //! - Async message delivery with backpressure handling
 //! - Performance monitoring and bottleneck identification
 
-use std::collections::HashMap;
+use ahash::AHashMap;
+use bytes::Bytes;
+use metrics::{counter, gauge, histogram};
+use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{mpsc, RwLock, Semaphore};
-use tokio::time::{sleep, timeout};
-use tracing::{instrument, debug, info, warn, error};
-use metrics::{counter, histogram, gauge};
-use bytes::{Bytes, BytesMut, BufMut};
-use smallvec::SmallVec;
-use ahash::AHashMap;
-use serde::{Serialize, Deserialize};
+use tokio::sync::{mpsc, RwLock};
+use tracing::{debug, error, info, instrument, warn};
 use uuid::Uuid;
 
 /// High-performance FIPA message router with optimized routing and batching
@@ -63,7 +61,7 @@ impl Default for AgentId {
 pub struct AgentEndpoint {
     pub agent_id: AgentId,
     pub address: String,
-    pub capabilities: SmallVec<[String; 4]>,  // Most agents have few capabilities
+    pub capabilities: SmallVec<[String; 4]>, // Most agents have few capabilities
     pub last_seen: Instant,
     pub message_queue: mpsc::UnboundedSender<FipaMessage>,
 }
@@ -113,7 +111,7 @@ pub enum Performative {
     RequestWhenever,
 
     // Negotiation performatives
-    Cfp,          // Call for proposals
+    Cfp, // Call for proposals
     Propose,
     AcceptProposal,
     RejectProposal,
@@ -225,8 +223,8 @@ impl OptimizedMessageRouter {
         let mut routing_table = self.routing_table.write().await;
         routing_table.insert(agent_id, endpoint);
 
-        counter!("caxton_agents_registered_total", 1);
-        gauge!("caxton_active_agents", routing_table.len() as f64);
+        counter!("caxton_agents_registered_total");
+        gauge!("caxton_active_agents").set(routing_table.len() as f64);
 
         info!(agent_id = ?agent_id, "Agent registered in routing table");
     }
@@ -236,8 +234,8 @@ impl OptimizedMessageRouter {
     pub async fn unregister_agent(&self, agent_id: AgentId) {
         let mut routing_table = self.routing_table.write().await;
         if routing_table.remove(&agent_id).is_some() {
-            counter!("caxton_agents_unregistered_total", 1);
-            gauge!("caxton_active_agents", routing_table.len() as f64);
+            counter!("caxton_agents_unregistered_total");
+            gauge!("caxton_active_agents").set(routing_table.len() as f64);
 
             info!(agent_id = ?agent_id, "Agent unregistered from routing table");
         }
@@ -255,25 +253,33 @@ impl OptimizedMessageRouter {
         self.batch_processor.add_message(message).await?;
 
         let duration = start_time.elapsed();
-        histogram!("caxton_message_routing_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_messages_routed_total", 1);
+        histogram!(
+            "caxton_message_routing_duration_seconds",
+            duration.as_secs_f64()
+        );
+        counter!("caxton_messages_routed_total");
         self.metrics.record_message_routed(duration).await;
 
-        debug!(duration_us = duration.as_micros(), "Message added to routing batch");
+        debug!(
+            duration_us = duration.as_micros(),
+            "Message added to routing batch"
+        );
         Ok(())
     }
 
     /// Route multiple messages in a batch for efficiency
     #[instrument(skip(self, messages))]
-    pub async fn route_messages_batch(&self, messages: Vec<FipaMessage>) -> Result<Vec<Result<(), RoutingError>>, RoutingError> {
+    pub async fn route_messages_batch(
+        &self,
+        messages: Vec<FipaMessage>,
+    ) -> Result<Vec<Result<(), RoutingError>>, RoutingError> {
         let start_time = Instant::now();
         let batch_size = messages.len();
 
         let mut results = Vec::with_capacity(batch_size);
 
         for message in messages {
-            let result = self.validate_message(&message)
-                .and_then(|_| Ok(message));
+            let result = self.validate_message(&message).and_then(|_| Ok(message));
 
             match result {
                 Ok(msg) => {
@@ -288,9 +294,12 @@ impl OptimizedMessageRouter {
         }
 
         let duration = start_time.elapsed();
-        histogram!("caxton_message_batch_routing_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_message_batches_routed_total", 1);
-        counter!("caxton_messages_routed_total", batch_size as u64);
+        histogram!(
+            "caxton_message_batch_routing_duration_seconds",
+            duration.as_secs_f64()
+        );
+        counter!("caxton_message_batches_routed_total");
+        counter!("caxton_messages_routed_total").increment(batch_size as u64);
 
         info!(
             batch_size = batch_size,
@@ -369,16 +378,17 @@ impl OptimizedMessageRouter {
                 let before_count = table.len();
 
                 // Remove timed-out agents
-                table.retain(|_, endpoint| {
-                    endpoint.last_seen.elapsed() < agent_timeout
-                });
+                table.retain(|_, endpoint| endpoint.last_seen.elapsed() < agent_timeout);
 
                 let removed_count = before_count - table.len();
                 if removed_count > 0 {
-                    counter!("caxton_agents_cleaned_up_total", removed_count as u64);
-                    gauge!("caxton_active_agents", table.len() as f64);
+                    counter!("caxton_agents_cleaned_up_total").increment(removed_count as u64);
+                    gauge!("caxton_active_agents").set(table.len() as f64);
 
-                    info!(removed_agents = removed_count, "Cleaned up timed-out agents");
+                    info!(
+                        removed_agents = removed_count,
+                        "Cleaned up timed-out agents"
+                    );
                 }
             }
         });
@@ -433,7 +443,8 @@ impl MessageBatchProcessor {
     }
 
     async fn add_message(&self, message: FipaMessage) -> Result<(), RoutingError> {
-        self.sender.send(message)
+        self.sender
+            .send(message)
             .map_err(|_| RoutingError::ChannelClosed)?;
         Ok(())
     }
@@ -460,8 +471,11 @@ impl MessageBatchProcessor {
         batch_stats.total_messages_processed += batch_size as u64;
         batch_stats.total_processing_time += duration;
 
-        counter!("caxton_message_batches_processed_total", 1);
-        histogram!("caxton_message_batch_processing_duration_seconds", duration.as_secs_f64());
+        counter!("caxton_message_batches_processed_total");
+        histogram!(
+            "caxton_message_batch_processing_duration_seconds",
+            duration.as_secs_f64()
+        );
 
         debug!(
             batch_size = batch_size,
@@ -478,7 +492,7 @@ impl MessageBatchProcessor {
         // 3. Send to the agent's message queue
         // 4. Handle delivery failures and retries
 
-        counter!("caxton_messages_delivered_total", 1);
+        counter!("caxton_messages_delivered_total");
     }
 
     async fn get_stats(&self) -> BatchProcessorStats {
@@ -625,12 +639,14 @@ mod tests {
 
         let (tx, _rx) = mpsc::unbounded_channel();
 
-        router.register_agent(
-            agent_id,
-            "localhost:8080".to_string(),
-            vec!["capability1".to_string()],
-            tx,
-        ).await;
+        router
+            .register_agent(
+                agent_id,
+                "localhost:8080".to_string(),
+                vec!["capability1".to_string()],
+                tx,
+            )
+            .await;
 
         let stats = router.get_performance_stats().await;
         assert_eq!(stats.active_agents, 1);
@@ -644,12 +660,14 @@ mod tests {
 
         let (tx, _rx) = mpsc::unbounded_channel();
 
-        router.register_agent(
-            agent_id,
-            "localhost:8080".to_string(),
-            vec!["test_capability".to_string()],
-            tx,
-        ).await;
+        router
+            .register_agent(
+                agent_id,
+                "localhost:8080".to_string(),
+                vec!["test_capability".to_string()],
+                tx,
+            )
+            .await;
 
         let agents = router.find_agents_by_capability("test_capability").await;
         assert_eq!(agents.len(), 1);

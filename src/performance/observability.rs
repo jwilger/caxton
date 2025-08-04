@@ -7,17 +7,16 @@
 //! - OpenTelemetry integration with sampling and compression
 //! - Performance metrics collection with minimal latency impact
 
-use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tokio::sync::{mpsc, RwLock, Semaphore};
-use tokio::time::{sleep, timeout, interval};
-use tracing::{instrument, debug, info, warn, error, Span};
-use metrics::{counter, histogram, gauge};
-use bytes::{Bytes, BytesMut, BufMut};
-use smallvec::SmallVec;
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use ahash::HashMap;
+use metrics::{counter, histogram};
+use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
+use std::sync::Arc;
+use std::time::{Duration, Instant, SystemTime};
+use tokio::sync::{mpsc, RwLock, Semaphore};
+use tokio::time::{interval, sleep};
+use tracing::{debug, error, info, instrument, warn};
+use uuid::Uuid;
 
 /// High-performance observability system with batched event processing
 #[derive(Debug)]
@@ -75,9 +74,7 @@ impl OptimizedObservabilitySystem {
             config.max_concurrent_batches,
         ));
 
-        let metrics_collector = Arc::new(MetricsCollector::new(
-            config.metrics_collection_interval,
-        ));
+        let metrics_collector = Arc::new(MetricsCollector::new(config.metrics_collection_interval));
 
         let performance_monitor = Arc::new(ObservabilityPerformanceMonitor::new());
 
@@ -107,7 +104,7 @@ impl OptimizedObservabilitySystem {
 
         // Apply sampling
         if !self.should_sample() {
-            counter!("caxton_observability_events_sampled_out_total", 1);
+            counter!("caxton_observability_events_sampled_out_total");
             return Ok(());
         }
 
@@ -115,18 +112,29 @@ impl OptimizedObservabilitySystem {
         self.event_processor.add_event(event).await?;
 
         let duration = start_time.elapsed();
-        histogram!("caxton_observability_event_emission_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_observability_events_emitted_total", 1);
+        histogram!(
+            "caxton_observability_event_emission_duration_seconds",
+            duration.as_secs_f64()
+        );
+        counter!("caxton_observability_events_emitted_total");
 
-        self.performance_monitor.record_event_emission(duration).await;
+        self.performance_monitor
+            .record_event_emission(duration)
+            .await;
 
-        debug!(duration_us = duration.as_micros(), "Event emitted to batch processor");
+        debug!(
+            duration_us = duration.as_micros(),
+            "Event emitted to batch processor"
+        );
         Ok(())
     }
 
     /// Emit multiple events in a batch for efficiency
     #[instrument(skip(self, events))]
-    pub async fn emit_events_batch(&self, events: Vec<ObservabilityEvent>) -> Result<Vec<Result<(), ObservabilityError>>, ObservabilityError> {
+    pub async fn emit_events_batch(
+        &self,
+        events: Vec<ObservabilityEvent>,
+    ) -> Result<Vec<Result<(), ObservabilityError>>, ObservabilityError> {
         let start_time = Instant::now();
         let batch_size = events.len();
 
@@ -145,13 +153,18 @@ impl OptimizedObservabilitySystem {
 
         // Process sampled events
         if !sampled_events.is_empty() {
-            self.event_processor.add_events_batch(sampled_events).await?;
+            self.event_processor
+                .add_events_batch(sampled_events)
+                .await?;
         }
 
         let duration = start_time.elapsed();
-        histogram!("caxton_observability_batch_emission_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_observability_event_batches_emitted_total", 1);
-        counter!("caxton_observability_events_emitted_total", batch_size as u64);
+        histogram!(
+            "caxton_observability_batch_emission_duration_seconds",
+            duration.as_secs_f64()
+        );
+        counter!("caxton_observability_event_batches_emitted_total");
+        counter!("caxton_observability_events_emitted_total").increment(batch_size as u64);
 
         info!(
             batch_size = batch_size,
@@ -257,14 +270,21 @@ impl EventBatchProcessor {
     }
 
     async fn add_event(&self, event: ObservabilityEvent) -> Result<(), ObservabilityError> {
-        self.sender.send(event).await
+        self.sender
+            .send(event)
+            .await
             .map_err(|_| ObservabilityError::ChannelClosed)?;
         Ok(())
     }
 
-    async fn add_events_batch(&self, events: Vec<ObservabilityEvent>) -> Result<(), ObservabilityError> {
+    async fn add_events_batch(
+        &self,
+        events: Vec<ObservabilityEvent>,
+    ) -> Result<(), ObservabilityError> {
         for event in events {
-            self.sender.send(event).await
+            self.sender
+                .send(event)
+                .await
                 .map_err(|_| ObservabilityError::ChannelClosed)?;
         }
         Ok(())
@@ -284,14 +304,18 @@ impl EventBatchProcessor {
         });
     }
 
-    async fn process_batch(batch: Vec<ObservabilityEvent>, stats: &Arc<RwLock<BatchProcessorStats>>) {
+    async fn process_batch(
+        batch: Vec<ObservabilityEvent>,
+        stats: &Arc<RwLock<BatchProcessorStats>>,
+    ) {
         let start_time = Instant::now();
         let batch_size = batch.len();
 
         // Sort events by priority and timestamp for optimal processing
         let mut sorted_batch = batch;
         sorted_batch.sort_by(|a, b| {
-            a.priority.cmp(&b.priority)
+            a.priority
+                .cmp(&b.priority)
                 .then_with(|| a.timestamp.cmp(&b.timestamp))
         });
 
@@ -308,8 +332,11 @@ impl EventBatchProcessor {
         batch_stats.total_events_processed += batch_size as u64;
         batch_stats.total_processing_time += duration;
 
-        counter!("caxton_observability_batches_processed_total", 1);
-        histogram!("caxton_observability_batch_processing_duration_seconds", duration.as_secs_f64());
+        counter!("caxton_observability_batches_processed_total");
+        histogram!(
+            "caxton_observability_batch_processing_duration_seconds",
+            duration.as_secs_f64()
+        );
 
         debug!(
             batch_size = batch_size,
@@ -326,7 +353,7 @@ impl EventBatchProcessor {
         // 3. Send to observability backend (Jaeger, Prometheus, etc.)
         // 4. Handle retries and errors
 
-        counter!("caxton_observability_events_processed_total", 1);
+        counter!("caxton_observability_events_processed_total");
 
         // Simulate processing time based on event type
         let processing_delay = match event.event_type {
@@ -383,8 +410,11 @@ impl MetricsCollector {
         collector_stats.total_collection_time += duration;
         collector_stats.last_collection = Some(start_time);
 
-        histogram!("caxton_observability_metrics_collection_duration_seconds", duration.as_secs_f64());
-        counter!("caxton_observability_metrics_collections_total", 1);
+        histogram!(
+            "caxton_observability_metrics_collection_duration_seconds",
+            duration.as_secs_f64()
+        );
+        counter!("caxton_observability_metrics_collections_total");
 
         debug!(
             system_metrics_count = system_metrics.len(),
@@ -427,14 +457,12 @@ impl MetricsCollector {
         // - WASM execution metrics
         // - Error rates
 
-        vec![
-            MetricData {
-                name: "caxton_active_agents".to_string(),
-                value: 42.0, // Example value
-                labels: HashMap::default(),
-                timestamp: SystemTime::now(),
-            },
-        ]
+        vec![MetricData {
+            name: "caxton_active_agents".to_string(),
+            value: 42.0, // Example value
+            labels: HashMap::default(),
+            timestamp: SystemTime::now(),
+        }]
     }
 
     async fn get_stats(&self) -> MetricsCollectorStats {
@@ -494,14 +522,17 @@ impl ObservabilityPerformanceMonitor {
             let mut sorted_times = times.clone();
             sorted_times.sort();
             let p95_index = (times.len() as f64 * 0.95) as usize;
-            let p95 = sorted_times.get(p95_index).copied().unwrap_or(Duration::ZERO);
+            let p95 = sorted_times
+                .get(p95_index)
+                .copied()
+                .unwrap_or(Duration::ZERO);
 
             (avg, p95)
         };
 
         ObservabilityMonitorStats {
             average_emission_time: avg_emission_time,
-            p95_emission_time: p95_emission_time,
+            p95_emission_time,
             system_metrics: system_metrics.clone(),
         }
     }
@@ -658,10 +689,18 @@ pub enum ObservabilityError {
 }
 
 // Placeholder functions for system metrics (would be implemented with actual system calls)
-fn get_current_memory_usage() -> f64 { 0.0 }
-fn get_current_cpu_usage() -> f64 { 0.0 }
-fn get_current_disk_usage() -> f64 { 0.0 }
-fn get_current_network_usage() -> f64 { 0.0 }
+fn get_current_memory_usage() -> f64 {
+    0.0
+}
+fn get_current_cpu_usage() -> f64 {
+    0.0
+}
+fn get_current_disk_usage() -> f64 {
+    0.0
+}
+fn get_current_network_usage() -> f64 {
+    0.0
+}
 
 #[cfg(test)]
 mod tests {

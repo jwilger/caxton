@@ -3,10 +3,10 @@
 //! Tests cover the complete agent lifecycle from creation to termination,
 //! including edge cases, error handling, and resource management.
 
-use crate::*;
 use crate::lifecycle::AgentLifecycleManager;
-use tokio_test;
+use crate::*;
 use std::sync::Arc;
+use tokio_test;
 
 #[tokio::test]
 async fn test_complete_agent_lifecycle() {
@@ -32,7 +32,10 @@ async fn test_complete_agent_lifecycle() {
     assert_eq!(status.metadata.capabilities.len(), 2);
 
     // Suspend agent
-    lifecycle_manager.suspend_agent(&agent_id, "Testing suspension".to_string()).await.unwrap();
+    lifecycle_manager
+        .suspend_agent(&agent_id, "Testing suspension".to_string())
+        .await
+        .unwrap();
     let status = lifecycle_manager.get_agent_status(&agent_id).await.unwrap();
     assert_eq!(status.state, AgentState::Suspended);
 
@@ -42,7 +45,10 @@ async fn test_complete_agent_lifecycle() {
     assert_eq!(status.state, AgentState::Ready);
 
     // Stop agent gracefully
-    lifecycle_manager.stop_agent(&agent_id, Some("Test complete".to_string())).await.unwrap();
+    lifecycle_manager
+        .stop_agent(&agent_id, Some("Test complete".to_string()))
+        .await
+        .unwrap();
 
     // Verify agent is no longer in registry
     let agents = lifecycle_manager.list_managed_agents().await;
@@ -70,7 +76,10 @@ async fn test_agent_state_transitions() {
     // Load WASM module (simulated)
     let loaded_agent = unloaded_agent.load_wasm_module(&[]).unwrap();
     assert_eq!(loaded_agent.metadata.state, AgentState::Ready);
-    assert_eq!(loaded_agent.metadata.properties.get("wasm_loaded"), Some(&"true".to_string()));
+    assert_eq!(
+        loaded_agent.metadata.properties.get("wasm_loaded"),
+        Some(&"true".to_string())
+    );
 
     // Start agent
     let mut running_agent = loaded_agent.start().unwrap();
@@ -87,7 +96,10 @@ async fn test_agent_state_transitions() {
     };
 
     running_agent.process_message(&message).unwrap();
-    assert!(running_agent.metadata.properties.contains_key("last_message_at"));
+    assert!(running_agent
+        .metadata
+        .properties
+        .contains_key("last_message_at"));
 
     // Get performance metrics
     let metrics = running_agent.get_performance_metrics();
@@ -101,7 +113,10 @@ async fn test_agent_state_transitions() {
     // Unload agent
     let unloaded_agent = loaded_agent.unload();
     assert_eq!(unloaded_agent.metadata.state, AgentState::Initializing);
-    assert!(!unloaded_agent.metadata.properties.contains_key("wasm_loaded"));
+    assert!(!unloaded_agent
+        .metadata
+        .properties
+        .contains_key("wasm_loaded"));
 }
 
 #[tokio::test]
@@ -141,15 +156,24 @@ async fn test_resource_monitoring() {
     assert_eq!(updated_usage.message_count, 1);
 
     // Test resource limit updates
-    runtime.update_agent_limits(
-        &agent_id,
-        Some(128 * 1024 * 1024), // 128MB
-        Some(Duration::from_secs(120)),
-    ).await.unwrap();
+    runtime
+        .update_agent_limits(
+            &agent_id,
+            Some(128 * 1024 * 1024), // 128MB
+            Some(Duration::from_secs(120)),
+        )
+        .await
+        .unwrap();
 
     let (metadata, _) = runtime.get_agent_metadata(&agent_id).await.unwrap();
-    assert_eq!(metadata.properties.get("max_memory"), Some(&(128 * 1024 * 1024).to_string()));
-    assert_eq!(metadata.properties.get("max_cpu_time_ms"), Some(&(120 * 1000).to_string()));
+    assert_eq!(
+        metadata.properties.get("max_memory"),
+        Some(&(128 * 1024 * 1024).to_string())
+    );
+    assert_eq!(
+        metadata.properties.get("max_cpu_time_ms"),
+        Some(&(120 * 1000).to_string())
+    );
 
     // Test health check
     let health_status = runtime.health_check_agent(&agent_id).await.unwrap();
@@ -157,7 +181,10 @@ async fn test_resource_monitoring() {
     assert!(health_status.metrics.contains_key("message_count"));
 
     // Clean up
-    runtime.terminate_agent(&agent_id, Duration::from_secs(5)).await.unwrap();
+    runtime
+        .terminate_agent(&agent_id, Duration::from_secs(5))
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -206,10 +233,14 @@ async fn test_agent_registry_operations() {
     // Test metadata update
     let mut updated_metadata = metadata1.clone();
     updated_metadata.add_capability("new_capability");
-    registry.update_metadata(&agent_id1, updated_metadata).unwrap();
+    registry
+        .update_metadata(&agent_id1, updated_metadata)
+        .unwrap();
 
     let retrieved_metadata = registry.get_metadata(&agent_id1).unwrap();
-    assert!(retrieved_metadata.capabilities.contains(&"new_capability".to_string()));
+    assert!(retrieved_metadata
+        .capabilities
+        .contains(&"new_capability".to_string()));
 
     // Test unregister
     let removed_metadata = registry.unregister(&agent_id1).unwrap();
@@ -244,7 +275,9 @@ async fn test_error_handling() {
     assert!(result.is_err());
 
     // Test resource limit updates on non-existent agent
-    let result = runtime.update_agent_limits(&non_existent_id, Some(1024), None).await;
+    let result = runtime
+        .update_agent_limits(&non_existent_id, Some(1024), None)
+        .await;
     assert!(result.is_err());
 }
 
@@ -292,7 +325,9 @@ async fn test_concurrent_operations() {
     for agent_id in agent_ids {
         let manager = lifecycle_manager.clone();
         let handle = tokio::spawn(async move {
-            manager.stop_agent(&agent_id, Some("Concurrent test cleanup".to_string())).await
+            manager
+                .stop_agent(&agent_id, Some("Concurrent test cleanup".to_string()))
+                .await
         });
         cleanup_handles.push(handle);
     }

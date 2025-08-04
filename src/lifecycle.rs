@@ -11,15 +11,43 @@ use tokio::time::{interval, Duration as TokioDuration};
 /// Lifecycle event types for detailed tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LifecycleEvent {
-    AgentCreated { agent_id: AgentId, config: AgentConfig },
-    AgentStarted { agent_id: AgentId },
-    AgentSuspended { agent_id: AgentId, reason: String },
-    AgentResumed { agent_id: AgentId },
-    AgentTerminated { agent_id: AgentId, reason: String },
-    AgentCrashed { agent_id: AgentId, error: String },
-    ResourceLimitExceeded { agent_id: AgentId, resource_type: String, limit: u64, current: u64 },
-    HealthCheckFailed { agent_id: AgentId, details: String },
-    StateTransition { agent_id: AgentId, from: AgentState, to: AgentState },
+    AgentCreated {
+        agent_id: AgentId,
+        config: AgentConfig,
+    },
+    AgentStarted {
+        agent_id: AgentId,
+    },
+    AgentSuspended {
+        agent_id: AgentId,
+        reason: String,
+    },
+    AgentResumed {
+        agent_id: AgentId,
+    },
+    AgentTerminated {
+        agent_id: AgentId,
+        reason: String,
+    },
+    AgentCrashed {
+        agent_id: AgentId,
+        error: String,
+    },
+    ResourceLimitExceeded {
+        agent_id: AgentId,
+        resource_type: String,
+        limit: u64,
+        current: u64,
+    },
+    HealthCheckFailed {
+        agent_id: AgentId,
+        details: String,
+    },
+    StateTransition {
+        agent_id: AgentId,
+        from: AgentState,
+        to: AgentState,
+    },
 }
 
 /// Lifecycle manager for coordinating agent operations
@@ -68,7 +96,7 @@ impl AgentLifecycleManager {
         // Emit creation event
         let _ = self.event_tx.send(LifecycleEvent::AgentCreated {
             agent_id: AgentId::new(), // Temporary ID for event
-            config: config.clone()
+            config: config.clone(),
         });
 
         // Spawn agent through runtime
@@ -79,7 +107,9 @@ impl AgentLifecycleManager {
         self.registry.register(agent_id.clone(), metadata);
 
         // Emit started event
-        let _ = self.event_tx.send(LifecycleEvent::AgentStarted { agent_id: agent_id.clone() });
+        let _ = self.event_tx.send(LifecycleEvent::AgentStarted {
+            agent_id: agent_id.clone(),
+        });
 
         info!(agent_id = %agent_id, "Agent created and registered successfully");
         Ok(agent_id)
@@ -87,7 +117,11 @@ impl AgentLifecycleManager {
 
     /// Gracefully stop an agent with cleanup
     #[instrument(name = "stop_agent", skip(self), fields(agent_id = %agent_id))]
-    pub async fn stop_agent(&self, agent_id: &AgentId, reason: Option<String>) -> Result<(), CaxtonError> {
+    pub async fn stop_agent(
+        &self,
+        agent_id: &AgentId,
+        reason: Option<String>,
+    ) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Stopping agent with reason: {:?}", reason);
 
         // Perform health check before stopping
@@ -109,7 +143,7 @@ impl AgentLifecycleManager {
         // Emit termination event
         let _ = self.event_tx.send(LifecycleEvent::AgentTerminated {
             agent_id: agent_id.clone(),
-            reason: reason.unwrap_or_else(|| "Graceful shutdown".to_string())
+            reason: reason.unwrap_or_else(|| "Graceful shutdown".to_string()),
         });
 
         info!(agent_id = %agent_id, "Agent stopped and cleaned up successfully");
@@ -118,7 +152,11 @@ impl AgentLifecycleManager {
 
     /// Suspend an agent for maintenance or debugging
     #[instrument(name = "suspend_agent", skip(self), fields(agent_id = %agent_id))]
-    pub async fn suspend_agent(&self, agent_id: &AgentId, reason: String) -> Result<(), CaxtonError> {
+    pub async fn suspend_agent(
+        &self,
+        agent_id: &AgentId,
+        reason: String,
+    ) -> Result<(), CaxtonError> {
         info!(agent_id = %agent_id, "Suspending agent: {}", reason);
 
         self.runtime.suspend_agent(agent_id).await?;
@@ -126,7 +164,7 @@ impl AgentLifecycleManager {
         // Emit suspension event
         let _ = self.event_tx.send(LifecycleEvent::AgentSuspended {
             agent_id: agent_id.clone(),
-            reason
+            reason,
         });
 
         Ok(())
@@ -140,14 +178,20 @@ impl AgentLifecycleManager {
         self.runtime.resume_agent(agent_id).await?;
 
         // Emit resume event
-        let _ = self.event_tx.send(LifecycleEvent::AgentResumed { agent_id: agent_id.clone() });
+        let _ = self.event_tx.send(LifecycleEvent::AgentResumed {
+            agent_id: agent_id.clone(),
+        });
 
         Ok(())
     }
 
     /// Force terminate an unresponsive agent
     #[instrument(name = "force_terminate_agent", skip(self), fields(agent_id = %agent_id))]
-    pub async fn force_terminate_agent(&self, agent_id: &AgentId, reason: String) -> Result<(), CaxtonError> {
+    pub async fn force_terminate_agent(
+        &self,
+        agent_id: &AgentId,
+        reason: String,
+    ) -> Result<(), CaxtonError> {
         warn!(agent_id = %agent_id, "Force terminating agent: {}", reason);
 
         self.runtime.force_terminate_agent(agent_id).await?;
@@ -159,14 +203,17 @@ impl AgentLifecycleManager {
         // Emit crash event
         let _ = self.event_tx.send(LifecycleEvent::AgentCrashed {
             agent_id: agent_id.clone(),
-            error: reason
+            error: reason,
         });
 
         Ok(())
     }
 
     /// Get comprehensive agent status including lifecycle information
-    pub async fn get_agent_status(&self, agent_id: &AgentId) -> Result<AgentStatusReport, CaxtonError> {
+    pub async fn get_agent_status(
+        &self,
+        agent_id: &AgentId,
+    ) -> Result<AgentStatusReport, CaxtonError> {
         let state = self.runtime.get_agent_state(agent_id).await?;
         let (metadata, resource_usage) = self.runtime.get_agent_metadata(agent_id).await?;
         let health_result = self.monitor.health_check(agent_id).await;
@@ -207,11 +254,17 @@ impl AgentLifecycleManager {
     /// Enable or disable automatic recovery
     pub async fn set_recovery_enabled(&self, enabled: bool) {
         *self.recovery_enabled.write().await = enabled;
-        info!("Automatic recovery {}", if enabled { "enabled" } else { "disabled" });
+        info!(
+            "Automatic recovery {}",
+            if enabled { "enabled" } else { "disabled" }
+        );
     }
 
     /// Background task to process lifecycle events
-    async fn process_lifecycle_events(&self, mut event_rx: mpsc::UnboundedReceiver<LifecycleEvent>) {
+    async fn process_lifecycle_events(
+        &self,
+        mut event_rx: mpsc::UnboundedReceiver<LifecycleEvent>,
+    ) {
         while let Some(event) = event_rx.recv().await {
             match &event {
                 LifecycleEvent::AgentCrashed { agent_id, error } => {
@@ -227,7 +280,12 @@ impl AgentLifecycleManager {
                 LifecycleEvent::HealthCheckFailed { agent_id, details } => {
                     warn!(agent_id = %agent_id, "Health check failed: {}", details);
                 }
-                LifecycleEvent::ResourceLimitExceeded { agent_id, resource_type, limit, current } => {
+                LifecycleEvent::ResourceLimitExceeded {
+                    agent_id,
+                    resource_type,
+                    limit,
+                    current,
+                } => {
                     warn!(
                         agent_id = %agent_id,
                         "Resource limit exceeded - {}: {} / {} limit",
@@ -270,11 +328,19 @@ impl AgentLifecycleManager {
                         status: HealthStatus {
                             healthy: health_result.healthy,
                             timestamp: health_result.timestamp,
-                            details: if health_result.errors.is_empty() { None } else { Some(health_result.errors.join("; ")) },
-                            metrics: health_result.details.iter()
-                                .filter_map(|(k, v)| v.parse::<f64>().ok().map(|val| (k.clone(), val)))
+                            details: if health_result.errors.is_empty() {
+                                None
+                            } else {
+                                Some(health_result.errors.join("; "))
+                            },
+                            metrics: health_result
+                                .details
+                                .iter()
+                                .filter_map(|(k, v)| {
+                                    v.parse::<f64>().ok().map(|val| (k.clone(), val))
+                                })
                                 .collect(),
-                        }
+                        },
                     },
                     trace_id: None,
                 });
@@ -293,9 +359,13 @@ impl AgentLifecycleManager {
                 name: format!("{}-recovered", metadata.name),
                 agent_type: metadata.agent_type,
                 capabilities: metadata.capabilities,
-                max_memory: metadata.properties.get("max_memory_bytes")
+                max_memory: metadata
+                    .properties
+                    .get("max_memory_bytes")
                     .and_then(|s| s.parse().ok()),
-                timeout: metadata.properties.get("timeout_ms")
+                timeout: metadata
+                    .properties
+                    .get("timeout_ms")
                     .and_then(|s| s.parse::<u64>().ok())
                     .map(Duration::from_millis),
             };
@@ -310,7 +380,9 @@ impl AgentLifecycleManager {
 
             Ok(())
         } else {
-            Err(CaxtonError::Agent("Cannot recover agent: metadata not found".to_string()))
+            Err(CaxtonError::Agent(
+                "Cannot recover agent: metadata not found".to_string(),
+            ))
         }
     }
 
@@ -318,25 +390,21 @@ impl AgentLifecycleManager {
     async fn record_lifecycle_event(&self, event: &LifecycleEvent) {
         // Convert lifecycle event to agent event format for monitoring
         let agent_event = match event {
-            LifecycleEvent::StateTransition { agent_id, from, to } => {
-                Some(AgentEvent {
-                    agent_id: agent_id.clone(),
-                    timestamp: std::time::SystemTime::now(),
-                    event_type: AgentEventType::StateChange {
-                        from: from.clone(),
-                        to: to.clone(),
-                    },
-                    trace_id: None,
-                })
-            }
-            LifecycleEvent::AgentCrashed { agent_id, error } => {
-                Some(AgentEvent {
-                    agent_id: agent_id.clone(),
-                    timestamp: std::time::SystemTime::now(),
-                    event_type: AgentEventType::Crashed(error.clone()),
-                    trace_id: None,
-                })
-            }
+            LifecycleEvent::StateTransition { agent_id, from, to } => Some(AgentEvent {
+                agent_id: agent_id.clone(),
+                timestamp: std::time::SystemTime::now(),
+                event_type: AgentEventType::StateChange {
+                    from: from.clone(),
+                    to: to.clone(),
+                },
+                trace_id: None,
+            }),
+            LifecycleEvent::AgentCrashed { agent_id, error } => Some(AgentEvent {
+                agent_id: agent_id.clone(),
+                timestamp: std::time::SystemTime::now(),
+                event_type: AgentEventType::Crashed(error.clone()),
+                trace_id: None,
+            }),
             _ => None,
         };
 

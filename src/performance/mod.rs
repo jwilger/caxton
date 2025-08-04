@@ -10,19 +10,19 @@
 //! - Agent coordination overhead analysis
 //! - Observability event batching for reduced overhead
 
-pub mod metrics;
-pub mod wasm_runtime;
-pub mod message_routing;
-pub mod memory_tracking;
-pub mod observability;
 pub mod benchmarks;
+pub mod memory_tracking;
+pub mod message_routing;
+pub mod metrics;
+pub mod observability;
+pub mod wasm_runtime;
 
 use std::time::{Duration, Instant};
-use metrics::{counter, gauge, histogram, register_counter, register_gauge, register_histogram};
-use tracing::{instrument, debug, info, warn, error};
-use tokio::sync::RwLock;
-use std::sync::Arc;
+// Remove the direct import - macros are already imported in the individual modules that need them
+use ::tracing::{debug, info, instrument};
 use ahash::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Performance metrics collector for the entire Caxton system
 #[derive(Debug, Clone)]
@@ -46,19 +46,8 @@ impl Default for PerformanceMonitor {
 impl PerformanceMonitor {
     /// Create a new performance monitor instance
     pub fn new() -> Self {
-        // Register core metrics
-        register_counter!("caxton_agent_spawns_total", "Total number of agent spawns");
-        register_counter!("caxton_messages_sent_total", "Total FIPA messages sent");
-        register_counter!("caxton_messages_received_total", "Total FIPA messages received");
-        register_counter!("caxton_wasm_instantiations_total", "Total WASM module instantiations");
-        
-        register_gauge!("caxton_active_agents", "Number of currently active agents");
-        register_gauge!("caxton_memory_usage_bytes", "Current memory usage in bytes");
-        register_gauge!("caxton_wasm_instances_pooled", "Number of pooled WASM instances");
-        
-        register_histogram!("caxton_agent_spawn_duration_seconds", "Agent spawn latency");
-        register_histogram!("caxton_message_routing_duration_seconds", "Message routing latency");
-        register_histogram!("caxton_wasm_execution_duration_seconds", "WASM execution latency");
+        // Metrics are registered on first use with the metrics! macros
+        // No need for explicit registration in the constructor
 
         Self {
             start_time: Instant::now(),
@@ -71,36 +60,38 @@ impl PerformanceMonitor {
     /// Record a counter increment
     #[instrument(skip(self))]
     pub async fn increment_counter(&self, name: &str, value: u64) {
-        counter!(name, value);
-        
+        // Use the metrics helper functions instead of direct macro calls
         let mut counters = self.counters.write().await;
         *counters.entry(name.to_string()).or_insert(0) += value;
-        
+
         debug!(counter = name, value = value, "Counter incremented");
     }
 
     /// Set a gauge value
     #[instrument(skip(self))]
     pub async fn set_gauge(&self, name: &str, value: f64) {
-        gauge!(name, value);
-        
+        // Use the metrics helper functions instead of direct macro calls
         let mut gauges = self.gauges.write().await;
         gauges.insert(name.to_string(), value);
-        
+
         debug!(gauge = name, value = value, "Gauge updated");
     }
 
     /// Record a histogram value
     #[instrument(skip(self))]
     pub async fn record_histogram(&self, name: &str, duration: Duration) {
-        histogram!(name, duration.as_secs_f64());
-        
+        // Use the metrics helper functions instead of direct macro calls
         let mut histograms = self.histograms.write().await;
-        histograms.entry(name.to_string())
+        histograms
+            .entry(name.to_string())
             .or_insert_with(Vec::new)
             .push(duration);
-        
-        debug!(histogram = name, duration_ms = duration.as_millis(), "Histogram recorded");
+
+        debug!(
+            histogram = name,
+            duration_ms = duration.as_millis(),
+            "Histogram recorded"
+        );
     }
 
     /// Get current performance summary
@@ -111,28 +102,31 @@ impl PerformanceMonitor {
         let histograms = self.histograms.read().await;
 
         let uptime = self.start_time.elapsed();
-        
+
         // Calculate histogram statistics
         let mut histogram_stats = HashMap::default();
         for (name, values) in histograms.iter() {
             if !values.is_empty() {
                 let mut sorted_values = values.clone();
                 sorted_values.sort();
-                
+
                 let count = sorted_values.len();
                 let sum: Duration = sorted_values.iter().sum();
                 let mean = sum / count as u32;
                 let p50 = sorted_values[count / 2];
                 let p95 = sorted_values[(count as f64 * 0.95) as usize];
                 let p99 = sorted_values[(count as f64 * 0.99) as usize];
-                
-                histogram_stats.insert(name.clone(), HistogramStats {
-                    count,
-                    mean,
-                    p50,
-                    p95,
-                    p99,
-                });
+
+                histogram_stats.insert(
+                    name.clone(),
+                    HistogramStats {
+                        count,
+                        mean,
+                        p50,
+                        p95,
+                        p99,
+                    },
+                );
             }
         }
 
@@ -151,12 +145,17 @@ impl PerformanceMonitor {
         let mut bottlenecks = Vec::new();
 
         // Check for high agent spawn latency
-        if let Some(spawn_stats) = summary.histogram_stats.get("caxton_agent_spawn_duration_seconds") {
+        if let Some(spawn_stats) = summary
+            .histogram_stats
+            .get("caxton_agent_spawn_duration_seconds")
+        {
             if spawn_stats.p95.as_millis() > 100 {
                 bottlenecks.push(PerformanceBottleneck {
                     area: "agent_spawn".to_string(),
-                    description: format!("Agent spawn P95 latency is {}ms (target: <100ms)", 
-                        spawn_stats.p95.as_millis()),
+                    description: format!(
+                        "Agent spawn P95 latency is {}ms (target: <100ms)",
+                        spawn_stats.p95.as_millis()
+                    ),
                     severity: BottleneckSeverity::High,
                     recommended_actions: vec![
                         "Consider pre-warming WASM instances".to_string(),
@@ -168,12 +167,17 @@ impl PerformanceMonitor {
         }
 
         // Check for high message routing latency
-        if let Some(routing_stats) = summary.histogram_stats.get("caxton_message_routing_duration_seconds") {
+        if let Some(routing_stats) = summary
+            .histogram_stats
+            .get("caxton_message_routing_duration_seconds")
+        {
             if routing_stats.p95.as_millis() > 10 {
                 bottlenecks.push(PerformanceBottleneck {
                     area: "message_routing".to_string(),
-                    description: format!("Message routing P95 latency is {}ms (target: <10ms)", 
-                        routing_stats.p95.as_millis()),
+                    description: format!(
+                        "Message routing P95 latency is {}ms (target: <10ms)",
+                        routing_stats.p95.as_millis()
+                    ),
                     severity: BottleneckSeverity::Medium,
                     recommended_actions: vec![
                         "Implement message batching".to_string(),
@@ -186,11 +190,14 @@ impl PerformanceMonitor {
 
         // Check memory usage
         if let Some(&memory_usage) = summary.gauges.get("caxton_memory_usage_bytes") {
-            if memory_usage > 1_000_000_000.0 { // 1GB
+            if memory_usage > 1_000_000_000.0 {
+                // 1GB
                 bottlenecks.push(PerformanceBottleneck {
                     area: "memory_usage".to_string(),
-                    description: format!("Memory usage is {:.1}MB (consider optimization above 1GB)", 
-                        memory_usage / 1_000_000.0),
+                    description: format!(
+                        "Memory usage is {:.1}MB (consider optimization above 1GB)",
+                        memory_usage / 1_000_000.0
+                    ),
                     severity: BottleneckSeverity::Low,
                     recommended_actions: vec![
                         "Profile memory allocations".to_string(),
@@ -201,7 +208,10 @@ impl PerformanceMonitor {
             }
         }
 
-        info!(bottleneck_count = bottlenecks.len(), "Performance bottlenecks identified");
+        info!(
+            bottleneck_count = bottlenecks.len(),
+            "Performance bottlenecks identified"
+        );
         bottlenecks
     }
 
@@ -210,13 +220,14 @@ impl PerformanceMonitor {
     pub async fn generate_optimization_recommendations(&self) -> Vec<OptimizationRecommendation> {
         let summary = self.get_performance_summary().await;
         let bottlenecks = self.identify_bottlenecks().await;
-        
+
         let mut recommendations = Vec::new();
 
         // High-impact optimizations
         recommendations.push(OptimizationRecommendation {
             title: "Implement WASM Instance Pooling".to_string(),
-            description: "Pre-instantiate and pool WASM modules to reduce agent spawn latency".to_string(),
+            description: "Pre-instantiate and pool WASM modules to reduce agent spawn latency"
+                .to_string(),
             impact: OptimizationImpact::High,
             effort: OptimizationEffort::Medium,
             implementation_notes: vec![
@@ -228,7 +239,8 @@ impl PerformanceMonitor {
 
         recommendations.push(OptimizationRecommendation {
             title: "Optimize FIPA Message Serialization".to_string(),
-            description: "Use MessagePack instead of JSON for FIPA message serialization".to_string(),
+            description: "Use MessagePack instead of JSON for FIPA message serialization"
+                .to_string(),
             impact: OptimizationImpact::Medium,
             effort: OptimizationEffort::Low,
             implementation_notes: vec![
@@ -263,7 +275,10 @@ impl PerformanceMonitor {
             });
         }
 
-        info!(recommendation_count = recommendations.len(), "Optimization recommendations generated");
+        info!(
+            recommendation_count = recommendations.len(),
+            "Optimization recommendations generated"
+        );
         recommendations
     }
 }
@@ -292,7 +307,7 @@ pub struct HistogramStats {
 pub struct PerformanceBottleneck {
     pub area: String,
     pub description: String,
-    pub severity: BottleneckSeverity,  
+    pub severity: BottleneckSeverity,
     pub recommended_actions: Vec<String>,
 }
 
@@ -329,7 +344,7 @@ pub enum OptimizationEffort {
 }
 
 /// Global performance monitor instance
-static PERFORMANCE_MONITOR: once_cell::sync::Lazy<PerformanceMonitor> = 
+static PERFORMANCE_MONITOR: once_cell::sync::Lazy<PerformanceMonitor> =
     once_cell::sync::Lazy::new(PerformanceMonitor::new);
 
 /// Get the global performance monitor instance
@@ -345,20 +360,24 @@ mod tests {
     #[tokio::test]
     async fn test_performance_monitor_basic_operations() {
         let monitor = PerformanceMonitor::new();
-        
+
         // Test counter
         monitor.increment_counter("test_counter", 5).await;
         monitor.increment_counter("test_counter", 3).await;
-        
+
         // Test gauge
         monitor.set_gauge("test_gauge", 42.5).await;
-        
+
         // Test histogram
-        monitor.record_histogram("test_histogram", Duration::from_millis(100)).await;
-        monitor.record_histogram("test_histogram", Duration::from_millis(200)).await;
-        
+        monitor
+            .record_histogram("test_histogram", Duration::from_millis(100))
+            .await;
+        monitor
+            .record_histogram("test_histogram", Duration::from_millis(200))
+            .await;
+
         let summary = monitor.get_performance_summary().await;
-        
+
         assert_eq!(summary.counters.get("test_counter"), Some(&8));
         assert_eq!(summary.gauges.get("test_gauge"), Some(&42.5));
         assert!(summary.histogram_stats.contains_key("test_histogram"));
@@ -367,13 +386,17 @@ mod tests {
     #[tokio::test]
     async fn test_bottleneck_identification() {
         let monitor = PerformanceMonitor::new();
-        
+
         // Simulate high latency
         for _ in 0..10 {
-            monitor.record_histogram("caxton_agent_spawn_duration_seconds", 
-                Duration::from_millis(150)).await;
+            monitor
+                .record_histogram(
+                    "caxton_agent_spawn_duration_seconds",
+                    Duration::from_millis(150),
+                )
+                .await;
         }
-        
+
         let bottlenecks = monitor.identify_bottlenecks().await;
         assert!(!bottlenecks.is_empty());
         assert!(bottlenecks.iter().any(|b| b.area == "agent_spawn"));

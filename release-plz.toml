@@ -1,10 +1,8 @@
 # Caxton release-plz configuration
 
 # Workspace configuration
+[workspace]
 release_always = true
-
-# Allow dirty working directory (for CI)
-allow_dirty = true
 
 # Dependencies update
 dependencies_update = true

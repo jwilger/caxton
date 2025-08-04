@@ -10,9 +10,7 @@ use tokio::time::{sleep, Duration};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     println!("🚀 Starting Caxton Agent Lifecycle Example");
 
@@ -43,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "batch-processing".to_string(),
                 "stream-processing".to_string(),
             ],
-            max_memory: Some(128 * 1024 * 1024), // 128MB
+            max_memory: Some(128 * 1024 * 1024),     // 128MB
             timeout: Some(Duration::from_secs(300)), // 5 minutes
         },
         AgentConfig {
@@ -54,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "resource-management".to_string(),
                 "load-balancing".to_string(),
             ],
-            max_memory: Some(64 * 1024 * 1024), // 64MB
+            max_memory: Some(64 * 1024 * 1024),      // 64MB
             timeout: Some(Duration::from_secs(600)), // 10 minutes
         },
         AgentConfig {
@@ -65,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "performance-tracking".to_string(),
                 "alerting".to_string(),
             ],
-            max_memory: Some(32 * 1024 * 1024), // 32MB
+            max_memory: Some(32 * 1024 * 1024),      // 32MB
             timeout: Some(Duration::from_secs(120)), // 2 minutes
         },
     ];
@@ -87,18 +85,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 System Statistics:");
     println!("  Total agents: {}", stats.total_agents);
     println!("  Agents by state: {:?}", stats.agents_by_state);
-    println!("  Capability distribution: {:?}", stats.capability_distribution);
+    println!(
+        "  Capability distribution: {:?}",
+        stats.capability_distribution
+    );
     println!("  Recovery enabled: {}", stats.recovery_enabled);
 
     // Demonstrate agent status monitoring
     println!("\n🔍 Agent Status Reports:");
     for agent_id in &agent_ids {
         let status = lifecycle_manager.get_agent_status(agent_id).await?;
-        println!("  Agent {}: {:?} - {} capabilities",
-                 agent_id,
-                 status.state,
-                 status.metadata.capabilities.len());
-        println!("    Health: {}", if status.health_status.healthy { "✅ Healthy" } else { "❌ Unhealthy" });
+        println!(
+            "  Agent {}: {:?} - {} capabilities",
+            agent_id,
+            status.state,
+            status.metadata.capabilities.len()
+        );
+        println!(
+            "    Health: {}",
+            if status.health_status.healthy {
+                "✅ Healthy"
+            } else {
+                "❌ Unhealthy"
+            }
+        );
         println!("    Memory: {} bytes", status.resource_usage.memory_bytes);
         println!("    Messages: {}", status.resource_usage.message_count);
     }
@@ -121,8 +131,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         match runtime.send_message(message).await {
-            Ok(response) => println!("  ✅ Message sent to {}, got response: {:?}",
-                                   agent_id, response.performative),
+            Ok(response) => println!(
+                "  ✅ Message sent to {}, got response: {:?}",
+                agent_id, response.performative
+            ),
             Err(e) => println!("  ❌ Failed to send message to {}: {:?}", agent_id, e),
         }
     }
@@ -133,7 +145,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Demonstrate agent suspension and resumption
     if let Some(first_agent) = agent_ids.first() {
         println!("\n⏸️  Suspending agent: {}", first_agent);
-        lifecycle_manager.suspend_agent(first_agent, "Demonstration suspension".to_string()).await?;
+        lifecycle_manager
+            .suspend_agent(first_agent, "Demonstration suspension".to_string())
+            .await?;
 
         let status = lifecycle_manager.get_agent_status(first_agent).await?;
         println!("  Agent state after suspension: {:?}", status.state);
@@ -150,25 +164,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Demonstrate resource limit updates
     if let Some(second_agent) = agent_ids.get(1) {
         println!("\n🔧 Updating resource limits for agent: {}", second_agent);
-        runtime.update_agent_limits(
-            second_agent,
-            Some(256 * 1024 * 1024), // 256MB
-            Some(Duration::from_secs(900)), // 15 minutes
-        ).await?;
+        runtime
+            .update_agent_limits(
+                second_agent,
+                Some(256 * 1024 * 1024),        // 256MB
+                Some(Duration::from_secs(900)), // 15 minutes
+            )
+            .await?;
 
         let (metadata, _) = runtime.get_agent_metadata(second_agent).await?;
-        println!("  Updated max memory: {} bytes",
-                 metadata.properties.get("max_memory").unwrap_or(&"N/A".to_string()));
+        println!(
+            "  Updated max memory: {} bytes",
+            metadata
+                .properties
+                .get("max_memory")
+                .unwrap_or(&"N/A".to_string())
+        );
     }
 
     // Demonstrate health checks
     println!("\n🏥 Performing health checks...");
     for agent_id in &agent_ids {
         let health = runtime.health_check_agent(agent_id).await?;
-        println!("  Agent {}: {} ({}ms response time)",
-                 agent_id,
-                 if health.healthy { "✅ Healthy" } else { "❌ Unhealthy" },
-                 health.timestamp.signed_duration_since(chrono::Utc::now()).num_milliseconds().abs());
+        println!(
+            "  Agent {}: {} ({}ms response time)",
+            agent_id,
+            if health.healthy {
+                "✅ Healthy"
+            } else {
+                "❌ Unhealthy"
+            },
+            health
+                .timestamp
+                .signed_duration_since(chrono::Utc::now())
+                .num_milliseconds()
+                .abs()
+        );
 
         if !health.warnings.is_empty() {
             println!("    Warnings: {:?}", health.warnings);
@@ -188,15 +219,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    Total spawned: {}", runtime_metrics.0);
     println!("    Currently active: {}", runtime_metrics.1);
     println!("    Messages processed: {}", runtime_metrics.2);
-    println!("    Total memory used: {} MB", runtime_metrics.3 / 1024 / 1024);
+    println!(
+        "    Total memory used: {} MB",
+        runtime_metrics.3 / 1024 / 1024
+    );
 
     // Demonstrate graceful shutdown
     println!("\n🛑 Initiating graceful shutdown...");
 
     // Stop all agents gracefully
     for (i, agent_id) in agent_ids.iter().enumerate() {
-        println!("  Stopping agent {} ({}/{})", agent_id, i + 1, agent_ids.len());
-        match lifecycle_manager.stop_agent(agent_id, Some("Example shutdown".to_string())).await {
+        println!(
+            "  Stopping agent {} ({}/{})",
+            agent_id,
+            i + 1,
+            agent_ids.len()
+        );
+        match lifecycle_manager
+            .stop_agent(agent_id, Some("Example shutdown".to_string()))
+            .await
+        {
             Ok(()) => println!("    ✅ Agent stopped successfully"),
             Err(e) => println!("    ❌ Failed to stop agent: {:?}", e),
         }
