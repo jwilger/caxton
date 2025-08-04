@@ -3,19 +3,16 @@
 //! Benchmarks for measuring agent spawning performance across different
 //! optimization strategies and configuration parameters.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use caxton::performance::{wasm_runtime::OptimizedWasmRuntime, PerformanceMonitor};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use caxton::performance::{
-    wasm_runtime::OptimizedWasmRuntime,
-    PerformanceMonitor,
-};
-use std::sync::Arc;
 
 /// Benchmark agent spawning with different configurations
 fn bench_agent_spawn_performance(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let mut group = c.benchmark_group("agent_spawn");
     group.measurement_time(Duration::from_secs(10));
     group.sample_size(100);
@@ -29,14 +26,14 @@ fn bench_agent_spawn_performance(c: &mut Criterion) {
                 b.to_async(&rt).iter(|| async {
                     let monitor = Arc::new(PerformanceMonitor::new());
                     let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
-                    
+
                     // Simulate spawning multiple agents
                     for i in 0..agent_count {
                         // In a real benchmark, this would load actual WASM modules
                         // and create instances. For now, we simulate the overhead.
                         let agent_type = format!("test_agent_{}", i);
                         black_box(agent_type);
-                        
+
                         // Simulate WASM module loading time
                         tokio::task::yield_now().await;
                     }
@@ -51,25 +48,28 @@ fn bench_agent_spawn_performance(c: &mut Criterion) {
 /// Benchmark WASM module loading and compilation
 fn bench_wasm_module_loading(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let mut group = c.benchmark_group("wasm_module_loading");
     group.measurement_time(Duration::from_secs(5));
 
     // Simple WASM module for testing (minimal "hello world" module)
-    let simple_wasm = wat::parse_str(r#"
+    let simple_wasm = wat::parse_str(
+        r#"
         (module
             (func $hello (result i32)
                 i32.const 42
             )
             (export "hello" (func $hello))
         )
-    "#).unwrap();
+    "#,
+    )
+    .unwrap();
 
     group.bench_function("load_simple_module", |b| {
         b.to_async(&rt).iter(|| async {
             let monitor = Arc::new(PerformanceMonitor::new());
             let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
-            
+
             let result = runtime.load_module("test_module", &simple_wasm).await;
             black_box(result);
         });
@@ -83,7 +83,10 @@ fn bench_wasm_module_loading(c: &mut Criterion) {
                 let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
                 rt.block_on(async {
                     // Pre-load the module to cache it
-                    runtime.load_module("cached_module", &simple_wasm).await.unwrap();
+                    runtime
+                        .load_module("cached_module", &simple_wasm)
+                        .await
+                        .unwrap();
                     runtime
                 })
             },
@@ -102,11 +105,12 @@ fn bench_wasm_module_loading(c: &mut Criterion) {
 /// Benchmark instance pooling performance
 fn bench_instance_pooling(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let mut group = c.benchmark_group("instance_pooling");
     group.measurement_time(Duration::from_secs(5));
 
-    let simple_wasm = wat::parse_str(r#"
+    let simple_wasm = wat::parse_str(
+        r#"
         (module
             (func $add (param i32 i32) (result i32)
                 local.get 0
@@ -115,14 +119,19 @@ fn bench_instance_pooling(c: &mut Criterion) {
             )
             (export "add" (func $add))
         )
-    "#).unwrap();
+    "#,
+    )
+    .unwrap();
 
     group.bench_function("get_new_instance", |b| {
         b.to_async(&rt).iter(|| async {
             let monitor = Arc::new(PerformanceMonitor::new());
             let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
-            let module = runtime.load_module("pool_test", &simple_wasm).await.unwrap();
-            
+            let module = runtime
+                .load_module("pool_test", &simple_wasm)
+                .await
+                .unwrap();
+
             // Get instance (will create new since pool is empty)
             let instance = runtime.get_instance(&module, "test_agent").await;
             black_box(instance);
@@ -135,12 +144,15 @@ fn bench_instance_pooling(c: &mut Criterion) {
                 let monitor = Arc::new(PerformanceMonitor::new());
                 let runtime = OptimizedWasmRuntime::new(monitor).unwrap();
                 rt.block_on(async {
-                    let module = runtime.load_module("pool_test", &simple_wasm).await.unwrap();
-                    
+                    let module = runtime
+                        .load_module("pool_test", &simple_wasm)
+                        .await
+                        .unwrap();
+
                     // Pre-warm the pool by creating and returning an instance
                     let instance = runtime.get_instance(&module, "test_agent").await.unwrap();
                     runtime.return_instance(instance).await;
-                    
+
                     (runtime, module)
                 })
             },
@@ -184,10 +196,10 @@ fn bench_memory_allocation(c: &mut Criterion) {
 
     group.bench_function("pooled_allocation_simulation", |b| {
         let rt = Runtime::new().unwrap();
-        
+
         b.to_async(&rt).iter(|| async {
             let pool = caxton::performance::memory_tracking::MemoryPool::new(100);
-            
+
             // Get and return objects to simulate pooling
             for _ in 0..100 {
                 let item = pool.get(|| vec![0u8; 1024]).await;
@@ -200,21 +212,23 @@ fn bench_memory_allocation(c: &mut Criterion) {
 }
 
 /// Benchmark performance monitoring overhead
-fn bench_performance_monitoring(c: &mut Criterion) {  
+fn bench_performance_monitoring(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let mut group = c.benchmark_group("performance_monitoring");
     group.measurement_time(Duration::from_secs(3));
 
     group.bench_function("monitor_overhead", |b| {
         b.to_async(&rt).iter(|| async {
             let monitor = PerformanceMonitor::new();
-            
+
             // Simulate recording various metrics
             for i in 0..100 {
                 monitor.increment_counter("test_counter", 1).await;
                 monitor.set_gauge("test_gauge", i as f64).await;
-                monitor.record_histogram("test_histogram", Duration::from_micros(i * 10)).await;
+                monitor
+                    .record_histogram("test_histogram", Duration::from_micros(i * 10))
+                    .await;
             }
         });
     });
