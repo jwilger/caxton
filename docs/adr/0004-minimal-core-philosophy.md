@@ -1,3 +1,11 @@
+---
+title: "0004. Minimal Core Philosophy"
+date: 2025-01-31
+status: proposed
+layout: adr
+categories: [Architecture]
+---
+
 # 0004. Minimal Core Philosophy
 
 Date: 2025-01-31

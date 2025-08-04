@@ -1,3 +1,11 @@
+---
+title: "0005. MCP for External Tools"
+date: 2025-01-31
+status: proposed
+layout: adr
+categories: [Technology]
+---
+
 # 0005. MCP for External Tools
 
 Date: 2025-01-31
