@@ -1,9 +1,8 @@
-name: Release Artifacts
+name: Build Artifacts
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 permissions:
   contents: write
