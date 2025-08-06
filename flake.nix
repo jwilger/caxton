@@ -54,6 +54,16 @@
             # Set npm cache to also be local
             export NPM_CONFIG_CACHE="$PWD/.npm-cache"
             mkdir -p "$PWD/.npm-cache"
+
+            # Ensure claude code and claude-flow are available
+            # First check if claude code is installed
+            if ! command -v claude &> /dev/null; then
+              npm install -g @anthropic-ai/claude-code
+            fi
+            # Ensure claude-flow is available
+            if ! command -v claude-flow &> /dev/null; then
+              npm install -g claude-flow@alpha
+            fi
           '';
         };
       }
