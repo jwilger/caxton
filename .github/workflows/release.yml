@@ -44,11 +44,10 @@ jobs:
 
       - name: Run release-plz
         run: |
-          # Create release PR on push to main
+          # Run both commands - release-plz is smart enough to handle this
+          # release-pr creates/updates PR if there are releasable changes
+          # release creates tags/releases only if current commit is a release commit
           release-plz release-pr --git-token "${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}"
-
-          # Create actual release when release PR is merged
-          # This checks if the current commit is a release commit
           release-plz release --git-token "${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}"
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
