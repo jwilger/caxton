@@ -1,8 +1,8 @@
 # Caxton System Architecture
 
-**Version**: 1.0  
-**Date**: 2025-08-04  
-**Status**: Design Phase  
+**Version**: 1.0
+**Date**: 2025-08-04
+**Status**: Design Phase
 
 ## Executive Summary
 
@@ -69,7 +69,7 @@ Caxton is a production-ready multi-agent orchestration server that provides WebA
 │  ┌─────────────────────────────────────────────────────┐ │
 │  │               Storage Layer                         │ │
 │  │  • Agent State (Event Sourcing)                   │ │
-│  │  • Message Persistence                            │ │  
+│  │  • Message Persistence                            │ │
 │  │  • Configuration Store                            │ │
 │  └─────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
@@ -124,7 +124,7 @@ impl Agent<Running> {
     pub fn drain(self) -> Result<Agent<Draining>, DrainError> {
         // Only running agents can be drained
     }
-    
+
     pub fn handle_message(&self, msg: FipaMessage) -> Result<(), ProcessingError> {
         // Only running agents can process messages
     }
@@ -155,19 +155,19 @@ pub enum Performative {
     Inform,
     Query,
     Request,
-    
+
     // Negotiation
     Propose,
     AcceptProposal,
     RejectProposal,
-    
+
     // Contract Net Protocol
     Cfp,  // Call for Proposals
-    
+
     // Error handling
     NotUnderstood,
     Failure,
-    
+
     // Conversation management
     Cancel,
 }
@@ -196,11 +196,11 @@ pub struct Deployment {
 pub enum DeploymentStrategy {
     Direct,
     BlueGreen { warm_up_duration: Duration },
-    Canary { 
+    Canary {
         stages: Vec<CanaryStage>,
         rollback_conditions: RollbackConditions,
     },
-    Shadow { 
+    Shadow {
         duration: Duration,
         comparison_metrics: Vec<MetricComparison>,
     },
@@ -273,45 +273,45 @@ pub struct AgentRuntime {
 
 impl AgentRuntime {
     pub async fn spawn_agent(
-        &mut self, 
+        &mut self,
         config: AgentConfig
     ) -> Result<AgentId, SpawnError> {
         let span = tracing::info_span!("agent_spawn", %config.name);
         let _enter = span.enter();
-        
+
         // 1. Validate WASM module
         let module = self.validate_wasm_module(&config.wasm_bytes).await?;
-        
+
         // 2. Create agent instance
         let agent = Agent::new(config.name, module)
             .load(config.wasm_bytes)?
             .start()?;
-            
+
         // 3. Register with router
         self.message_router.register_agent(agent.id(), &agent).await?;
-        
+
         // 4. Track resources
         self.resource_manager.track_agent(agent.id(), config.resources)?;
-        
+
         // 5. Store running agent
         let agent_id = agent.id();
         self.agents.insert(agent_id, Arc::new(agent));
-        
+
         // 6. Emit telemetry
         self.observability.record_agent_spawned(agent_id);
-        
+
         Ok(agent_id)
     }
-    
+
     #[instrument(skip(self, message))]
     pub async fn route_message(
-        &self, 
+        &self,
         message: FipaMessage
     ) -> Result<(), RoutingError> {
         // Message routing with full observability
         let agent = self.agents.get(&message.receiver)
             .ok_or(RoutingError::AgentNotFound(message.receiver))?;
-            
+
         // Create child span for message processing
         let span = tracing::info_span!(
             "message_process",
@@ -319,7 +319,7 @@ impl AgentRuntime {
             message_id = %message.id,
             performative = ?message.performative,
         );
-        
+
         agent.handle_message(message).instrument(span).await
     }
 }
@@ -347,26 +347,26 @@ impl FipaMessageRouter {
     pub async fn route(&self, message: FipaMessage) -> Result<(), RoutingError> {
         // 1. Validate message
         self.validate_message(&message)?;
-        
+
         // 2. Store for persistence
         self.message_store.store_message(&message).await?;
-        
+
         // 3. Update conversation state
         self.conversation_manager
             .update_conversation(&message)
             .await?;
-        
+
         // 4. Find target agent
         let agents = self.routing_table.read().await;
         let target_agent = agents.get(&message.receiver)
             .ok_or(RoutingError::AgentNotFound(message.receiver))?;
-        
+
         // 5. Deliver message
         target_agent.handle_message(message).await?;
-        
+
         // 6. Record metrics
         self.observability.record_message_routed(&message);
-        
+
         Ok(())
     }
 }
@@ -391,13 +391,13 @@ impl AgentLifecycleManager {
     ) -> Result<DeploymentId, DeploymentError> {
         let deployment_id = DeploymentId::new();
         let span = tracing::info_span!(
-            "agent_deploy", 
+            "agent_deploy",
             %deployment_id,
             agent_name = %config.agent_name,
             strategy = ?config.strategy
         );
         let _enter = span.enter();
-        
+
         // Create deployment record
         let deployment = Deployment {
             id: deployment_id,
@@ -407,10 +407,10 @@ impl AgentLifecycleManager {
             state: DeploymentState::Validating,
             created_at: SystemTime::now(),
         };
-        
+
         // Store deployment
         self.state_store.store_deployment(&deployment).await?;
-        
+
         // Execute deployment strategy
         match config.strategy {
             DeploymentStrategy::Direct => {
@@ -427,7 +427,7 @@ impl AgentLifecycleManager {
             },
         }
     }
-    
+
     #[instrument(skip(self, config))]
     async fn execute_canary_deployment(
         &self,
@@ -437,37 +437,37 @@ impl AgentLifecycleManager {
         // 1. Validation phase
         self.update_deployment_state(deployment_id, DeploymentState::Validating).await?;
         let validation_result = self.validate_agent(&config).await?;
-        
+
         if !validation_result.passed {
             return Err(DeploymentError::ValidationFailed(validation_result.errors));
         }
-        
+
         // 2. Begin canary deployment
         self.update_deployment_state(deployment_id, DeploymentState::Deploying).await?;
-        
+
         if let DeploymentStrategy::Canary { stages, rollback_conditions } = &config.strategy {
             for stage in stages {
                 // Deploy to percentage of traffic
                 self.deploy_canary_stage(deployment_id, stage).await?;
-                
+
                 // Monitor for rollback conditions
                 let monitoring_result = self.monitor_canary_stage(
-                    deployment_id, 
-                    stage, 
+                    deployment_id,
+                    stage,
                     rollback_conditions
                 ).await?;
-                
+
                 if monitoring_result.should_rollback {
                     self.rollback_deployment(deployment_id, monitoring_result.reason).await?;
                     return Err(DeploymentError::RolledBack(monitoring_result.reason));
                 }
             }
         }
-        
+
         // 3. Complete deployment
         self.update_deployment_state(deployment_id, DeploymentState::Running).await?;
         self.observability.record_deployment_completed(deployment_id);
-        
+
         Ok(deployment_id)
     }
 }
@@ -500,7 +500,7 @@ impl ContractNetProtocol {
             participant_count = participants.len()
         );
         let _enter = span.enter();
-        
+
         // 1. Create conversation
         let conversation = Conversation {
             id: conversation_id,
@@ -512,9 +512,9 @@ impl ContractNetProtocol {
             created_at: SystemTime::now(),
             expires_at: Some(SystemTime::now() + Duration::from_secs(300)),
         };
-        
+
         self.conversation_manager.create_conversation(conversation).await?;
-        
+
         // 2. Send Call for Proposals
         let cfp_message = FipaMessage {
             id: MessageId::new(),
@@ -531,24 +531,24 @@ impl ContractNetProtocol {
             span_id: SpanId::new(),
             timestamp: SystemTime::now(),
         };
-        
+
         // Broadcast to all participants
         for participant in &participants {
             let mut participant_message = cfp_message.clone();
             participant_message.receiver = *participant;
             self.message_router.route(participant_message).await?;
         }
-        
+
         // 3. Collect proposals with timeout
         let proposals = self.collect_proposals(
-            conversation_id, 
+            conversation_id,
             participants.len(),
             Duration::from_secs(30)
         ).await?;
-        
+
         // 4. Evaluate and select winner
         let winning_proposal = self.evaluate_proposals(proposals)?;
-        
+
         // 5. Send accept-proposal to winner
         let accept_message = FipaMessage {
             id: MessageId::new(),
@@ -565,9 +565,9 @@ impl ContractNetProtocol {
             span_id: SpanId::new(),
             timestamp: SystemTime::now(),
         };
-        
+
         self.message_router.route(accept_message).await?;
-        
+
         // 6. Send reject-proposal to others
         for proposal in &proposals {
             if proposal.sender != winning_proposal.sender {
@@ -586,11 +586,11 @@ impl ContractNetProtocol {
                     span_id: SpanId::new(),
                     timestamp: SystemTime::now(),
                 };
-                
+
                 self.message_router.route(reject_message).await?;
             }
         }
-        
+
         // 7. Complete conversation
         self.conversation_manager.complete_conversation(
             conversation_id,
@@ -599,7 +599,7 @@ impl ContractNetProtocol {
                 task: task.clone(),
             }
         ).await?;
-        
+
         Ok(ContractResult {
             conversation_id,
             winner: winning_proposal.sender,
@@ -641,9 +641,9 @@ impl WasmSandbox {
         config.wasm_reference_types(false);  // Disable ref types
         config.wasm_bulk_memory(false);  // Disable bulk memory
         config.consume_fuel(true);  // Enable fuel for CPU limiting
-        
+
         let engine = wasmtime::Engine::new(&config)?;
-        
+
         // Create store with resource limits
         let context = WasmContext {
             agent_id,
@@ -651,17 +651,17 @@ impl WasmSandbox {
             mcp_tools: Arc::new(McpToolRegistry::new()),
             observability: Arc::new(ObservabilityLayer::new()),
         };
-        
+
         let mut store = wasmtime::Store::new(&engine, context);
         store.limiter(|ctx| &mut ctx.resource_limits);
-        
+
         // Set fuel limit for CPU control
         store.set_fuel(resource_limits.max_cpu_millis.into())?;
-        
+
         // Load and instantiate module
         let module = wasmtime::Module::new(&engine, wasm_bytes)?;
         let instance = wasmtime::Instance::new(&mut store, &module, &[])?;
-        
+
         Ok(Self {
             engine,
             store,
@@ -669,43 +669,43 @@ impl WasmSandbox {
             resource_limiter: ResourceLimiter::new(resource_limits),
         })
     }
-    
+
     #[instrument(skip(self, message))]
     pub async fn handle_message(
-        &mut self, 
+        &mut self,
         message: FipaMessage
     ) -> Result<Option<FipaMessage>, SandboxError> {
         // Serialize message for WASM
         let message_bytes = serde_json::to_vec(&message)?;
-        
+
         // Get WASM function
         let handle_message = self.instance
             .get_typed_func::<(i32, i32), i32>(&mut self.store, "handle_message")?;
-        
+
         // Allocate memory in WASM instance
         let memory = self.instance.get_memory(&mut self.store, "memory")
             .ok_or(SandboxError::NoMemoryExport)?;
-        
+
         let message_ptr = self.allocate_in_wasm(memory, &message_bytes)?;
-        
+
         // Set fuel before execution
         self.store.set_fuel(self.resource_limiter.remaining_cpu())?;
-        
+
         // Call WASM function with timeout
         let result = tokio::time::timeout(
             self.resource_limiter.max_execution_time(),
             async {
                 handle_message.call_async(
-                    &mut self.store, 
+                    &mut self.store,
                     (message_ptr, message_bytes.len() as i32)
                 ).await
             }
         ).await??;
-        
+
         // Check remaining fuel
         let consumed_fuel = self.resource_limiter.max_cpu_millis() - self.store.get_fuel()?;
         self.resource_limiter.consume_cpu(consumed_fuel)?;
-        
+
         // Handle result
         match result {
             0 => Ok(None), // No response
@@ -728,7 +728,7 @@ pub struct ResourceLimiter {
     max_memory_bytes: ByteSize,
     max_cpu_millis: CpuMillis,
     max_execution_time: Duration,
-    
+
     consumed_memory: AtomicU64,
     consumed_cpu: AtomicU64,
     start_time: SystemTime,
@@ -746,7 +746,7 @@ impl ResourceLimiter {
             Ok(())
         }
     }
-    
+
     pub fn consume_cpu(&self, millis: u64) -> Result<(), ResourceError> {
         let current = self.consumed_cpu.fetch_add(millis, Ordering::SeqCst);
         if current + millis > self.max_cpu_millis.as_u64() {
@@ -773,7 +773,7 @@ pub struct ObservabilityLayer {
 }
 
 impl ObservabilityLayer {
-    pub fn record_agent_event<T>(&self, event: AgentEvent<T>) 
+    pub fn record_agent_event<T>(&self, event: AgentEvent<T>)
     where T: Serialize + Send + Sync + 'static {
         // Structured logging
         tracing::info!(
@@ -783,17 +783,17 @@ impl ObservabilityLayer {
             trace_id = %event.trace_id,
             "Agent event recorded"
         );
-        
+
         // Store event for analysis
         self.event_store.store_event(event);
-        
+
         // Update metrics
         self.metrics_registry.increment_counter(
             "caxton_agent_events_total",
             &[("agent_id", &event.agent_id.to_string())]
         );
     }
-    
+
     pub fn record_message_metrics(&self, message: &FipaMessage, duration: Duration) {
         // Histogram for message processing time
         self.metrics_registry.record_histogram(
@@ -805,7 +805,7 @@ impl ObservabilityLayer {
                 ("receiver", &message.receiver.to_string()),
             ]
         );
-        
+
         // Counter for message throughput
         self.metrics_registry.increment_counter(
             "caxton_messages_processed_total",
@@ -867,24 +867,24 @@ pub struct PerformanceEvent {
 pub struct PerformanceOptimizedRuntime {
     // Agent pool for reusing WASM instances
     agent_pool: Arc<AgentPool>,
-    
+
     // Message batching for throughput
     message_batcher: Arc<MessageBatcher>,
-    
+
     // Lock-free message queue
     message_queue: Arc<crossbeam::queue::SegQueue<FipaMessage>>,
-    
+
     // CPU-intensive work executor
     cpu_executor: Arc<tokio::task::JoinSet<()>>,
-    
-    // I/O bound work executor  
+
+    // I/O bound work executor
     io_executor: Arc<tokio::task::JoinSet<()>>,
 }
 
 impl PerformanceOptimizedRuntime {
     pub async fn process_message_batch(&self) -> Result<(), ProcessingError> {
         let batch = self.message_batcher.get_batch().await?;
-        
+
         // Process messages in parallel
         let mut tasks = Vec::new();
         for message in batch {
@@ -895,10 +895,10 @@ impl PerformanceOptimizedRuntime {
             });
             tasks.push(task);
         }
-        
+
         // Wait for all messages to complete
         futures::future::try_join_all(tasks).await?;
-        
+
         Ok(())
     }
 }
@@ -912,28 +912,28 @@ pub struct AgentPool {
 impl AgentPool {
     pub async fn get_agent(&self, agent_id: AgentId) -> Result<Agent<Running>, PoolError> {
         let mut pool = self.available_agents.lock().await;
-        
+
         if let Some(agents) = pool.get_mut(&agent_id) {
             if let Some(agent) = agents.pop_front() {
                 return Ok(agent);
             }
         }
-        
+
         // No pooled instance available, create new one
         self.create_fresh_agent(agent_id).await
     }
-    
+
     pub async fn return_agent(&self, agent: Agent<Running>) -> Result<(), PoolError> {
         let mut pool = self.available_agents.lock().await;
         let agent_id = agent.id();
-        
+
         let agents = pool.entry(agent_id).or_insert_with(VecDeque::new);
-        
+
         if agents.len() < self.max_pool_size {
             agents.push_back(agent);
         }
         // Otherwise, drop the agent to reclaim memory
-        
+
         Ok(())
     }
 }
@@ -949,22 +949,22 @@ impl AgentPool {
 pub enum CaxtonError {
     #[error("Agent error: {0}")]
     Agent(#[from] AgentError),
-    
+
     #[error("Message routing error: {0}")]
     Routing(#[from] RoutingError),
-    
+
     #[error("Deployment error: {0}")]
     Deployment(#[from] DeploymentError),
-    
+
     #[error("Resource error: {0}")]
     Resource(#[from] ResourceError),
-    
+
     #[error("Security error: {0}")]
     Security(#[from] SecurityError),
-    
+
     #[error("Configuration error: {0}")]
     Configuration(#[from] ConfigurationError),
-    
+
     #[error("Observability error: {0}")]
     Observability(#[from] ObservabilityError),
 }
@@ -974,17 +974,17 @@ pub enum CaxtonError {
 pub enum AgentError {
     #[error("Agent {agent_id} not found")]
     NotFound { agent_id: AgentId },
-    
+
     #[error("Agent {agent_id} is in state {current_state}, cannot perform {operation}")]
     InvalidState {
         agent_id: AgentId,
         current_state: String,
         operation: String,
     },
-    
+
     #[error("WASM execution failed: {reason}")]
     WasmExecutionFailed { reason: String },
-    
+
     #[error("Agent {agent_id} exceeded resource limit: {limit_type}")]
     ResourceLimitExceeded {
         agent_id: AgentId,
@@ -996,16 +996,16 @@ pub enum AgentError {
 pub enum RoutingError {
     #[error("No route found for agent {agent_id}")]
     NoRoute { agent_id: AgentId },
-    
+
     #[error("Message {message_id} delivery failed: {reason}")]
     DeliveryFailed {
         message_id: MessageId,
         reason: String,
     },
-    
+
     #[error("Invalid message format: {details}")]
     InvalidMessageFormat { details: String },
-    
+
     #[error("Conversation {conversation_id} not found")]
     ConversationNotFound { conversation_id: ConversationId },
 }
@@ -1015,16 +1015,16 @@ pub type CaxtonResult<T> = Result<T, CaxtonError>;
 
 pub trait CaxtonResultExt<T> {
     fn with_context<F>(self, f: F) -> CaxtonResult<T>
-    where 
+    where
         F: FnOnce() -> String;
 }
 
-impl<T, E> CaxtonResultExt<T> for Result<T, E> 
+impl<T, E> CaxtonResultExt<T> for Result<T, E>
 where
     E: Into<CaxtonError>
 {
     fn with_context<F>(self, f: F) -> CaxtonResult<T>
-    where 
+    where
         F: FnOnce() -> String
     {
         self.map_err(|e| {
@@ -1044,15 +1044,15 @@ impl AgentId {
     pub fn new() -> Self {
         Self(NonZeroU64::new(rand::random()).expect("random u64 is non-zero"))
     }
-    
+
     // Parse from string with validation
     pub fn parse(s: &str) -> Result<Self, ParseError> {
         let id = s.parse::<u64>()
             .map_err(|_| ParseError::InvalidFormat)?;
-        
+
         let non_zero_id = NonZeroU64::new(id)
             .ok_or(ParseError::ZeroId)?;
-        
+
         Ok(Self(non_zero_id))
     }
 }
@@ -1061,7 +1061,7 @@ impl MessageId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
-    
+
     pub fn parse(s: &str) -> Result<Self, ParseError> {
         let uuid = Uuid::parse_str(s)
             .map_err(|_| ParseError::InvalidUuid)?;
@@ -1080,18 +1080,18 @@ impl Percentage {
         }
         Ok(Self(value))
     }
-    
+
     pub fn from_ratio(ratio: f64) -> Result<Self, ValidationError> {
         if !(0.0..=1.0).contains(&ratio) {
             return Err(ValidationError::InvalidRatio { ratio });
         }
         Ok(Self(ratio * 100.0))
     }
-    
+
     pub fn as_ratio(&self) -> f64 {
         self.0 / 100.0
     }
-    
+
     pub fn as_percentage(&self) -> f64 {
         self.0
     }
@@ -1128,7 +1128,7 @@ services:
     depends_on:
       - postgres
       - jaeger
-    
+
   postgres:
     image: postgres:15-alpine
     environment:
@@ -1139,7 +1139,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-      
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:

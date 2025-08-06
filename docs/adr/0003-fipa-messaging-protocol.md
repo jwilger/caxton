@@ -117,6 +117,6 @@ let msg = FipaMessage::request()
 ## References
 
 - FIPA ACL Message Structure Specification
-- FIPA Communicative Act Library Specification  
+- FIPA Communicative Act Library Specification
 - "Multi-Agent Systems" by Wooldridge
 - JADE (Java Agent DEvelopment framework) documentation

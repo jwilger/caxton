@@ -16,9 +16,9 @@ Caxton is a multi-agent orchestration server - like Redis for caching or Postgre
 
 You install Caxton, deploy your agents (written in any language), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
 
-✅ **Install in seconds** - Single binary, no dependencies  
-✅ **Deploy any language** - If it compiles to WebAssembly, it runs on Caxton  
-✅ **Production-ready** - Built-in observability, fault tolerance, and scaling  
+✅ **Install in seconds** - Single binary, no dependencies
+✅ **Deploy any language** - If it compiles to WebAssembly, it runs on Caxton
+✅ **Production-ready** - Built-in observability, fault tolerance, and scaling
 ✅ **Zero boilerplate** - Message routing, state management, and coordination handled for you
 
 ## Installation
@@ -35,7 +35,7 @@ curl -sSL https://caxton.io/install.sh | sh
 # macOS
 brew install caxton
 
-# Ubuntu/Debian  
+# Ubuntu/Debian
 sudo apt install caxton
 
 # Docker
@@ -161,7 +161,7 @@ pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
 
 Now that you have agents running:
 - 📝 [Write your first agent](docs/first-agent.md) in Python, JavaScript, or Go
-- 🔧 [Configure Caxton](docs/configuration.md) for your environment  
+- 🔧 [Configure Caxton](docs/configuration.md) for your environment
 - 📊 [Explore the dashboard](docs/dashboard.md) at http://localhost:8080
 - 🚀 [Deploy to production](docs/production.md) with Docker or Kubernetes
 
@@ -212,7 +212,7 @@ Caxton provides:
 
 We're intentionally NOT building:
 - Complex orchestration languages
-- Built-in workflow engines  
+- Built-in workflow engines
 - Agent hierarchies or permissions systems
 - **Infrastructure-level consensus protocols** (Raft, Paxos, PBFT) - use etcd/Consul for distributed state
 - Message transformation pipelines

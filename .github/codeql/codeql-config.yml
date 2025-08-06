@@ -11,7 +11,7 @@ queries:
 query-filters:
   - exclude:
       id: "rust/unused-value"
-      
+
 paths-ignore:
   - "target/"
   - "tests/fixtures/"
@@ -20,7 +20,7 @@ paths-ignore:
 
 paths:
   - "src/"
-  
+
 # Security-focused query packs
 packs:
   - "codeql/rust-queries:Security"

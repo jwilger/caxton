@@ -39,12 +39,12 @@ We will implement a hot-reload deployment model with multi-stage validation:
 service AgentDeployment {
   // Direct deployment (development/testing)
   rpc DeployAgent(DeployRequest) returns (DeployResponse);
-  
+
   // Production deployment strategies
   rpc CreateCanaryDeployment(CanaryRequest) returns (CanaryResponse);
   rpc PromoteCanary(PromoteRequest) returns (PromoteResponse);
   rpc RollbackDeployment(RollbackRequest) returns (RollbackResponse);
-  
+
   // Shadow deployment for testing
   rpc CreateShadowDeployment(ShadowRequest) returns (ShadowResponse);
 }
@@ -58,16 +58,16 @@ Every deployment goes through mandatory validation:
 async fn validate_agent(wasm_module: &[u8]) -> Result<ValidationReport> {
     // Stage 1: Static validation
     let static_report = validate_wasm_module(wasm_module)?;
-    
+
     // Stage 2: Sandbox execution
     let sandbox_report = run_in_sandbox(wasm_module).await?;
-    
+
     // Stage 3: Contract verification
     let contract_report = verify_message_contracts(wasm_module).await?;
-    
+
     // Stage 4: Resource profiling
     let resource_report = profile_resource_usage(wasm_module).await?;
-    
+
     Ok(ValidationReport {
         static: static_report,
         sandbox: sandbox_report,
@@ -144,16 +144,16 @@ Instant rollback with state preservation:
 async fn rollback_deployment(deployment_id: &str) -> Result<()> {
     // 1. Stop routing messages to new version
     router.disable_agent(deployment_id).await?;
-    
+
     // 2. Drain in-flight messages (max 30s)
     drain_messages(deployment_id).await?;
-    
+
     // 3. Restore previous version routing
     router.enable_previous_version(deployment_id).await?;
-    
+
     // 4. Clean up failed deployment
     cleanup_deployment(deployment_id).await?;
-    
+
     Ok(())
 }
 ```
@@ -231,7 +231,7 @@ Every deployment emits:
 
 **Metrics**:
 ```
-caxton_deployment_duration_seconds{strategy="canary", status="success"} 
+caxton_deployment_duration_seconds{strategy="canary", status="success"}
 caxton_deployment_validation_time_seconds{stage="sandbox"}
 caxton_deployment_rollback_total{reason="high_error_rate"}
 caxton_agent_version_active{agent="processor", version="v2"}

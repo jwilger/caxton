@@ -68,12 +68,12 @@ Key aspects:
 - **Pros**: Maximum isolation, existing tooling
 - **Cons**: High overhead, slow startup, complex IPC
 
-### Docker/Containers  
+### Docker/Containers
 - **Pros**: Good isolation, rich ecosystem
 - **Cons**: Heavyweight, requires container runtime, slow startup
 
 ### Language-specific Isolation (V8 Isolates, Erlang Processes)
-- **Pros**: Fast, efficient for specific languages  
+- **Pros**: Fast, efficient for specific languages
 - **Cons**: Locks us into specific language/runtime
 
 ### Shared Memory Threads
@@ -93,7 +93,7 @@ pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
     // Agent processes message and returns status
 }
 
-#[no_mangle]  
+#[no_mangle]
 pub extern "C" fn get_response(buf_ptr: *mut u8, buf_len: usize) -> i32 {
     // Agent writes response to provided buffer
 }
@@ -108,6 +108,6 @@ The host will:
 ## References
 
 - WebAssembly specification
-- Wasmtime documentation  
+- Wasmtime documentation
 - "WebAssembly: A New Hope" by Lin Clark
 - WASI (WebAssembly System Interface) proposal

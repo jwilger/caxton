@@ -132,7 +132,7 @@ When reporting a vulnerability, please include:
 ### Response Timeline
 
 - **Acknowledgment**: Within 24 hours
-- **Initial Assessment**: Within 72 hours  
+- **Initial Assessment**: Within 72 hours
 - **Detailed Response**: Within 1 week
 - **Fix Timeline**: Varies by severity (see below)
 

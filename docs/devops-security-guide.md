@@ -423,7 +423,7 @@ The security implementation provides strong guarantees for multi-agent orchestra
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-08-04  
-**Next Review**: 2025-09-04  
+**Document Version**: 1.0
+**Last Updated**: 2025-08-04
+**Next Review**: 2025-09-04
 **Owner**: DevOps Security Team

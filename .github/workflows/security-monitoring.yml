@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "::group::Vulnerability Audit"
           cargo audit --json > audit-report.json || true
-          
+
           # Check if vulnerabilities found
           VULN_COUNT=$(jq '.vulnerabilities | length' audit-report.json)
           if [ "$VULN_COUNT" -gt 0 ]; then
@@ -57,14 +57,14 @@ jobs:
         run: |
           echo "::group::Dependency Analysis"
           cargo tree --format "{p} {r}" > dependency-tree.txt
-          
+
           # Count dependencies
           DIRECT_DEPS=$(grep -v "├─\|└─" dependency-tree.txt | wc -l)
           TOTAL_DEPS=$(wc -l < dependency-tree.txt)
-          
+
           echo "Direct dependencies: $DIRECT_DEPS"
           echo "Total dependencies: $TOTAL_DEPS"
-          
+
           # Check for security-sensitive dependencies
           echo "Security-sensitive dependencies:"
           grep -E "(crypto|ssl|tls|auth|rand|hash)" dependency-tree.txt || echo "None found"
@@ -74,9 +74,9 @@ jobs:
         run: |
           echo "::group::Unsafe Code Analysis"
           cargo geiger --format json > geiger-report.json
-          
+
           UNSAFE_COUNT=$(jq '.used.functions.unsafe + .used.expressions.unsafe + .used.impls.unsafe + .used.traits.unsafe + .used.methods.unsafe' geiger-report.json)
-          
+
           if [ "$UNSAFE_COUNT" -gt 0 ]; then
             echo "::warning::$UNSAFE_COUNT unsafe code blocks found"
             cargo geiger
@@ -124,22 +124,22 @@ jobs:
       - name: Check for security patterns
         run: |
           echo "::group::Security Pattern Analysis"
-          
+
           # Check for hardcoded secrets
           if grep -r "password\|secret\|key\|token" src/ --include="*.rs" | grep -v "test\|example\|config"; then
             echo "::warning::Potential hardcoded secrets found"
           fi
-          
+
           # Check for unsafe practices
           if grep -r "unwrap()\|expect(" src/ --include="*.rs" | grep -v "test"; then
             echo "::warning::Potential panic-inducing code found"
           fi
-          
+
           # Check for network operations without proper validation
           if grep -r "TcpStream\|UdpSocket\|Http" src/ --include="*.rs" | grep -v "test"; then
             echo "::notice::Network operations found - ensure proper validation"
           fi
-          
+
           echo "::endgroup::"
 
   container-security-scan:
@@ -154,28 +154,28 @@ jobs:
         run: |
           cat > Dockerfile.security << 'EOF'
           FROM rust:1.75-alpine3.18 as builder
-          
+
           # Security hardening
           RUN apk update && apk upgrade && \
               apk add --no-cache musl-dev pkgconfig openssl-dev && \
               rm -rf /var/cache/apk/* && \
               addgroup -g 1000 rust && \
               adduser -D -s /bin/sh -u 1000 -G rust rust
-          
+
           WORKDIR /app
           COPY --chown=rust:rust . .
-          
+
           USER rust
           RUN cargo build --release --target x86_64-unknown-linux-musl
-          
+
           FROM scratch
           COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
           COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/caxton /caxton
-          
+
           USER 65534:65534
           ENTRYPOINT ["/caxton"]
           EOF
-          
+
           docker build -f Dockerfile.security -t caxton:security-scan .
 
       - name: Run Trivy vulnerability scanner
@@ -196,20 +196,20 @@ jobs:
           echo "::group::Trivy Results"
           TRIVY_CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-results.json)
           TRIVY_HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-results.json)
-          
+
           echo "Critical vulnerabilities: $TRIVY_CRITICAL"
           echo "High vulnerabilities: $TRIVY_HIGH"
-          
+
           if [ "$TRIVY_CRITICAL" -gt 0 ]; then
             echo "::error::Critical vulnerabilities found in container"
             jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")' trivy-results.json
           fi
           echo "::endgroup::"
-          
+
           echo "::group::Grype Results"
           GRYPE_CRITICAL=$(jq '[.matches[]? | select(.vulnerability.severity == "Critical")] | length' grype-results.json)
           GRYPE_HIGH=$(jq '[.matches[]? | select(.vulnerability.severity == "High")] | length' grype-results.json)
-          
+
           echo "Critical vulnerabilities (Grype): $GRYPE_CRITICAL"
           echo "High vulnerabilities (Grype): $GRYPE_HIGH"
           echo "::endgroup::"
@@ -233,7 +233,7 @@ jobs:
       - name: Check security configuration
         run: |
           echo "::group::Security Configuration Audit"
-          
+
           # Check for security files
           SECURITY_FILES=(
             "SECURITY.md"
@@ -242,7 +242,7 @@ jobs:
             ".github/dependabot.yml"
             ".pre-commit-config.yaml"
           )
-          
+
           for file in "${SECURITY_FILES[@]}"; do
             if [ -f "$file" ]; then
               echo "✅ $file exists"
@@ -250,57 +250,57 @@ jobs:
               echo "❌ $file missing"
             fi
           done
-          
+
           # Check security-related ADRs
           if [ -f "_adrs/0002-webassembly-for-agent-isolation.md" ]; then
             echo "✅ WebAssembly isolation ADR exists"
           else
             echo "❌ WebAssembly isolation ADR missing"
           fi
-          
+
           if [ -f "_adrs/0003-fipa-messaging-protocol.md" ]; then
             echo "✅ FIPA messaging protocol ADR exists"
           else
             echo "❌ FIPA messaging protocol ADR missing"
           fi
-          
+
           echo "::endgroup::"
 
       - name: Generate security dashboard
         run: |
           cat > security-dashboard.md << 'EOF'
           # Security Dashboard
-          
+
           ## Daily Security Status
-          
+
           **Date**: $(date -u)
           **Commit**: ${{ github.sha }}
-          
+
           ### Security Metrics
           - **Dependency Vulnerabilities**: Check audit reports
           - **Code Security Issues**: Check CodeQL results
           - **Container Vulnerabilities**: Check Trivy/Grype results
           - **Security Configuration**: All files present
-          
+
           ### Security Controls Status
           - ✅ Pre-commit hooks configured
           - ✅ Dependabot enabled
           - ✅ Security policy documented
           - ✅ CI/CD security pipeline active
           - ✅ Container security scanning enabled
-          
+
           ### Recent Security Activities
           - Daily dependency audit completed
           - Container image security scan completed
           - Code security analysis completed
           - Security configuration verified
-          
+
           ### Recommendations
           1. Review any high/critical vulnerabilities immediately
           2. Update dependencies with security patches
           3. Monitor security alerts and notifications
           4. Conduct regular security reviews
-          
+
           ---
           *Generated by automated security monitoring*
           EOF
@@ -324,7 +324,7 @@ jobs:
           echo "Code security scan: ${{ needs.code-security-scan.result }}"
           echo "Container security scan: ${{ needs.container-security-scan.result }}"
           echo "Security baseline: ${{ needs.security-baseline.result }}"
-          
+
           # Check for failures
           if [ "${{ needs.dependency-audit.result }}" != "success" ] || \
              [ "${{ needs.code-security-scan.result }}" != "success" ] || \

@@ -1077,13 +1077,13 @@ a:not(.btn):not(.nav-link):not(.link-card):focus {
     .adr-carousel-controls {
         display: none;
     }
-    
+
     .adr-carousel-container {
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     .adr-carousel-item {
         scroll-snap-align: start;
     }

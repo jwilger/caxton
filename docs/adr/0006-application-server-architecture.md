@@ -67,30 +67,30 @@ We will pivot Caxton from a Rust library to a standalone application server that
 
 ### Mitigation Strategies
 
-- **Performance**: 
+- **Performance**:
   - Use gRPC for efficient binary protocol
   - Implement connection pooling and multiplexing
   - Target < 1ms API overhead for local deployments
   - Benchmark: 100K+ messages/second on single core
 
-- **Deployment**: 
+- **Deployment**:
   - Provide Docker images, Helm charts within 30 days
   - Package managers: brew, apt, yum support
   - systemd unit files with proper service management
   - One-line installation scripts
 
-- **Migration**: 
+- **Migration**:
   - Clear documentation and automated migration tools
   - Maintain library adapter for 6-month transition period
   - Direct support for early adopters
 
-- **Resources**: 
+- **Resources**:
   - Implement cgroup-based resource isolation
   - Publish sizing guidelines: 100 agents/GB RAM baseline
   - CPU quotas and memory limits per agent
   - Automatic resource recommendation engine
 
-- **API stability**: 
+- **API stability**:
   - Semantic versioning from v1.0.0
   - 12-month deprecation policy
   - Generated SDKs for major languages
