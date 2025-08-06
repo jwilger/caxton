@@ -2,5 +2,14 @@
 name = "caxton"
 version = "0.1.0"
 edition = "2024"
+authors = ["John Wilger <john.wilger@gmail.com>"]
+description = "A modern, efficient typesetting and document preparation system"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/jwilger/caxton"
+homepage = "https://github.com/jwilger/caxton"
+documentation = "https://docs.rs/caxton"
+readme = "README.md"
+keywords = ["typesetting", "document", "publishing", "latex", "markdown"]
+categories = ["text-processing", "command-line-utilities"]
 
 [dependencies]
