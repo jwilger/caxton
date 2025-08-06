@@ -30,6 +30,7 @@
             rustToolchain
             nodejs
             git
+            gh
             pre-commit
             cargo-nextest
             cargo-watch
