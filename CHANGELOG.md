@@ -7,49 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Features
+## [0.1.1] - 2025-08-06
 
-- Implement comprehensive Caxton multi-agent orchestration platform
-- Complete type-driven domain model with phantom types for agent lifecycle
-- FIPA protocol messaging implementation with conversation tracking
-- WebAssembly runtime with instance pooling and resource limits
-- Comprehensive observability with OpenTelemetry integration
-- Performance optimizations achieving 2-4x improvements
-- Property-based and integration test suites with 80%+ coverage
-- Production-ready CI/CD pipeline with security scanning
-- Complete architecture documentation and development roadmap
+### Changed
+- Complete project restart with simplified foundation
+- Removed all previous implementation code
+- Established clean base for new development approach
 
-### Build System
+### Added
+- Basic Rust project structure with Cargo.toml
+- Minimal main.rs entry point
+- Development environment configuration (flake.nix)
+- Claude Code and Claude Flow tools integration for AI-assisted development
 
-- Add comprehensive GitHub Actions workflows for CI/CD
-- Configure release automation with release-plz
-- Set up GitHub Pages for documentation hosting
+### Fixed
+- Corrected rust toolchain target parameter in build workflow
+
+## [0.1.0] - 2025-08-06
+
+### Added
+- Initial release with comprehensive build and release automation
+- GitHub Actions workflows for CI/CD
+- Release automation with release-plz
+- Multi-platform build artifacts (Linux, macOS, Windows)
+- Automated Homebrew formula updates
+- Security scanning and dependency management
+- Comprehensive project documentation structure
 
 ### Documentation
+- README with project vision
+- SECURITY.md with vulnerability reporting process
+- Basic ARCHITECTURE.md placeholder
+- CONTRIBUTING.md guidelines
 
-- Create comprehensive ARCHITECTURE.md with system design
-- Add DEVELOPMENT_ROADMAP.md with 3-phase strategic plan
-- Create EXECUTIVE_SUMMARY.md for business overview
-- Add SECURITY.md with vulnerability reporting process
-- Create detailed testing documentation in README_TESTING.md
-
-### Testing
-
-- Add property-based tests for core domain types
-- Create integration tests for agent coordination
-- Add performance benchmarks with criterion
-- Implement WASM isolation tests
-
-### Performance
-
-- Implement WebAssembly instance pooling (60-80% latency reduction)
-- Add message routing batching (3-5x throughput increase)
-- Create memory allocation tracking (25-40% efficiency improvement)
-- Implement batched observability processing (70-90% overhead reduction)
-
-### Security
-
-- Configure comprehensive security scanning in CI pipeline
-- Add container security validation with Trivy
-- Implement daily security monitoring workflow
-- Configure dependabot for automated dependency updates
+[Unreleased]: https://github.com/jwilger/caxton/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/jwilger/caxton/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/jwilger/caxton/releases/tag/v0.1.0
