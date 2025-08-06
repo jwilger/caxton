@@ -291,16 +291,16 @@ impl Agent for OrderProcessor {
         match msg {
             Message::ProcessOrder(order) => {
                 // Automatic distributed tracing
-                let inventory = self.request("inventory-checker", 
+                let inventory = self.request("inventory-checker",
                     CheckInventory { items: order.items }).await?;
-                
+
                 // Type-safe contract negotiation
                 let shipping = self.negotiate_contract(
-                    ShippingRequest { items: order.items, 
+                    ShippingRequest { items: order.items,
                                      address: order.address }).await?;
-                
-                Ok(Response::OrderConfirmed { 
-                    tracking: shipping.tracking_number 
+
+                Ok(Response::OrderConfirmed {
+                    tracking: shipping.tracking_number
                 })
             }
         }
@@ -348,7 +348,7 @@ impl Agent for OrderProcessor {
                 </div>
                 <h3 class="release-title">Foundation Phase</h3>
                 <p class="release-description">
-                    Caxton is currently in early development. Core architecture is being implemented with a focus on 
+                    Caxton is currently in early development. Core architecture is being implemented with a focus on
                     getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
                 </p>
                 <div class="release-actions">

@@ -173,7 +173,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 // ✅ CORRECT: Concurrent agent deployment
 [Single Message]:
   - Task("Agent 1", "full instructions", "agent-type-1")
-  - Task("Agent 2", "full instructions", "agent-type-2") 
+  - Task("Agent 2", "full instructions", "agent-type-2")
   - Task("Agent 3", "full instructions", "agent-type-3")
   - Task("Agent 4", "full instructions", "agent-type-4")
   - Task("Agent 5", "full instructions", "agent-type-5")
@@ -192,7 +192,7 @@ npx claude-flow sparc run integration "integrate authentication with user manage
 ```bash
 # Deploy full development swarm
 Task("Research requirements", "...", "researcher")
-Task("Plan architecture", "...", "planner") 
+Task("Plan architecture", "...", "planner")
 Task("Implement features", "...", "coder")
 Task("Create tests", "...", "tester")
 Task("Review code", "...", "reviewer")
@@ -271,7 +271,7 @@ Task("Adaptive optimization", "...", "adaptive-coordinator")
 #### **Full-Stack Development Swarm (8 agents)**
 ```bash
 Task("System architecture", "...", "system-architect")
-Task("Backend APIs", "...", "backend-dev") 
+Task("Backend APIs", "...", "backend-dev")
 Task("Frontend mobile", "...", "mobile-dev")
 Task("Database design", "...", "coder")
 Task("API documentation", "...", "api-docs")
@@ -284,7 +284,7 @@ Task("Production validation", "...", "production-validator")
 ```bash
 Task("Byzantine consensus", "...", "byzantine-coordinator")
 Task("Raft coordination", "...", "raft-manager")
-Task("Gossip protocols", "...", "gossip-coordinator") 
+Task("Gossip protocols", "...", "gossip-coordinator")
 Task("CRDT synchronization", "...", "crdt-synchronizer")
 Task("Security management", "...", "security-manager")
 Task("Performance monitoring", "...", "perf-analyzer")
@@ -303,7 +303,7 @@ Task("Workflow automation", "...", "workflow-automation")
 ```bash
 Task("Requirements spec", "...", "specification")
 Task("Algorithm design", "...", "pseudocode")
-Task("System architecture", "...", "architecture") 
+Task("System architecture", "...", "architecture")
 Task("TDD implementation", "...", "sparc-coder")
 Task("London school tests", "...", "tdd-london-swarm")
 Task("Iterative refinement", "...", "refinement")
@@ -322,7 +322,7 @@ Task("Production validation", "...", "production-validator")
 - Implement `swarm-memory-manager` for distributed coordination
 - Apply `collective-intelligence-coordinator` for decision-making
 
-For more information about SPARC methodology and batchtools optimization, see: 
+For more information about SPARC methodology and batchtools optimization, see:
 - SPARC Guide: https://github.com/ruvnet/claude-code-flow/docs/sparc.md
 - Batchtools Documentation: https://github.com/ruvnet/claude-code-flow/docs/batchtools.md
 

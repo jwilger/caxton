@@ -13,7 +13,7 @@ Build the simplest possible server for multi-agent systems, then let the communi
 **Goal**: Ship a production-ready orchestration server with baseline performance.
 
 **Deliverables**:
-- [ ] WASM agent runtime with isolation guarantees  
+- [ ] WASM agent runtime with isolation guarantees
 - [ ] Async message router with FIPA ACL support
 - [ ] FIPA Contract Net Protocol (CNP) implementation for task delegation
 - [ ] External agent routing API (gRPC + REST gateway)
@@ -146,7 +146,7 @@ We will **NEVER** add these to Caxton core:
 3. **Documentation** - Examples and tutorials
 4. **Testing** - Chaos testing, benchmarks
 
-### Phase 2 Opportunities  
+### Phase 2 Opportunities
 1. **Pattern development** - Share your agent patterns
 2. **Language bindings** - Make agents easy to build
 3. **Debugging tools** - Trace visualization and analysis

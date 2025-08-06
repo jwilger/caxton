@@ -55,12 +55,12 @@ caxton server status
 ```bash
 # Agent Management
 caxton agent deploy <file>      # Deploy new agent
-caxton agent list              # List running agents  
+caxton agent list              # List running agents
 caxton agent logs <id>         # Stream agent logs
 caxton agent delete <id>       # Remove agent
 caxton agent inspect <id>      # Detailed agent info
 
-# Message Operations  
+# Message Operations
 caxton message send            # Send message to agent
 caxton message trace <id>      # Trace message flow
 caxton message stream          # Stream all messages
@@ -116,7 +116,7 @@ Examples:
   # Production deployment with canary
   caxton agent deploy processor.wasm --canary --name prod-processor
 
-  # High-availability deployment  
+  # High-availability deployment
   caxton agent deploy processor.wasm --replicas 3
 ```
 
@@ -138,7 +138,7 @@ $ caxton agent deploy processor.wasm \
 $ caxton agent list
 AGENT ID        NAME            STATUS    UPTIME    MESSAGES
 proc-7f8d9      processor       Running   2h30m     45,231
-calc-2a4e1      calculator      Running   1h15m     12,054  
+calc-2a4e1      calculator      Running   1h15m     12,054
 filter-9b3c2    filter          Failed    -         0
 
 3 agents (2 running, 1 failed)
@@ -231,7 +231,7 @@ Running test scenario: order-processing
   ✓ Received order message
   ✓ Sent confirmation
   ✓ State correctly updated
-  
+
 All tests passed! (4/4)
 Coverage: 92% of message handlers
 ```
@@ -247,7 +247,7 @@ Coverage: 92% of message handlers
 - **Scriptable**: JSON output and proper exit codes
 - **Integrated**: Works with standard Unix tools
 
-### Negative  
+### Negative
 
 - **Binary size**: ~10MB due to gRPC and CLI framework
 - **Installation**: Requires separate download/install

@@ -48,7 +48,7 @@ Key aspects:
 - **Debugging efficiency**: Correlation IDs make it easy to follow request flows
 - **Production readiness**: Same observability in dev and production
 
-### Negative  
+### Negative
 
 - **Initial complexity**: Developers must understand distributed tracing concepts
 - **Performance overhead**: Telemetry collection adds some latency (typically < 1%)

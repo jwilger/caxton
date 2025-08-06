@@ -19,7 +19,7 @@ Proposed
 Agents need to interact with the external world:
 - Query databases and APIs
 - Read and write files
-- Send emails and notifications  
+- Send emails and notifications
 - Call LLM services
 - Execute system commands
 
@@ -71,7 +71,7 @@ Key aspects:
 - **Pros**: Simple, fast
 - **Cons**: No isolation, security risks, couples agents to host
 
-### Custom Tool Protocol  
+### Custom Tool Protocol
 - **Pros**: Optimized for our use case
 - **Cons**: Another protocol to design and maintain, no ecosystem
 
@@ -100,22 +100,22 @@ impl HostFunctions for CaxtonHost {
             tool: tool_name.to_string(),
             params: params.clone(),
         });
-        
+
         // Check permissions
         if !self.can_access_tool(agent_id, tool_name) {
             return Err(ToolError::Unauthorized);
         }
-        
+
         // Execute tool
         let result = self.mcp_client.call(tool_name, params).await?;
-        
+
         // Record completion event
         self.events.record(Event::ToolCompleted {
             agent: agent_id,
             tool: tool_name.to_string(),
             result: result.clone(),
         });
-        
+
         Ok(result)
     }
 }

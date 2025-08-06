@@ -24,7 +24,7 @@ Framework design faces constant pressure to add features:
 
 This feature creep leads to:
 - Bloated APIs that are hard to learn
-- Rigid abstractions that don't fit all use cases  
+- Rigid abstractions that don't fit all use cases
 - Performance overhead from unused features
 - Maintenance burden that slows innovation
 - Lock-in to specific architectural patterns
@@ -98,7 +98,7 @@ Caxton does NOT include infrastructure consensus protocols because:
 - **Pros**: Core stays small, extensions are modular
 - **Cons**: Plugin APIs become another thing to maintain
 
-### Layered Architecture  
+### Layered Architecture
 - **Pros**: Progressive disclosure of complexity
 - **Cons**: Layers create artificial boundaries
 

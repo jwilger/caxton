@@ -45,11 +45,11 @@ service CaxtonManagement {
   rpc DeployAgent(DeployAgentRequest) returns (DeployAgentResponse);
   rpc UndeployAgent(UndeployAgentRequest) returns (UndeployAgentResponse);
   rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
-  
+
   // Message operations
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
   rpc SubscribeMessages(SubscribeRequest) returns (stream Message);
-  
+
   // Health and monitoring
   rpc Health(HealthRequest) returns (HealthResponse);
   rpc Metrics(MetricsRequest) returns (MetricsResponse);

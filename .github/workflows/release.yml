@@ -55,7 +55,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact: caxton-linux-x86_64
-          - os: ubuntu-latest  
+          - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             artifact: caxton-linux-x86_64-musl
           - os: macos-latest
@@ -67,7 +67,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact: caxton-windows-x86_64.exe
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
