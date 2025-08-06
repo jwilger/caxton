@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/jwilger/caxton/compare/v0.1.1...v0.1.2) - 2025-08-06
+
+### Bug Fixes
+
+- update build-artifacts workflow to attach to existing release
+
 ## [0.1.1] - 2025-08-06
 
 ### Changed
