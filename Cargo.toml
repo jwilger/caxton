@@ -1,6 +1,6 @@
 [package]
 name = "caxton"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["John Wilger <john.wilger@gmail.com>"]
 description = "A modern, efficient typesetting and document preparation system"
