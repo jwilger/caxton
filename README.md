@@ -157,13 +157,17 @@ pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
 }
 ```
 
-## What's Next?
+## Documentation
 
-Now that you have agents running:
-- 📝 [Write your first agent](docs/first-agent.md) in Python, JavaScript, or Go
-- 🔧 [Configure Caxton](docs/configuration.md) for your environment
-- 📊 [Explore the dashboard](docs/dashboard.md) at http://localhost:8080
-- 🚀 [Deploy to production](docs/production.md) with Docker or Kubernetes
+📖 **[Full Documentation](docs/)** - Complete guide to Caxton
+
+### Quick Links
+- 🚀 [Installation](docs/getting-started/installation.md) - Get Caxton installed
+- ⚡ [Quick Start](docs/getting-started/quickstart.md) - Running in 3 minutes
+- 🎯 [First Agent](docs/getting-started/first-agent.md) - Build your first agent
+- 🔧 [Configuration](docs/getting-started/configuration.md) - Configure Caxton
+- 📚 [API Reference](docs/developer-guide/api-reference.md) - Complete API docs
+- 🏭 [Production Guide](docs/operations/production-deployment.md) - Deploy to production
 
 ## The Problem
 
