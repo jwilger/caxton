@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title | default: site.title }}</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  <link rel="canonical" href="{{ page.url | absolute_url }}">
+
+  <!-- Basic styling -->
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --text-color: #cdd6f4;
+      --accent-color: #89b4fa;
+      --secondary-bg: #313244;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 4rem 0;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      opacity: 0.9;
+    }
+
+    .description {
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      opacity: 0.8;
+    }
+
+    nav {
+      background-color: var(--secondary-bg);
+      padding: 1rem 0;
+      margin: 2rem 0;
+      border-radius: 8px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    nav a {
+      color: var(--text-color);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: var(--accent-color);
+    }
+
+    main {
+      margin-top: 3rem;
+    }
+
+    .content {
+      background-color: var(--secondary-bg);
+      padding: 2rem;
+      border-radius: 8px;
+    }
+
+    .links {
+      margin-top: 3rem;
+      text-align: center;
+    }
+
+    .links a {
+      display: inline-block;
+      padding: 0.8rem 2rem;
+      background-color: var(--accent-color);
+      color: var(--bg-color);
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 0 0.5rem;
+      font-weight: 600;
+      transition: opacity 0.3s;
+    }
+
+    .links a:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{ site.title }}</h1>
+      <p class="subtitle">{{ site.subtitle }}</p>
+      <p class="description">{{ site.description }}</p>
+    </header>
+
+    {% if site.navigation.main %}
+    <nav>
+      <ul>
+        {% for item in site.navigation.main %}
+        <li>
+          <a href="{{ item.url }}" {% if item.external %}target="_blank" rel="noopener"{% endif %}>
+            {{ item.title }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    <main>
+      <div class="content">
+        {{ content }}
+
+        <div class="links">
+          <a href="{{ site.social.github }}">View on GitHub</a>
+          <a href="{{ site.baseurl }}/adr/">Architecture Decisions</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

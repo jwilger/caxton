@@ -1,0 +1,295 @@
+---
+layout: default
+---
+
+<div class="adr-index-layout">
+    <!-- ADR Index Sidebar -->
+    <aside class="adr-sidebar">
+        <div class="adr-sidebar-header">
+            <h3>Architecture Decisions</h3>
+            {% if site.adr.search.enabled %}
+                <div class="adr-search">
+                    <input type="search" id="adr-search" placeholder="{{ site.adr.search.placeholder | default: 'Search ADRs...' }}" aria-label="Search ADRs">
+                    <div id="search-results" class="search-results"></div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="adr-filters">
+            <h4>Filter by Status</h4>
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All</button>
+                {% for status in site.adr.statuses %}
+                    <button class="filter-btn" data-filter="{{ status }}">{{ status | capitalize }}</button>
+                {% endfor %}
+            </div>
+
+            {% if site.adr.categories %}
+                <h4>Filter by Category</h4>
+                <div class="filter-group">
+                    {% for category in site.adr.categories %}
+                        <button class="filter-btn" data-filter="{{ category | downcase }}">{{ category }}</button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Statistics -->
+        <div class="adr-stats">
+            <h4>Statistics</h4>
+            <div class="stat-item">
+                <span class="stat-number">{{ site.adrs.size }}</span>
+                <span class="stat-label">Total ADRs</span>
+            </div>
+            {% assign accepted_count = site.adrs | where: 'status', 'accepted' | size %}
+            <div class="stat-item">
+                <span class="stat-number">{{ accepted_count }}</span>
+                <span class="stat-label">Accepted</span>
+            </div>
+            {% assign proposed_count = site.adrs | where: 'status', 'proposed' | size %}
+            <div class="stat-item">
+                <span class="stat-number">{{ proposed_count }}</span>
+                <span class="stat-label">Proposed</span>
+            </div>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div class="adr-quick-nav">
+            <h4>Quick Navigation</h4>
+            <ul>
+                <li><a href="{{ '/' | relative_url }}">← Back to Home</a></li>
+                {% if site.social.github %}
+                    <li><a href="{{ site.social.github }}/tree/main/docs/adr" target="_blank" rel="noopener">View Source</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="adr-index-main">
+        <div class="adr-content">
+            {% if page.title %}
+                <header class="adr-header">
+                    <h1>{{ page.title }}</h1>
+                    {% if page.subtitle or content != '' %}
+                        <div class="adr-description">
+                            {{ content }}
+                        </div>
+                    {% endif %}
+                </header>
+            {% endif %}
+
+            <!-- DEBUG: ADR Collection Information -->
+            <div class="debug-info" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border: 1px solid #ccc;">
+                <h4>🐛 DEBUG: ADR Collection Status</h4>
+                <p><strong>site.adrs size:</strong> {{ site.adrs.size }}</p>
+                <p><strong>Collections available:</strong> {{ site.collections | map: 'label' | join: ', ' }}</p>
+                {% if site.adrs.size > 0 %}
+                    <p><strong>First ADR title:</strong> {{ site.adrs.first.title }}</p>
+                    <p><strong>First ADR path:</strong> {{ site.adrs.first.path }}</p>
+                {% endif %}
+                <p><strong>Files in _adrs directory:</strong></p>
+                <ul>
+                    {% for file in site.static_files %}
+                        {% if file.path contains '_adrs' %}
+                            <li>{{ file.path }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- ADR Grid/List -->
+            <div class="adr-grid" id="adr-grid">
+                {% assign sorted_adrs = site.adrs | sort: 'date' | reverse %}
+                {% for adr in sorted_adrs %}
+                    <article class="adr-card"
+                             data-status="{{ adr.status | downcase }}"
+                             {% if adr.categories %}data-categories="{{ adr.categories | join: ',' | downcase }}"{% endif %}>
+                        {% if adr.status %}
+                            <div class="adr-status status-{{ adr.status | downcase }}">
+                                {{ adr.status | capitalize }}
+                            </div>
+                        {% endif %}
+
+                        <div class="adr-card-header">
+                            <div class="adr-number">
+                                {% assign adr_num = adr.title | split: '.' | first | split: ' ' | last %}
+                                ADR {{ adr_num }}
+                            </div>
+                            {% if adr.date %}
+                                <time datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: "%b %d, %Y" }}</time>
+                            {% endif %}
+                        </div>
+
+                        <div class="adr-card-content">
+                            <h3 class="adr-title">
+                                <a href="{{ adr.url | relative_url }}">{{ adr.title | split: '. ' | last }}</a>
+                            </h3>
+
+                            {% if adr.categories %}
+                                <div class="adr-categories">
+                                    {% for category in adr.categories %}
+                                        <span class="category">{{ category }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if adr.excerpt and adr.excerpt != '' %}
+                                <p class="adr-excerpt">{{ adr.excerpt | strip_html | truncate: 150 }}</p>
+                            {% elsif adr.content %}
+                                {% assign content_preview = adr.content | strip_html | strip_newlines | truncatewords: 30 %}
+                                {% unless content_preview contains adr.title %}
+                                    <p class="adr-excerpt">{{ content_preview }}</p>
+                                {% endunless %}
+                            {% endif %}
+                        </div>
+
+                        <div class="adr-card-footer">
+                            <a href="{{ adr.url | relative_url }}" class="read-more">Read More →</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <!-- Empty State for Search/Filter -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <h3>No ADRs found</h3>
+                <p>Try adjusting your search or filter criteria.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- JavaScript for filtering and search -->
+<script>
+// Embed server-side data for client-side use
+const ADR_CONFIG = {
+    statuses: {{ site.adr.statuses | jsonify }},
+    categories: {{ site.adr.categories | jsonify }}
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const adrCards = document.querySelectorAll('.adr-card');
+    const searchInput = document.getElementById('adr-search');
+    const emptyState = document.getElementById('empty-state');
+    const adrGrid = document.getElementById('adr-grid');
+
+    // Filter state tracking
+    let currentStatusFilter = 'all';
+    let currentCategoryFilter = null;
+    let currentSearchQuery = '';
+
+    // Filter functionality
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            const filterGroup = this.closest('.filter-group');
+
+            // Update active button within this group
+            filterGroup.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Determine filter type and update state
+            if (ADR_CONFIG.statuses.includes(filter) || filter === 'all') {
+                currentStatusFilter = filter;
+            } else if (ADR_CONFIG.categories.map(c => c.toLowerCase()).includes(filter.toLowerCase())) {
+                currentCategoryFilter = filter.toLowerCase();
+            }
+
+            // Apply combined filters
+            applyAllFilters();
+        });
+    });
+
+    // Search functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            currentSearchQuery = this.value.toLowerCase();
+            applyAllFilters();
+        });
+    }
+
+    function applyAllFilters() {
+        let visibleCount = 0;
+
+        adrCards.forEach(card => {
+            const status = card.dataset.status || '';
+            const categories = card.dataset.categories || '';
+            const title = card.querySelector('.adr-title')?.textContent.toLowerCase() || '';
+            const excerpt = card.querySelector('.adr-excerpt')?.textContent.toLowerCase() || '';
+
+            let shouldShow = true;
+
+            // Status filter
+            if (currentStatusFilter !== 'all') {
+                shouldShow = shouldShow && (status === currentStatusFilter);
+            }
+
+            // Category filter
+            if (currentCategoryFilter) {
+                shouldShow = shouldShow && categories.toLowerCase().includes(currentCategoryFilter);
+            }
+
+            // Search filter
+            if (currentSearchQuery) {
+                shouldShow = shouldShow && (title.includes(currentSearchQuery) || excerpt.includes(currentSearchQuery));
+            }
+
+            if (shouldShow) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update filter counts (if elements exist)
+        updateFilterCounts();
+
+        // Show/hide empty state
+        toggleEmptyState(visibleCount === 0);
+    }
+
+    function updateFilterCounts() {
+        // Count ADRs for each filter type
+        ADR_CONFIG.statuses.forEach(status => {
+            const count = Array.from(adrCards).filter(card => {
+                if (status === 'all') return true;
+                return card.dataset.status === status;
+            }).length;
+
+            const button = document.querySelector(`[data-filter="${status}"]`);
+            if (button && status !== 'all') {
+                button.textContent = `${status.charAt(0).toUpperCase() + status.slice(1)} (${count})`;
+            }
+        });
+
+        ADR_CONFIG.categories.forEach(category => {
+            const count = Array.from(adrCards).filter(card => {
+                const categories = card.dataset.categories || '';
+                return categories.toLowerCase().includes(category.toLowerCase());
+            }).length;
+
+            const button = document.querySelector(`[data-filter="${category.toLowerCase()}"]`);
+            if (button) {
+                button.textContent = `${category} (${count})`;
+            }
+        });
+    }
+
+    function toggleEmptyState(show) {
+        if (show) {
+            emptyState.style.display = 'block';
+            adrGrid.style.display = 'none';
+        } else {
+            emptyState.style.display = 'none';
+            adrGrid.style.display = 'grid';
+        }
+    }
+
+    // Initialize filter counts on page load
+    updateFilterCounts();
+});
+</script>
