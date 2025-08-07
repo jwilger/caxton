@@ -52,6 +52,11 @@ defaults:
     values:
       layout: "adr"
       sitemap: true
+  - scope:
+      path: "docs"
+    values:
+      layout: "documentation"
+      sitemap: true
 
 # Sass configuration to match current Catppuccin theme
 sass:

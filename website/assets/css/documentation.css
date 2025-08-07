@@ -29,9 +29,7 @@
   position: sticky;
   top: calc(80px + var(--space-4));
   height: fit-content;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.5) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
