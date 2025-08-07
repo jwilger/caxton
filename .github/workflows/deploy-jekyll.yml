@@ -155,16 +155,19 @@ jobs:
 
           # Create release data file for Jekyll
           mkdir -p website/_data
-          chmod +x .github/scripts/generate-release-data.sh
-          .github/scripts/generate-release-data.sh \
-            "$VERSION" \
-            "$TAG_NAME" \
-            "$RELEASE_NAME" \
-            "$RELEASE_DATE" \
-            "$RELEASE_STATUS" \
-            "$RELEASE_PHASE" \
-            "$RELEASE_URL" \
-            "$RELEASE_BODY"
+
+          # Use printf to create YAML with proper escaping
+          {
+            echo "version: \"$VERSION\""
+            echo "tag: \"$TAG_NAME\""
+            echo "name: \"$RELEASE_NAME\""
+            echo "date: \"$RELEASE_DATE\""
+            echo "status: \"$RELEASE_STATUS\""
+            echo "phase: \"$RELEASE_PHASE\""
+            echo "url: \"$RELEASE_URL\""
+            echo "description: |"
+            echo "  $RELEASE_BODY" | sed 's/^/  /'
+          } > website/_data/release.yml
 
           echo "Latest release: $VERSION ($RELEASE_STATUS)"
 
