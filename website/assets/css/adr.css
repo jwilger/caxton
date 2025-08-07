@@ -350,15 +350,16 @@
   align-items: center;
   justify-content: center;
   min-width: 60px;
-  height: 28px;
+  height: 24px;
   padding: 0 var(--space-3);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-lavender) 100%);
   color: var(--text-on-primary);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-bold);
   font-family: var(--font-mono);
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .adr-card-header time {
@@ -367,14 +368,14 @@
   font-family: var(--font-mono);
   flex-grow: 1;
   text-align: center;
-  line-height: 28px;
+  line-height: 24px;
 }
 
 /* ADR Status Badge */
 .adr-status {
   display: inline-flex;
   align-items: center;
-  height: 28px;
+  height: 24px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
@@ -382,6 +383,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .adr-status.status-accepted,
