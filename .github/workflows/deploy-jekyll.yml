@@ -74,19 +74,32 @@ jobs:
 
       - name: Copy markdown documentation
         run: |
-          # Copy main documentation files to website
-          mkdir -p website/docs
-          cp README.md ARCHITECTURE.md ROADMAP.md SECURITY.md CONTRIBUTING.md website/docs/ 2>/dev/null || true
+          # Copy entire docs directory structure to website
+          if [ -d "docs" ]; then
+            echo "Copying documentation from /docs to website/docs..."
 
-          # Add Jekyll front matter to docs if not present
-          for file in website/docs/*.md; do
+            # Create the target directory if it doesn't exist
+            mkdir -p website/docs
+
+            # Copy all documentation files preserving directory structure
+            cp -r docs/* website/docs/ 2>/dev/null || true
+
+            # Also copy root-level documentation files
+            cp README.md ARCHITECTURE.md ROADMAP.md SECURITY.md CONTRIBUTING.md website/docs/ 2>/dev/null || true
+          fi
+
+          # Add Jekyll front matter to all markdown files if not present
+          find website/docs -name "*.md" | while read -r file; do
             if [ -f "$file" ] && ! grep -q "^---" "$file"; then
+              # Extract title from filename, replacing hyphens with spaces
               filename=$(basename "$file" .md)
+              title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+
               # Create temp file with front matter
               {
                 echo "---"
                 echo "layout: default"
-                echo "title: \"${filename}\""
+                echo "title: \"${title}\""
                 echo "---"
                 echo ""
                 cat "$file"
@@ -94,6 +107,9 @@ jobs:
               mv "${file}.tmp" "$file"
             fi
           done
+
+          echo "Documentation copy completed. Contents of website/docs:"
+          find website/docs -type f -name "*.md" | sort
 
       - name: Build Jekyll site
         run: |
