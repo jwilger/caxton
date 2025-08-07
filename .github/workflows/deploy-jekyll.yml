@@ -156,18 +156,26 @@ jobs:
           # Create release data file for Jekyll
           mkdir -p website/_data
 
-          # Use printf to create YAML with proper escaping
-          {
-            echo "version: \"$VERSION\""
-            echo "tag: \"$TAG_NAME\""
-            echo "name: \"$RELEASE_NAME\""
-            echo "date: \"$RELEASE_DATE\""
-            echo "status: \"$RELEASE_STATUS\""
-            echo "phase: \"$RELEASE_PHASE\""
-            echo "url: \"$RELEASE_URL\""
-            echo "description: |"
-            echo "  $RELEASE_BODY" | sed 's/^/  /'
-          } > website/_data/release.yml
+          # Write YAML file line by line to avoid heredoc issues
+          echo "version: \"$VERSION\"" > website/_data/release.yml
+          echo "tag: \"$TAG_NAME\"" >> website/_data/release.yml
+          echo "name: \"$RELEASE_NAME\"" >> website/_data/release.yml
+          echo "date: \"$RELEASE_DATE\"" >> website/_data/release.yml
+          echo "status: \"$RELEASE_STATUS\"" >> website/_data/release.yml
+          echo "phase: \"$RELEASE_PHASE\"" >> website/_data/release.yml
+          echo "url: \"$RELEASE_URL\"" >> website/_data/release.yml
+          echo "description: |" >> website/_data/release.yml
+          # Ensure release body is properly indented for YAML
+          if [ -n "$RELEASE_BODY" ]; then
+            echo "$RELEASE_BODY" | sed 's/^/  /' >> website/_data/release.yml
+          else
+            echo "  Caxton is currently in early development." >> website/_data/release.yml
+          fi
+
+          # Debug: Show the generated file
+          echo "Generated release.yml:"
+          cat website/_data/release.yml
+          echo "---"
 
           echo "Latest release: $VERSION ($RELEASE_STATUS)"
 
