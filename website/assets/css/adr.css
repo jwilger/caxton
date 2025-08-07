@@ -7,7 +7,7 @@
  * ============================================================================ */
 .adr-index-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(300px, auto) 1fr;
   gap: var(--space-8);
   max-width: 1400px;
   margin: 0 auto;
@@ -28,13 +28,13 @@
   position: sticky;
   top: calc(80px + var(--space-4));
   height: fit-content;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   border: 2px solid var(--color-surface1);
+  min-width: 300px;
+  width: fit-content;
 }
 
 @media (max-width: 1024px) {
@@ -496,7 +496,7 @@
  * ============================================================================ */
 .adr-page-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: minmax(280px, auto) 1fr;
   gap: var(--space-8);
   max-width: 1400px;
   margin: 0 auto;
@@ -519,13 +519,13 @@
   position: sticky;
   top: calc(80px + var(--space-4));
   height: fit-content;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   border: 2px solid var(--color-surface1);
+  min-width: 280px;
+  width: fit-content;
 }
 
 .adr-page-sidebar .adr-sidebar-header {
