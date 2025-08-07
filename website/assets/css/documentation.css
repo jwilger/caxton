@@ -323,6 +323,10 @@ main pre {
   padding: var(--space-6);
   margin: var(--space-6) 0;
   overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+  tab-size: 2;
 }
 
 main code {
@@ -338,6 +342,10 @@ main pre code {
   background: transparent;
   padding: 0;
   color: var(--text-primary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+  tab-size: 2;
 }
 
 .docs-body > h1:first-child,
@@ -494,6 +502,10 @@ main pre code {
   overflow-x: auto;
   position: relative;
   box-shadow: var(--shadow-sm);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+  tab-size: 2;
 }
 
 .docs-body code,
@@ -513,6 +525,10 @@ main pre code {
   padding: 0;
   color: var(--text-primary);
   border: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  display: block;
+  tab-size: 2;
 }
 
 /* Tables in documentation */
@@ -954,6 +970,202 @@ main pre code {
 }
 
 /* ============================================================================
+ * Anchor Links Enhancement
+ * ============================================================================ */
+
+/* Enhanced anchor link positioning for documentation */
+.docs-body h2,
+.docs-body h3,
+.docs-body h4,
+.docs-body h5,
+.docs-body h6,
+.docs-content h2,
+.docs-content h3,
+.docs-content h4,
+.docs-content h5,
+.docs-content h6 {
+  scroll-margin-top: 6rem;
+}
+
+/* Table of Contents Styling */
+.table-of-contents,
+.toc,
+#toc {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(137, 180, 250, 0.05) 100%);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin: var(--space-8) 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.table-of-contents::before,
+.toc::before,
+#toc::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    var(--color-blue) 0%,
+    var(--color-lavender) 50%,
+    var(--color-mauve) 100%);
+}
+
+.table-of-contents h3,
+.table-of-contents h4,
+.toc h3,
+.toc h4,
+#toc h3,
+#toc h4 {
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-surface1);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-semibold);
+}
+
+/* Anchor link hover enhancements for documentation */
+.docs-body .anchor-link,
+.docs-content .anchor-link {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(137, 180, 250, 0.1) 100%);
+  border: 1px solid var(--color-surface1);
+  backdrop-filter: blur(10px);
+}
+
+.docs-body .anchor-link:hover,
+.docs-content .anchor-link:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
+}
+
+.docs-body .anchor-icon,
+.docs-content .anchor-icon {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.docs-body .anchor-link:hover .anchor-icon,
+.docs-content .anchor-link:hover .anchor-icon {
+  color: white;
+}
+
+/* Enhanced heading styles with better anchor link integration */
+.docs-body h2::before,
+.docs-content h2::before {
+  left: calc(-1 * var(--space-8));
+  color: var(--color-lavender);
+  font-weight: var(--font-bold);
+  opacity: 0.3;
+  transition: opacity var(--transition-fast);
+}
+
+.docs-body h2:hover::before,
+.docs-content h2:hover::before {
+  opacity: 0.6;
+}
+
+.docs-body h3::before,
+.docs-content h3::before {
+  left: calc(-1 * var(--space-6));
+  color: var(--color-primary);
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.docs-body h3:hover::before,
+.docs-content h3:hover::before {
+  opacity: 0.8;
+}
+
+/* Copy-to-clipboard toast notification */
+.anchor-copy-toast {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  background: var(--color-green);
+  color: white;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-medium);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all var(--transition-base);
+  z-index: 9999;
+}
+
+.anchor-copy-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Link highlight animation */
+@keyframes highlight-heading {
+  0% { background: transparent; }
+  50% { background: rgba(137, 180, 250, 0.1); }
+  100% { background: transparent; }
+}
+
+.heading-highlighted {
+  animation: highlight-heading 1.5s ease-out;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4));
+}
+
+/* ============================================================================
+ * Collapsible Sections Integration
+ * ============================================================================ */
+/* Override h2 padding when collapsible sections are present */
+.collapsible-section h2 {
+  position: relative;
+}
+
+/* Ensure proper spacing for collapsible content */
+.collapsible-content {
+  margin-top: var(--space-6);
+}
+
+/* Smooth height transitions for collapsible content */
+.collapsible-content > *:first-child {
+  margin-top: 0;
+}
+
+.collapsible-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Adjust h2 decoration when it's collapsible */
+.collapsible-section h2::before {
+  left: calc(-1 * var(--space-12)) !important;
+}
+
+/* Ensure toggle button doesn't interfere with existing decorations */
+.collapsible-section .section-toggle {
+  left: calc(-1 * var(--space-10));
+}
+
+@media (max-width: 768px) {
+  .collapsible-section .section-toggle {
+    left: calc(-1 * var(--space-8));
+  }
+
+  .collapsible-section h2::before {
+    left: calc(-1 * var(--space-10)) !important;
+  }
+}
+
+/* ============================================================================
  * Print Styles
  * ============================================================================ */
 @media print {
@@ -979,5 +1191,28 @@ main pre code {
 
   .docs-body table {
     page-break-inside: avoid;
+  }
+
+  /* Hide anchor links in print */
+  .anchor-link {
+    display: none !important;
+  }
+
+  .table-of-contents {
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  /* Hide collapsible controls in print */
+  .collapsible-controls,
+  .section-toggle {
+    display: none !important;
+  }
+
+  /* Ensure all sections are expanded in print */
+  .collapsed .collapsible-content {
+    max-height: none !important;
+    opacity: 1 !important;
   }
 }

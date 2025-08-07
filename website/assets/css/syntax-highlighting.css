@@ -1,0 +1,449 @@
+/* =============================================================================
+ * Rouge Syntax Highlighting - Catppuccin Mocha Theme
+ * Optimized for GitHub Pages with Rouge highlighter
+ * Based on Catppuccin Mocha color scheme for excellent accessibility
+ * ============================================================================= */
+
+/* Base highlight container styles */
+.highlight {
+  background-color: var(--bg-surface, #313244);
+  border-radius: var(--radius-md, 0.375rem);
+  padding: var(--space-4, 1rem);
+  margin: var(--space-4, 1rem) 0;
+  overflow-x: auto;
+  border: 1px solid var(--color-surface1, #45475a);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.highlight pre {
+  margin: 0;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  overflow: visible;
+}
+
+.highlight code {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: var(--color-text, #cdd6f4);
+}
+
+/* Line numbers support */
+.highlight .lineno {
+  color: var(--color-overlay0, #6c7086);
+  user-select: none;
+  padding-right: var(--space-3, 0.75rem);
+  border-right: 1px solid var(--color-surface1, #45475a);
+  margin-right: var(--space-3, 0.75rem);
+}
+
+/* Rouge-specific token classes with Catppuccin Mocha colors */
+
+/* Keywords (if, else, function, class, etc.) - Lavender */
+.highlight .k,      /* Keyword */
+.highlight .kc,     /* Keyword.Constant */
+.highlight .kd,     /* Keyword.Declaration */
+.highlight .kn,     /* Keyword.Namespace */
+.highlight .kp,     /* Keyword.Pseudo */
+.highlight .kr,     /* Keyword.Reserved */
+.highlight .kt {    /* Keyword.Type */
+  color: var(--color-lavender, #b4befe);
+  font-weight: var(--font-medium, 500);
+}
+
+/* Strings - Green */
+.highlight .s,      /* Literal.String */
+.highlight .sa,     /* Literal.String.Affix */
+.highlight .sb,     /* Literal.String.Backtick */
+.highlight .sc,     /* Literal.String.Char */
+.highlight .dl,     /* Literal.String.Delimiter */
+.highlight .sd,     /* Literal.String.Doc */
+.highlight .s2,     /* Literal.String.Double */
+.highlight .se,     /* Literal.String.Escape */
+.highlight .sh,     /* Literal.String.Heredoc */
+.highlight .si,     /* Literal.String.Interpol */
+.highlight .sx,     /* Literal.String.Other */
+.highlight .sr,     /* Literal.String.Regex */
+.highlight .s1,     /* Literal.String.Single */
+.highlight .ss {    /* Literal.String.Symbol */
+  color: var(--color-green, #a6e3a1);
+}
+
+/* Comments - Overlay */
+.highlight .c,      /* Comment */
+.highlight .ch,     /* Comment.Hashbang */
+.highlight .cm,     /* Comment.Multiline */
+.highlight .cp,     /* Comment.Preproc */
+.highlight .cpf,    /* Comment.PreprocFile */
+.highlight .c1,     /* Comment.Single */
+.highlight .cs {    /* Comment.Special */
+  color: var(--color-overlay1, #7f849c);
+  font-style: italic;
+}
+
+/* Functions and methods - Blue */
+.highlight .nf,     /* Name.Function */
+.highlight .fm,     /* Name.Function.Magic */
+.highlight .nd,     /* Name.Decorator */
+.highlight .ni {    /* Name.Entity */
+  color: var(--color-blue, #89b4fa);
+  font-weight: var(--font-medium, 500);
+}
+
+/* Variables and identifiers - Text (default) */
+.highlight .n,      /* Name */
+.highlight .na,     /* Name.Attribute */
+.highlight .nb,     /* Name.Builtin */
+.highlight .bp,     /* Name.Builtin.Pseudo */
+.highlight .nc,     /* Name.Class */
+.highlight .no,     /* Name.Constant */
+.highlight .ne,     /* Name.Exception */
+.highlight .nl,     /* Name.Label */
+.highlight .nn,     /* Name.Namespace */
+.highlight .nx,     /* Name.Other */
+.highlight .py,     /* Name.Property */
+.highlight .nt,     /* Name.Tag */
+.highlight .nv,     /* Name.Variable */
+.highlight .vc,     /* Name.Variable.Class */
+.highlight .vg,     /* Name.Variable.Global */
+.highlight .vi,     /* Name.Variable.Instance */
+.highlight .vm {    /* Name.Variable.Magic */
+  color: var(--color-text, #cdd6f4);
+}
+
+/* Numbers - Peach */
+.highlight .m,      /* Literal.Number */
+.highlight .mb,     /* Literal.Number.Bin */
+.highlight .mf,     /* Literal.Number.Float */
+.highlight .mh,     /* Literal.Number.Hex */
+.highlight .mi,     /* Literal.Number.Integer */
+.highlight .mo,     /* Literal.Number.Oct */
+.highlight .il {    /* Literal.Number.Integer.Long */
+  color: var(--color-peach, #fab387);
+  font-weight: var(--font-medium, 500);
+}
+
+/* Operators - Sapphire */
+.highlight .o,      /* Operator */
+.highlight .ow,     /* Operator.Word */
+.highlight .p {     /* Punctuation */
+  color: var(--color-sapphire, #74c7ec);
+}
+
+/* Generic tokens - various colors for syntax elements */
+.highlight .gd {    /* Generic.Deleted */
+  color: var(--color-red, #f38ba8);
+  background-color: rgba(243, 139, 168, 0.1);
+}
+
+.highlight .gi {    /* Generic.Inserted */
+  color: var(--color-green, #a6e3a1);
+  background-color: rgba(166, 227, 161, 0.1);
+}
+
+.highlight .gh {    /* Generic.Heading */
+  color: var(--color-mauve, #cba6f7);
+  font-weight: var(--font-bold, 700);
+}
+
+.highlight .gu {    /* Generic.Subheading */
+  color: var(--color-lavender, #b4befe);
+  font-weight: var(--font-semibold, 600);
+}
+
+.highlight .ge {    /* Generic.Emph */
+  font-style: italic;
+}
+
+.highlight .gs {    /* Generic.Strong */
+  font-weight: var(--font-bold, 700);
+}
+
+/* Error highlighting - Red */
+.highlight .err {
+  color: var(--color-red, #f38ba8);
+  background-color: rgba(243, 139, 168, 0.1);
+  border-radius: var(--radius-sm, 0.25rem);
+  padding: 0 var(--space-1, 0.25rem);
+}
+
+/* Whitespace and other special tokens */
+.highlight .w {     /* Text.Whitespace */
+  color: var(--color-surface2, #585b70);
+}
+
+/* Language-specific enhancements */
+
+/* JavaScript/TypeScript specific */
+.language-javascript .highlight .kr,
+.language-typescript .highlight .kr,
+.language-js .highlight .kr,
+.language-ts .highlight .kr {
+  color: var(--color-yellow, #f9e2af); /* const, let, var */
+}
+
+/* CSS specific */
+.language-css .highlight .nt,
+.language-scss .highlight .nt,
+.language-sass .highlight .nt {
+  color: var(--color-pink, #f5c2e7); /* CSS selectors */
+}
+
+.language-css .highlight .na,
+.language-scss .highlight .na,
+.language-sass .highlight .na {
+  color: var(--color-teal, #94e2d5); /* CSS properties */
+}
+
+/* HTML/XML specific */
+.language-html .highlight .nt,
+.language-xml .highlight .nt {
+  color: var(--color-red, #f38ba8); /* HTML tags */
+}
+
+.language-html .highlight .na,
+.language-xml .highlight .na {
+  color: var(--color-yellow, #f9e2af); /* HTML attributes */
+}
+
+/* JSON specific */
+.language-json .highlight .nt {
+  color: var(--color-blue, #89b4fa); /* JSON keys */
+}
+
+/* Shell/Bash specific */
+.language-bash .highlight .nv,
+.language-sh .highlight .nv,
+.language-shell .highlight .nv {
+  color: var(--color-teal, #94e2d5); /* Environment variables */
+}
+
+.language-bash .highlight .s2,
+.language-sh .highlight .s2,
+.language-shell .highlight .s2 {
+  color: var(--color-green, #a6e3a1); /* Double quoted strings */
+}
+
+/* Python specific */
+.language-python .highlight .bp {
+  color: var(--color-mauve, #cba6f7); /* Built-in functions like print, len */
+}
+
+.language-python .highlight .nb {
+  color: var(--color-sky, #89dceb); /* Built-in types like str, int */
+}
+
+/* Rust specific */
+.language-rust .highlight .k {
+  color: var(--color-lavender, #b4befe); /* Rust keywords */
+}
+
+.language-rust .highlight .kt {
+  color: var(--color-yellow, #f9e2af); /* Rust types */
+}
+
+/* Go specific */
+.language-go .highlight .kt {
+  color: var(--color-yellow, #f9e2af); /* Go types */
+}
+
+.language-go .highlight .kd {
+  color: var(--color-mauve, #cba6f7); /* Go declarations */
+}
+
+/* Elixir specific */
+.language-elixir .highlight .ss {
+  color: var(--color-pink, #f5c2e7); /* Atoms */
+}
+
+.language-elixir .highlight .nd {
+  color: var(--color-yellow, #f9e2af); /* Module attributes */
+}
+
+/* YAML specific */
+.language-yaml .highlight .nt,
+.language-yml .highlight .nt {
+  color: var(--color-blue, #89b4fa); /* YAML keys */
+}
+
+/* Docker specific */
+.language-dockerfile .highlight .k {
+  color: var(--color-lavender, #b4befe); /* Dockerfile instructions */
+}
+
+/* SQL specific */
+.language-sql .highlight .k {
+  color: var(--color-lavender, #b4befe); /* SQL keywords */
+}
+
+.language-sql .highlight .kt {
+  color: var(--color-yellow, #f9e2af); /* SQL data types */
+}
+
+/* =============================================================================
+ * Inline code styling
+ * ============================================================================= */
+
+/* Inline code blocks */
+:not(pre) > code {
+  background-color: var(--bg-surface, #313244);
+  color: var(--color-text, #cdd6f4);
+  padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+  border-radius: var(--radius-sm, 0.25rem);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace);
+  font-size: 0.875em;
+  border: 1px solid var(--color-surface1, #45475a);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Code in links */
+a code {
+  color: inherit;
+}
+
+/* =============================================================================
+ * Copy button for code blocks (optional enhancement)
+ * ============================================================================= */
+
+.highlight {
+  position: relative;
+}
+
+.highlight:hover .copy-code-btn {
+  opacity: 1;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: var(--space-2, 0.5rem);
+  right: var(--space-2, 0.5rem);
+  background-color: var(--bg-surface-hover, #45475a);
+  color: var(--color-text, #cdd6f4);
+  border: 1px solid var(--color-surface2, #585b70);
+  border-radius: var(--radius-sm, 0.25rem);
+  padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 150ms ease);
+  z-index: 10;
+}
+
+.copy-code-btn:hover {
+  background-color: var(--color-blue, #89b4fa);
+  color: var(--bg-primary, #1e1e2e);
+}
+
+/* =============================================================================
+ * Responsive adjustments
+ * ============================================================================= */
+
+@media (max-width: 768px) {
+  .highlight {
+    padding: var(--space-3, 0.75rem);
+    margin: var(--space-3, 0.75rem) 0;
+    border-radius: var(--radius-sm, 0.25rem);
+  }
+
+  .highlight code {
+    font-size: 0.8125rem;
+  }
+
+  .highlight .lineno {
+    padding-right: var(--space-2, 0.5rem);
+    margin-right: var(--space-2, 0.5rem);
+  }
+}
+
+/* =============================================================================
+ * Dark mode compatibility (already optimized for Catppuccin Mocha)
+ * ============================================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .highlight {
+    /* Already optimized for dark theme, no changes needed */
+  }
+}
+
+/* =============================================================================
+ * High contrast mode support
+ * ============================================================================= */
+
+@media (prefers-contrast: high) {
+  .highlight {
+    border-width: 2px;
+    border-color: var(--color-text, #cdd6f4);
+  }
+
+  .highlight .k,
+  .highlight .kc,
+  .highlight .kd,
+  .highlight .kn,
+  .highlight .kp,
+  .highlight .kr,
+  .highlight .kt {
+    color: #ffffff;
+    font-weight: var(--font-bold, 700);
+  }
+
+  .highlight .s,
+  .highlight .s2,
+  .highlight .s1 {
+    color: #90ff90;
+  }
+
+  .highlight .c,
+  .highlight .c1,
+  .highlight .cm {
+    color: #cccccc;
+  }
+}
+
+/* =============================================================================
+ * Print styles for code blocks
+ * ============================================================================= */
+
+@media print {
+  .highlight {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    color: #212529 !important;
+    box-shadow: none !important;
+  }
+
+  .highlight code {
+    color: #212529 !important;
+  }
+
+  .highlight .k,
+  .highlight .kc,
+  .highlight .kd,
+  .highlight .kn,
+  .highlight .kp,
+  .highlight .kr,
+  .highlight .kt {
+    color: #0066cc !important;
+    font-weight: bold !important;
+  }
+
+  .highlight .s,
+  .highlight .s2,
+  .highlight .s1 {
+    color: #006600 !important;
+  }
+
+  .highlight .c,
+  .highlight .c1,
+  .highlight .cm {
+    color: #666666 !important;
+  }
+
+  .copy-code-btn {
+    display: none !important;
+  }
+}
