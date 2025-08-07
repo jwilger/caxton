@@ -1,6 +1,6 @@
 ---
 title: "0004. Minimal Core Philosophy"
-date: 2025-01-31
+date: 2025-07-31
 status: proposed
 layout: adr
 categories: [Architecture]

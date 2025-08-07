@@ -1,6 +1,6 @@
 ---
 title: "0010. External Agent Routing API"
-date: 2025-01-03
+date: 2025-08-03
 status: proposed
 layout: adr
 categories: [Architecture, Technology]
