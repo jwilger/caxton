@@ -59,21 +59,6 @@
         {% endfor %}
       </ul>
 
-      <!-- Theme toggle (for future light mode) -->
-      <div class="navbar__actions">
-        <button class="theme-toggle"
-                id="theme-toggle"
-                aria-label="Toggle dark mode"
-                title="Toggle theme">
-          <svg class="theme-toggle__icon theme-toggle__icon--dark"
-               width="20"
-               height="20"
-               viewBox="0 0 20 20"
-               fill="currentColor">
-            <path d="M10 3a7 7 0 100 14 7 7 0 000-14zM10 15v-10a5 5 0 010 10z"/>
-          </svg>
-        </button>
-      </div>
     </div>
   </div>
 </nav>
@@ -294,48 +279,7 @@
   margin-left: var(--space-1);
 }
 
-.navbar__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
 
-  @media (max-width: 768px) {
-    margin-top: auto;
-    padding-top: var(--space-6);
-    border-top: 1px solid var(--color-surface0);
-    width: 100%;
-  }
-}
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background-color: var(--bg-surface);
-  border: 2px solid var(--color-surface1);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-
-  &:hover {
-    background-color: var(--bg-surface-hover);
-    border-color: var(--color-surface2);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-}
-
-.theme-toggle__icon {
-  width: 20px;
-  height: 20px;
-}
 
 /* Overlay for mobile menu */
 .navbar__overlay {
@@ -452,9 +396,4 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Theme toggle (for future implementation)
-document.getElementById('theme-toggle')?.addEventListener('click', function() {
-  // Future light mode implementation
-  console.log('Theme toggle clicked - light mode coming soon!');
-});
 </script>

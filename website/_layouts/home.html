@@ -355,7 +355,7 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                 <div class="step-number">1</div>
                 <h3>Install Caxton</h3>
                 <div class="code-snippet">
-                    <pre><code># Install with observability stack included
+                    <pre data-language="BASH"><code># Install with observability stack included
 curl -sSL https://caxton.dev/install.sh | sh
 caxton init my-system --with-observability</code></pre>
                 </div>
@@ -364,7 +364,7 @@ caxton init my-system --with-observability</code></pre>
                 <div class="step-number">2</div>
                 <h3>Create Your First Agent</h3>
                 <div class="code-snippet">
-                    <pre><code># Create an agent from template
+                    <pre data-language="BASH"><code># Create an agent from template
 caxton agent create order-processor \
   --template request-handler \
   --capability order-processing</code></pre>
@@ -374,7 +374,7 @@ caxton agent create order-processor \
                 <div class="step-number">3</div>
                 <h3>Deploy and Monitor</h3>
                 <div class="code-snippet">
-                    <pre><code># Start with full observability
+                    <pre data-language="BASH"><code># Start with full observability
 docker-compose up  # Includes Jaeger, Prometheus
 caxton deploy
 caxton monitor --dashboard</code></pre>
