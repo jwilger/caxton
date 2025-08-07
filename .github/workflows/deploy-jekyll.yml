@@ -93,7 +93,7 @@ jobs:
               # Create temp file with front matter
               {
                 echo "---"
-                echo "layout: default"
+                echo "layout: documentation"
                 echo "title: \"${title}\""
                 echo "---"
                 echo ""
