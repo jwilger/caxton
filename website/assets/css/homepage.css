@@ -734,10 +734,10 @@
 }
 
 .steps-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -898,7 +898,7 @@
 
 .resources-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--space-6);
   max-width: 1200px;
   margin: 0 auto;
