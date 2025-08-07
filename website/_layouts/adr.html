@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title }} - {{ site.title }}</title>
+  <meta name="description" content="{{ page.description | default: page.excerpt | strip_html | truncate: 160 }}">
+  <link rel="canonical" href="{{ page.url | absolute_url }}">
+
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --text-color: #cdd6f4;
+      --accent-color: #89b4fa;
+      --secondary-bg: #313244;
+      --success: #a6e3a1;
+      --warning: #f9e2af;
+      --danger: #f38ba8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .breadcrumb {
+      margin-bottom: 2rem;
+      opacity: 0.8;
+    }
+
+    .breadcrumb a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--secondary-bg);
+    }
+
+    h1 {
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+    }
+
+    .metadata {
+      display: flex;
+      gap: 2rem;
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    .status.accepted { background-color: var(--success); color: var(--bg-color); }
+    .status.proposed { background-color: var(--warning); color: var(--bg-color); }
+    .status.deprecated { background-color: var(--danger); color: var(--bg-color); }
+    .status.superseded { opacity: 0.6; }
+
+    .content {
+      background-color: var(--secondary-bg);
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .content h2 {
+      color: var(--accent-color);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .content h2:first-child {
+      margin-top: 0;
+    }
+
+    .content pre {
+      background-color: var(--bg-color);
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .content code {
+      background-color: var(--bg-color);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .content pre code {
+      background-color: transparent;
+      padding: 0;
+    }
+
+    .content a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    .content a:hover {
+      text-decoration: underline;
+    }
+
+    .content ul, .content ol {
+      margin-left: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 2rem;
+      border-top: 1px solid var(--secondary-bg);
+    }
+
+    .navigation a {
+      color: var(--accent-color);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      background-color: var(--secondary-bg);
+      border-radius: 4px;
+      transition: opacity 0.3s;
+    }
+
+    .navigation a:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="{{ site.baseurl }}/">Home</a> /
+      <a href="{{ site.baseurl }}/adr/">ADRs</a> /
+      {{ page.title }}
+    </div>
+
+    <header>
+      <h1>{{ page.title }}</h1>
+      <div class="metadata">
+        {% if page.status %}
+        <span class="status {{ page.status | downcase }}">{{ page.status }}</span>
+        {% endif %}
+        {% if page.date %}
+        <span>Date: {{ page.date | date: "%Y-%m-%d" }}</span>
+        {% endif %}
+        {% if page.author %}
+        <span>Author: {{ page.author }}</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="content">
+      {{ content }}
+    </div>
+
+    <nav class="navigation">
+      {% if page.previous %}
+      <a href="{{ page.previous.url }}">← Previous: {{ page.previous.title }}</a>
+      {% endif %}
+      {% if page.next %}
+      <a href="{{ page.next.url }}">Next: {{ page.next.title }} →</a>
+      {% endif %}
+    </nav>
+  </div>
+</body>
+</html>
