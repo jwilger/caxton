@@ -37,6 +37,9 @@
     {% if page.layout == 'adr' or page.layout == 'adr-index' %}
         <link rel="stylesheet" href="{{ '/assets/css/adr.css' | relative_url }}">
     {% endif %}
+    {% if page.layout == 'documentation' %}
+        <link rel="stylesheet" href="{{ '/assets/css/documentation.css' | relative_url }}">
+    {% endif %}
 
     <!-- Feed -->
     {% feed_meta %}
