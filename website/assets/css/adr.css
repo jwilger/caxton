@@ -25,8 +25,6 @@
  * ADR Sidebar
  * ============================================================================ */
 .adr-sidebar {
-  position: sticky;
-  top: calc(80px + var(--space-4));
   height: fit-content;
   overflow: visible;
   background: var(--bg-surface);
@@ -39,8 +37,7 @@
 
 @media (max-width: 1024px) {
   .adr-sidebar {
-    position: static;
-    max-height: none;
+    width: 100%;
   }
 }
 
@@ -516,8 +513,6 @@
 
 /* ADR Page Sidebar */
 .adr-page-sidebar {
-  position: sticky;
-  top: calc(80px + var(--space-4));
   height: fit-content;
   overflow: visible;
   background: var(--bg-surface);

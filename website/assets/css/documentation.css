@@ -26,8 +26,6 @@
  * Documentation Sidebar
  * ============================================================================ */
 .docs-sidebar {
-  position: sticky;
-  top: calc(80px + var(--space-4));
   height: fit-content;
   overflow: visible;
   background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.5) 100%);
@@ -39,8 +37,7 @@
 
 @media (max-width: 1024px) {
   .docs-sidebar {
-    position: static;
-    max-height: none;
+    width: 100%;
     margin-bottom: var(--space-8);
   }
 }
