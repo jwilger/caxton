@@ -2,6 +2,47 @@
  * Building on design-system.css for consistent design
  * ============================================================================ */
 
+/* Ensure all required CSS variables are available */
+:root {
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+/* ============================================================================
+ * Reset and Base Styles for Documentation Pages
+ * ============================================================================ */
+
+/* Override global link styles for documentation pages */
+.docs-layout a:not(.btn):not(.nav-link):not(.link-card),
+.docs-content a:not(.btn):not(.nav-link):not(.link-card),
+.docs-body a:not(.btn):not(.nav-link):not(.link-card) {
+  color: var(--color-primary) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.docs-layout a:not(.btn):not(.nav-link):not(.link-card):hover,
+.docs-content a:not(.btn):not(.nav-link):not(.link-card):hover,
+.docs-body a:not(.btn):not(.nav-link):not(.link-card):hover {
+  color: var(--color-lavender) !important;
+  border-bottom-color: var(--color-lavender) !important;
+  text-decoration: none !important;
+}
+
 /* ============================================================================
  * Documentation Layout
  * ============================================================================ */
@@ -228,12 +269,79 @@
 
 /* Documentation Body Content */
 .docs-body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed);
+  color: var(--text-primary);
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/* Ensure base text styles apply to all documentation content */
+.docs-content {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+/* Apply consistent styles to raw content */
+.docs-content:not(:has(.docs-body)) {
   font-size: var(--font-size-md);
   line-height: var(--line-height-relaxed);
   color: var(--text-primary);
 }
 
-.docs-body > h1:first-child {
+/* Fallback styles for main content areas */
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6 {
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+}
+
+main p {
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-6);
+}
+
+main ul,
+main ol {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+  padding-left: var(--space-8);
+}
+
+main pre {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--color-surface1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin: var(--space-6) 0;
+  overflow-x: auto;
+}
+
+main code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-green);
+  background: var(--bg-tertiary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+main pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.docs-body > h1:first-child,
+.docs-body > h1:first-of-type {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-bold);
   margin-top: 0;
@@ -242,17 +350,21 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-fill-color: transparent;
 }
 
-.docs-body h1 {
+.docs-body h1,
+.docs-content h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-bold);
   margin-top: var(--space-12);
   margin-bottom: var(--space-6);
   color: var(--text-primary);
+  line-height: var(--line-height-tight);
 }
 
-.docs-body h2 {
+.docs-body h2,
+.docs-content h2 {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-semibold);
   margin-top: var(--space-10);
@@ -262,9 +374,11 @@
   border-bottom: 2px solid var(--color-surface1);
   position: relative;
   padding-left: var(--space-8);
+  line-height: var(--line-height-snug);
 }
 
-.docs-body h2::before {
+.docs-body h2::before,
+.docs-content h2::before {
   content: '§';
   position: absolute;
   left: 0;
@@ -273,7 +387,8 @@
   opacity: 0.5;
 }
 
-.docs-body h3 {
+.docs-body h3,
+.docs-content h3 {
   font-size: var(--font-size-xl);
   font-weight: var(--font-semibold);
   margin-top: var(--space-8);
@@ -281,9 +396,11 @@
   color: var(--text-primary);
   position: relative;
   padding-left: var(--space-6);
+  line-height: var(--line-height-snug);
 }
 
-.docs-body h3::before {
+.docs-body h3::before,
+.docs-content h3::before {
   content: '▪';
   position: absolute;
   left: 0;
@@ -291,15 +408,18 @@
   opacity: 0.7;
 }
 
-.docs-body h4 {
+.docs-body h4,
+.docs-content h4 {
   font-size: var(--font-size-lg);
   font-weight: var(--font-medium);
   margin-top: var(--space-6);
   margin-bottom: var(--space-3);
   color: var(--text-primary);
+  line-height: var(--line-height-snug);
 }
 
-.docs-body p {
+.docs-body p,
+.docs-content p {
   margin-bottom: var(--space-6);
   color: var(--text-secondary);
   font-size: var(--font-size-md);
@@ -307,12 +427,16 @@
 }
 
 .docs-body ul,
-.docs-body ol {
+.docs-body ol,
+.docs-content ul,
+.docs-content ol {
   margin-bottom: var(--space-6);
   padding-left: var(--space-8);
+  list-style: none;
 }
 
-.docs-body li {
+.docs-body li,
+.docs-content li {
   margin-bottom: var(--space-3);
   color: var(--text-secondary);
   line-height: var(--line-height-relaxed);
@@ -320,33 +444,48 @@
   position: relative;
 }
 
-.docs-body ul li::before {
+.docs-body ul li::before,
+.docs-content ul li::before {
   content: '▸';
   position: absolute;
-  left: calc(var(--space-8) * -1);
+  left: calc(var(--space-8) * -1 + var(--space-2));
   color: var(--color-primary);
   font-weight: var(--font-bold);
 }
 
-.docs-body ol li::marker {
+.docs-body ol,
+.docs-content ol {
+  counter-reset: docs-counter;
+}
+
+.docs-body ol li::before,
+.docs-content ol li::before {
+  counter-increment: docs-counter;
+  content: counter(docs-counter) ".";
+  position: absolute;
+  left: calc(var(--space-8) * -1 + var(--space-2));
   color: var(--color-primary);
   font-weight: var(--font-semibold);
 }
 
-.docs-body a {
+.docs-body a,
+.docs-content a {
   color: var(--color-primary);
   text-decoration: none;
   transition: all var(--transition-fast);
   border-bottom: 1px solid transparent;
+  font-weight: var(--font-medium);
 }
 
-.docs-body a:hover {
+.docs-body a:hover,
+.docs-content a:hover {
   color: var(--color-lavender);
   border-bottom-color: var(--color-lavender);
 }
 
 /* Code blocks in documentation */
-.docs-body pre {
+.docs-body pre,
+.docs-content pre {
   background: var(--bg-tertiary);
   border: 1px solid var(--color-surface1);
   border-radius: var(--radius-lg);
@@ -354,68 +493,88 @@
   margin: var(--space-6) 0;
   overflow-x: auto;
   position: relative;
+  box-shadow: var(--shadow-sm);
 }
 
-.docs-body code {
+.docs-body code,
+.docs-content code {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   color: var(--color-green);
   background: var(--bg-tertiary);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+  border: 1px solid var(--color-surface0);
 }
 
-.docs-body pre code {
+.docs-body pre code,
+.docs-content pre code {
   background: transparent;
   padding: 0;
   color: var(--text-primary);
+  border: none;
 }
 
 /* Tables in documentation */
-.docs-body table {
+.docs-body table,
+.docs-content table {
   width: 100%;
   margin: var(--space-6) 0;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-surface1);
 }
 
-.docs-body th {
+.docs-body th,
+.docs-content th {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   font-weight: var(--font-semibold);
   text-align: left;
   padding: var(--space-4);
   border-bottom: 2px solid var(--color-surface1);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.docs-body td {
+.docs-body td,
+.docs-content td {
   padding: var(--space-4);
   border-bottom: 1px solid var(--color-surface0);
   color: var(--text-secondary);
+  font-size: var(--font-size-md);
 }
 
-.docs-body tr:last-child td {
+.docs-body tr:last-child td,
+.docs-content tr:last-child td {
   border-bottom: none;
 }
 
-.docs-body tr:hover {
+.docs-body tbody tr:hover,
+.docs-content tbody tr:hover {
   background: rgba(137, 180, 250, 0.05);
+  transition: background var(--transition-fast);
 }
 
 /* Blockquotes */
-.docs-body blockquote {
+.docs-body blockquote,
+.docs-content blockquote {
   margin: var(--space-6) 0;
   padding: var(--space-6);
   background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(249, 226, 175, 0.05) 100%);
   border-left: 4px solid var(--color-yellow);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
+  font-style: italic;
 }
 
-.docs-body blockquote p {
+.docs-body blockquote p,
+.docs-content blockquote p {
   margin-bottom: 0;
 }
 
@@ -607,6 +766,156 @@
 
 .edit-link:hover {
   color: var(--color-primary);
+}
+
+/* ============================================================================
+ * Direct content styling fallbacks
+ * ============================================================================ */
+
+/* Ensure direct markdown rendered in .docs-content gets styled */
+.docs-content > h1,
+.docs-content > h2,
+.docs-content > h3,
+.docs-content > h4,
+.docs-content > h5,
+.docs-content > h6,
+.docs-content > p,
+.docs-content > ul,
+.docs-content > ol,
+.docs-content > blockquote,
+.docs-content > pre,
+.docs-content > table {
+  /* Inherit all the styles from docs-body */
+}
+
+/* Direct heading styles */
+.docs-content > h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-bold);
+  margin-top: 0;
+  margin-bottom: var(--space-8);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.docs-content > h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-semibold);
+  margin-top: var(--space-10);
+  margin-bottom: var(--space-6);
+  color: var(--color-primary);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-surface1);
+  position: relative;
+  padding-left: var(--space-8);
+}
+
+.docs-content > h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-semibold);
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
+  position: relative;
+  padding-left: var(--space-6);
+}
+
+/* Strong and emphasis styling */
+.docs-content strong,
+.docs-body strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.docs-content em,
+.docs-body em {
+  color: var(--color-lavender);
+  font-style: italic;
+}
+
+/* Horizontal rules */
+.docs-content hr,
+.docs-body hr {
+  margin: var(--space-10) 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-surface1) 20%,
+    var(--color-surface1) 80%,
+    transparent 100%);
+}
+
+/* Image styles */
+.docs-content img,
+.docs-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: var(--space-6) 0;
+}
+
+/* Nested lists */
+.docs-content ul ul,
+.docs-content ol ol,
+.docs-content ul ol,
+.docs-content ol ul,
+.docs-body ul ul,
+.docs-body ol ol,
+.docs-body ul ol,
+.docs-body ol ul {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Definition lists */
+.docs-content dl,
+.docs-body dl {
+  margin: var(--space-6) 0;
+}
+
+.docs-content dt,
+.docs-body dt {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.docs-content dd,
+.docs-body dd {
+  margin-left: var(--space-8);
+  margin-bottom: var(--space-4);
+  color: var(--text-secondary);
+}
+
+/* Keyboard shortcuts */
+.docs-content kbd,
+.docs-body kbd {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--color-surface1);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 0 var(--color-surface2);
+}
+
+/* Small text */
+.docs-content small,
+.docs-body small {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Abbreviations */
+.docs-content abbr,
+.docs-body abbr {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--color-primary);
 }
 
 /* ============================================================================
