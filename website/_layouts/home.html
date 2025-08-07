@@ -482,14 +482,14 @@ console.log(result.tracking_number);</code></pre>
                     Foundation Phase
                 {% endif %}
             </h3>
-            <p class="release-description">
+            <div class="release-description">
                 {% if site.data.release and site.data.release.description %}
-                    {{ site.data.release.description | truncate: 300 }}
+                    {{ site.data.release.description | markdownify | truncate: 300 | strip_html }}
                 {% else %}
                     Caxton is currently in early development. Core architecture is being implemented with a focus on
                     getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
                 {% endif %}
-            </p>
+            </div>
             <div class="release-actions">
                 {% if site.data.release and site.data.release.url and site.data.release.version != "0.1.0-dev" %}
                 <a href="{{ site.data.release.url }}" target="_blank" rel="noopener" class="btn btn-outline">

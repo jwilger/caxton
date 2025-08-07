@@ -118,7 +118,12 @@ jobs:
             TAG_NAME=$(echo "$RELEASE_JSON" | jq -r '.tag_name // "v0.0.0"')
             RELEASE_NAME=$(echo "$RELEASE_JSON" | jq -r '.name // "Development"')
             RELEASE_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at // ""' | cut -d'T' -f1)
-            RELEASE_BODY=$(echo "$RELEASE_JSON" | jq -r '.body // ""' | head -20)
+            # Get release body - keep as Markdown but make YAML-safe
+            RELEASE_BODY_RAW=$(echo "$RELEASE_JSON" | jq -r '.body // ""')
+            # Escape quotes for YAML and limit length
+            RELEASE_BODY=$(echo "$RELEASE_BODY_RAW" | \
+              sed 's/"/\\"/g' | \
+              head -20)
             RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url // ""')
 
             # Clean version (remove 'v' prefix if present)
