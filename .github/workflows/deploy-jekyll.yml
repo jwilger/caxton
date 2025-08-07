@@ -153,19 +153,18 @@ jobs:
           echo "RELEASE_PHASE=$RELEASE_PHASE" >> $GITHUB_ENV
           echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
 
-          # Save release body to file for Jekyll to read
+          # Create release data file for Jekyll
           mkdir -p website/_data
-          cat > website/_data/release.yml << EOF
-          version: "$VERSION"
-          tag: "$TAG_NAME"
-          name: "$RELEASE_NAME"
-          date: "$RELEASE_DATE"
-          status: "$RELEASE_STATUS"
-          phase: "$RELEASE_PHASE"
-          url: "$RELEASE_URL"
-          description: |
-            $RELEASE_BODY
-          EOF
+          chmod +x .github/scripts/generate-release-data.sh
+          .github/scripts/generate-release-data.sh \
+            "$VERSION" \
+            "$TAG_NAME" \
+            "$RELEASE_NAME" \
+            "$RELEASE_DATE" \
+            "$RELEASE_STATUS" \
+            "$RELEASE_PHASE" \
+            "$RELEASE_URL" \
+            "$RELEASE_BODY"
 
           echo "Latest release: $VERSION ($RELEASE_STATUS)"
 
