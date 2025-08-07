@@ -13,13 +13,10 @@
   align-items: center;
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at top right, rgba(137, 180, 250, 0.15), transparent 50%),
-    radial-gradient(ellipse at bottom left, rgba(203, 166, 247, 0.1), transparent 50%),
-    linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
-/* Animated background particles */
+/* Subtle background gradient - no animation */
 .hero::before {
   content: '';
   position: absolute;
@@ -28,18 +25,9 @@
   right: 0;
   bottom: 0;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(137, 180, 250, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(180, 190, 254, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(116, 199, 236, 0.06) 0%, transparent 50%);
-  animation: floatBackground 20s ease-in-out infinite;
+    radial-gradient(circle at 20% 50%, rgba(137, 180, 250, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(180, 190, 254, 0.04) 0%, transparent 50%);
   pointer-events: none;
-}
-
-@keyframes floatBackground {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(-20px, -30px) scale(1.05); }
-  50% { transform: translate(20px, -20px) scale(0.95); }
-  75% { transform: translate(-10px, 20px) scale(1.02); }
 }
 
 .hero-content {
@@ -82,19 +70,10 @@
 .gradient-text {
   background: linear-gradient(135deg,
     var(--color-blue) 0%,
-    var(--color-lavender) 50%,
-    var(--color-mauve) 100%);
+    var(--color-lavender) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  background-size: 200% auto;
-  animation: shimmer 3s linear infinite;
-}
-
-@keyframes shimmer {
-  to {
-    background-position: 200% center;
-  }
 }
 
 .hero-subtitle {
@@ -123,7 +102,7 @@
   animation: fadeIn 1s ease-out 0.6s forwards;
 }
 
-/* Enhanced floating card */
+/* Simple floating card with subtle shadow */
 .floating-card {
   position: relative;
   width: min(400px, 90vw);
@@ -131,50 +110,32 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: floatRotate 8s ease-in-out infinite;
+  animation: gentleFloat 6s ease-in-out infinite;
 }
 
-@keyframes floatRotate {
+@keyframes gentleFloat {
   0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-10px) rotate(1deg);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px) rotate(-1deg);
-  }
-  75% {
-    transform: translateY(-15px) rotate(0.5deg);
+    transform: translateY(-10px);
   }
 }
 
+/* Subtle glow effect - no spinning */
 .floating-card::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    transparent 0deg,
-    var(--color-blue) 45deg,
-    transparent 90deg,
-    var(--color-lavender) 135deg,
-    transparent 180deg,
-    var(--color-sapphire) 225deg,
-    transparent 270deg,
-    var(--color-mauve) 315deg,
-    transparent 360deg
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(
+    circle at center,
+    rgba(137, 180, 250, 0.1) 0%,
+    transparent 70%
   );
-  animation: rotate 10s linear infinite;
-  opacity: 0.3;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  opacity: 0.5;
 }
 
 .hero-logo {
@@ -362,11 +323,11 @@
   font-size: var(--font-size-4xl);
   margin-bottom: var(--space-4);
   display: block;
-  animation: pulse 2s ease-in-out infinite;
+  transition: transform var(--transition-base);
 }
 
 .feature-card:hover .feature-icon {
-  animation-duration: 1s;
+  transform: scale(1.1);
 }
 
 .feature-card h3 {
