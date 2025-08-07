@@ -779,17 +779,19 @@
   padding-right: var(--space-16);
 }
 
-.code-snippet {
+/* Match the tab-content pre styling exactly */
+.code-snippet pre {
   background: var(--bg-tertiary);
   border: 1px solid var(--color-surface0);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   overflow-x: auto;
   position: relative;
+  margin: 0;
 }
 
-.code-snippet::before {
-  content: 'BASH';
+.code-snippet pre::before {
+  content: attr(data-language);
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
@@ -799,10 +801,7 @@
   background: var(--bg-base);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
-}
-
-.code-snippet pre {
-  margin: 0;
+  text-transform: uppercase;
 }
 
 .code-snippet code {

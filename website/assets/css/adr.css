@@ -30,6 +30,7 @@
   height: fit-content;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
@@ -520,6 +521,7 @@
   height: fit-content;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
