@@ -486,7 +486,10 @@ console.log(result.tracking_number);</code></pre>
                 {% endif %}
             </h3>
             <div class="release-description">
-                {% if site.data.release and site.data.release.description %}
+                {% if site.data.release.version and site.data.release.version contains "0." %}
+                    Caxton is currently in early development. Core architecture is being implemented with a focus on
+                    getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+                {% elsif site.data.release and site.data.release.description %}
                     {{ site.data.release.description | markdownify | truncate: 300 | strip_html }}
                 {% else %}
                     Caxton is currently in early development. Core architecture is being implemented with a focus on
