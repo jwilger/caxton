@@ -164,6 +164,7 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: var(--space-12);
+  text-align: center;
 }
 
 .problem-grid {
@@ -269,9 +270,7 @@
 .features .section-title {
   font-size: var(--font-size-3xl);
   margin-bottom: var(--space-12);
-  position: relative;
-  display: inline-block;
-  width: 100%;
+  text-align: center;
 }
 
 .features-grid {
@@ -391,7 +390,7 @@
   font-size: var(--font-size-3xl);
   color: var(--color-peach);
   text-align: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .three-am-test .section-subtitle {
@@ -724,7 +723,7 @@
 .getting-started .section-title {
   font-size: var(--font-size-3xl);
   text-align: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .getting-started .section-subtitle {
