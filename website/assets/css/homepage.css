@@ -871,17 +871,8 @@
   padding-right: var(--space-16);
 }
 
-/* Step numbers for example tabs */
-.tab-content {
-  counter-increment: example-step;
-}
-
-.example-tabs {
-  counter-reset: example-step;
-}
-
-.tab-content::after {
-  content: counter(example-step);
+/* Step numbers for example tabs - matching step-card styling */
+.tab-content .step-number {
   position: absolute;
   top: var(--space-4);
   right: var(--space-4);

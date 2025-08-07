@@ -385,6 +385,7 @@ caxton monitor --dashboard</code></pre>
             <h3>Simple Multi-Agent Example</h3>
             <div class="example-tabs">
                 <div class="tab-content">
+                    <div class="step-number">1</div>
                     <h4>Define Your Agent Configuration</h4>
                     <pre data-language="YAML"><code class="language-yaml"># agent-config.yaml
 name: order-processor
@@ -398,6 +399,7 @@ resources:
   timeout: 30s</code></pre>
                 </div>
                 <div class="tab-content">
+                    <div class="step-number">2</div>
                     <h4>Deploy to Caxton Server</h4>
                     <pre data-language="BASH"><code class="language-bash"># Deploy your compiled WebAssembly agent
 caxton agent deploy order-processor.wasm \
@@ -409,6 +411,7 @@ caxton agent status order-processor
 ✓ Running (3/3 instances healthy)</code></pre>
                 </div>
                 <div class="tab-content">
+                    <div class="step-number">3</div>
                     <h4>Invoke Your Agent</h4>
                     <pre data-language="JS"><code class="language-javascript">// Using any language with the Caxton client
 const client = new CaxtonClient('https://caxton.local');
