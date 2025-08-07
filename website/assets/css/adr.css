@@ -342,6 +342,7 @@
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
+  min-height: 36px;
 }
 
 .adr-number {
@@ -349,7 +350,8 @@
   align-items: center;
   justify-content: center;
   min-width: 60px;
-  padding: var(--space-2) var(--space-3);
+  height: 28px;
+  padding: 0 var(--space-3);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-lavender) 100%);
   color: var(--text-on-primary);
   border-radius: var(--radius-full);
@@ -365,11 +367,15 @@
   font-family: var(--font-mono);
   flex-grow: 1;
   text-align: center;
+  line-height: 28px;
 }
 
 /* ADR Status Badge */
 .adr-status {
-  padding: var(--space-1) var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
   font-weight: var(--font-semibold);
