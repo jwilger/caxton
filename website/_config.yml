@@ -150,9 +150,11 @@ navigation:
     - title: Get Started
       url: "#getting-started"
     - title: API Docs
-      url: "/caxton/"
+      url: "/doc/caxton/"
     - title: ADRs
       url: "/adr/"
+    - title: Documentation
+      url: "/docs/"
     - title: GitHub
       url: "https://github.com/jwilger/caxton"
       external: true
