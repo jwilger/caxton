@@ -419,6 +419,11 @@ class AnchorLinks {
     }
 
     autoGenerateTableOfContents() {
+        // Don't auto-generate TOC on documentation pages (they have sidebar navigation)
+        if (document.querySelector('.docs-layout, .docs-sidebar')) {
+            return;
+        }
+
         const headings = document.querySelectorAll(this.headingSelectors);
         if (headings.length < 3) return; // Don't create TOC for short documents
 
