@@ -13,6 +13,7 @@
   margin: 0 auto;
   padding: var(--space-8) var(--space-6);
   min-height: calc(100vh - 200px);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
 @media (max-width: 1024px) {
@@ -30,10 +31,12 @@
   height: fit-content;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
-  background: var(--bg-surface);
+  overflow-x: hidden;
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.5) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   border: 2px solid var(--color-surface1);
+  box-shadow: var(--shadow-md);
 }
 
 @media (max-width: 1024px) {
@@ -184,10 +187,26 @@
 }
 
 .docs-content {
-  background: var(--bg-surface);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.2) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-10);
   border: 2px solid var(--color-surface1);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.docs-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    var(--color-blue) 0%,
+    var(--color-lavender) 50%,
+    var(--color-mauve) 100%);
 }
 
 .docs-header {
@@ -217,6 +236,17 @@
   color: var(--text-primary);
 }
 
+.docs-body > h1:first-child {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-bold);
+  margin-top: 0;
+  margin-bottom: var(--space-8);
+  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-lavender) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .docs-body h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-bold);
@@ -229,18 +259,39 @@
   font-size: var(--font-size-2xl);
   font-weight: var(--font-semibold);
   margin-top: var(--space-10);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
   color: var(--color-primary);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-surface1);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-surface1);
+  position: relative;
+  padding-left: var(--space-8);
+}
+
+.docs-body h2::before {
+  content: '§';
+  position: absolute;
+  left: 0;
+  color: var(--color-lavender);
+  font-weight: var(--font-bold);
+  opacity: 0.5;
 }
 
 .docs-body h3 {
   font-size: var(--font-size-xl);
   font-weight: var(--font-semibold);
   margin-top: var(--space-8);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
   color: var(--text-primary);
+  position: relative;
+  padding-left: var(--space-6);
+}
+
+.docs-body h3::before {
+  content: '▪';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  opacity: 0.7;
 }
 
 .docs-body h4 {
@@ -252,8 +303,10 @@
 }
 
 .docs-body p {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
   color: var(--text-secondary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed);
 }
 
 .docs-body ul,
@@ -263,13 +316,24 @@
 }
 
 .docs-body li {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
   color: var(--text-secondary);
   line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-md);
+  position: relative;
 }
 
-.docs-body li::marker {
+.docs-body ul li::before {
+  content: '▸';
+  position: absolute;
+  left: calc(var(--space-8) * -1);
   color: var(--color-primary);
+  font-weight: var(--font-bold);
+}
+
+.docs-body ol li::marker {
+  color: var(--color-primary);
+  font-weight: var(--font-semibold);
 }
 
 .docs-body a {
@@ -370,14 +434,15 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-6);
-  background: var(--bg-tertiary);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.5) 100%);
   border: 2px solid var(--color-surface1);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   text-decoration: none;
   color: inherit;
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .quick-link-card::before {
@@ -434,9 +499,17 @@
 
 .help-card {
   padding: var(--space-6);
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-surface1);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(69, 71, 90, 0.3) 100%);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--color-surface1);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.help-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .help-card h3 {
