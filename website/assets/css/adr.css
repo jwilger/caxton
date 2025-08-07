@@ -1052,6 +1052,76 @@
 }
 
 /* ============================================================================
+ * Anchor Links Enhancement for ADRs
+ * ============================================================================ */
+
+/* Enhanced anchor link positioning for ADR content */
+.adr-content h2,
+.adr-content h3,
+.adr-content h4,
+.adr-content h5,
+.adr-content h6 {
+  scroll-margin-top: 6rem;
+  position: relative;
+}
+
+/* ADR-specific anchor link styling */
+.adr-content .anchor-link {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(137, 180, 250, 0.1) 100%);
+  border: 1px solid var(--color-surface1);
+  backdrop-filter: blur(10px);
+}
+
+.adr-content .anchor-link:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
+}
+
+.adr-content .anchor-icon {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.adr-content .anchor-link:hover .anchor-icon {
+  color: white;
+}
+
+/* Enhanced heading hover effects for ADR content */
+.adr-content h2:hover::before {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.adr-content h3:hover {
+  color: var(--color-primary);
+}
+
+/* Table of Contents styling for ADRs */
+.adr-content .table-of-contents,
+.adr-content .toc,
+.adr-content #toc {
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(180, 190, 254, 0.05) 100%);
+  border: 2px solid var(--color-lavender);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin: var(--space-8) 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.adr-content .table-of-contents::before,
+.adr-content .toc::before,
+.adr-content #toc::before {
+  background: linear-gradient(90deg,
+    var(--color-lavender) 0%,
+    var(--color-mauve) 50%,
+    var(--color-blue) 100%);
+}
+
+/* ============================================================================
  * Print Styles
  * ============================================================================ */
 @media print {
@@ -1075,5 +1145,16 @@
 
   .adr-card {
     page-break-inside: avoid;
+  }
+
+  /* Hide anchor links in print for ADRs */
+  .adr-content .anchor-link {
+    display: none !important;
+  }
+
+  .adr-content .table-of-contents {
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
   }
 }

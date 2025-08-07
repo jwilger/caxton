@@ -1,0 +1,56 @@
+{
+  "author": "Caxton Development Team",
+  "bin": {
+    "caxton-validate": "./run-all-validations.js"
+  },
+  "bugs": {
+    "url": "https://github.com/jwilger/caxton/issues"
+  },
+  "dependencies": {},
+  "description": "Comprehensive technical validation scripts for the Caxton website",
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "*.js",
+    "README.md"
+  ],
+  "homepage": "https://jwilger.github.io/caxton",
+  "keywords": [
+    "validation",
+    "website",
+    "testing",
+    "quality-assurance",
+    "jekyll",
+    "html",
+    "css",
+    "javascript",
+    "seo",
+    "responsive-design",
+    "caxton"
+  ],
+  "license": "MIT",
+  "main": "run-all-validations.js",
+  "name": "@caxton/website-validation",
+  "preferGlobal": false,
+  "repository": {
+    "directory": "scripts/validation",
+    "type": "git",
+    "url": "https://github.com/jwilger/caxton.git"
+  },
+  "scripts": {
+    "clean": "rm -f *.json",
+    "reports": "ls -la *.json",
+    "test": "npm run validate",
+    "validate": "node run-all-validations.js",
+    "validate:build": "node build-deployment-checker.js",
+    "validate:html-css": "node html-css-validator.js",
+    "validate:js": "node js-error-checker.js",
+    "validate:links": "node dead-link-checker.js",
+    "validate:responsive": "node responsive-design-checker.js",
+    "validate:seo": "node seo-meta-validator.js",
+    "validate:syntax": "node code-syntax-highlighter.js"
+  },
+  "version": "1.0.0"
+}

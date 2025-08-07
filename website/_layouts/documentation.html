@@ -129,7 +129,8 @@ layout: default
     </main>
 </div>
 
-<!-- JavaScript for search -->
+<!-- JavaScript for search and anchor links -->
+<script src="{{ '/assets/js/anchor-links.js' | relative_url }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('docs-search');
@@ -162,3 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Collapsible Sections Script -->
+<script src="{{ '/assets/js/collapsible-sections.js' | relative_url }}"></script>
