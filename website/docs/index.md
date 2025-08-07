@@ -43,7 +43,7 @@ View our [Architecture Decision Records](/adr/) for detailed insights into key a
 ### Developer Guide
 
 - [**API Reference**](/docs/developer-guide/api-reference/) - REST and gRPC API reference
-- [**Rust API Documentation**](/doc/caxton/) - Complete Rust API reference (generated from source)
+- [**Rust API Documentation**](https://docs.rs/caxton/latest/caxton/) - Complete Rust API reference on docs.rs
 
 ### Operations
 

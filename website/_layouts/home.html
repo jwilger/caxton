@@ -432,10 +432,10 @@ console.log(result.tracking_number);</code></pre>
     <div class="container">
         <h2 class="section-title">Resources</h2>
         <div class="resources-grid">
-            <a href="{{ '/doc/caxton/' | relative_url }}" class="resource-card">
+            <a href="https://docs.rs/caxton/latest/caxton/" target="_blank" rel="noopener" class="resource-card">
                 <div class="resource-icon">📖</div>
                 <h3>API Documentation</h3>
-                <p>Complete Rust API reference and documentation</p>
+                <p>Complete Rust API reference on docs.rs</p>
             </a>
             <a href="{{ '/adr/' | relative_url }}" class="resource-card">
                 <div class="resource-icon">🏛️</div>
@@ -462,15 +462,40 @@ console.log(result.tracking_number);</code></pre>
         <h2 class="section-title">Latest Release</h2>
         <div class="release-card">
             <div class="release-status">
-                <span class="status-badge">Early Development</span>
-                <span class="release-date">Project Status</span>
+                <span class="status-badge">{% if site.data.release %}{{ site.data.release.status }}{% else %}Early Development{% endif %}</span>
+                <span class="release-date">
+                    {% if site.data.release.version and site.data.release.version != "0.1.0-dev" %}
+                        v{{ site.data.release.version }} • {{ site.data.release.date }}
+                    {% else %}
+                        Project Status
+                    {% endif %}
+                </span>
             </div>
-            <h3 class="release-title">Foundation Phase</h3>
+            <h3 class="release-title">
+                {% if site.data.release %}
+                    {% if site.data.release.version == "0.1.0-dev" or site.data.release.version contains "0." %}
+                        {{ site.data.release.phase | default: "Foundation Phase" }}
+                    {% else %}
+                        {{ site.data.release.name }}
+                    {% endif %}
+                {% else %}
+                    Foundation Phase
+                {% endif %}
+            </h3>
             <p class="release-description">
-                Caxton is currently in early development. Core architecture is being implemented with a focus on
-                getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+                {% if site.data.release and site.data.release.description %}
+                    {{ site.data.release.description | truncate: 300 }}
+                {% else %}
+                    Caxton is currently in early development. Core architecture is being implemented with a focus on
+                    getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+                {% endif %}
             </p>
             <div class="release-actions">
+                {% if site.data.release and site.data.release.url and site.data.release.version != "0.1.0-dev" %}
+                <a href="{{ site.data.release.url }}" target="_blank" rel="noopener" class="btn btn-outline">
+                    View Release Notes
+                </a>
+                {% endif %}
                 <a href="{{ site.social.github }}/releases" target="_blank" rel="noopener" class="btn btn-outline">
                     View All Releases
                 </a>
