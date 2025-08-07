@@ -357,7 +357,8 @@
 .protocol,
 .observable,
 .perf,
-.integration {
+.integration,
+.tool {
   background: var(--bg-tertiary);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
@@ -372,26 +373,10 @@
 .feature-card:hover .protocol,
 .feature-card:hover .observable,
 .feature-card:hover .perf,
-.feature-card:hover .integration {
+.feature-card:hover .integration,
+.feature-card:hover .tool {
   border-color: var(--color-primary);
   color: var(--text-primary);
-}
-
-.feature-tools code {
-  display: inline-block;
-  background: var(--bg-tertiary);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  color: var(--color-green);
-  font-family: var(--font-mono);
-  border: 1px solid var(--color-surface1);
-  transition: all var(--transition-fast);
-}
-
-.feature-card:hover .feature-tools code {
-  border-color: var(--color-green);
-  background: rgba(166, 227, 161, 0.1);
 }
 
 /* ============================================================================
