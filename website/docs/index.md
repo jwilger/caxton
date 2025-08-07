@@ -12,10 +12,11 @@ Welcome to the comprehensive documentation for Caxton, the production-ready mult
 
 ### Core Documentation
 
-- [**Architecture Overview**](/docs/architecture/) - Detailed system architecture and design principles
-- [**Roadmap**](/docs/roadmap/) - Project roadmap and planned features
-- [**Security Policy**](/docs/security/) - Security guidelines and vulnerability reporting
-- [**Contributing Guide**](/docs/contributing/) - How to contribute to Caxton
+- [**Project Overview**](/docs/README/) - Introduction to Caxton
+- [**Architecture Overview**](/docs/ARCHITECTURE/) - Detailed system architecture and design principles
+- [**Roadmap**](/docs/ROADMAP/) - Project roadmap and planned features
+- [**Security Policy**](/docs/SECURITY/) - Security guidelines and vulnerability reporting
+- [**Contributing Guide**](/docs/CONTRIBUTING/) - How to contribute to Caxton
 
 ### Architecture Decision Records (ADRs)
 
@@ -32,25 +33,21 @@ View our [Architecture Decision Records](/adr/) for detailed insights into key a
 - [CLI Tool Design](/adr/0009-cli-tool-design/)
 - [External Agent Routing API](/adr/0010-external-agent-routing-api/)
 
-### API Documentation
-
-- [**Rust API Documentation**](/doc/caxton/) - Complete Rust API reference (generated from source)
-- [**Management API**](/docs/api/management/) - REST and gRPC management API reference
-- [**Agent SDK**](/docs/api/sdk/) - SDK for building Caxton agents
-
 ### Getting Started Guides
 
-- [**Quick Start**](/docs/quickstart/) - Get up and running in 5 minutes
-- [**Installation**](/docs/installation/) - Detailed installation instructions
-- [**Your First Agent**](/docs/first-agent/) - Build and deploy your first agent
-- [**Configuration**](/docs/configuration/) - Configuration reference
+- [**Quick Start**](/docs/getting-started/quickstart/) - Get up and running in 5 minutes
+- [**Installation**](/docs/getting-started/installation/) - Detailed installation instructions
+- [**Your First Agent**](/docs/getting-started/first-agent/) - Build and deploy your first agent
+- [**Configuration**](/docs/getting-started/configuration/) - Configuration reference
+
+### Developer Guide
+
+- [**API Reference**](/docs/developer-guide/api-reference/) - REST and gRPC API reference
+- [**Rust API Documentation**](/doc/caxton/) - Complete Rust API reference (generated from source)
 
 ### Operations
 
-- [**Deployment Guide**](/docs/deployment/) - Production deployment best practices
-- [**Monitoring**](/docs/monitoring/) - Observability and monitoring setup
-- [**Debugging**](/docs/debugging/) - Debugging tools and techniques
-- [**Performance Tuning**](/docs/performance/) - Performance optimization guide
+- [**DevOps & Security Guide**](/docs/operations/devops-security-guide/) - Production deployment, monitoring, and security best practices
 
 ## Need Help?
 
