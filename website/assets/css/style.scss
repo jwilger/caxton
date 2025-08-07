@@ -1,6 +1,14 @@
 ---
 ---
 
+/* Import modular CSS files */
+@import "design-system.css";
+@import "navigation.css";
+@import "homepage.css";
+@import "footer.css";
+@import "adr.css";
+@import "documentation.css";
+
 /* Jekyll Main Stylesheet - Converted from Catppuccin Static Site */
 /* Preserves exact visual design while adding Jekyll functionality */
 

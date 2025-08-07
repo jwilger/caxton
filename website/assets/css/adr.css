@@ -3,12 +3,266 @@
  * ============================================================================ */
 
 /* ============================================================================
- * ADR Index Page
+ * ADR Index Layout
+ * ============================================================================ */
+.adr-index-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-8);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  min-height: calc(100vh - 200px);
+}
+
+@media (max-width: 1024px) {
+  .adr-index-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+ * ADR Sidebar
+ * ============================================================================ */
+.adr-sidebar {
+  position: sticky;
+  top: calc(80px + var(--space-4));
+  height: fit-content;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 2px solid var(--color-surface1);
+}
+
+@media (max-width: 1024px) {
+  .adr-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
+.adr-sidebar-header {
+  margin-bottom: var(--space-6);
+}
+
+.adr-sidebar-header h3 {
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+/* ADR Search */
+.adr-search {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.adr-search input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-fast);
+}
+
+.adr-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.1);
+}
+
+.adr-search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ADR Filters */
+.adr-filters {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-surface1);
+}
+
+.adr-filters h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-3);
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.filter-btn {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--color-surface2);
+}
+
+.filter-btn.active {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
+}
+
+/* ADR Statistics */
+.adr-stats {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-surface1);
+}
+
+.adr-stats h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-3);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+}
+
+.stat-number {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Quick Navigation */
+.adr-quick-nav {
+  margin-bottom: var(--space-4);
+}
+
+.adr-quick-nav h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-3);
+}
+
+.adr-quick-nav ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adr-quick-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: color var(--transition-fast);
+}
+
+.adr-quick-nav a:hover {
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+ * ADR Main Content
+ * ============================================================================ */
+.adr-index-main {
+  min-width: 0; /* Prevent grid blowout */
+}
+
+.adr-content {
+  padding: 0;
+}
+
+.adr-header {
+  margin-bottom: var(--space-8);
+}
+
+.adr-header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.adr-description {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.adr-description h1 {
+  display: none; /* Hide duplicate h1 from markdown */
+}
+
+.adr-description h2 {
+  font-size: var(--font-size-xl);
+  color: var(--text-primary);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+.adr-description p {
+  margin-bottom: var(--space-4);
+}
+
+/* ============================================================================
+ * ADR Grid
  * ============================================================================ */
 .adr-index {
   padding: var(--space-24) 0;
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-16);
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--color-surface1);
+}
+
+.empty-state h3 {
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-3);
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
 }
 
 .adr-index-header {
@@ -38,8 +292,7 @@
 .adr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: var(--space-8);
-  margin-top: var(--space-12);
+  gap: var(--space-6);
 }
 
 .adr-card {
@@ -53,6 +306,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  text-decoration: none;
+  color: inherit;
 }
 
 .adr-card::before {
@@ -86,6 +341,7 @@
 .adr-card-header {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
@@ -104,93 +360,98 @@
   font-family: var(--font-mono);
 }
 
+.adr-card-header time {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+}
+
+/* ADR Status Badge */
 .adr-status {
-  margin-left: auto;
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-medium);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+.adr-status.status-accepted,
 .adr-status.accepted {
   background: rgba(166, 227, 161, 0.2);
   color: var(--color-green);
   border: 1px solid var(--color-green);
 }
 
+.adr-status.status-proposed,
 .adr-status.proposed {
   background: rgba(249, 226, 175, 0.2);
   color: var(--color-yellow);
   border: 1px solid var(--color-yellow);
 }
 
+.adr-status.status-deprecated,
 .adr-status.deprecated {
   background: rgba(243, 139, 168, 0.2);
   color: var(--color-red);
   border: 1px solid var(--color-red);
 }
 
+.adr-status.status-superseded,
 .adr-status.superseded {
   background: rgba(148, 226, 213, 0.2);
   color: var(--color-teal);
   border: 1px solid var(--color-teal);
 }
 
-.adr-card-title {
-  font-size: var(--font-size-xl);
+/* ADR Card Content */
+.adr-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.adr-title {
+  font-size: var(--font-size-lg);
   font-weight: var(--font-semibold);
-  color: var(--text-primary);
   margin-bottom: var(--space-3);
   line-height: var(--line-height-snug);
 }
 
-.adr-card-description {
+.adr-title a {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.adr-title a:hover {
+  color: var(--color-primary);
+}
+
+.adr-excerpt {
   color: var(--text-secondary);
   line-height: var(--line-height-relaxed);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
-}
-
-.adr-card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-surface1);
   font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
-
-.adr-date {
-  font-family: var(--font-mono);
-}
-
-.adr-author {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.adr-author::before {
-  content: '👤';
-  font-size: var(--font-size-base);
 }
 
 /* ADR Categories/Tags */
 .adr-categories {
   display: flex;
   gap: var(--space-2);
-  margin-top: var(--space-4);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 
-.adr-category {
+.adr-categories .category {
   padding: var(--space-1) var(--space-3);
   background: var(--bg-tertiary);
   border: 1px solid var(--color-surface1);
@@ -200,27 +461,201 @@
   transition: all var(--transition-fast);
 }
 
-.adr-card:hover .adr-category {
+.adr-card:hover .category {
   border-color: var(--color-primary);
   color: var(--text-primary);
 }
 
-/* ============================================================================
- * Individual ADR Page
- * ============================================================================ */
-.adr-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: var(--space-24) var(--space-6);
+/* ADR Card Footer */
+.adr-card-footer {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-surface1);
+  display: flex;
+  justify-content: flex-end;
 }
 
-.adr-header {
-  margin-bottom: var(--space-12);
-  padding-bottom: var(--space-8);
+.read-more {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.read-more:hover {
+  color: var(--color-lavender);
+  transform: translateX(4px);
+}
+
+/* ============================================================================
+ * Individual ADR Page with Sidebar
+ * ============================================================================ */
+.adr-page-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-8);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  min-height: calc(100vh - 200px);
+}
+
+@media (max-width: 1024px) {
+  .adr-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .adr-page-sidebar {
+    display: none;
+  }
+}
+
+/* ADR Page Sidebar */
+.adr-page-sidebar {
+  position: sticky;
+  top: calc(80px + var(--space-4));
+  height: fit-content;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 2px solid var(--color-surface1);
+}
+
+.adr-page-sidebar .adr-sidebar-header {
+  margin-bottom: var(--space-6);
+}
+
+.adr-page-sidebar .adr-sidebar-header h3 {
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.adr-page-sidebar .adr-search {
+  margin-bottom: var(--space-4);
+}
+
+.adr-page-sidebar .adr-search input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+}
+
+.adr-page-sidebar .adr-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.1);
+}
+
+/* ADR Navigation List */
+.adr-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adr-nav-item {
+  display: block;
+  padding: var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.adr-nav-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--color-surface2);
+  transform: translateX(4px);
+}
+
+.adr-nav-item.current {
+  background: linear-gradient(135deg, var(--bg-surface-hover) 0%, rgba(137, 180, 250, 0.1) 100%);
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+}
+
+.adr-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.adr-nav-number {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+}
+
+.adr-nav-status {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.adr-nav-status.status-accepted {
+  background: rgba(166, 227, 161, 0.2);
+  color: var(--color-green);
+}
+
+.adr-nav-status.status-proposed {
+  background: rgba(249, 226, 175, 0.2);
+  color: var(--color-yellow);
+}
+
+.adr-nav-status.status-deprecated {
+  background: rgba(243, 139, 168, 0.2);
+  color: var(--color-red);
+}
+
+.adr-nav-title {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--space-1);
+}
+
+.adr-nav-date {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ADR Page Main Content */
+.adr-page-main {
+  min-width: 0;
+}
+
+.adr-page-content {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10);
+  border: 2px solid var(--color-surface1);
+}
+
+.adr-page-header {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-6);
   border-bottom: 2px solid var(--color-surface1);
 }
 
-.adr-title {
+.adr-page-header h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-bold);
   color: var(--text-primary);
@@ -228,11 +663,23 @@
   line-height: var(--line-height-tight);
 }
 
+.adr-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-6);
+}
+
+.adr-header {
+  margin-bottom: var(--space-8);
+}
+
 .adr-metadata {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6);
   margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-surface1);
 }
 
 .adr-meta-item {
