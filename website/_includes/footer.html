@@ -31,7 +31,7 @@
           Deploy agents, route messages, debug with confidence.
         </p>
         <div class="footer__badges">
-          <span class="badge badge--neutral">v{{ site.version | default: '0.1.0' }}</span>
+          <span class="badge badge--neutral">v{{ site.data.release.version | default: '0.1.0-dev' }}</span>
           <span class="badge badge--neutral">MIT License</span>
         </div>
       </div>
@@ -43,7 +43,12 @@
           <ul class="footer__links-list" role="list">
             <li><a href="{{ '/docs/' | relative_url }}">Overview</a></li>
             <li><a href="{{ '/docs/quickstart/' | relative_url }}">Quick Start</a></li>
-            <li><a href="{{ '/doc/caxton/' | relative_url }}">API Reference</a></li>
+            <li><a href="https://docs.rs/caxton/latest/caxton/" target="_blank" rel="noopener noreferrer">API Reference
+              <svg class="footer__external-icon" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-label="Opens in new window">
+                <path d="M10.5 1.5v3h-1v-2L5 7l-.7-.7L8.8 2h-2v-1h3z"/>
+                <path d="M9.5 7.5v3h-8v-8h3v-1h-4v10h10v-4h-1z"/>
+              </svg>
+            </a></li>
             <li><a href="{{ '/adr/' | relative_url }}">Architecture</a></li>
           </ul>
         </div>

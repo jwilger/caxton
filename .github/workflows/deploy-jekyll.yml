@@ -67,11 +67,6 @@ jobs:
 
           echo "✅ ADR sync completed successfully"
 
-      - name: Setup Rust (for rustdoc)
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-
       - name: Copy markdown documentation
         run: |
           # Copy entire docs directory structure to website
@@ -111,21 +106,82 @@ jobs:
           echo "Documentation copy completed. Contents of website/docs:"
           find website/docs -type f -name "*.md" | sort
 
+      - name: Fetch latest release info
+        id: latest_release
+        run: |
+          # Fetch latest release from GitHub API
+          RELEASE_JSON=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+
+          # Check if we got a valid release
+          if echo "$RELEASE_JSON" | grep -q '"tag_name"'; then
+            # Extract release information
+            TAG_NAME=$(echo "$RELEASE_JSON" | jq -r '.tag_name // "v0.0.0"')
+            RELEASE_NAME=$(echo "$RELEASE_JSON" | jq -r '.name // "Development"')
+            RELEASE_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at // ""' | cut -d'T' -f1)
+            RELEASE_BODY=$(echo "$RELEASE_JSON" | jq -r '.body // ""' | head -20)
+            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url // ""')
+
+            # Clean version (remove 'v' prefix if present)
+            VERSION="${TAG_NAME#v}"
+
+            # Check if this is a pre-1.0 release
+            if [[ "$VERSION" == 0.* ]]; then
+              RELEASE_STATUS="Early Development"
+              RELEASE_PHASE="Foundation Phase"
+            else
+              RELEASE_STATUS="Stable Release"
+              RELEASE_PHASE="Production Ready"
+            fi
+          else
+            # No releases found, use defaults
+            VERSION="0.1.0-dev"
+            TAG_NAME="development"
+            RELEASE_NAME="Foundation Phase"
+            RELEASE_DATE=$(date +%Y-%m-%d)
+            RELEASE_STATUS="Early Development"
+            RELEASE_PHASE="Foundation Phase"
+            RELEASE_BODY="Caxton is currently in early development. Core architecture is being implemented with a focus on getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability."
+            RELEASE_URL="https://github.com/${{ github.repository }}/releases"
+          fi
+
+          # Export for Jekyll
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
+          echo "RELEASE_STATUS=$RELEASE_STATUS" >> $GITHUB_ENV
+          echo "RELEASE_PHASE=$RELEASE_PHASE" >> $GITHUB_ENV
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+
+          # Save release body to file for Jekyll to read
+          mkdir -p website/_data
+          cat > website/_data/release.yml << EOF
+          version: "$VERSION"
+          tag: "$TAG_NAME"
+          name: "$RELEASE_NAME"
+          date: "$RELEASE_DATE"
+          status: "$RELEASE_STATUS"
+          phase: "$RELEASE_PHASE"
+          url: "$RELEASE_URL"
+          description: |
+            $RELEASE_BODY
+          EOF
+
+          echo "Latest release: $VERSION ($RELEASE_STATUS)"
+
       - name: Build Jekyll site
         run: |
           cd website
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-
-      - name: Build Rust documentation
-        run: |
-          # Build rustdoc
-          cargo doc --no-deps --all-features
-
-          # Copy rustdoc to Jekyll output (will be at /doc/ path)
-          mkdir -p website/_site/doc
-          cp -r target/doc/* website/_site/doc/
+          JEKYLL_VERSION: ${{ env.VERSION }}
+          JEKYLL_RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          JEKYLL_RELEASE_NAME: ${{ env.RELEASE_NAME }}
+          JEKYLL_RELEASE_DATE: ${{ env.RELEASE_DATE }}
+          JEKYLL_RELEASE_STATUS: ${{ env.RELEASE_STATUS }}
+          JEKYLL_RELEASE_PHASE: ${{ env.RELEASE_PHASE }}
+          JEKYLL_RELEASE_URL: ${{ env.RELEASE_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
