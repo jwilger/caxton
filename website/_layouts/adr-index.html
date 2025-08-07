@@ -87,12 +87,6 @@ layout: default
                     <article class="adr-card"
                              data-status="{{ adr.status | downcase }}"
                              {% if adr.categories %}data-categories="{{ adr.categories | join: ',' | downcase }}"{% endif %}>
-                        {% if adr.status %}
-                            <div class="adr-status status-{{ adr.status | downcase }}">
-                                {{ adr.status | capitalize }}
-                            </div>
-                        {% endif %}
-
                         <div class="adr-card-header">
                             <div class="adr-number">
                                 {% assign adr_num = adr.title | split: '.' | first | split: ' ' | last %}
@@ -100,6 +94,11 @@ layout: default
                             </div>
                             {% if adr.date %}
                                 <time datetime="{{ adr.date | date_to_xmlschema }}">{{ adr.date | date: "%b %d, %Y" }}</time>
+                            {% endif %}
+                            {% if adr.status %}
+                                <div class="adr-status status-{{ adr.status | downcase }}">
+                                    {{ adr.status | capitalize }}
+                                </div>
                             {% endif %}
                         </div>
 
