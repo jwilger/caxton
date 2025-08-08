@@ -164,6 +164,10 @@ pub struct EchoAgent {
 }
 
 impl EchoAgent {
+    // Agent metadata - defined in code, not configuration
+    const VERSION: &'static str = "1.0.0";
+    const NAME: &'static str = "echo-agent";
+    
     pub fn new(id: String) -> Self {
         Self {
             id,
@@ -187,7 +191,7 @@ impl Agent for EchoAgent {
         // - Resource limits (memory, CPU)
         // - Environment variables  
         // - Scaling parameters
-        // - Network configuration
+        // Everything else is in code!
         
         Ok(())
     }
@@ -382,14 +386,9 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
 // agent-manifest.json
 {
   "name": "echo-agent",
-  "version": "1.0.0",
-  "description": "Simple echo agent for demonstration",
-  // NOTE: Capabilities are NOT defined here - they're registered in agent code
-  // This manifest is for deployment and resource configuration only
   "resources": {
     "memory": "10MB",
-    "cpu": "100m",
-    "max_message_queue": 1000
+    "cpu": "100m"
   },
   "environment": {
     "LOG_LEVEL": "info",
@@ -399,14 +398,31 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
     "min_instances": 1,
     "max_instances": 10,
     "target_cpu_utilization": 70
-  },
-  "networking": {
-    "protocols": ["fipa-acl"],
-    "ontologies": ["echo-ontology"],
-    "message_timeout_ms": 30000
   }
 }
 ```
+
+**That's it!** The manifest is purely for deployment configuration:
+- **name**: Identifies which agent to deploy
+- **resources**: Memory and CPU limits
+- **environment**: Runtime environment variables
+- **scaling**: Instance count and autoscaling rules
+
+### What NOT to Include in Manifests
+
+Common fields that should **NOT** be in the manifest:
+- ❌ **version** - Define as a constant in agent code
+- ❌ **description** - Use code comments and documentation
+- ❌ **capabilities** - Register programmatically in initialization
+- ❌ **protocols** - Caxton uses FIPA, period
+- ❌ **ontologies** - Academic baggage, just use JSON schemas
+- ❌ **dependencies** - Handle in build configuration
+
+Everything else belongs in the agent code:
+- Version (as a constant like `const VERSION = "1.0.0"`)
+- Capabilities (registered via `ctx.register_capability()`)
+- Message handling (FIPA is built into the platform)
+- Business logic and behavior
 
 ## Important: Capability Registration Pattern
 
@@ -422,13 +438,14 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
 
 ### Configuration vs Code Responsibilities
 
-| **Agent Code** (Runtime) | **Manifest/Config** (Deployment) |
-|--------------------------|-----------------------------------|
-| Capability registration | Resource limits (memory, CPU) |
-| Message handling logic | Environment variables |
-| State management | Scaling parameters |
-| Business logic | Network configuration |
-| Protocol implementation | Monitoring settings |
+| **Agent Code** (Runtime) | **Manifest** (Deployment Only) |
+|--------------------------|----------------------------------|
+| Agent version | Resource limits (memory, CPU) |
+| Capability registration | Environment variables |
+| Message handling logic | Scaling parameters |
+| State management | Instance naming |
+| Business logic | |
+| FIPA message processing | |
 
 ## Agent Lifecycle
 
