@@ -174,7 +174,7 @@ The final phase transforms Caxton into an enterprise-ready platform with advance
 We welcome community contributions and feedback at every stage of development.
 
 ### Contributing
-- Review our [Contributing Guide](/docs/contributing/)
+- Review our [Contributing Guide](https://github.com/jwilger/caxton/blob/main/CONTRIBUTING.md)
 - Check open issues on [GitHub](https://github.com/caxton-org/caxton)
 - Join our [Discord community](https://discord.gg/caxton)
 

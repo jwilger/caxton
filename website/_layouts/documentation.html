@@ -41,6 +41,10 @@ layout: default
                 <h4>Developer Guide</h4>
                 <ul>
                     <li><a href="{{ '/docs/developer-guide/api-reference/' | relative_url }}" {% if page.url contains 'api-reference' %}class="current"{% endif %}>API Reference</a></li>
+                    <li><a href="{{ '/docs/developer-guide/building-agents/' | relative_url }}" {% if page.url contains 'building-agents' %}class="current"{% endif %}>Building Agents</a></li>
+                    <li><a href="{{ '/docs/developer-guide/message-protocols/' | relative_url }}" {% if page.url contains 'message-protocols' %}class="current"{% endif %}>Message Protocols</a></li>
+                    <li><a href="{{ '/docs/developer-guide/wasm-integration/' | relative_url }}" {% if page.url contains 'wasm-integration' %}class="current"{% endif %}>WebAssembly Integration</a></li>
+                    <li><a href="{{ '/docs/developer-guide/testing/' | relative_url }}" {% if page.url contains 'testing' %}class="current"{% endif %}>Testing Guide</a></li>
                     <li><a href="https://docs.rs/caxton/latest/caxton/" target="_blank" rel="noopener">Rust API Docs <span class="external-link">↗</span></a></li>
                 </ul>
             </div>
@@ -49,7 +53,9 @@ layout: default
             <div class="docs-nav-section">
                 <h4>Operations</h4>
                 <ul>
-                    <li><a href="{{ '/docs/operations/devops-security-guide/' | relative_url }}" {% if page.url contains 'devops-security' %}class="current"{% endif %}>DevOps & Security</a></li>
+                    <li><a href="{{ '/docs/operations/deployment/' | relative_url }}" {% if page.url contains '/docs/operations/deployment' %}class="current"{% endif %}>Deployment Guide</a></li>
+                    <li><a href="{{ '/docs/operations/monitoring/' | relative_url }}" {% if page.url contains '/docs/operations/monitoring' %}class="current"{% endif %}>Monitoring & Observability</a></li>
+                    <li><a href="{{ '/docs/operations/security/' | relative_url }}" {% if page.url contains '/docs/operations/security' %}class="current"{% endif %}>Security Best Practices</a></li>
                 </ul>
             </div>
 

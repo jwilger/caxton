@@ -563,11 +563,11 @@ caxton stop --agent <agent-id> --force
 
 ## Related Documentation
 
-- [API Reference](../developer-guide/api-reference.md) - Complete API documentation
-- [Agent Development Guide](../developer-guide/building-agents.md) - Building agents tutorial
-- [Deployment Guide](../operations/deployment.md) - Production deployment strategies
-- [Security Guide](../operations/security.md) - Security best practices
-- [Monitoring Guide](../operations/monitoring.md) - Observability setup and configuration
+- [API Reference]({{ site.baseurl }}/docs/developer-guide/api-reference) - Complete API documentation
+- [Agent Development Guide]({{ site.baseurl }}/docs/developer-guide/building-agents) - Building agents tutorial
+- [Deployment Guide]({{ site.baseurl }}/docs/operations/deployment) - Production deployment strategies
+- [Security Guide]({{ site.baseurl }}/docs/operations/security) - Security best practices
+- [Monitoring Guide]({{ site.baseurl }}/docs/operations/monitoring) - Observability setup and configuration
 
 <script src="/assets/js/architecture-diagrams.js"></script>
 

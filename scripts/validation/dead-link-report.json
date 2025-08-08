@@ -1,0 +1,291 @@
+{
+  "timestamp": "2025-08-08T03:03:07.361Z",
+  "summary": {
+    "total": 22,
+    "working": 19,
+    "broken": 0,
+    "warnings": 0,
+    "links": [
+      {
+        "url": "https://docs.rs/caxton/latest/caxton/",
+        "sourceFile": "_includes/footer.html",
+        "type": "html-link",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "https://fonts.gstatic.com",
+        "sourceFile": "_layouts/default.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "https://docs.rs/caxton/latest/caxton/",
+        "sourceFile": "_layouts/documentation.html",
+        "type": "html-link",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "https://docs.rs/caxton/latest/caxton/",
+        "sourceFile": "_layouts/home.html",
+        "type": "html-link",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/assets/js/architecture-diagrams.js",
+        "sourceFile": "docs/ARCHITECTURE.md",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "https://github.com/jwilger/caxton/blob/main/CONTRIBUTING.md",
+        "sourceFile": "docs/ROADMAP.md",
+        "type": "markdown",
+        "text": "Contributing Guide",
+        "status": "pending"
+      },
+      {
+        "url": "https://github.com/caxton-org/caxton",
+        "sourceFile": "docs/ROADMAP.md",
+        "type": "markdown",
+        "text": "GitHub",
+        "status": "pending"
+      },
+      {
+        "url": "https://discord.gg/caxton",
+        "sourceFile": "docs/ROADMAP.md",
+        "type": "markdown",
+        "text": "Discord community",
+        "status": "pending"
+      },
+      {
+        "url": "/assets/js/roadmap-progress.js",
+        "sourceFile": "docs/ROADMAP.md",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "https://docs.rs/caxton/latest/caxton/",
+        "sourceFile": "docs/index.md",
+        "type": "markdown",
+        "text": "Rust API Docs",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/css/design-system.css",
+        "sourceFile": "test-all-features.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/css/documentation.css",
+        "sourceFile": "test-all-features.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/css/syntax-highlighting.css",
+        "sourceFile": "test-all-features.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/js/caxton.js",
+        "sourceFile": "test-all-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/js/anchor-links.js",
+        "sourceFile": "test-all-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/js/collapsible-sections.js",
+        "sourceFile": "test-all-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/js/architecture-diagrams.js",
+        "sourceFile": "test-all-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "/caxton/assets/js/roadmap-progress.js",
+        "sourceFile": "test-all-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "assets/css/design-system.css",
+        "sourceFile": "test-search-features.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "assets/css/adr.css",
+        "sourceFile": "test-search-features.html",
+        "type": "css",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "assets/js/caxton.js",
+        "sourceFile": "test-search-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      },
+      {
+        "url": "assets/js/search-integration.js",
+        "sourceFile": "test-search-features.html",
+        "type": "script",
+        "text": "",
+        "status": "pending"
+      }
+    ]
+  },
+  "links": [
+    {
+      "url": "https://docs.rs/caxton/latest/caxton/",
+      "type": "html-link",
+      "instances": 4,
+      "status": "working",
+      "statusCode": 200,
+      "whitelisted": true
+    },
+    {
+      "url": "https://fonts.gstatic.com",
+      "type": "css",
+      "instances": 1,
+      "status": "working",
+      "statusCode": 200,
+      "whitelisted": true
+    },
+    {
+      "url": "/assets/js/architecture-diagrams.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "https://github.com/jwilger/caxton/blob/main/CONTRIBUTING.md",
+      "type": "markdown",
+      "instances": 1,
+      "status": "working",
+      "statusCode": 200,
+      "whitelisted": true
+    },
+    {
+      "url": "https://github.com/caxton-org/caxton",
+      "type": "markdown",
+      "instances": 1,
+      "status": "working",
+      "statusCode": 200,
+      "whitelisted": true
+    },
+    {
+      "url": "https://discord.gg/caxton",
+      "type": "markdown",
+      "instances": 1,
+      "status": "working",
+      "statusCode": 200,
+      "whitelisted": true
+    },
+    {
+      "url": "/assets/js/roadmap-progress.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/css/design-system.css",
+      "type": "css",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/css/documentation.css",
+      "type": "css",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/css/syntax-highlighting.css",
+      "type": "css",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/js/caxton.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/js/anchor-links.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/js/collapsible-sections.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/js/architecture-diagrams.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "/caxton/assets/js/roadmap-progress.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "assets/css/design-system.css",
+      "type": "css",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "assets/css/adr.css",
+      "type": "css",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "assets/js/caxton.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    },
+    {
+      "url": "assets/js/search-integration.js",
+      "type": "script",
+      "instances": 1,
+      "status": "working"
+    }
+  ]
+}
