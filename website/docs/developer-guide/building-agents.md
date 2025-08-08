@@ -402,27 +402,74 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
 }
 ```
 
-**That's it!** The manifest is purely for deployment configuration:
-- **name**: Identifies which agent to deploy
-- **resources**: Memory and CPU limits
-- **environment**: Runtime environment variables
-- **scaling**: Instance count and autoscaling rules
+**That's it!** The manifest is purely for deployment configuration. Caxton validates manifests against this schema on deployment:
 
-### What NOT to Include in Manifests
+### Manifest JSON Schema
 
-Common fields that should **NOT** be in the manifest:
-- ❌ **version** - Define as a constant in agent code
-- ❌ **description** - Use code comments and documentation
-- ❌ **capabilities** - Register programmatically in initialization
-- ❌ **protocols** - Caxton uses FIPA, period
-- ❌ **ontologies** - Academic baggage, just use JSON schemas
-- ❌ **dependencies** - Handle in build configuration
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["name", "resources"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Agent identifier (lowercase, alphanumeric, hyphens)"
+    },
+    "resources": {
+      "type": "object",
+      "required": ["memory", "cpu"],
+      "additionalProperties": false,
+      "properties": {
+        "memory": {
+          "type": "string",
+          "pattern": "^[0-9]+(Mi|Gi|MB|GB)$",
+          "description": "Memory limit (e.g., '10MB', '256Mi')"
+        },
+        "cpu": {
+          "type": "string",
+          "pattern": "^[0-9]+m?$",
+          "description": "CPU limit in millicores (e.g., '100m', '2000m')"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Environment variables as key-value pairs"
+    },
+    "scaling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min_instances": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "max_instances": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10
+        },
+        "target_cpu_utilization": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 70,
+          "description": "Target CPU percentage for autoscaling"
+        }
+      }
+    }
+  }
+}
+```
 
-Everything else belongs in the agent code:
-- Version (as a constant like `const VERSION = "1.0.0"`)
-- Capabilities (registered via `ctx.register_capability()`)
-- Message handling (FIPA is built into the platform)
-- Business logic and behavior
+Invalid manifests are rejected at deployment with clear error messages.
 
 ## Important: Capability Registration Pattern
 
