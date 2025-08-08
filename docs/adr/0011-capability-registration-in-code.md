@@ -1,6 +1,6 @@
 ---
 layout: adr
-title: "ADR-0011: Capability Registration in Code"
+title: "0011. Capability Registration in Code"
 status: accepted
 date: 2025-08-08
 ---
