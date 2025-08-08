@@ -80,10 +80,13 @@ jobs:
             cp -r docs/* website/docs/ 2>/dev/null || true
 
             # Also copy root-level documentation files
-            cp README.md ARCHITECTURE.md ROADMAP.md SECURITY.md CONTRIBUTING.md website/docs/ 2>/dev/null || true
+            cp ARCHITECTURE.md ROADMAP.md SECURITY.md CONTRIBUTING.md website/docs/ 2>/dev/null || true
 
-            # Copy logo.svg to website/docs for README.md logo reference
-            cp logo.svg website/docs/ 2>/dev/null || true
+            # Copy README with fixed logo path for Jekyll
+            cp README.md website/docs/README.md.tmp
+            # Replace relative logo path with Jekyll-friendly path
+            sed 's|<img src="logo.svg"|<img src="{{ '"'"'/assets/img/logo.svg'"'"' \| relative_url }}"|g' website/docs/README.md.tmp > website/docs/README.md
+            rm website/docs/README.md.tmp
           fi
 
           # Add Jekyll front matter to all markdown files if not present
