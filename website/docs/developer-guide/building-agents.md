@@ -181,17 +181,9 @@ impl Agent for EchoAgent {
     async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
         tracing::info!("Echo agent {} initializing", self.id);
         
-        // Register capabilities - SINGLE SOURCE OF TRUTH
-        // Capabilities are defined here in code, NOT in configuration files
-        // This ensures type safety and allows dynamic capability registration
+        // Register capabilities that this agent provides
         ctx.register_capability("echo").await?;
         ctx.register_capability("state_management").await?;
-        
-        // The agent manifest (JSON) handles deployment concerns only:
-        // - Resource limits (memory, CPU)
-        // - Environment variables  
-        // - Scaling parameters
-        // Everything else is in code!
         
         Ok(())
     }
@@ -471,28 +463,20 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
 
 Invalid manifests are rejected at deployment with clear error messages.
 
-## Important: Capability Registration Pattern
+## Capability Registration
 
-**Capabilities are registered programmatically in agent code, NOT in configuration files.** This is a deliberate architectural decision:
+Capabilities are registered programmatically in the agent's initialization method:
 
-### Why Programmatic Registration?
+```rust
+async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
+    // Register what this agent can do
+    ctx.register_capability("echo").await?;
+    ctx.register_capability("state_management").await?;
+    Ok(())
+}
+```
 
-1. **Single Source of Truth**: Agent code defines what the agent can do
-2. **Type Safety**: Compile-time checking in strongly-typed languages
-3. **Dynamic Capabilities**: Can register based on runtime conditions or feature flags
-4. **Better Testing**: Easy to mock or override in test environments
-5. **Self-Documenting**: Code clearly shows agent capabilities
-
-### Configuration vs Code Responsibilities
-
-| **Agent Code** (Runtime) | **Manifest** (Deployment Only) |
-|--------------------------|----------------------------------|
-| Agent version | Resource limits (memory, CPU) |
-| Capability registration | Environment variables |
-| Message handling logic | Scaling parameters |
-| State management | Instance naming |
-| Business logic | |
-| FIPA message processing | |
+Capabilities determine which agents receive specific types of messages and tasks.
 
 ## Agent Lifecycle
 
