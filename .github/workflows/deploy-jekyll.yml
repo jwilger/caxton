@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "Syncing ADRs from docs/adr/ to website/_adrs/"
 
-          # Create _adrs directory if it doesn't exist
+          # Create _adrs directory if it doesn't exist (matches Jekyll collection name 'adrs')
           mkdir -p website/_adrs
 
           # Copy all ADR files
