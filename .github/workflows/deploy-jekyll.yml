@@ -81,6 +81,9 @@ jobs:
 
             # Also copy root-level documentation files
             cp README.md ARCHITECTURE.md ROADMAP.md SECURITY.md CONTRIBUTING.md website/docs/ 2>/dev/null || true
+
+            # Copy logo.svg to website/docs for README.md logo reference
+            cp logo.svg website/docs/ 2>/dev/null || true
           fi
 
           # Add Jekyll front matter to all markdown files if not present

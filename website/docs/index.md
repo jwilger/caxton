@@ -4,6 +4,10 @@ title: Documentation
 permalink: /docs/
 ---
 
+<div align="center">
+  <img src="{{ '/assets/img/logo.svg' | relative_url }}" alt="Caxton Logo" width="150" height="150">
+</div>
+
 # Caxton Documentation
 
 Welcome to the comprehensive documentation for Caxton, the production-ready multi-agent application server.
@@ -34,7 +38,7 @@ Caxton is a specialized server for coordinating smart software components called
 
 ### Real-World Examples
 - **Customer Service**: Route inquiries between specialist agents (billing, technical, sales)
-- **Content Processing**: Coordinate agents that analyze, summarize, and moderate user-generated content  
+- **Content Processing**: Coordinate agents that analyze, summarize, and moderate user-generated content
 - **E-commerce**: Have agents handle inventory, recommendations, and fraud detection working together
 - **Data Analysis**: Pipeline where agents clean data, run analysis, and generate reports
 
@@ -71,7 +75,7 @@ Caxton is a specialized server for coordinating smart software components called
 ### Agents
 Think of agents as small, focused programs that handle specific tasks. For example:
 - A **billing agent** that processes payments and invoices
-- A **notification agent** that sends emails and texts  
+- A **notification agent** that sends emails and texts
 - A **data agent** that reads from databases and APIs
 
 Each agent runs in its own secure sandbox with configurable memory and CPU limits, like lightweight containers but even safer.
@@ -82,7 +86,7 @@ Agents communicate by sending structured messages to each other, similar to REST
 {
   "type": "request",
   "from": "customer-service",
-  "to": "billing-agent", 
+  "to": "billing-agent",
   "content": "Please create invoice for order #12345"
 }
 ```
