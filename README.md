@@ -144,18 +144,17 @@ Unlike traditional libraries, Caxton runs independently from your application co
 
 ## Building Agents
 
-> 🚧 **Note**: The following sections are being updated to reflect Caxton's new application server architecture. Some code examples may still show the deprecated library approach.
-
 Agents are WebAssembly modules that can be written in any language that compiles to WASM. Here's the basic structure:
 
 ```rust
-// Example agent (in any WASM-compatible language)
-// Full examples for JavaScript, Python, and Go coming soon!
+// Example agent in Rust
 #[no_mangle]
 pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
     // Your agent logic here
 }
 ```
+
+For language-specific examples, see the [Building Agents Guide](docs/developer-guide/building-agents.md).
 
 ## Documentation
 
