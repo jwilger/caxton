@@ -10,7 +10,33 @@ Welcome to the comprehensive documentation for Caxton, the production-ready mult
 
 ## What is Caxton?
 
-Caxton is a multi-agent orchestration server - like Redis for caching or PostgreSQL for data, but for coordinating intelligent agents. You install Caxton, deploy your agents (written in any language that compiles to WebAssembly), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
+Caxton is a specialized server for coordinating smart software components called "agents" - like Redis for caching or PostgreSQL for data, but for managing intelligent automation. You install Caxton, deploy your agents (written in any language that compiles to WebAssembly), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
+
+## What problems does Caxton solve?
+
+**Building intelligent automation is hard.** Here are common challenges Caxton addresses:
+
+### Coordinating Multiple AI Systems
+- **Problem**: You have different AI models (LLMs, vision models, specialized algorithms) that need to work together
+- **Solution**: Caxton routes messages between agents, so your GPT-4 agent can request image analysis from your vision agent
+
+### Scaling Smart Applications
+- **Problem**: Your AI application works great for one user, but breaks under load or when processing multiple requests
+- **Solution**: Caxton handles resource management, queuing, and scaling so your agents stay responsive
+
+### Integrating with Existing Systems
+- **Problem**: Your AI agents need to read databases, call APIs, send emails, or interact with other services
+- **Solution**: Caxton's tool system (MCP bridges) lets agents safely interact with external systems
+
+### Making AI Systems Observable
+- **Problem**: When your AI application misbehaves, you can't see what went wrong or why
+- **Solution**: Caxton provides built-in tracing and monitoring so you can debug distributed AI workflows
+
+### Real-World Examples
+- **Customer Service**: Route inquiries between specialist agents (billing, technical, sales)
+- **Content Processing**: Coordinate agents that analyze, summarize, and moderate user-generated content  
+- **E-commerce**: Have agents handle inventory, recommendations, and fraud detection working together
+- **Data Analysis**: Pipeline where agents clean data, run analysis, and generate reports
 
 ## Quick Links
 
@@ -43,16 +69,42 @@ Caxton is a multi-agent orchestration server - like Redis for caching or Postgre
 ## Core Concepts
 
 ### Agents
-WebAssembly-isolated components that process messages and make decisions. Each agent runs in its own sandbox with configurable resource limits.
+Think of agents as small, focused programs that handle specific tasks. For example:
+- A **billing agent** that processes payments and invoices
+- A **notification agent** that sends emails and texts  
+- A **data agent** that reads from databases and APIs
+
+Each agent runs in its own secure sandbox with configurable memory and CPU limits, like lightweight containers but even safer.
 
 ### Messages
-FIPA-compliant messages that agents exchange. Caxton handles routing, delivery guarantees, and protocol state machines.
+Agents communicate by sending structured messages to each other, similar to REST API calls but between your own components. For example:
+```json
+{
+  "type": "request",
+  "from": "customer-service",
+  "to": "billing-agent", 
+  "content": "Please create invoice for order #12345"
+}
+```
+
+Caxton uses a simplified version of industry-standard agent messaging protocols, keeping the useful parts (reliable delivery, request tracking) while discarding academic complexity. See [ADR-0012](/adr/0012-pragmatic-fipa-subset/) for our pragmatic approach.
 
 ### Observability
-Built-in OpenTelemetry support provides distributed tracing, metrics, and structured logging from day one.
+When your agents are working together, you need to see what's happening. Caxton provides:
+- **Distributed tracing**: Follow a customer request across multiple agents
+- **Performance metrics**: See which agents are slow or failing
+- **Structured logging**: Debug issues with detailed, searchable logs
 
-### Tools
-MCP (Model Context Protocol) bridges allow agents to interact with external systems, databases, and APIs.
+All built-in from day one using industry-standard OpenTelemetry.
+
+### Tools (MCP Integration)
+Agents often need to interact with external systems. Rather than giving agents direct database access (risky), Caxton provides controlled "tools" they can use:
+- Database queries through secure connections
+- API calls with rate limiting and error handling
+- File system access with proper permissions
+- Integration with services like Slack, GitHub, or your internal APIs
+
+This uses the Model Context Protocol (MCP) standard for safe, observable external interactions.
 
 ## Documentation Structure
 

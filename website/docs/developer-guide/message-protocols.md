@@ -4,20 +4,27 @@ layout: documentation
 description: Comprehensive guide to FIPA message protocols used in Caxton for agent communication.
 ---
 
-# FIPA Message Protocols
+# Message Protocols for Service Communication
 
-FIPA (Foundation for Intelligent Physical Agents) message protocols provide standardized communication patterns for multi-agent systems. This guide covers how Caxton implements and uses FIPA protocols for secure, semantic agent communication.
+This guide explains how to send messages between services in Caxton using FIPA-based protocols. Think of it as a standardized way for your services to talk to each other - like having a common language for requests, responses, and negotiations.
 
-## Overview
+## What Are Message Protocols?
 
-FIPA ACL (Agent Communication Language) defines a set of message types called **performatives** that express the intent behind agent communications. Each performative has well-defined semantics that enable agents to understand not just what data is being sent, but why it's being sent and what response is expected.
+Message protocols define how services communicate with each other. Instead of just sending raw data, these protocols include information about:
 
-### Core Benefits
+- **What** you're sending (the data)
+- **Why** you're sending it (request, notification, proposal, etc.)
+- **What response** you expect (if any)
+- **How long** to wait for a response
 
-- **Semantic Clarity**: Messages express intent, not just data
-- **Interoperability**: Standard protocol enables integration with other FIPA systems
-- **Proven Patterns**: 20+ years of research and real-world deployment
-- **Rich Interaction Models**: Support for negotiations, auctions, and complex workflows
+FIPA (Foundation for Intelligent Physical Agents) provides proven patterns that have been used in distributed systems for over 20 years. Caxton implements a pragmatic subset focused on practical service communication needs.
+
+### Why Use Structured Message Types?
+
+- **Clear Intent**: Both sender and receiver know exactly what's expected
+- **Error Handling**: Standardized ways to handle failures and rejections  
+- **Conversations**: Group related messages together for complex workflows
+- **Timeouts**: Built-in support for request deadlines
 
 ## FIPA Message Structure
 
@@ -59,9 +66,20 @@ Every FIPA message in Caxton follows this standardized structure:
 - **protocol**: Interaction protocol being used
 - **reply_by**: Deadline for response (ISO 8601 format)
 
-## Performatives
+## Common Message Types
 
-FIPA defines several performatives, each with specific semantics and usage patterns.
+### When to Use Each Message Type
+
+| Message Type | Use When | Expected Response |
+|-------------|----------|------------------|
+| `INFORM` | Sharing information, status updates | None (fire-and-forget) |
+| `REQUEST` | Asking another service to do something | `AGREE`/`REFUSE`, then `INFORM`/`FAILURE` |
+| `QUERY_IF` | Asking "is this true?" | `INFORM` with true/false |
+| `QUERY_REF` | Asking "what is the value of X?" | `INFORM` with the data |
+| `CFP` | Starting a bidding process | `PROPOSE` or `REFUSE` |
+| `PROPOSE` | Making an offer or bid | `ACCEPT_PROPOSAL`/`REJECT_PROPOSAL` |
+
+### Detailed Message Types
 
 ### Information Exchange
 
@@ -333,320 +351,121 @@ async fn handle_request(server: &FipaServer, message: FipaMessage) {
 }
 ```
 
-### Contract Net Protocol
+### Bidding System (Contract Net Protocol)
 
-Distributed task allocation through bidding:
+The Contract Net Protocol is a bidding system where one service asks others to bid on a task:
 
-```
-Initiator → Participants: CFP (Call for Proposals)
-Participants → Initiator: PROPOSE|REFUSE
-Initiator → Winner: ACCEPT_PROPOSAL
-Initiator → Others: REJECT_PROPOSAL
-Winner → Initiator: INFORM (result) | FAILURE
-```
+1. **Coordinator** sends `CFP` (Call for Proposals) to multiple services
+2. **Services** respond with `PROPOSE` (their bid) or `REFUSE` (can't do it)
+3. **Coordinator** picks the best bid and sends `ACCEPT_PROPOSAL` to winner, `REJECT_PROPOSAL` to others
+4. **Winner** does the work and sends `INFORM` (result) or `FAILURE`
 
-**Implementation Example:**
-
+**Simple Example:**
 ```rust
-// Task coordinator (initiator)
-async fn run_contract_net_auction(
-    coordinator: &FipaClient,
-    task: TaskDescription
-) -> Result<TaskResult> {
-    let conversation_id = Uuid::new_v4().to_string();
-    
-    // Send CFP to all potential bidders
-    let cfp = FipaMessage::cfp()
-        .receiver("broadcast://compute_agents")
-        .content(serde_json::to_value(&task)?)
-        .conversation_id(&conversation_id)
-        .reply_with("cfp_001")
-        .reply_by(Utc::now() + chrono::Duration::minutes(2))
-        .build();
-    
-    coordinator.send(cfp).await?;
-    
-    // Collect proposals
-    let mut proposals = Vec::new();
-    let deadline = Utc::now() + chrono::Duration::minutes(2);
-    
-    while Utc::now() < deadline {
-        if let Ok(msg) = coordinator.receive_timeout(
-            Duration::from_secs(30)
-        ).await {
-            if msg.conversation_id.as_ref() == Some(&conversation_id) {
-                match msg.performative {
-                    Performative::Propose => {
-                        proposals.push((msg.sender.clone(), msg.content.clone()));
-                    }
-                    Performative::Refuse => {
-                        println!("Agent {} refused to bid", msg.sender);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-    
-    // Select best proposal
-    let winner = select_best_proposal(&proposals)?;
-    
-    // Send acceptance to winner
-    let accept = FipaMessage::accept_proposal()
-        .receiver(&winner.0)
-        .conversation_id(&conversation_id)
-        .build();
-    coordinator.send(accept).await?;
-    
-    // Send rejections to others
-    for (agent_id, _) in proposals.iter() {
-        if agent_id != &winner.0 {
-            let reject = FipaMessage::reject_proposal()
-                .receiver(agent_id)
-                .conversation_id(&conversation_id)
-                .build();
-            coordinator.send(reject).await?;
-        }
-    }
-    
-    // Wait for result
-    let result_msg = coordinator.wait_for_message(|msg| {
-        msg.conversation_id.as_ref() == Some(&conversation_id) &&
-        msg.sender == winner.0 &&
-        matches!(msg.performative, Performative::Inform | Performative::Failure)
-    }).await?;
-    
-    match result_msg.performative {
-        Performative::Inform => Ok(serde_json::from_value(result_msg.content)?),
-        Performative::Failure => Err(result_msg.content["error"].as_str()
-            .unwrap_or("Task failed").into()),
-        _ => unreachable!()
-    }
-}
+// Ask for bids on a data processing task
+let cfp = FipaMessage::cfp()
+    .receiver("broadcast://data_processors")
+    .content(json!({
+        "task": "process_large_dataset",
+        "size_gb": 100,
+        "deadline": "2024-01-15T18:00:00Z"
+    }))
+    .conversation_id("auction_001")
+    .reply_by("2024-01-15T12:00:00Z")
+    .build();
 
-// Compute agent (participant)
-async fn handle_cfp(agent: &FipaClient, cfp_message: FipaMessage) {
-    let task: TaskDescription = match serde_json::from_value(cfp_message.content) {
-        Ok(task) => task,
-        Err(_) => {
-            let refuse = FipaMessage::refuse()
-                .receiver(&cfp_message.sender)
-                .conversation_id(&cfp_message.conversation_id.unwrap())
-                .content(json!({"reason": "invalid_task_format"}))
-                .build();
-            agent.send(refuse).await.unwrap();
-            return;
-        }
-    };
-    
-    // Evaluate capability and generate proposal
-    match evaluate_task_capability(&task).await {
-        Some(proposal_details) => {
-            let propose = FipaMessage::propose()
-                .receiver(&cfp_message.sender)
-                .conversation_id(&cfp_message.conversation_id.unwrap())
-                .content(serde_json::to_value(proposal_details).unwrap())
-                .build();
-            agent.send(propose).await.unwrap();
-        }
-        None => {
-            let refuse = FipaMessage::refuse()
-                .receiver(&cfp_message.sender)
-                .conversation_id(&cfp_message.conversation_id.unwrap())
-                .content(json!({"reason": "insufficient_capability"}))
-                .build();
-            agent.send(refuse).await.unwrap();
-        }
-    }
-}
+// Services respond with their bids
+let proposal = FipaMessage::propose()
+    .content(json!({
+        "cost": 50,
+        "estimated_time": "2 hours",
+        "confidence": 0.95
+    }))
+    .build();
 ```
+
+## Pragmatic FIPA Implementation
+
+Caxton implements a pragmatic subset of FIPA protocols, focusing on the most commonly needed message patterns while maintaining compatibility with the broader FIPA ecosystem. Our approach prioritizes:
+
+- **Simplicity**: Use only the message types you actually need
+- **Performance**: Efficient serialization and routing  
+- **Reliability**: Built-in timeouts and error handling
+- **Debuggability**: Clear message tracing and logging
+
+This pragmatic approach follows our architectural decision (referenced in our internal ADR-0012) to adopt proven FIPA patterns without the complexity of full academic FIPA implementations.
 
 ## Advanced Features
 
-### Conversation Management
+*For complex implementations that require detailed conversation management, message validation, and error handling patterns, see the [Advanced FIPA Implementation Guide](/docs/advanced/fipa-advanced).*
 
-Conversations group related messages and maintain context:
+## Quick Start Examples
+
+### Send a Simple Request
 
 ```rust
-pub struct ConversationManager {
-    conversations: HashMap<String, ConversationContext>,
-}
+// Ask a service to process data
+let request = FipaMessage::request()
+    .receiver("data_processor")
+    .content(json!({
+        "action": "analyze",
+        "file": "data.csv"
+    }))
+    .reply_with("req_001")
+    .reply_by("2024-01-15T10:35:00Z")
+    .build();
 
-impl ConversationManager {
-    pub fn start_conversation(&mut self, protocol: &str) -> String {
-        let conversation_id = Uuid::new_v4().to_string();
-        let context = ConversationContext {
-            id: conversation_id.clone(),
-            protocol: protocol.to_string(),
-            state: ConversationState::Started,
-            participants: HashSet::new(),
-            messages: Vec::new(),
-            created_at: Utc::now(),
-            last_activity: Utc::now(),
-        };
-        
-        self.conversations.insert(conversation_id.clone(), context);
-        conversation_id
+// Send and wait for response
+let response = client.send_and_wait(request).await?;
+match response.performative {
+    Performative::Agree => {
+        // Service accepted, wait for result
+        let result = client.wait_for_inform("req_001").await?;
+        println!("Result: {}", result.content);
     }
-    
-    pub fn add_message(&mut self, message: &FipaMessage) {
-        if let Some(conv_id) = &message.conversation_id {
-            if let Some(context) = self.conversations.get_mut(conv_id) {
-                context.participants.insert(message.sender.clone());
-                context.participants.insert(message.receiver.clone());
-                context.messages.push(message.clone());
-                context.last_activity = Utc::now();
-                
-                // Update conversation state based on message
-                self.update_conversation_state(context, message);
-            }
-        }
+    Performative::Refuse => {
+        let reason = response.content["reason"].as_str().unwrap();
+        eprintln!("Request refused: {}", reason);
     }
-    
-    fn update_conversation_state(
-        &self, 
-        context: &mut ConversationContext, 
-        message: &FipaMessage
-    ) {
-        match (&context.protocol[..], &message.performative) {
-            ("fipa-request", Performative::Request) => {
-                context.state = ConversationState::RequestSent;
-            }
-            ("fipa-request", Performative::Agree) => {
-                context.state = ConversationState::Agreed;
-            }
-            ("fipa-request", Performative::Inform) => {
-                context.state = ConversationState::Completed;
-            }
-            ("contract-net", Performative::Cfp) => {
-                context.state = ConversationState::ProposalPhase;
-            }
-            ("contract-net", Performative::AcceptProposal) => {
-                context.state = ConversationState::ExecutionPhase;
-            }
-            _ => {}
-        }
-    }
+    _ => {}
 }
 ```
 
-### Message Validation
-
-Implement comprehensive validation for incoming messages:
+### Send Information Updates
 
 ```rust
-pub struct FipaValidator;
+// Notify other services of status change
+let status_update = FipaMessage::inform()
+    .receiver("monitoring_service")
+    .content(json!({
+        "service": "data_processor",
+        "status": "ready",
+        "capacity": 80
+    }))
+    .build();
 
-impl FipaValidator {
-    pub fn validate_message(message: &FipaMessage) -> Result<(), ValidationError> {
-        // Basic field validation
-        Self::validate_required_fields(message)?;
-        Self::validate_performative_semantics(message)?;
-        Self::validate_conversation_consistency(message)?;
-        Self::validate_content_format(message)?;
-        
-        Ok(())
-    }
-    
-    fn validate_required_fields(message: &FipaMessage) -> Result<(), ValidationError> {
-        if message.sender.is_empty() {
-            return Err(ValidationError::MissingField("sender"));
-        }
-        if message.receiver.is_empty() {
-            return Err(ValidationError::MissingField("receiver"));
-        }
-        // Additional validations...
-        Ok(())
-    }
-    
-    fn validate_performative_semantics(
-        message: &FipaMessage
-    ) -> Result<(), ValidationError> {
-        match message.performative {
-            Performative::Request => {
-                // REQUEST must have reply_with for correlation
-                if message.reply_with.is_none() {
-                    return Err(ValidationError::SemanticError(
-                        "REQUEST performative requires reply_with field"
-                    ));
-                }
-            }
-            Performative::Inform => {
-                // INFORM responding to a request must have in_reply_to
-                if message.in_reply_to.is_none() && 
-                   message.content.get("unsolicited").is_none() {
-                    return Err(ValidationError::SemanticError(
-                        "INFORM must specify in_reply_to or mark as unsolicited"
-                    ));
-                }
-            }
-            Performative::Propose => {
-                // PROPOSE should be part of a conversation
-                if message.conversation_id.is_none() {
-                    return Err(ValidationError::SemanticError(
-                        "PROPOSE should be part of a conversation"
-                    ));
-                }
-            }
-            _ => {}
-        }
-        Ok(())
-    }
-}
+client.send(status_update).await?;
 ```
 
-### Error Handling
-
-Robust error handling with FIPA semantics:
+### Ask a Simple Question  
 
 ```rust
-#[derive(Debug, Clone)]
-pub enum FipaError {
-    MessageDeliveryFailed(String),
-    InvalidPerformative(String),
-    ConversationTimeout(String),
-    ProtocolViolation(String),
-    AgentNotFound(String),
-    ValidationError(String),
-}
+// Check if a service is available
+let health_check = FipaMessage::query_if()
+    .receiver("target_service")
+    .content(json!({
+        "query": "status == 'healthy'"
+    }))
+    .reply_with("health_001")
+    .build();
 
-impl FipaError {
-    pub fn to_fipa_message(&self, original_message: &FipaMessage) -> FipaMessage {
-        match self {
-            FipaError::MessageDeliveryFailed(reason) => {
-                FipaMessage::failure()
-                    .receiver(&original_message.sender)
-                    .content(json!({
-                        "error": "message_delivery_failed",
-                        "reason": reason
-                    }))
-                    .in_reply_to(&original_message.reply_with)
-                    .build()
-            }
-            FipaError::AgentNotFound(agent_id) => {
-                FipaMessage::not_understood()
-                    .receiver(&original_message.sender)
-                    .content(json!({
-                        "error": "agent_not_found",
-                        "agent_id": agent_id
-                    }))
-                    .in_reply_to(&original_message.reply_with)
-                    .build()
-            }
-            _ => {
-                FipaMessage::failure()
-                    .receiver(&original_message.sender)
-                    .content(json!({
-                        "error": "processing_error",
-                        "details": self.to_string()
-                    }))
-                    .in_reply_to(&original_message.reply_with)
-                    .build()
-            }
-        }
-    }
-}
+let response = client.send_and_wait(health_check).await?;
+let is_healthy = response.content["result"].as_bool().unwrap_or(false);
 ```
+
+## Getting Started
+
+These examples should cover most common service communication needs. For advanced patterns like complex negotiations, distributed coordination, or custom protocol implementations, consult the [Advanced FIPA Guide](/docs/advanced/fipa-advanced) or our API documentation.
 
 ## Best Practices
 
