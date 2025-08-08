@@ -87,7 +87,7 @@ Agents communicate by sending structured messages to each other, similar to REST
 }
 ```
 
-Caxton uses a simplified version of industry-standard agent messaging protocols, keeping the useful parts (reliable delivery, request tracking) while discarding academic complexity. See [ADR-0012](/adr/0012-pragmatic-fipa-subset/) for our pragmatic approach.
+Caxton uses a simplified version of industry-standard agent messaging protocols, keeping the useful parts (reliable delivery, request tracking) while discarding academic complexity. See [ADR-0012](https://github.com/jwilger/caxton/blob/main/docs/adr/0012-pragmatic-fipa-subset.md) for our pragmatic approach.
 
 ### Observability
 When your agents are working together, you need to see what's happening. Caxton provides:
