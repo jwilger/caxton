@@ -759,6 +759,8 @@ async fn test_agent_lifecycle_api() {
     let wasm_b64 = base64::encode(&wasm_bytes);
     
     // Test agent deployment
+    // Note: capabilities are registered in code, not config
+    // In test code, capabilities should be mocked/stubbed rather than configured via JSON
     let deploy_request = json!({
         "wasm_module": wasm_b64,
         "config": {
@@ -766,8 +768,8 @@ async fn test_agent_lifecycle_api() {
             "resources": {
                 "memory": "50MB",
                 "cpu": "100m"
-            },
-            "capabilities": ["testing"]
+            }
+            // capabilities field removed - handle via mocks in test code
         }
     });
     

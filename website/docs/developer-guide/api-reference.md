@@ -362,8 +362,16 @@ POST /api/v1/tasks
   "protocol": "contract_net",
   "participants": ["agent_1", "agent_2", "agent_3"],
   "timeout_seconds": 300,
+  "deployment_config": {
+    "environment": "production",
+    "priority": "high",
+    "resource_limits": {
+      "memory_mb": 512,
+      "cpu_cores": 2
+    }
+  },
   "requirements": {
-    "capabilities": ["data_processing"],
+    // Note: Agent capabilities are registered programmatically in agent code, not in configuration
     "min_performance_score": 0.8
   }
 }

@@ -177,9 +177,17 @@ impl Agent for EchoAgent {
     async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
         tracing::info!("Echo agent {} initializing", self.id);
         
-        // Register capabilities
+        // Register capabilities - SINGLE SOURCE OF TRUTH
+        // Capabilities are defined here in code, NOT in configuration files
+        // This ensures type safety and allows dynamic capability registration
         ctx.register_capability("echo").await?;
         ctx.register_capability("state_management").await?;
+        
+        // The agent manifest (JSON) handles deployment concerns only:
+        // - Resource limits (memory, CPU)
+        // - Environment variables  
+        // - Scaling parameters
+        // - Network configuration
         
         Ok(())
     }
@@ -368,15 +376,16 @@ wasm-opt -Oz -o target/wasm32-wasi/release/my_agent_opt.wasm \
 
 ### Deployment Configuration
 
-Create agent deployment configuration:
+Create agent deployment manifest (Note: capabilities are registered in code, not config):
 
 ```json
-// agent-config.json
+// agent-manifest.json
 {
   "name": "echo-agent",
   "version": "1.0.0",
   "description": "Simple echo agent for demonstration",
-  "capabilities": ["echo", "state_management"],
+  // NOTE: Capabilities are NOT defined here - they're registered in agent code
+  // This manifest is for deployment and resource configuration only
   "resources": {
     "memory": "10MB",
     "cpu": "100m",
@@ -386,10 +395,40 @@ Create agent deployment configuration:
     "LOG_LEVEL": "info",
     "TIMEOUT_MS": "5000"
   },
-  "protocols": ["fipa-acl"],
-  "ontologies": ["echo-ontology"]
+  "scaling": {
+    "min_instances": 1,
+    "max_instances": 10,
+    "target_cpu_utilization": 70
+  },
+  "networking": {
+    "protocols": ["fipa-acl"],
+    "ontologies": ["echo-ontology"],
+    "message_timeout_ms": 30000
+  }
 }
 ```
+
+## Important: Capability Registration Pattern
+
+**Capabilities are registered programmatically in agent code, NOT in configuration files.** This is a deliberate architectural decision:
+
+### Why Programmatic Registration?
+
+1. **Single Source of Truth**: Agent code defines what the agent can do
+2. **Type Safety**: Compile-time checking in strongly-typed languages
+3. **Dynamic Capabilities**: Can register based on runtime conditions or feature flags
+4. **Better Testing**: Easy to mock or override in test environments
+5. **Self-Documenting**: Code clearly shows agent capabilities
+
+### Configuration vs Code Responsibilities
+
+| **Agent Code** (Runtime) | **Manifest/Config** (Deployment) |
+|--------------------------|-----------------------------------|
+| Capability registration | Resource limits (memory, CPU) |
+| Message handling logic | Environment variables |
+| State management | Scaling parameters |
+| Business logic | Network configuration |
+| Protocol implementation | Monitoring settings |
 
 ## Agent Lifecycle
 

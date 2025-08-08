@@ -788,6 +788,8 @@ pub fn send_to_agent(agent_id: &str, message: &FipaMessage) -> Result<(), String
 
 // Broadcast to multiple agents
 pub fn broadcast_to_capability(capability: &str, message: &FipaMessage) -> Result<u32, String> {
+    // Note: capabilities are used here for runtime filtering, not agent configuration
+    // Agents register their capabilities programmatically, not through static config
     let filter = json!({
         "capabilities": [capability]
     });
