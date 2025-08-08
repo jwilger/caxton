@@ -393,7 +393,7 @@ Caxton implements a pragmatic subset of FIPA protocols, focusing on the most com
 - **Reliability**: Built-in timeouts and error handling
 - **Debuggability**: Clear message tracing and logging
 
-This pragmatic approach follows our architectural decision (see [ADR-0012](https://github.com/jwilger/caxton/blob/main/docs/adr/0012-pragmatic-fipa-subset.md)) to adopt proven FIPA patterns without the complexity of full academic FIPA implementations.
+This pragmatic approach follows our architectural decision (see [ADR-0012]({{ '/adr/0012-pragmatic-fipa-subset/' | relative_url }})) to adopt proven FIPA patterns without the complexity of full academic FIPA implementations.
 
 ## Advanced Features
 
