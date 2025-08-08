@@ -8,6 +8,91 @@ description: Complete API documentation for Caxton management and control.
 
 Complete API documentation for Caxton management and control.
 
+## Quick Start
+
+The three most common operations:
+
+### 1. Deploy an Agent
+```bash
+# Set your environment
+export CAXTON_TOKEN="your-token-here"
+export CAXTON_API="http://localhost:8080/api/v1"
+
+# Deploy agent
+curl -X POST "$CAXTON_API/agents" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: multipart/form-data" \
+  -F "wasm=@agent.wasm" \
+  -F 'config={"name":"my-agent","resources":{"memory":"50MB"}}'
+```
+
+### 2. Send a Message
+```bash
+# Send message to agent
+curl -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "sender": "client_001",
+    "receiver": "agent_123",
+    "content": {"action": "process", "data": {"key": "value"}}
+  }'
+```
+
+### 3. List All Agents
+```bash
+# Get running agents
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents?status=running"
+```
+
+## Environment Setup
+
+Set these environment variables for all examples:
+
+```bash
+# Required - Your authentication token
+export CAXTON_TOKEN="your-token-here"
+
+# API endpoints
+export CAXTON_API="http://localhost:8080/api/v1"
+export CAXTON_WS="ws://localhost:8080/ws"
+export CAXTON_GRPC="localhost:50051"
+
+# Optional - Default values
+export CAXTON_TIMEOUT="30"
+export CAXTON_RETRY_COUNT="3"
+```
+
+## Error Codes
+
+All APIs return consistent error responses with these codes:
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `AGENT_NOT_FOUND` | 404 | Agent does not exist |
+| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
+| `INVALID_WASM` | 400 | Invalid WebAssembly module |
+| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
+| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
+| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
+| `UNAUTHORIZED` | 401 | Authentication required |
+| `FORBIDDEN` | 403 | Operation not permitted |
+| `RATE_LIMITED` | 429 | Rate limit exceeded |
+| `INTERNAL_ERROR` | 500 | Internal server error |
+
+**Error Response Format:**
+```json
+{
+  "error": {
+    "code": "AGENT_NOT_FOUND",
+    "message": "Agent with ID 'agent_999' not found",
+    "trace_id": "trace_abc123"
+  }
+}
+```
+
 ## API Overview
 
 Caxton provides both gRPC and REST APIs for management operations. The gRPC API is the primary interface, with REST available as a gateway.
@@ -24,10 +109,10 @@ Include authentication token in requests:
 
 ```bash
 # REST
-curl -H "X-Caxton-Token: your-token" http://localhost:8080/api/v1/agents
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
 
 # gRPC
-grpcurl -H "authorization: Bearer your-token" localhost:50051 caxton.v1.AgentService/ListAgents
+grpcurl -H "authorization: Bearer $CAXTON_TOKEN" $CAXTON_GRPC caxton.v1.AgentService/ListAgents
 ```
 
 ## Agent Management API
@@ -36,61 +121,36 @@ grpcurl -H "authorization: Bearer your-token" localhost:50051 caxton.v1.AgentSer
 
 Deploy a new WebAssembly agent to the server.
 
-#### REST
-
 ```bash
-POST /api/v1/agents
-
-# Request
-curl -X POST http://localhost:8080/api/v1/agents \
+# Deploy agent
+curl -X POST "$CAXTON_API/agents" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
   -H "Content-Type: multipart/form-data" \
   -F "wasm=@agent.wasm" \
-  -F "config={\"name\":\"my-agent\",\"resources\":{\"memory\":\"50MB\"}}"
+  -F 'config={"name":"my-agent","resources":{"memory":"50MB"}}'
 
 # Response
 {
   "agent_id": "agent_123",
   "name": "my-agent",
   "status": "running",
-  "deployed_at": "2024-01-15T10:30:00Z",
-  "version": "1.0.0"
+  "deployed_at": "2024-01-15T10:30:00Z"
 }
 ```
 
-#### gRPC
-
-```protobuf
-service AgentService {
-  rpc DeployAgent(DeployAgentRequest) returns (DeployAgentResponse);
-}
-
-message DeployAgentRequest {
-  bytes wasm_module = 1;
-  AgentConfig config = 2;
-}
-
-message AgentConfig {
-  string name = 1;
-  ResourceLimits resources = 2;
-  map<string, string> environment = 3;
-  repeated string capabilities = 4;
-}
-
-message DeployAgentResponse {
-  string agent_id = 1;
-  AgentStatus status = 2;
-  google.protobuf.Timestamp deployed_at = 3;
-}
-```
 
 ### List Agents
 
 Get a list of all deployed agents.
 
-#### REST
-
 ```bash
-GET /api/v1/agents?status=running&limit=10&offset=0
+# List all agents
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents"
+
+# List running agents with pagination
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents?status=running&limit=10&offset=0"
 
 # Response
 {
@@ -99,67 +159,37 @@ GET /api/v1/agents?status=running&limit=10&offset=0
       "agent_id": "agent_123",
       "name": "my-agent",
       "status": "running",
-      "created_at": "2024-01-15T10:30:00Z",
-      "resources": {
-        "memory_used": "25MB",
-        "cpu_usage": 0.15
-      }
+      "memory_used": "25MB",
+      "cpu_usage": 0.15
     }
   ],
-  "total": 42,
-  "next_offset": 10
+  "total": 42
 }
 ```
 
-#### gRPC
-
-```protobuf
-message ListAgentsRequest {
-  AgentStatus status_filter = 1;
-  int32 limit = 2;
-  int32 offset = 3;
-}
-
-message ListAgentsResponse {
-  repeated Agent agents = 1;
-  int32 total = 2;
-}
-```
 
 ### Get Agent Details
 
 Retrieve detailed information about a specific agent.
 
-#### REST
-
 ```bash
-GET /api/v1/agents/{agent_id}
+# Get agent details
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/agent_123"
 
 # Response
 {
   "agent_id": "agent_123",
   "name": "my-agent",
   "status": "running",
-  "version": "1.0.0",
-  "deployment": {
-    "strategy": "direct",
-    "deployed_at": "2024-01-15T10:30:00Z",
-    "deployed_by": "user@example.com"
-  },
+  "deployed_at": "2024-01-15T10:30:00Z",
   "resources": {
-    "limits": {
-      "memory": "50MB",
-      "cpu": "100m"
-    },
-    "usage": {
-      "memory": "25MB",
-      "cpu": "50m"
-    }
+    "memory": "25MB/50MB",
+    "cpu": "50m/100m"
   },
   "metrics": {
     "messages_processed": 1542,
     "messages_failed": 3,
-    "average_latency_ms": 12.5,
     "uptime_seconds": 3600
   }
 }
@@ -169,21 +199,17 @@ GET /api/v1/agents/{agent_id}
 
 Update an agent's configuration or code.
 
-#### REST
-
 ```bash
-PUT /api/v1/agents/{agent_id}
-
-# Request
-{
-  "wasm_module": "base64_encoded_wasm",  // Optional
-  "config": {                             // Optional
-    "resources": {
-      "memory": "100MB"
-    }
-  },
-  "strategy": "blue_green"
-}
+# Update agent configuration
+curl -X PUT "$CAXTON_API/agents/agent_123" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config": {
+      "resources": {"memory": "100MB"}
+    },
+    "strategy": "blue_green"
+  }'
 
 # Response
 {
@@ -197,22 +223,25 @@ PUT /api/v1/agents/{agent_id}
 
 Stop a running agent gracefully.
 
-#### REST
-
 ```bash
-POST /api/v1/agents/{agent_id}/stop
+# Stop agent with grace period
+curl -X POST "$CAXTON_API/agents/agent_123/stop" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grace_period_seconds": 30,
+    "drain_messages": true
+  }'
 
-# Request
-{
-  "grace_period_seconds": 30,
-  "drain_messages": true
-}
+# Stop immediately
+curl -X POST "$CAXTON_API/agents/agent_123/stop" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -d '{}'
 
 # Response
 {
   "agent_id": "agent_123",
-  "status": "draining",
-  "estimated_completion": "2024-01-15T10:31:00Z"
+  "status": "stopping"
 }
 ```
 
@@ -220,16 +249,19 @@ POST /api/v1/agents/{agent_id}/stop
 
 Remove an agent from the system.
 
-#### REST
-
 ```bash
-DELETE /api/v1/agents/{agent_id}
+# Remove agent
+curl -X DELETE "$CAXTON_API/agents/agent_123" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN"
+
+# Force remove (skip graceful shutdown)
+curl -X DELETE "$CAXTON_API/agents/agent_123?force=true" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN"
 
 # Response
 {
   "agent_id": "agent_123",
-  "status": "removed",
-  "removed_at": "2024-01-15T10:35:00Z"
+  "status": "removed"
 }
 ```
 
@@ -239,81 +271,56 @@ DELETE /api/v1/agents/{agent_id}
 
 Send a FIPA message to an agent.
 
-#### REST
-
 ```bash
-POST /api/v1/messages
+# Send request message
+curl -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "sender": "client_001",
+    "receiver": "agent_123",
+    "content": {"action": "process", "data": {"key": "value"}}
+  }'
 
-# Request
-{
-  "performative": "request",
-  "sender": "client_001",
-  "receiver": "agent_123",
-  "content": {
-    "action": "process",
-    "data": {"key": "value"}
-  },
-  "conversation_id": "conv_789",
-  "reply_with": "msg_001"
-}
+# Send with conversation tracking
+curl -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "receiver": "agent_123",
+    "content": {"action": "process"},
+    "conversation_id": "conv_789"
+  }'
 
 # Response
 {
   "message_id": "msg_abc123",
-  "status": "delivered",
-  "delivered_at": "2024-01-15T10:30:00.123Z"
+  "status": "delivered"
 }
 ```
 
-#### gRPC
-
-```protobuf
-service MessageService {
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  rpc SendMessageAndWait(SendMessageRequest) returns (MessageReply);
-}
-
-message SendMessageRequest {
-  FipaMessage message = 1;
-  DeliveryOptions options = 2;
-}
-
-message FipaMessage {
-  string performative = 1;
-  string sender = 2;
-  string receiver = 3;
-  google.protobuf.Struct content = 4;
-  string conversation_id = 5;
-  string reply_with = 6;
-  string in_reply_to = 7;
-  string ontology = 8;
-  string language = 9;
-}
-```
 
 ### Subscribe to Messages
 
 Subscribe to message streams via WebSocket.
 
-#### WebSocket
-
 ```javascript
 // Connect to WebSocket
-const ws = new WebSocket('ws://localhost:8080/ws');
+const ws = new WebSocket(process.env.CAXTON_WS);
 
 // Subscribe to agent messages
 ws.send(JSON.stringify({
   type: 'subscribe',
-  filter: {
-    agents: ['agent_123', 'agent_456'],
-    performatives: ['inform', 'request']
-  }
+  agents: ['agent_123'],
+  events: ['message.*']
 }));
 
 // Receive messages
 ws.onmessage = (event) => {
   const message = JSON.parse(event.data);
-  console.log('Received:', message);
+  console.log('Message received:', message.content);
 };
 ```
 
@@ -321,10 +328,18 @@ ws.onmessage = (event) => {
 
 Retrieve historical messages.
 
-#### REST
-
 ```bash
-GET /api/v1/messages?conversation_id=conv_789&limit=50
+# Get conversation messages
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/messages?conversation_id=conv_789"
+
+# Get agent messages with pagination
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/messages?sender=agent_123&limit=50&offset=0"
+
+# Get recent messages
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/messages?since=2024-01-15T10:00:00Z"
 
 # Response
 {
@@ -334,12 +349,11 @@ GET /api/v1/messages?conversation_id=conv_789&limit=50
       "performative": "request",
       "sender": "agent_123",
       "receiver": "agent_456",
-      "content": {...},
+      "content": {"action": "process"},
       "timestamp": "2024-01-15T10:30:00Z"
     }
   ],
-  "total": 150,
-  "next_cursor": "cursor_abc"
+  "total": 150
 }
 ```
 
@@ -349,38 +363,33 @@ GET /api/v1/messages?conversation_id=conv_789&limit=50
 
 Create a task for distribution among agents.
 
-#### REST
-
 ```bash
-POST /api/v1/tasks
+# Create simple task
+curl -X POST "$CAXTON_API/tasks" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "process_data",
+    "description": "Process customer data batch",
+    "data": {"batch_id": "batch_001"},
+    "timeout_seconds": 300
+  }'
 
-# Request
-{
-  "name": "process_data",
-  "description": "Process customer data batch",
-  "data": {...},
-  "protocol": "contract_net",
-  "participants": ["agent_1", "agent_2", "agent_3"],
-  "timeout_seconds": 300,
-  "deployment_config": {
-    "environment": "production",
-    "priority": "high",
-    "resource_limits": {
-      "memory_mb": 512,
-      "cpu_cores": 2
-    }
-  },
-  "requirements": {
-    // Note: Agent capabilities are registered programmatically in agent code, not in configuration
-    "min_performance_score": 0.8
-  }
-}
+# Create task with specific agents
+curl -X POST "$CAXTON_API/tasks" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "process_data",
+    "data": {"batch_id": "batch_001"},
+    "participants": ["agent_1", "agent_2"],
+    "protocol": "contract_net"
+  }'
 
 # Response
 {
   "task_id": "task_999",
-  "status": "created",
-  "created_at": "2024-01-15T10:30:00Z"
+  "status": "created"
 }
 ```
 
@@ -388,28 +397,27 @@ POST /api/v1/tasks
 
 Distribute a task using Contract Net Protocol.
 
-#### REST
-
 ```bash
-POST /api/v1/tasks/{task_id}/distribute
+# Distribute task to available agents
+curl -X POST "$CAXTON_API/tasks/task_999/distribute" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "strategy": "best_bid",
+    "max_wait_seconds": 30
+  }'
 
-# Request
-{
-  "strategy": "best_bid",
-  "max_wait_seconds": 30
-}
+# Distribute with immediate assignment
+curl -X POST "$CAXTON_API/tasks/task_999/distribute" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -d '{}'
 
 # Response
 {
   "task_id": "task_999",
   "status": "distributed",
   "assigned_to": "agent_456",
-  "proposals_received": 3,
-  "winning_bid": {
-    "agent_id": "agent_456",
-    "estimated_time": 45,
-    "confidence": 0.95
-  }
+  "proposals_received": 3
 }
 ```
 
@@ -417,10 +425,18 @@ POST /api/v1/tasks/{task_id}/distribute
 
 Check the status of a task.
 
-#### REST
-
 ```bash
-GET /api/v1/tasks/{task_id}
+# Get task status
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/tasks/task_999"
+
+# List all tasks
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/tasks"
+
+# List tasks by status
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/tasks?status=in_progress"
 
 # Response
 {
@@ -428,18 +444,7 @@ GET /api/v1/tasks/{task_id}
   "status": "in_progress",
   "assigned_to": "agent_456",
   "progress": 0.65,
-  "started_at": "2024-01-15T10:31:00Z",
-  "estimated_completion": "2024-01-15T10:32:00Z",
-  "subtasks": [
-    {
-      "id": "subtask_001",
-      "status": "completed"
-    },
-    {
-      "id": "subtask_002",
-      "status": "in_progress"
-    }
-  ]
+  "started_at": "2024-01-15T10:31:00Z"
 }
 ```
 
@@ -449,33 +454,32 @@ GET /api/v1/tasks/{task_id}
 
 Create a new deployment with specific strategy.
 
-#### REST
-
 ```bash
-POST /api/v1/deployments
+# Simple deployment
+curl -X POST "$CAXTON_API/deployments" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: multipart/form-data" \
+  -F "agent_id=agent_123" \
+  -F "wasm=@agent-v2.wasm" \
+  -F "version=2.0.0"
 
-# Request
-{
-  "agent_id": "agent_123",
-  "wasm_module": "base64_encoded_wasm",
-  "version": "2.0.0",
-  "strategy": {
-    "type": "canary",
-    "stages": [
-      {"percentage": 10, "duration": "5m"},
-      {"percentage": 50, "duration": "10m"},
-      {"percentage": 100, "duration": "0"}
-    ],
-    "rollback_on_error": true,
-    "error_threshold": 0.05
-  }
-}
+# Canary deployment
+curl -X POST "$CAXTON_API/deployments" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "agent_123",
+    "version": "2.0.0",
+    "strategy": {
+      "type": "canary",
+      "stages": [10, 50, 100]
+    }
+  }'
 
 # Response
 {
   "deployment_id": "deploy_888",
-  "status": "initializing",
-  "created_at": "2024-01-15T10:30:00Z"
+  "status": "initializing"
 }
 ```
 
@@ -483,10 +487,18 @@ POST /api/v1/deployments
 
 Monitor deployment progress.
 
-#### REST
-
 ```bash
-GET /api/v1/deployments/{deployment_id}
+# Check deployment status
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/deployments/deploy_888"
+
+# List all deployments
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/deployments"
+
+# List active deployments
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/deployments?status=in_progress"
 
 # Response
 {
@@ -494,25 +506,8 @@ GET /api/v1/deployments/{deployment_id}
   "status": "in_progress",
   "current_stage": 2,
   "current_percentage": 50,
-  "metrics": {
-    "success_rate": 0.98,
-    "error_count": 5,
-    "latency_p99": 125.5
-  },
-  "stages": [
-    {
-      "stage": 1,
-      "percentage": 10,
-      "status": "completed",
-      "completed_at": "2024-01-15T10:35:00Z"
-    },
-    {
-      "stage": 2,
-      "percentage": 50,
-      "status": "in_progress",
-      "started_at": "2024-01-15T10:35:00Z"
-    }
-  ]
+  "success_rate": 0.98,
+  "error_count": 5
 }
 ```
 
@@ -520,22 +515,23 @@ GET /api/v1/deployments/{deployment_id}
 
 Rollback a deployment to previous version.
 
-#### REST
-
 ```bash
-POST /api/v1/deployments/{deployment_id}/rollback
+# Rollback deployment
+curl -X POST "$CAXTON_API/deployments/deploy_888/rollback" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "High error rate detected"}'
 
-# Request
-{
-  "reason": "High error rate detected"
-}
+# Emergency rollback
+curl -X POST "$CAXTON_API/deployments/deploy_888/rollback" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -d '{}'
 
 # Response
 {
   "deployment_id": "deploy_888",
   "status": "rolling_back",
-  "rollback_to_version": "1.0.0",
-  "estimated_completion": "2024-01-15T10:37:00Z"
+  "rollback_to_version": "1.0.0"
 }
 ```
 
@@ -545,10 +541,14 @@ POST /api/v1/deployments/{deployment_id}/rollback
 
 Retrieve system-wide metrics.
 
-#### REST
-
 ```bash
-GET /api/v1/metrics/system
+# Current system metrics
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/system"
+
+# Historical metrics
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/system?period=1h"
 
 # Response
 {
@@ -559,20 +559,12 @@ GET /api/v1/metrics/system
     "failed": 2
   },
   "messages": {
-    "total_processed": 1000000,
     "rate_per_second": 1500,
     "queue_size": 250
   },
   "resources": {
     "cpu_usage_percent": 45.2,
-    "memory_used_mb": 2048,
-    "memory_available_mb": 6144,
-    "disk_used_gb": 10.5
-  },
-  "performance": {
-    "message_latency_p50": 10.5,
-    "message_latency_p99": 125.3,
-    "agent_spawn_time_ms": 85.2
+    "memory_used_mb": 2048
   }
 }
 ```
@@ -581,35 +573,27 @@ GET /api/v1/metrics/system
 
 Get metrics for a specific agent.
 
-#### REST
-
 ```bash
-GET /api/v1/metrics/agents/{agent_id}?period=1h
+# Current agent metrics
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/agents/agent_123"
+
+# Historical metrics (1 hour)
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/agents/agent_123?period=1h"
+
+# Performance metrics only
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/agents/agent_123?type=performance"
 
 # Response
 {
   "agent_id": "agent_123",
-  "period": "1h",
-  "metrics": {
-    "messages_processed": 5432,
-    "messages_failed": 12,
-    "average_latency_ms": 15.3,
-    "cpu_usage": {
-      "average": 0.25,
-      "peak": 0.85
-    },
-    "memory_usage": {
-      "average_mb": 32,
-      "peak_mb": 48
-    },
-    "errors": [
-      {
-        "timestamp": "2024-01-15T10:15:00Z",
-        "error": "timeout",
-        "count": 3
-      }
-    ]
-  }
+  "messages_processed": 5432,
+  "messages_failed": 12,
+  "average_latency_ms": 15.3,
+  "cpu_usage": 0.25,
+  "memory_usage_mb": 32
 }
 ```
 
@@ -617,221 +601,115 @@ GET /api/v1/metrics/agents/{agent_id}?period=1h
 
 Real-time event streaming via WebSocket.
 
-### Event Types
+### Connect and Subscribe
+
+```bash
+# Test WebSocket connection
+wscat -c "$CAXTON_WS" -H "X-Caxton-Token: $CAXTON_TOKEN"
+```
 
 ```javascript
-// Agent lifecycle events
-{
-  "type": "agent.deployed",
-  "agent_id": "agent_123",
-  "timestamp": "2024-01-15T10:30:00Z"
-}
+// Connect and subscribe to agent events
+const ws = new WebSocket(process.env.CAXTON_WS);
 
-// Message events
-{
-  "type": "message.sent",
-  "message_id": "msg_456",
-  "from": "agent_123",
-  "to": "agent_456",
-  "performative": "inform"
-}
+ws.onopen = () => {
+  // Subscribe to all events for specific agents
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    agents: ['agent_123', 'agent_456'],
+    events: ['*']
+  }));
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log(`${data.type}: ${data.message}`);
+};
+```
+
+### Common Event Types
+
+```javascript
+// Agent events
+{"type": "agent.deployed", "agent_id": "agent_123"}
+{"type": "agent.failed", "agent_id": "agent_123", "error": "timeout"}
+
+// Message events  
+{"type": "message.sent", "from": "agent_123", "to": "agent_456"}
 
 // Task events
-{
-  "type": "task.completed",
-  "task_id": "task_999",
-  "agent_id": "agent_456",
-  "result": "success"
-}
+{"type": "task.completed", "task_id": "task_999", "result": "success"}
 
-// System events
-{
-  "type": "system.alert",
-  "severity": "warning",
-  "message": "High memory usage detected",
-  "details": {
-    "memory_percent": 85
-  }
-}
+// System alerts
+{"type": "system.alert", "message": "High memory usage"}
 ```
 
-### Subscription Management
 
-```javascript
-// Subscribe to specific event types
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  events: ['agent.*', 'task.completed'],
-  filters: {
-    agent_ids: ['agent_123']
-  }
-}));
+## Quick Examples
 
-// Unsubscribe
-ws.send(JSON.stringify({
-  type: 'unsubscribe',
-  subscription_id: 'sub_123'
-}));
+### Complete Agent Workflow
+
+```bash
+# 1. Deploy agent
+AGENT_ID=$(curl -s -X POST "$CAXTON_API/agents" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -F "wasm=@agent.wasm" \
+  -F 'config={"name":"worker"}' | jq -r '.agent_id')
+
+# 2. Send work request
+MSG_ID=$(curl -s -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"performative\": \"request\",
+    \"receiver\": \"$AGENT_ID\",
+    \"content\": {\"action\": \"process\", \"data\": \"hello\"}
+  }" | jq -r '.message_id')
+
+# 3. Check agent status
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/$AGENT_ID"
+
+# 4. Get metrics
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/agents/$AGENT_ID"
 ```
 
-## Error Responses
+### Batch Operations
 
-All APIs use consistent error responses:
+```bash
+# Deploy multiple agents
+for i in {1..3}; do
+  curl -X POST "$CAXTON_API/agents" \
+    -H "X-Caxton-Token: $CAXTON_TOKEN" \
+    -F "wasm=@agent.wasm" \
+    -F "config={\"name\":\"worker-$i\"}"
+done
 
-```json
-{
-  "error": {
-    "code": "AGENT_NOT_FOUND",
-    "message": "Agent with ID 'agent_999' not found",
-    "details": {
-      "agent_id": "agent_999",
-      "searched_at": "2024-01-15T10:30:00Z"
-    },
-    "trace_id": "trace_abc123"
-  }
-}
+# Send messages to all agents
+for agent in $(curl -s -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents" | jq -r '.agents[].agent_id'); do
+  curl -X POST "$CAXTON_API/messages" \
+    -H "X-Caxton-Token: $CAXTON_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"performative\":\"request\",\"receiver\":\"$agent\"}"
+done
 ```
 
-### Error Codes
+## Rate Limits & Headers
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AGENT_NOT_FOUND` | 404 | Agent does not exist |
-| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
-| `INVALID_WASM` | 400 | Invalid WebAssembly module |
-| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
-| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
-| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Operation not permitted |
-| `RATE_LIMITED` | 429 | Rate limit exceeded |
-| `INTERNAL_ERROR` | 500 | Internal server error |
+**Rate Limits:**
+- Agent operations: 10/min
+- Message sending: 1000/sec
+- Metrics queries: 100/min
 
-## SDK Examples
-
-### JavaScript/TypeScript
-
-```typescript
-import { CaxtonClient } from '@caxton/sdk';
-
-const client = new CaxtonClient({
-  endpoint: 'http://localhost:8080',
-  apiKey: 'your-api-key'
-});
-
-// Deploy an agent
-const agent = await client.deployAgent({
-  wasmModule: fs.readFileSync('agent.wasm'),
-  config: {
-    name: 'my-agent',
-    resources: {
-      memory: '50MB'
-    }
-  }
-});
-
-// Send a message
-const response = await client.sendMessage({
-  performative: 'request',
-  receiver: agent.id,
-  content: { action: 'process' }
-});
-
-// Subscribe to events
-client.on('agent.failed', (event) => {
-  console.log('Agent failed:', event);
-});
-```
-
-### Python
-
-```python
-from caxton import CaxtonClient
-
-client = CaxtonClient(
-    endpoint='http://localhost:8080',
-    api_key='your-api-key'
-)
-
-# Deploy an agent
-with open('agent.wasm', 'rb') as f:
-    agent = client.deploy_agent(
-        wasm_module=f.read(),
-        config={
-            'name': 'my-agent',
-            'resources': {'memory': '50MB'}
-        }
-    )
-
-# Send and wait for reply
-reply = client.send_message_and_wait(
-    performative='request',
-    receiver=agent.id,
-    content={'action': 'process'},
-    timeout=30
-)
-
-# Query metrics
-metrics = client.get_agent_metrics(
-    agent_id=agent.id,
-    period='1h'
-)
-```
-
-### Go
-
-```go
-package main
-
-import (
-    "github.com/caxton/caxton-go"
-)
-
-func main() {
-    client := caxton.NewClient(
-        caxton.WithEndpoint("localhost:50051"),
-        caxton.WithAPIKey("your-api-key"),
-    )
-
-    // Deploy agent
-    agent, err := client.DeployAgent(ctx, &caxton.DeployRequest{
-        WasmModule: wasmBytes,
-        Config: &caxton.AgentConfig{
-            Name: "my-agent",
-            Resources: &caxton.Resources{
-                Memory: "50MB",
-            },
-        },
-    })
-
-    // Send message
-    resp, err := client.SendMessage(ctx, &caxton.Message{
-        Performative: "request",
-        Receiver: agent.ID,
-        Content: map[string]interface{}{
-            "action": "process",
-        },
-    })
-}
-```
-
-## Rate Limiting
-
-API rate limits per endpoint:
-
-| Endpoint | Rate Limit | Burst |
-|----------|------------|-------|
-| Agent deployment | 10/min | 20 |
-| Message sending | 1000/sec | 2000 |
-| Metrics queries | 100/min | 200 |
-| System operations | 50/min | 100 |
-
-Rate limit headers:
-
-```
-X-RateLimit-Limit: 1000
-X-RateLimit-Remaining: 950
-X-RateLimit-Reset: 1642248000
+**Check Rate Limits:**
+```bash
+# Headers show remaining quota
+curl -I -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
+# Returns:
+# X-RateLimit-Limit: 1000
+# X-RateLimit-Remaining: 950
 ```
 
 ## Next Steps
