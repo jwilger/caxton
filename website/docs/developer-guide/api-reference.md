@@ -828,7 +828,6 @@ X-RateLimit-Reset: 1642248000
 
 ## Next Steps
 
-- [Message Protocols](message-protocols.md) - FIPA protocol details
-- [Building Agents](building-agents.md) - Agent development guide
-- [WebAssembly Integration](wasm-integration.md) - WASM specifics
-- [Testing Guide](testing.md) - Testing strategies
+- [Message Protocols]({{ '/docs/developer-guide/message-protocols/' | relative_url }}) - FIPA protocol details
+- [WebAssembly Integration]({{ '/docs/developer-guide/wasm-integration/' | relative_url }}) - WASM specifics
+- [Testing Guide]({{ '/docs/developer-guide/testing/' | relative_url }}) - Testing strategies
