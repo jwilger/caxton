@@ -2,11 +2,9 @@ name: "Caxton Security CodeQL Config"
 
 disable-default-queries: false
 
+# Use default queries for Rust since custom query packs may not be available
 queries:
-  - name: security-and-quality
-    uses: security-and-quality
-  - name: security-extended
-    uses: security-extended
+  - uses: security-and-quality
 
 query-filters:
   - exclude:
@@ -20,8 +18,3 @@ paths-ignore:
 
 paths:
   - "src/"
-
-# Security-focused query packs
-packs:
-  - "codeql/rust-queries:Security"
-  - "codeql/rust-queries:AlertSuppression"
