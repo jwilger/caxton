@@ -83,18 +83,8 @@ services:
       timeout: 10s
       retries: 3
 
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    ports:
-      - "6379:6379"
-
 volumes:
   caxton-data:
-  redis-data:
 ```
 
 ### Kubernetes Deployment
@@ -121,18 +111,23 @@ data:
     max_agents = 1000
     wasm_memory_limit = "512MB"
     execution_timeout = "30s"
-    
+
     [networking]
     bind_address = "0.0.0.0:8080"
     metrics_address = "0.0.0.0:9090"
-    
+
     [observability]
     enable_tracing = true
     otlp_endpoint = "http://jaeger-collector:14268/api/traces"
-    
-    [storage]
-    backend = "redis"
-    redis_url = "redis://redis-service:6379"
+
+    [coordination]
+    # Local state storage
+    local_state_path = "/data/local.db"
+
+    # Cluster coordination
+    cluster_enabled = true
+    bind_addr = "0.0.0.0:7946"
+    gossip_interval = "200ms"
 ```
 
 #### Deployment Configuration
@@ -220,8 +215,7 @@ sudo apt update && sudo apt install -y \
   curl wget \
   build-essential \
   pkg-config \
-  libssl-dev \
-  redis-server
+  libssl-dev
 
 # Install Rust toolchain
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -251,8 +245,7 @@ sudo chown -R caxton:caxton /opt/caxton
 sudo tee /etc/systemd/system/caxton.service > /dev/null << EOF
 [Unit]
 Description=Caxton Multi-Agent Runtime
-After=network.target redis.service
-Requires=redis.service
+After=network.target
 
 [Service]
 Type=exec
@@ -320,17 +313,22 @@ tls_cert_path = "/opt/caxton/config/server.crt"
 tls_key_path = "/opt/caxton/config/server.key"
 tls_ca_path = "/opt/caxton/config/ca.crt"
 
-[storage]
-backend = "redis_cluster"
-redis_cluster_endpoints = [
-  "redis-node-1:6379",
-  "redis-node-2:6379",
-  "redis-node-3:6379"
+[coordination]
+# Local state storage (per instance)
+local_state_path = "/opt/caxton/data/local.db"
+journal_mode = "WAL"
+
+# Cluster coordination
+cluster_enabled = true
+bind_addr = "0.0.0.0:7946"
+advertise_addr = "auto"
+seeds = [
+  "caxton-node-1:7946",
+  "caxton-node-2:7946",
+  "caxton-node-3:7946"
 ]
-redis_password = "${REDIS_PASSWORD}"
-redis_db = 0
-redis_pool_size = 50
-redis_timeout = "5s"
+gossip_interval = "200ms"
+probe_interval = "1s"
 
 [observability]
 # Logging
@@ -375,7 +373,6 @@ cors_methods = ["GET", "POST", "PUT", "DELETE"]
 # /opt/caxton/config/caxton.env
 CAXTON_CONFIG_PATH=/opt/caxton/config/production.toml
 CAXTON_LOG_LEVEL=info
-REDIS_PASSWORD=your-redis-password
 JWT_SECRET=your-jwt-secret
 OTLP_ENDPOINT=http://jaeger:14268/api/traces
 ```
@@ -424,18 +421,13 @@ backend caxton_metrics_backend
     server caxton3 10.0.1.12:9090 check
 ```
 
-#### Redis Cluster Setup
+#### Cluster Coordination Setup
 
 ```bash
-# Create Redis cluster
-redis-cli --cluster create \
-  10.0.1.20:6379 \
-  10.0.1.21:6379 \
-  10.0.1.22:6379 \
-  10.0.1.23:6379 \
-  10.0.1.24:6379 \
-  10.0.1.25:6379 \
-  --cluster-replicas 1
+# Each Caxton instance automatically discovers others via SWIM protocol
+# No external coordination service required
+# Instances share agent registry through gossip
+# Message routing works without shared state
 ```
 
 ### Health Checks and Failover
@@ -487,12 +479,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -532,29 +524,28 @@ upstream caxton_backend {
 
 ### Data Backup
 
-#### Redis Backup Script
+#### Local State Backup Script
 
 ```bash
 #!/bin/bash
-# /opt/caxton/scripts/backup-redis.sh
+# /opt/caxton/scripts/backup-state.sh
 
 BACKUP_DIR="/opt/caxton/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
-REDIS_HOST="localhost"
-REDIS_PORT="6379"
+STATE_PATH="/opt/caxton/data/local.db"
 
 mkdir -p "$BACKUP_DIR"
 
-# Create Redis dump
-redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" --rdb "$BACKUP_DIR/redis_$DATE.rdb"
+# Create SQLite backup
+sqlite3 "$STATE_PATH" ".backup '$BACKUP_DIR/state_$DATE.db'"
 
 # Compress backup
-gzip "$BACKUP_DIR/redis_$DATE.rdb"
+gzip "$BACKUP_DIR/state_$DATE.db"
 
 # Clean old backups (keep last 7 days)
-find "$BACKUP_DIR" -name "redis_*.rdb.gz" -mtime +7 -delete
+find "$BACKUP_DIR" -name "state_*.db.gz" -mtime +7 -delete
 
-echo "Redis backup completed: $BACKUP_DIR/redis_$DATE.rdb.gz"
+echo "State backup completed: $BACKUP_DIR/state_$DATE.db.gz"
 ```
 
 #### Configuration Backup
@@ -589,7 +580,7 @@ After=caxton.service
 [Service]
 Type=oneshot
 User=caxton
-ExecStart=/opt/caxton/scripts/backup-redis.sh
+ExecStart=/opt/caxton/scripts/backup-state.sh
 ExecStartPost=/opt/caxton/scripts/backup-config.sh
 
 # /etc/systemd/system/caxton-backup.timer
@@ -609,16 +600,18 @@ WantedBy=timers.target
 
 #### Recovery Procedures
 
-1. **Redis Data Recovery**:
+1. **Local State Recovery**:
    ```bash
    # Stop Caxton service
    sudo systemctl stop caxton
-   
-   # Restore Redis dump
-   sudo -u redis redis-server --port 0 --dbfilename dump.rdb --dir /path/to/backup/
-   
-   # Start services
-   sudo systemctl start redis
+
+   # Restore SQLite database
+   gunzip -c state_backup.db.gz > /opt/caxton/data/local.db
+
+   # Set permissions
+   sudo chown caxton:caxton /opt/caxton/data/local.db
+
+   # Start service
    sudo systemctl start caxton
    ```
 
@@ -626,10 +619,10 @@ WantedBy=timers.target
    ```bash
    # Extract configuration backup
    tar -xzf config_backup.tar.gz -C /opt/caxton/
-   
+
    # Set permissions
    sudo chown -R caxton:caxton /opt/caxton/config
-   
+
    # Restart service
    sudo systemctl restart caxton
    ```
@@ -638,10 +631,10 @@ WantedBy=timers.target
    ```bash
    # Deploy infrastructure
    kubectl apply -f kubernetes/
-   
+
    # Wait for pods to be ready
    kubectl wait --for=condition=ready pod -l app=caxton-runtime
-   
+
    # Restore data
    kubectl exec -it caxton-runtime-0 -- /scripts/restore-data.sh
    ```

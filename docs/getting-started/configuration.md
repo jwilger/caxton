@@ -48,21 +48,33 @@ messaging:
   enable_persistence: true   # Persist messages to disk
   persistence_path: /var/lib/caxton/messages
 
-# Storage configuration
-storage:
-  type: postgres            # Storage backend (postgres, sqlite, memory)
-  postgres:
-    host: localhost
-    port: 5432
-    database: caxton
-    user: caxton
-    password: ${CAXTON_DB_PASSWORD}  # Environment variable
-    max_connections: 50
-    connection_timeout: 10s
-  sqlite:
-    path: /var/lib/caxton/caxton.db
+# Coordination configuration
+coordination:
+  # Local state storage (per instance)
+  local_state:
+    type: sqlite            # Always SQLite for local state
+    path: /var/lib/caxton/local.db
     journal_mode: WAL
-  
+
+  # Cluster coordination
+  cluster:
+    enabled: true           # Enable multi-instance coordination
+    bind_addr: 0.0.0.0:7946  # SWIM protocol binding
+    advertise_addr: auto    # Address advertised to other nodes
+    seeds:                  # Initial cluster members
+      - caxton-1.example.com:7946
+      - caxton-2.example.com:7946
+    gossip_interval: 200ms  # Gossip protocol interval
+    probe_interval: 1s      # Failure detection interval
+
+  # Partition handling
+  partition:
+    detection_timeout: 5s   # Time before declaring partition
+    quorum_size: 2          # Minimum nodes for write operations
+    degraded_mode: true     # Enable degraded mode in minority partition
+    queue_writes: true      # Queue writes during partition
+    max_queue_size: 10000   # Maximum queued messages
+
 # Observability configuration
 observability:
   # Logging
@@ -74,13 +86,13 @@ observability:
     max_file_size: 100MB
     max_backups: 10
     max_age: 30d
-  
+
   # Metrics
   metrics:
     enabled: true
     export_interval: 10s
     histogram_buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
-    
+
   # Tracing
   tracing:
     enabled: true
@@ -88,7 +100,7 @@ observability:
     endpoint: http://localhost:4317
     sample_rate: 0.1      # Sample 10% of traces
     export_timeout: 10s
-    
+
 # Security configuration
 security:
   authentication:
@@ -102,17 +114,17 @@ security:
       client_id: ${OAUTH_CLIENT_ID}
       client_secret: ${OAUTH_CLIENT_SECRET}
       redirect_url: http://localhost:8080/auth/callback
-  
+
   authorization:
     enabled: false
     type: rbac           # Authorization type (rbac, abac)
     policy_file: /etc/caxton/policies.yaml
-  
+
   rate_limiting:
     enabled: true
     requests_per_second: 100
     burst_size: 200
-    
+
   cors:
     enabled: true
     allowed_origins: ["*"]
@@ -120,7 +132,7 @@ security:
     allowed_headers: ["*"]
     max_age: 3600
 
-# Agent deployment configuration  
+# Agent deployment configuration
 deployment:
   strategies:
     default: direct      # Default deployment strategy
@@ -132,7 +144,7 @@ deployment:
     blue_green:
       warm_up_time: 30s
       switch_delay: 10s
-  
+
   health_checks:
     enabled: true
     initial_delay: 5s
@@ -150,10 +162,10 @@ integrations:
       - name: web_tools
         url: http://localhost:3000
         capabilities: ["web_search", "web_fetch"]
-      - name: database_tools  
+      - name: database_tools
         url: http://localhost:3001
         capabilities: ["sql_query", "data_export"]
-  
+
   # Webhook notifications
   webhooks:
     enabled: false
@@ -170,13 +182,13 @@ resources:
   cpu:
     reserve_system: 20%    # Reserve for system
     overcommit_ratio: 1.5  # Allow 150% allocation
-    
-  # Memory management  
+
+  # Memory management
   memory:
     reserve_system: 500MB
     swap_enabled: false
     oom_kill_disable: false
-    
+
   # Disk management
   disk:
     data_dir: /var/lib/caxton
@@ -260,18 +272,18 @@ resources:
   memory: 50MB
   cpu: 50m
   timeout: 10s
-  
+
 environment:
   - name: LOG_LEVEL
     value: debug
   - name: API_KEY
     valueFrom:
       secretRef: api-key-secret
-      
+
 capabilities:
   - web_search
   - database_access
-  
+
 metadata:
   version: "1.0.0"
   author: "developer@example.com"
@@ -535,11 +547,11 @@ observability:
   logging:
     level: trace
     format: pretty
-    
+
   tracing:
     enabled: true
     sample_rate: 1.0  # Sample all traces
-    
+
 experimental:
   enable_debug_endpoints: true
 ```

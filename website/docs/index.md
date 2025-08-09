@@ -14,7 +14,7 @@ Welcome to the comprehensive documentation for Caxton, the production-ready mult
 
 ## What is Caxton?
 
-Caxton is a specialized server for coordinating smart software components called "agents" - like Redis for caching or PostgreSQL for data, but for managing intelligent automation. You install Caxton, deploy your agents (written in any language that compiles to WebAssembly), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
+Caxton is a specialized server for coordinating smart software components called "agents" - like Redis for caching or Nginx for web serving, but for managing intelligent automation. You install Caxton, deploy your agents (written in any language that compiles to WebAssembly), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling - all without requiring any external databases or dependencies.
 
 ## What problems does Caxton solve?
 

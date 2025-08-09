@@ -8,7 +8,7 @@
 
 Caxton is a production-ready server that orchestrates multi-agent systems. Deploy agents written in any WebAssembly-compatible language - JavaScript, Python, Go, or Rust - with built-in message routing, fault tolerance, and observability.
 
-> ⚠️ **Important**: Caxton is a standalone server application, not a Rust library. You install and run it like any other server (PostgreSQL, Redis, etc.) and interact with it via CLI or API.
+> ⚠️ **Important**: Caxton is a standalone server application, not a Rust library. You install and run it like any other server (Redis, Nginx, etc.) and interact with it via CLI or API. Unlike traditional databases, Caxton requires **no external dependencies** - not even PostgreSQL.
 
 ## What is Caxton?
 
@@ -16,10 +16,11 @@ Caxton is a multi-agent orchestration server - like Redis for caching or Postgre
 
 You install Caxton, deploy your agents (written in any language), and it handles all the complex distributed systems challenges: message routing, fault tolerance, observability, and scaling.
 
-✅ **Install in seconds** - Single binary, no dependencies
+✅ **Install in seconds** - Single binary, no external dependencies
 ✅ **Deploy any language** - If it compiles to WebAssembly, it runs on Caxton
-✅ **Production-ready** - Built-in observability, fault tolerance, and scaling
-✅ **Zero boilerplate** - Message routing, state management, and coordination handled for you
+✅ **Production-ready** - Built-in observability, fault tolerance, and horizontal scaling
+✅ **Zero boilerplate** - Message routing and coordination handled for you
+✅ **Truly lightweight** - No databases required, uses coordination protocols instead
 
 ## Installation
 
@@ -192,14 +193,32 @@ Caxton is a multi-agent orchestration server that handles:
 
 Caxton runs as a standalone server (like PostgreSQL or Redis) and manages all agent coordination for you.
 
+## State Management Philosophy
+
+Caxton uses a **coordination-first architecture** instead of shared databases:
+
+- **No PostgreSQL/MySQL required** - Each instance uses embedded SQLite for local state
+- **Cluster coordination via SWIM protocol** - Lightweight gossip for agent discovery
+- **Agent state is YOUR responsibility** - Use MCP tools to persist to your preferred backend
+
+This means Caxton can scale horizontally without database bottlenecks. See [ADR-0014](docs/adr/0014-coordination-first-architecture.md) for details.
+
 ## External Tools via MCP
 
-Agents can access external tools through the Model Context Protocol:
+Agents can access external tools through the Model Context Protocol, including state persistence:
 
 ```javascript
 // In your agent (JavaScript example)
+// Search the web
 const result = await mcp_call("web_search", {
     query: "latest news on quantum computing"
+});
+
+// Persist state (business provides the backend)
+await mcp_call("state_tool", {
+    action: "store",
+    key: "agent_checkpoint",
+    value: currentState
 });
 ```
 
