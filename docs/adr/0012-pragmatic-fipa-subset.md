@@ -10,6 +10,14 @@ date: 2025-08-08
 ## Status
 Accepted
 
+## Relationship to ADR-0003
+This ADR refines and supersedes certain aspects of [ADR-0003: FIPA Messaging Protocol](0003-fipa-messaging-protocol.md). While ADR-0003 established FIPA as our messaging foundation, this ADR pragmatically adapts FIPA for production use by:
+- Keeping only the valuable core patterns
+- Replacing academic complexity with modern alternatives
+- Focusing on developer experience and operational simplicity
+
+ADR-0003 remains valid for understanding why we chose FIPA patterns. This ADR defines **how** we implement them practically.
+
 ## Context
 FIPA (Foundation for Intelligent Physical Agents) specifications were developed in the late 1990s by academic researchers working on multi-agent systems. While FIPA provides useful patterns for agent communication, it includes significant complexity that doesn't add value in modern production systems.
 
