@@ -12,6 +12,37 @@ use crate::resource_manager::{ResourceLimits, ResourceManager};
 use crate::sandbox::Sandbox;
 use crate::security::SecurityPolicy;
 
+/// Result of executing an agent function
+#[derive(Debug, Clone)]
+pub struct ExecutionResult {
+    /// Amount of fuel consumed during execution
+    pub fuel_consumed: CpuFuel,
+    /// Whether the execution completed successfully
+    pub completed_successfully: bool,
+    /// Output data from the execution
+    pub output: Option<Vec<u8>>,
+}
+
+impl ExecutionResult {
+    /// Creates a successful execution result
+    pub fn success(fuel_consumed: CpuFuel, output: Option<Vec<u8>>) -> Self {
+        Self {
+            fuel_consumed,
+            completed_successfully: true,
+            output,
+        }
+    }
+
+    /// Creates a failed execution result
+    pub fn failure(fuel_consumed: CpuFuel) -> Self {
+        Self {
+            fuel_consumed,
+            completed_successfully: false,
+            output: None,
+        }
+    }
+}
+
 /// Configuration for the WebAssembly runtime
 #[derive(Debug, Clone)]
 pub struct WasmRuntimeConfig {
@@ -82,17 +113,6 @@ impl Default for ResourceUsage {
             message_count: MessageCount::zero(),
         }
     }
-}
-
-/// Result of executing an agent function
-#[derive(Debug)]
-pub struct ExecutionResult {
-    /// Amount of fuel consumed during execution
-    pub fuel_consumed: u64,
-    /// Whether the execution completed successfully
-    pub completed_successfully: bool,
-    /// Output data from the execution
-    pub output: Option<Vec<u8>>,
 }
 
 impl Agent {
@@ -193,7 +213,7 @@ impl WasmRuntime {
 
         Self::validate_module(&module);
 
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
         let mut sandbox = Sandbox::new(
             agent_id,
@@ -286,8 +306,7 @@ impl WasmRuntime {
 
         let result = agent.sandbox.execute(function, args).await?;
 
-        let fuel = CpuFuel::try_new(result.fuel_consumed)
-            .unwrap_or_else(|_| CpuFuel::try_new(1_000_000_000).unwrap());
+        let fuel = result.fuel_consumed;
         agent.resource_usage.update_cpu(fuel);
 
         Ok(result.output.unwrap_or_default())
@@ -325,8 +344,7 @@ impl WasmRuntime {
         let mut agent = self.agents.get_mut(&agent_id).unwrap();
         let result = agent.sandbox.execute(function, args).await?;
 
-        let fuel = CpuFuel::try_new(result.fuel_consumed)
-            .unwrap_or_else(|_| CpuFuel::try_new(1_000_000_000).unwrap());
+        let fuel = result.fuel_consumed;
         agent.resource_usage.update_cpu(fuel);
 
         Ok(result)
@@ -543,13 +561,9 @@ mod tests {
 
     #[test]
     fn test_execution_result() {
-        let result = ExecutionResult {
-            fuel_consumed: 100,
-            completed_successfully: true,
-            output: Some(vec![1, 2, 3]),
-        };
+        let result = ExecutionResult::success(CpuFuel::try_new(100).unwrap(), Some(vec![1, 2, 3]));
 
-        assert_eq!(result.fuel_consumed, 100);
+        assert_eq!(result.fuel_consumed.as_u64(), 100);
         assert!(result.completed_successfully);
         assert_eq!(result.output, Some(vec![1, 2, 3]));
     }

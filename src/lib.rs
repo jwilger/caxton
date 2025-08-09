@@ -5,6 +5,8 @@
 
 /// Domain types for preventing primitive obsession
 pub mod domain_types;
+/// Advanced domain types for type-safe state management
+// pub mod domain; // TODO: Fix compilation issues before enabling
 /// Host function registry and management
 pub mod host_functions;
 /// Resource management and limit enforcement
@@ -17,8 +19,8 @@ pub mod sandbox;
 pub mod security;
 
 pub use domain_types::{
-    AgentId, AgentName, CpuFuel, ExecutionTime, HostFunctionName, MaxAgents, MaxImportFunctions,
-    MemoryBytes, MessageCount, MessageSize,
+    AgentId, AgentName, CpuFuel, ExecutionTime, HostFunctionName, MaxAgents, MaxExports,
+    MaxImportFunctions, MemoryBytes, MessageCount, MessageSize,
 };
 pub use resource_manager::ResourceLimits;
 pub use runtime::{WasmRuntime, WasmRuntimeConfig};

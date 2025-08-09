@@ -26,7 +26,7 @@ pub struct AgentId(Uuid);
 
 impl AgentId {
     /// Creates a new random agent ID
-    pub fn new_v4() -> Self {
+    pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
 }
@@ -196,6 +196,35 @@ impl MaxAgents {
     default = 10
 )]
 pub struct MaxImportFunctions(usize);
+
+/// Maximum number of export functions
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 1000),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into,
+        Default
+    ),
+    default = 10
+)]
+pub struct MaxExports(usize);
+
+impl MaxExports {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}
 
 /// Message count for tracking
 #[nutype(
