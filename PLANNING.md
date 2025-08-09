@@ -14,14 +14,85 @@ This document contains the complete, prioritized backlog of user stories for the
 
 ---
 
+## Master Story Checklist
+
+### P0 - Critical Foundation
+
+- [X] Story 001: WebAssembly Runtime Foundation
+- [ ] Story 002: Core Message Router
+- [ ] Story 003: Agent Lifecycle Management
+- [ ] Story 004: Local State Storage
+
+### P1 - Essential Features
+
+- [ ] Story 005: FIPA-ACL Message Protocol
+- [ ] Story 006: gRPC Management API
+- [ ] Story 007: REST API Gateway
+- [ ] Story 008: CLI Tool
+- [ ] Story 009: OpenTelemetry Integration
+- [ ] Story 010: Basic MCP Tool Integration
+
+### P2 - Standard Features
+
+- [ ] Story 011: Contract Net Protocol
+- [ ] Story 012: Multi-Stage Deployment Validation
+- [ ] Story 013: Blue-Green Deployment
+- [ ] Story 014: External Agent Router
+- [ ] Story 015: Capability-Based Agent Discovery
+- [ ] Story 016: Resource Management and Limits
+- [ ] Story 017: Health Checks and Readiness Probes
+- [ ] Story 041: Emergency Operations Procedures
+- [ ] Story 042: Multi-Language Agent SDK
+- [ ] Story 043: Agent Testing Framework
+- [ ] Story 044: Dynamic Configuration Management
+- [ ] Story 045: Advanced Security Operations
+
+### P3 - Enhanced Features
+
+- [ ] Story 018: SWIM Cluster Membership
+- [ ] Story 019: Cross-Instance Message Routing
+- [ ] Story 020: Canary Deployment Strategy
+- [ ] Story 021: Shadow Deployment Mode
+- [ ] Story 022: mTLS Inter-Node Security
+- [ ] Story 023: API Authentication Framework
+- [ ] Story 024: Role-Based Access Control
+- [ ] Story 025: Agent Capability Registration
+- [ ] Story 046: Production Monitoring Suite
+- [ ] Story 047: Advanced Recovery Patterns
+- [ ] Story 048: Performance Engineering Tools
+- [ ] Story 049: Compliance Framework
+- [ ] Story 050: Developer Experience Platform
+
+### P4 - Advanced Features
+
+- [ ] Story 026: Distributed Agent Registry
+- [ ] Story 027: Performance Monitoring Dashboard
+- [ ] Story 028: Automated Backup System
+- [ ] Story 029: Circuit Breaker Pattern
+- [ ] Story 030: Rate Limiting Framework
+- [ ] Story 031: Message Batching Optimization
+- [ ] Story 032: Agent Pool Management
+- [ ] Story 033: Cluster Auto-Scaling
+- [ ] Story 034: Debug Tracing Interface
+- [ ] Story 035: Chaos Engineering Support
+- [ ] Story 036: Load Testing Framework
+- [ ] Story 037: Compliance Audit Logging
+- [ ] Story 038: Multi-Tenancy Support
+- [ ] Story 039: Plugin Architecture
+- [ ] Story 040: GraphQL API Layer
+
+---
+
 ## P0 - Critical Foundation Stories
 
 ### Story 001: WebAssembly Runtime Foundation
+
 **As a** system operator
 **I want** a secure WebAssembly runtime environment
 **So that** agents can execute in isolated sandboxes without affecting system stability
 
 **Acceptance Criteria:**
+
 - [ ] WASM runtime (wasmtime) is integrated and configured
 - [ ] Each agent runs in a completely isolated sandbox
 - [ ] Memory and CPU limits are enforced per agent
@@ -31,6 +102,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Security features disable dangerous WASM features (SIMD, ref types, bulk memory)
 
 **Definition of Done:**
+
 - Unit tests pass for all sandbox operations
 - Integration tests verify isolation between agents
 - Resource limits are enforced and tested
@@ -39,11 +111,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Performance meets baseline (< 100ms agent startup)
 
 ### Story 002: Core Message Router
+
 **As an** agent developer
 **I want** messages to be automatically routed between agents
 **So that** agents can communicate without knowing infrastructure details
 
 **Acceptance Criteria:**
+
 - [ ] Async message router processes messages without blocking
 - [ ] Messages are routed based on agent ID
 - [ ] Router handles agent registration and deregistration
@@ -52,6 +126,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Messages include trace and span IDs for observability
 
 **Definition of Done:**
+
 - Message routing works for local agents
 - Performance meets 100K messages/second target
 - No message loss under normal operation
@@ -60,11 +135,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Metrics track routing performance
 
 ### Story 003: Agent Lifecycle Management
+
 **As a** system operator
 **I want** to deploy, start, stop, and remove agents
 **So that** I can manage the agent population dynamically
 
 **Acceptance Criteria:**
+
 - [ ] Agents can be deployed from WASM modules
 - [ ] Agent state transitions follow defined lifecycle (Unloaded→Loaded→Running→Draining→Stopped)
 - [ ] Hot reload deploys new versions without downtime
@@ -73,6 +150,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Deployment validates WASM modules before activation
 
 **Definition of Done:**
+
 - All state transitions are type-safe and tested
 - Deployment completes in < 1 second
 - Hot reload maintains message processing
@@ -81,11 +159,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation covers deployment patterns
 
 ### Story 004: Local State Storage
+
 **As a** Caxton instance
 **I want** embedded SQLite storage for local state
 **So that** I can operate without external database dependencies
 
 **Acceptance Criteria:**
+
 - [ ] SQLite database is embedded in each instance
 - [ ] Agent registry is stored locally
 - [ ] Message routing tables are persisted
@@ -94,6 +174,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Concurrent access is handled safely
 
 **Definition of Done:**
+
 - SQLite operations are abstracted behind interfaces
 - Schema is documented and versioned
 - Performance meets requirements (< 1ms queries)
@@ -106,11 +187,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P1 - Essential Features Stories
 
 ### Story 005: FIPA-ACL Message Protocol
+
 **As an** agent developer
 **I want** standardized FIPA-ACL message structure
 **So that** agents can interoperate using industry standards
 
 **Acceptance Criteria:**
+
 - [ ] Messages follow FIPA-ACL structure (performative, sender, receiver, content, etc.)
 - [ ] Core performatives implemented (REQUEST, INFORM, QUERY, PROPOSE, ACCEPT_PROPOSAL, REJECT_PROPOSAL, FAILURE, NOT_UNDERSTOOD)
 - [ ] Conversation tracking via conversation_id, reply_with, in_reply_to
@@ -119,6 +202,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Malformed messages generate NOT_UNDERSTOOD responses
 
 **Definition of Done:**
+
 - FIPA compliance verified against specification
 - All performatives have test coverage
 - Message serialization/deserialization works
@@ -127,11 +211,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Performance overhead < 1ms per message
 
 ### Story 006: gRPC Management API
+
 **As a** client application
 **I want** a gRPC API for Caxton management
 **So that** I can programmatically control the server
 
 **Acceptance Criteria:**
+
 - [ ] CaxtonManagement service is implemented
 - [ ] Agent deployment endpoints work (Deploy, Undeploy, List, Get)
 - [ ] Message operations available (Send, Subscribe to responses)
@@ -141,6 +227,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Authentication tokens are validated
 
 **Definition of Done:**
+
 - gRPC service handles all defined operations
 - Generated SDKs work for Go, Python, JavaScript
 - TLS encryption is enforced
@@ -149,11 +236,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Integration tests cover all endpoints
 
 ### Story 007: REST API Gateway
+
 **As a** web developer
 **I want** REST/HTTP access to Caxton
 **So that** I can integrate without gRPC libraries
 
 **Acceptance Criteria:**
+
 - [ ] REST gateway auto-generated from gRPC definitions
 - [ ] All gRPC operations available via REST
 - [ ] OpenAPI/Swagger documentation generated
@@ -163,6 +252,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Resource-oriented URLs follow REST conventions
 
 **Definition of Done:**
+
 - REST API matches gRPC functionality
 - Swagger UI available for testing
 - WebSocket streaming verified
@@ -171,11 +261,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - curl examples in documentation
 
 ### Story 008: CLI Tool
+
 **As a** developer
 **I want** a command-line tool for Caxton operations
 **So that** I can manage agents from the terminal
 
 **Acceptance Criteria:**
+
 - [ ] Noun-verb command structure (caxton agent deploy, caxton message send)
 - [ ] All management operations available
 - [ ] Human-friendly output with tables and colors
@@ -185,6 +277,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Configuration via files and environment variables
 
 **Definition of Done:**
+
 - CLI covers all API operations
 - Output formats are consistent
 - Shell completion works
@@ -193,11 +286,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Installation documented for all platforms
 
 ### Story 009: OpenTelemetry Integration
+
 **As an** operations engineer
 **I want** comprehensive observability
 **So that** I can monitor and debug the system
 
 **Acceptance Criteria:**
+
 - [ ] OpenTelemetry SDK integrated
 - [ ] All operations generate spans with trace IDs
 - [ ] Structured logging with correlation IDs
@@ -207,6 +302,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Multiple exporters supported (Jaeger, Zipkin, OTLP)
 
 **Definition of Done:**
+
 - Traces visible in Jaeger UI
 - Metrics available in Prometheus
 - Logs contain trace/span IDs
@@ -215,11 +311,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Dashboard templates provided
 
 ### Story 010: Basic MCP Tool Integration
+
 **As an** agent developer
 **I want** agents to access external tools via MCP
 **So that** agents can interact with external systems safely
 
 **Acceptance Criteria:**
+
 - [ ] MCP client library available for WASM agents
 - [ ] Tool discovery and registration works
 - [ ] Permission system controls tool access per agent
@@ -229,6 +327,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Tool errors don't crash agents
 
 **Definition of Done:**
+
 - MCP tools callable from agents
 - Permissions prevent unauthorized access
 - Tool usage appears in traces
@@ -241,11 +340,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P2 - Standard Features Stories
 
 ### Story 011: Contract Net Protocol
+
 **As an** agent developer
 **I want** Contract Net Protocol for task distribution
 **So that** agents can delegate work through bidding
 
 **Acceptance Criteria:**
+
 - [ ] Call for Proposals (CFP) message type works
 - [ ] Agents can submit proposals
 - [ ] Initiator can accept/reject proposals
@@ -255,6 +356,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Failed negotiations handled gracefully
 
 **Definition of Done:**
+
 - CNP follows FIPA specification
 - Integration tests verify full protocol
 - Timeout handling tested
@@ -263,11 +365,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Metrics track protocol success rate
 
 ### Story 012: Multi-Stage Deployment Validation
+
 **As a** system operator
 **I want** comprehensive validation before agent activation
 **So that** faulty agents don't enter production
 
 **Acceptance Criteria:**
+
 - [ ] Static analysis validates WASM module structure
 - [ ] Sandbox testing runs agent in isolation
 - [ ] Contract testing verifies message handling
@@ -277,6 +381,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Validation results are logged
 
 **Definition of Done:**
+
 - All validation stages implemented
 - Malicious agents are detected
 - Resource bombs are prevented
@@ -285,11 +390,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation explains validation
 
 ### Story 013: Blue-Green Deployment
+
 **As a** system operator
 **I want** blue-green deployment for agents
 **So that** I can update agents with zero downtime
 
 **Acceptance Criteria:**
+
 - [ ] New version deployed alongside old
 - [ ] Traffic gradually shifted to new version
 - [ ] Health checks verify new version
@@ -299,6 +406,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Manual override available
 
 **Definition of Done:**
+
 - Zero message loss during deployment
 - Rollback completes in < 1 second
 - Health checks prevent bad deployments
@@ -307,11 +415,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Runbook documents procedures
 
 ### Story 014: External Agent Router
+
 **As an** external application
 **I want** to invoke agents and get responses
 **So that** I can use agents as services
 
 **Acceptance Criteria:**
+
 - [ ] ExternalAgentRouter service implemented
 - [ ] Synchronous request-response pattern works
 - [ ] Asynchronous job submission with polling
@@ -321,6 +431,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Timeouts and retries configurable
 
 **Definition of Done:**
+
 - External API handles all patterns
 - < 1ms overhead for local calls
 - Job storage persists across restarts
@@ -329,11 +440,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Client libraries demonstrate usage
 
 ### Story 015: Capability-Based Agent Discovery
+
 **As an** agent
 **I want** to discover other agents by capability
 **So that** I can find agents that provide needed services
 
 **Acceptance Criteria:**
+
 - [ ] Agents register capabilities at startup
 - [ ] Capability registry is searchable
 - [ ] Dynamic capability registration supported
@@ -343,6 +456,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Registry handles agent failures
 
 **Definition of Done:**
+
 - Discovery completes in < 10ms
 - Registry stays consistent
 - Type-safe in strongly-typed languages
@@ -351,11 +465,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation explains model
 
 ### Story 016: Resource Management and Limits
+
 **As a** system operator
 **I want** fine-grained resource control
 **So that** agents can't consume excessive resources
 
 **Acceptance Criteria:**
+
 - [ ] CPU limits enforced via WASM fuel
 - [ ] Memory limits enforced per agent
 - [ ] Message size limits configurable
@@ -365,6 +481,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Per-agent and global limits supported
 
 **Definition of Done:**
+
 - Limits enforced within 5% accuracy
 - Resource bombs prevented
 - Performance overhead < 10%
@@ -373,11 +490,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Tests verify all limits
 
 ### Story 017: Health Checks and Readiness Probes
+
 **As a** container orchestrator
 **I want** health and readiness endpoints
 **So that** I can manage Caxton instances
 
 **Acceptance Criteria:**
+
 - [ ] /health endpoint indicates system health
 - [ ] /ready endpoint indicates readiness for traffic
 - [ ] Health checks verify critical components
@@ -387,6 +506,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Kubernetes-compatible responses
 
 **Definition of Done:**
+
 - Endpoints follow Kubernetes standards
 - All components checked
 - Performance impact negligible
@@ -399,11 +519,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P3 - Enhanced Features Stories
 
 ### Story 018: SWIM Cluster Membership
+
 **As a** Caxton cluster
 **I want** SWIM protocol for membership
 **So that** instances discover each other without central coordination
 
 **Acceptance Criteria:**
+
 - [ ] SWIM gossip protocol implemented
 - [ ] Node discovery works automatically
 - [ ] Failure detection identifies dead nodes
@@ -413,6 +535,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Cluster can scale to 1000+ nodes
 
 **Definition of Done:**
+
 - Membership converges in < 30 seconds
 - False positive rate < 1%
 - Network overhead < 1KB/sec per node
@@ -421,11 +544,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Operations guide written
 
 ### Story 019: Cross-Instance Message Routing
+
 **As an** agent
 **I want** to message agents on other instances
 **So that** location is transparent
 
 **Acceptance Criteria:**
+
 - [ ] Agent registry synchronized via gossip
 - [ ] Messages routed to remote instances
 - [ ] QUIC transport for performance
@@ -435,6 +560,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Routing updates handle topology changes
 
 **Definition of Done:**
+
 - Cross-instance messaging works
 - < 5ms latency in same datacenter
 - Message ordering preserved per conversation
@@ -443,11 +569,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation covers setup
 
 ### Story 020: Canary Deployment Strategy
+
 **As a** system operator
 **I want** canary deployments with automatic rollback
 **So that** bad deployments are caught early
 
 **Acceptance Criteria:**
+
 - [ ] Multi-stage canary rollout (5%→25%→50%→100%)
 - [ ] Metrics compared between versions
 - [ ] Automatic rollback on degradation
@@ -457,6 +585,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Progress observable in real-time
 
 **Definition of Done:**
+
 - Canary stages execute correctly
 - Rollback triggers < 10 seconds
 - Metrics comparison accurate
@@ -465,11 +594,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Runbook covers procedures
 
 ### Story 021: Shadow Deployment Mode
+
 **As a** developer
 **I want** shadow deployments for testing
 **So that** I can validate changes without risk
 
 **Acceptance Criteria:**
+
 - [ ] Shadow agents receive copy of traffic
 - [ ] Shadow responses not sent to clients
 - [ ] Response comparison automated
@@ -479,6 +610,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] No impact on production traffic
 
 **Definition of Done:**
+
 - Shadow mode has zero production impact
 - Comparison reports generated
 - Performance overhead < 20%
@@ -487,11 +619,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Examples demonstrate setup
 
 ### Story 022: mTLS Inter-Node Security
+
 **As a** security engineer
 **I want** mutual TLS between nodes
 **So that** cluster communication is secure
 
 **Acceptance Criteria:**
+
 - [ ] Certificate generation automated
 - [ ] mTLS required for node communication
 - [ ] Certificate rotation without downtime
@@ -501,6 +635,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Revocation supported
 
 **Definition of Done:**
+
 - All inter-node traffic encrypted
 - Certificate rotation tested
 - Performance overhead < 10%
@@ -509,11 +644,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Monitoring alerts configured
 
 ### Story 023: API Authentication Framework
+
 **As a** system operator
 **I want** multiple authentication methods
 **So that** different clients can authenticate appropriately
 
 **Acceptance Criteria:**
+
 - [ ] API key authentication works
 - [ ] JWT token validation supported
 - [ ] mTLS client certificates accepted
@@ -523,6 +660,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Rate limiting per identity
 
 **Definition of Done:**
+
 - All auth methods tested
 - Performance overhead < 5ms
 - Security audit passed
@@ -531,11 +669,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Examples for all patterns
 
 ### Story 024: Role-Based Access Control
+
 **As a** system administrator
 **I want** granular permission control
 **So that** users have appropriate access
 
 **Acceptance Criteria:**
+
 - [ ] Roles defined (admin, operator, developer, viewer)
 - [ ] Permissions mapped to operations
 - [ ] Role assignment per user/service
@@ -545,6 +685,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Default deny policy
 
 **Definition of Done:**
+
 - RBAC prevents unauthorized access
 - Permission checks < 1ms
 - Audit trail complete
@@ -553,11 +694,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Compliance requirements met
 
 ### Story 025: Agent Capability Registration
+
 **As an** agent developer
 **I want** programmatic capability declaration
 **So that** capabilities are code-defined not configured
 
 **Acceptance Criteria:**
+
 - [ ] Capabilities declared in agent init
 - [ ] Runtime registration supported
 - [ ] Type-safe capability interfaces
@@ -567,6 +710,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Schema validation available
 
 **Definition of Done:**
+
 - Registration from all languages
 - Type safety in TypeScript/Rust
 - Discovery uses capabilities
@@ -579,11 +723,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P4 - Advanced Features Stories
 
 ### Story 026: Distributed Agent Registry
+
 **As a** large cluster
 **I want** eventually consistent agent registry
 **So that** all nodes know about all agents
 
 **Acceptance Criteria:**
+
 - [ ] Registry synchronized via gossip
 - [ ] Vector clocks track updates
 - [ ] Conflicts resolved by timestamp
@@ -593,6 +739,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Registry queryable locally
 
 **Definition of Done:**
+
 - Convergence time < 30 seconds
 - Conflict resolution tested
 - Scale tested to 10K agents
@@ -601,11 +748,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Operational procedures documented
 
 ### Story 027: Performance Monitoring Dashboard
+
 **As an** operations engineer
 **I want** real-time performance visibility
 **So that** I can identify bottlenecks
 
 **Acceptance Criteria:**
+
 - [ ] Grafana dashboards provided
 - [ ] Agent performance metrics shown
 - [ ] Message flow visualized
@@ -615,6 +764,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Historical data retained
 
 **Definition of Done:**
+
 - Dashboards auto-provision
 - Updates in < 5 seconds
 - Mobile-responsive layout
@@ -623,11 +773,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Troubleshooting guide written
 
 ### Story 028: Automated Backup System
+
 **As a** system operator
 **I want** automated state backups
 **So that** I can recover from failures
 
 **Acceptance Criteria:**
+
 - [ ] Scheduled backups (daily full, hourly incremental)
 - [ ] Multiple destinations (local, S3, GCS)
 - [ ] Component-based backup (agents, state, config, certificates)
@@ -637,6 +789,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Backup metrics tracked
 
 **Definition of Done:**
+
 - Backups complete reliably
 - Recovery tested end-to-end
 - < 5 minute recovery time
@@ -645,11 +798,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Monitoring alerts working
 
 ### Story 029: Circuit Breaker Pattern
+
 **As a** system
 **I want** circuit breakers for fault tolerance
 **So that** failures don't cascade
 
 **Acceptance Criteria:**
+
 - [ ] Circuit breaker per external dependency
 - [ ] States: closed→open→half-open
 - [ ] Failure threshold configurable
@@ -659,6 +814,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Manual override available
 
 **Definition of Done:**
+
 - Cascading failures prevented
 - Recovery time < 30 seconds
 - State transitions logged
@@ -667,11 +823,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Integration tests verify behavior
 
 ### Story 030: Rate Limiting Framework
+
 **As a** system operator
 **I want** comprehensive rate limiting
 **So that** the system isn't overwhelmed
 
 **Acceptance Criteria:**
+
 - [ ] Global rate limits enforced
 - [ ] Per-client rate limits
 - [ ] Per-operation rate limits
@@ -681,6 +839,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Limits dynamically adjustable
 
 **Definition of Done:**
+
 - Rate limiting accurate to 1%
 - Performance overhead < 1ms
 - Standard headers used
@@ -689,11 +848,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation complete
 
 ### Story 031: Message Batching Optimization
+
 **As a** high-throughput system
 **I want** intelligent message batching
 **So that** throughput is maximized
 
 **Acceptance Criteria:**
+
 - [ ] Messages batched during high load
 - [ ] Batch size dynamically adjusted
 - [ ] Latency targets maintained
@@ -703,6 +864,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Transparent to agents
 
 **Definition of Done:**
+
 - 2x throughput improvement
 - P99 latency maintained
 - No message reordering
@@ -711,11 +873,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Tuning guide written
 
 ### Story 032: Agent Pool Management
+
 **As a** system
 **I want** agent instance pooling
 **So that** startup latency is minimized
 
 **Acceptance Criteria:**
+
 - [ ] Warm agent instances pre-created
 - [ ] Pool size auto-adjusts to load
 - [ ] Instance health verified
@@ -725,6 +889,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Configuration tunable
 
 **Definition of Done:**
+
 - Agent startup < 10ms from pool
 - Memory usage optimized
 - Pool sizing effective
@@ -733,11 +898,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation explains tuning
 
 ### Story 033: Cluster Auto-Scaling
+
 **As a** cluster operator
 **I want** automatic scaling based on load
 **So that** capacity matches demand
 
 **Acceptance Criteria:**
+
 - [ ] Metrics trigger scale decisions
 - [ ] Scale up on high load
 - [ ] Scale down on low load
@@ -747,6 +914,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Manual override available
 
 **Definition of Done:**
+
 - Scaling responds in < 2 minutes
 - No message loss during scaling
 - Cost optimized for load
@@ -755,11 +923,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Runbook for operations
 
 ### Story 034: Debug Tracing Interface
+
 **As a** developer
 **I want** detailed debug traces
 **So that** I can troubleshoot issues
 
 **Acceptance Criteria:**
+
 - [ ] Debug mode per agent
 - [ ] Message flow traced
 - [ ] State transitions logged
@@ -769,6 +939,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Real-time trace streaming
 
 **Definition of Done:**
+
 - Debug mode has < 20% overhead
 - Traces help solve real issues
 - UI for trace exploration
@@ -777,11 +948,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Examples demonstrate usage
 
 ### Story 035: Chaos Engineering Support
+
 **As a** reliability engineer
 **I want** chaos testing capabilities
 **So that** I can verify resilience
 
 **Acceptance Criteria:**
+
 - [ ] Fault injection API available
 - [ ] Network delays simulated
 - [ ] Agent crashes induced
@@ -791,6 +964,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Results observable
 
 **Definition of Done:**
+
 - Chaos tests automated
 - System recovers from all faults
 - Mean time to recovery measured
@@ -799,11 +973,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Regular chaos exercises run
 
 ### Story 036: Load Testing Framework
+
 **As a** performance engineer
 **I want** load testing tools
 **So that** I can verify scale
 
 **Acceptance Criteria:**
+
 - [ ] Load generator for messages
 - [ ] Agent simulation at scale
 - [ ] Scenario scripting supported
@@ -813,6 +989,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Integration with CI/CD
 
 **Definition of Done:**
+
 - Load tests reproducible
 - 100K msg/sec verified
 - Bottlenecks identified
@@ -821,11 +998,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation complete
 
 ### Story 037: Compliance Audit Logging
+
 **As a** compliance officer
 **I want** comprehensive audit logs
 **So that** I can demonstrate compliance
 
 **Acceptance Criteria:**
+
 - [ ] All operations logged
 - [ ] Immutable audit trail
 - [ ] User/service attribution
@@ -835,6 +1014,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Export for analysis
 
 **Definition of Done:**
+
 - Audit logs tamper-evident
 - Retention automated
 - Compliance standards met
@@ -843,11 +1023,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Regular audit reports
 
 ### Story 038: Multi-Tenancy Support
+
 **As a** service provider
 **I want** isolated tenants
 **So that** I can serve multiple customers
 
 **Acceptance Criteria:**
+
 - [ ] Tenant isolation enforced
 - [ ] Resource limits per tenant
 - [ ] Separate namespaces
@@ -857,6 +1039,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Tenant management API
 
 **Definition of Done:**
+
 - Complete isolation verified
 - Performance isolation tested
 - Resource accounting accurate
@@ -865,11 +1048,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation complete
 
 ### Story 039: Plugin Architecture
+
 **As a** platform developer
 **I want** plugin extensibility
 **So that** custom features can be added
 
 **Acceptance Criteria:**
+
 - [ ] Plugin API defined
 - [ ] Plugin loading at runtime
 - [ ] Plugin isolation/sandboxing
@@ -879,6 +1064,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Plugin metrics/monitoring
 
 **Definition of Done:**
+
 - Example plugins working
 - Plugin development SDK
 - Security model defined
@@ -887,11 +1073,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Community contributing plugins
 
 ### Story 040: GraphQL API Layer
+
 **As a** frontend developer
 **I want** GraphQL API access
 **So that** I can efficiently query data
 
 **Acceptance Criteria:**
+
 - [ ] GraphQL schema defined
 - [ ] Query optimization
 - [ ] Subscription support
@@ -901,6 +1089,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Playground interface
 
 **Definition of Done:**
+
 - GraphQL fully functional
 - Performance optimized
 - Real-time subscriptions working
@@ -913,11 +1102,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P2 - Standard Features Stories (Additional)
 
 ### Story 041: Emergency Operations Procedures
+
 **As a** system operator
 **I want** emergency shutdown and recovery procedures
 **So that** I can handle critical failures safely
 
 **Acceptance Criteria:**
+
 - [ ] Emergency stop command (`caxton emergency stop`)
 - [ ] Graceful shutdown with message draining
 - [ ] Data corruption detection and recovery
@@ -927,6 +1118,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Emergency diagnostic commands
 
 **Definition of Done:**
+
 - Emergency procedures tested
 - Recovery time < 1 minute
 - No data loss during shutdown
@@ -935,11 +1127,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Regular drill exercises defined
 
 ### Story 042: Multi-Language Agent SDK
+
 **As an** agent developer
 **I want** SDKs for multiple programming languages
 **So that** I can develop agents in my preferred language
 
 **Acceptance Criteria:**
+
 - [ ] JavaScript/TypeScript SDK with types
 - [ ] Python SDK with type hints
 - [ ] Go SDK with interfaces
@@ -949,6 +1143,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Debug tools integrated
 
 **Definition of Done:**
+
 - SDKs published to package managers
 - Documentation for each language
 - Example agents in all languages
@@ -957,11 +1152,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Community feedback incorporated
 
 ### Story 043: Agent Testing Framework
+
 **As an** agent developer
 **I want** comprehensive testing tools
 **So that** I can ensure agent quality
 
 **Acceptance Criteria:**
+
 - [ ] Unit testing framework for agents
 - [ ] Message mocking and simulation
 - [ ] Conversation testing utilities
@@ -971,6 +1168,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] CI/CD integration
 
 **Definition of Done:**
+
 - Testing framework documented
 - Examples for all test types
 - Coverage targets defined
@@ -979,11 +1177,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Best practices documented
 
 ### Story 044: Dynamic Configuration Management
+
 **As a** system operator
 **I want** dynamic configuration without restarts
 **So that** I can tune the system at runtime
 
 **Acceptance Criteria:**
+
 - [ ] Runtime configuration changes
 - [ ] Configuration validation
 - [ ] Environment-specific profiles
@@ -993,6 +1193,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Audit trail of changes
 
 **Definition of Done:**
+
 - Configuration changes < 1 second
 - No service disruption
 - Validation prevents bad configs
@@ -1001,11 +1202,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Documentation complete
 
 ### Story 045: Advanced Security Operations
+
 **As a** security engineer
 **I want** comprehensive security operations tools
 **So that** I can maintain security posture
 
 **Acceptance Criteria:**
+
 - [ ] Agent signing and verification
 - [ ] End-to-end message encryption
 - [ ] Security event aggregation
@@ -1015,6 +1218,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Incident response automation
 
 **Definition of Done:**
+
 - Security scans automated
 - Zero false positives target
 - Incident response < 5 minutes
@@ -1027,11 +1231,13 @@ This document contains the complete, prioritized backlog of user stories for the
 ## P3 - Enhanced Features Stories (Additional)
 
 ### Story 046: Production Monitoring Suite
+
 **As an** operations engineer
 **I want** enterprise monitoring integration
 **So that** I can use existing monitoring infrastructure
 
 **Acceptance Criteria:**
+
 - [ ] Datadog integration
 - [ ] New Relic integration
 - [ ] CloudWatch integration
@@ -1041,6 +1247,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Distributed tracing enhancements
 
 **Definition of Done:**
+
 - All integrations tested
 - Metrics documented
 - Alert playbooks created
@@ -1049,11 +1256,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Training materials available
 
 ### Story 047: Advanced Recovery Patterns
+
 **As a** system architect
 **I want** sophisticated recovery mechanisms
 **So that** the system self-heals from failures
 
 **Acceptance Criteria:**
+
 - [ ] Checkpoint-based recovery
 - [ ] Event sourcing patterns
 - [ ] Conversation state recovery
@@ -1063,6 +1272,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Recovery metrics tracking
 
 **Definition of Done:**
+
 - Recovery patterns documented
 - MTTR < 30 seconds
 - No data loss during recovery
@@ -1071,11 +1281,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Metrics dashboard configured
 
 ### Story 048: Performance Engineering Tools
+
 **As a** performance engineer
 **I want** advanced tuning capabilities
 **So that** I can optimize system performance
 
 **Acceptance Criteria:**
+
 - [ ] NUMA awareness configuration
 - [ ] CPU affinity settings
 - [ ] Custom memory allocators
@@ -1085,6 +1297,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Benchmark automation
 
 **Definition of Done:**
+
 - Performance gains measured
 - Tuning guide published
 - Benchmarks automated
@@ -1093,11 +1306,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Regular performance reviews
 
 ### Story 049: Compliance Framework
+
 **As a** compliance officer
 **I want** regulatory compliance features
 **So that** we meet industry standards
 
 **Acceptance Criteria:**
+
 - [ ] SOC2 compliance features
 - [ ] ISO 27001 support
 - [ ] PCI-DSS capabilities
@@ -1107,6 +1322,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Audit automation
 
 **Definition of Done:**
+
 - Compliance certified
 - Reports automated
 - Audit trails complete
@@ -1115,11 +1331,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - Regular audits scheduled
 
 ### Story 050: Developer Experience Platform
+
 **As a** developer advocate
 **I want** comprehensive developer tools
 **So that** developers are productive quickly
 
 **Acceptance Criteria:**
+
 - [ ] Interactive development environment
 - [ ] Agent scaffolding system
 - [ ] Hot reload for development
@@ -1129,6 +1347,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Community templates
 
 **Definition of Done:**
+
 - Developer onboarding < 10 minutes
 - Tools integrated with IDEs
 - Documentation comprehensive
@@ -1143,6 +1362,7 @@ This document contains the complete, prioritized backlog of user stories for the
 This section maps ADR requirements and documentation features to user stories to ensure 100% coverage:
 
 ### ADR-0001: Observability First
+
 - Story 009: OpenTelemetry Integration ✓
 - Story 027: Performance Monitoring Dashboard ✓
 - Story 034: Debug Tracing Interface ✓
@@ -1150,70 +1370,86 @@ This section maps ADR requirements and documentation features to user stories to
 - Story 046: Production Monitoring Suite ✓
 
 ### ADR-0002: WebAssembly Isolation
+
 - Story 001: WebAssembly Runtime Foundation ✓
 - Story 016: Resource Management and Limits ✓
 - Story 032: Agent Pool Management ✓
 
 ### ADR-0003: FIPA Messaging Protocol
+
 - Story 005: FIPA-ACL Message Protocol ✓
 - Story 011: Contract Net Protocol ✓
 
 ### ADR-0004: Minimal Core Philosophy
+
 - Story 039: Plugin Architecture ✓
 - Core stories focus on minimal viable features ✓
 
 ### ADR-0005: MCP for External Tools
+
 - Story 010: Basic MCP Tool Integration ✓
 
 ### ADR-0006: Application Server Architecture
+
 - Story 002: Core Message Router ✓
 - Story 003: Agent Lifecycle Management ✓
 
 ### ADR-0007: Management API Design
+
 - Story 006: gRPC Management API ✓
 - Story 007: REST API Gateway ✓
 - Story 040: GraphQL API Layer ✓
 
 ### ADR-0008: Agent Deployment Model
+
 - Story 012: Multi-Stage Deployment Validation ✓
 - Story 013: Blue-Green Deployment ✓
 - Story 020: Canary Deployment Strategy ✓
 - Story 021: Shadow Deployment Mode ✓
 
 ### ADR-0009: CLI Tool Design
+
 - Story 008: CLI Tool ✓
 
 ### ADR-0010: External Agent Routing
+
 - Story 014: External Agent Router ✓
 - Story 029: Circuit Breaker Pattern ✓
 - Story 030: Rate Limiting Framework ✓
 
 ### ADR-0011: Capability Registration
+
 - Story 015: Capability-Based Agent Discovery ✓
 - Story 025: Agent Capability Registration ✓
 
 ### ADR-0012: Pragmatic FIPA Subset
+
 - Story 005: FIPA-ACL Message Protocol ✓
 
 ### ADR-0013: State Management Architecture
+
 - Story 004: Local State Storage ✓
 - Story 026: Distributed Agent Registry ✓
 
 ### ADR-0014: Coordination-First Architecture
+
 - Story 004: Local State Storage ✓
 - Story 018: SWIM Cluster Membership ✓
 
 ### ADR-0015: Distributed Protocol Architecture
+
 - Story 018: SWIM Cluster Membership ✓
 - Story 019: Cross-Instance Message Routing ✓
 - Story 026: Distributed Agent Registry ✓
 
 ### ADR-0016: Security Architecture
+
 - Story 022: mTLS Inter-Node Security ✓
 - Story 023: API Authentication Framework ✓
 - Story 024: Role-Based Access Control ✓
 
 ### ADR-0018: Operational Procedures
+
 - Story 017: Health Checks and Readiness Probes ✓
 - Story 028: Automated Backup System ✓
 - Story 033: Cluster Auto-Scaling ✓
@@ -1221,6 +1457,7 @@ This section maps ADR requirements and documentation features to user stories to
 - Story 047: Advanced Recovery Patterns ✓
 
 ### Documentation Coverage
+
 - **Developer Experience**: Stories 042, 043, 050 ✓
 - **Configuration Management**: Story 044 ✓
 - **Security Operations**: Story 045 ✓
@@ -1233,12 +1470,15 @@ This section maps ADR requirements and documentation features to user stories to
 ## Development Phases Mapping
 
 ### Phase 1: Minimal Core (V1.0)
+
 P0 Stories (001-004) + P1 Stories (005-010)
 
 ### Phase 2: Patterns & Performance (V2.0)
+
 P2 Stories (011-017, 041-045) + Selected P3 Stories (018-025)
 
 ### Phase 3: Scale & Ecosystem (V3.0)
+
 Remaining P3 Stories (046-050) + P4 Stories (026-040)
 
 ---
