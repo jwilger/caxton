@@ -42,6 +42,7 @@ uuid = { version = "1.11", features = ["v4", "serde"] }
 dashmap = "6.1"
 bytes = "1.9"
 wat = "1.223"
+nutype = { version = "0.6.2", features = ["serde"] }
 
 [dev-dependencies]
 criterion = "0.5"

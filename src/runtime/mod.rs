@@ -5,15 +5,12 @@ use dashmap::DashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tracing::{debug, info, warn};
-use uuid::Uuid;
 use wasmtime::{Config as WasmConfig, Engine, Module};
 
+use crate::domain_types::{AgentId, AgentName, CpuFuel, MaxAgents, MemoryBytes, MessageCount};
 use crate::resource_manager::{ResourceLimits, ResourceManager};
 use crate::sandbox::Sandbox;
 use crate::security::SecurityPolicy;
-
-/// Unique identifier for an agent
-pub type AgentId = Uuid;
 
 /// Configuration for the WebAssembly runtime
 #[derive(Debug, Clone)]
@@ -23,7 +20,7 @@ pub struct WasmRuntimeConfig {
     /// Security policy for agent execution
     pub security_policy: SecurityPolicy,
     /// Maximum number of concurrent agents
-    pub max_agents: usize,
+    pub max_agents: MaxAgents,
     /// Enable debug mode
     pub enable_debug: bool,
 }
@@ -33,7 +30,7 @@ impl Default for WasmRuntimeConfig {
         Self {
             resource_limits: ResourceLimits::default(),
             security_policy: SecurityPolicy::default(),
-            max_agents: 1000,
+            max_agents: MaxAgents::try_new(1000).unwrap(),
             enable_debug: false,
         }
     }
@@ -52,7 +49,7 @@ pub struct WasmRuntime {
 #[allow(dead_code)]
 struct Agent {
     id: AgentId,
-    name: String,
+    name: AgentName,
     sandbox: Sandbox,
     #[allow(dead_code)]
     module: Module,
@@ -70,11 +67,21 @@ enum AgentState {
     Stopped,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct ResourceUsage {
-    memory_bytes: usize,
-    cpu_fuel_consumed: u64,
-    message_count: usize,
+    memory_bytes: MemoryBytes,
+    cpu_fuel_consumed: CpuFuel,
+    message_count: MessageCount,
+}
+
+impl Default for ResourceUsage {
+    fn default() -> Self {
+        Self {
+            memory_bytes: MemoryBytes::zero(),
+            cpu_fuel_consumed: CpuFuel::zero(),
+            message_count: MessageCount::zero(),
+        }
+    }
 }
 
 /// Result of executing an agent function
@@ -93,22 +100,22 @@ impl Agent {
         self.id
     }
 
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> String {
+        self.name.to_string()
     }
 }
 
 impl ResourceUsage {
-    fn update_memory(&mut self, bytes: usize) {
+    fn update_memory(&mut self, bytes: MemoryBytes) {
         self.memory_bytes = bytes;
     }
 
-    fn update_cpu(&mut self, fuel: u64) {
-        self.cpu_fuel_consumed += fuel;
+    fn update_cpu(&mut self, fuel: CpuFuel) {
+        self.cpu_fuel_consumed = self.cpu_fuel_consumed.saturating_add(fuel);
     }
 
     fn increment_message_count(&mut self) {
-        self.message_count += 1;
+        self.message_count = self.message_count.increment();
     }
 }
 
@@ -174,7 +181,7 @@ impl WasmRuntime {
     pub async fn deploy_agent(&mut self, name: &str, wasm_bytes: &[u8]) -> Result<AgentId> {
         info!("Deploying agent: {}", name);
 
-        if self.active_agent_count() >= self.config.max_agents {
+        if self.active_agent_count() >= self.config.max_agents.into_inner() {
             bail!(
                 "Maximum number of agents ({}) reached",
                 self.config.max_agents
@@ -198,9 +205,11 @@ impl WasmRuntime {
         sandbox.initialize(&module).await?;
 
         // Start agents in Loaded state since sandbox is already initialized
+        let agent_name = AgentName::try_new(name.to_string())
+            .map_err(|e| anyhow::anyhow!("Invalid agent name: {}", e))?;
         let agent = Agent {
             id: agent_id,
-            name: name.to_string(),
+            name: agent_name,
             sandbox,
             module,
             state: AgentState::Loaded,
@@ -208,7 +217,7 @@ impl WasmRuntime {
         };
 
         debug!(
-            "Agent {} created and initialized in {:?} state",
+            "Agent {:?} created and initialized in {:?} state",
             agent_id, agent.state
         );
 
@@ -216,9 +225,9 @@ impl WasmRuntime {
         self.active_count.fetch_add(1, Ordering::SeqCst);
 
         // Use agent name and id for logging
-        info!("Agent '{}' deployed with ID: {}", name, agent_id);
+        info!("Agent '{}' deployed with ID: {:?}", name, agent_id);
         debug!(
-            "Agent {} is now in {:?} state",
+            "Agent {:?} is now in {:?} state",
             agent_id,
             AgentState::Loaded
         );
@@ -234,11 +243,11 @@ impl WasmRuntime {
         let mut agent = self
             .agents
             .get_mut(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
         if agent.state != AgentState::Loaded {
             bail!(
-                "Agent {} is not in Loaded state (current: {:?})",
+                "Agent {:?} is not in Loaded state (current: {:?})",
                 agent_id,
                 agent.state
             );
@@ -247,7 +256,7 @@ impl WasmRuntime {
         // Agent sandbox is already initialized during deployment, just transition state
         agent.state = AgentState::Running;
 
-        info!("Agent {} started", agent_id);
+        info!("Agent {:?} started", agent_id);
         Ok(())
     }
 
@@ -256,6 +265,10 @@ impl WasmRuntime {
     /// # Errors
     ///
     /// Returns an error if the agent is not found or not running
+    ///
+    /// # Panics
+    ///
+    /// Panics if the fuel value cannot be created (should never happen with valid fuel values)
     pub async fn execute_agent(
         &mut self,
         agent_id: AgentId,
@@ -265,15 +278,17 @@ impl WasmRuntime {
         let mut agent = self
             .agents
             .get_mut(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
         if agent.state != AgentState::Running {
-            bail!("Agent {} is not running", agent_id);
+            bail!("Agent {:?} is not running", agent_id);
         }
 
         let result = agent.sandbox.execute(function, args).await?;
 
-        agent.resource_usage.update_cpu(result.fuel_consumed);
+        let fuel = CpuFuel::try_new(result.fuel_consumed)
+            .unwrap_or_else(|_| CpuFuel::try_new(1_000_000_000).unwrap());
+        agent.resource_usage.update_cpu(fuel);
 
         Ok(result.output.unwrap_or_default())
     }
@@ -298,7 +313,7 @@ impl WasmRuntime {
             let agent = self
                 .agents
                 .get(&agent_id)
-                .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+                .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
             if agent.state != AgentState::Running {
                 drop(agent);
@@ -310,7 +325,9 @@ impl WasmRuntime {
         let mut agent = self.agents.get_mut(&agent_id).unwrap();
         let result = agent.sandbox.execute(function, args).await?;
 
-        agent.resource_usage.update_cpu(result.fuel_consumed);
+        let fuel = CpuFuel::try_new(result.fuel_consumed)
+            .unwrap_or_else(|_| CpuFuel::try_new(1_000_000_000).unwrap());
+        agent.resource_usage.update_cpu(fuel);
 
         Ok(result)
     }
@@ -320,13 +337,14 @@ impl WasmRuntime {
     /// # Errors
     ///
     /// Returns an error if the agent is not found
-    pub fn get_agent_memory_usage(&self, agent_id: AgentId) -> Result<usize> {
+    pub fn get_agent_memory_usage(&self, agent_id: AgentId) -> Result<MemoryBytes> {
         let agent = self
             .agents
             .get(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
-        Ok(agent.sandbox.get_memory_usage())
+        let usage = agent.sandbox.get_memory_usage();
+        MemoryBytes::try_new(usage).map_err(|e| anyhow::anyhow!("Invalid memory value: {}", e))
     }
 
     /// Gets the CPU fuel usage of a specific agent
@@ -334,11 +352,11 @@ impl WasmRuntime {
     /// # Errors
     ///
     /// Returns an error if the agent is not found
-    pub fn get_agent_cpu_usage(&self, agent_id: AgentId) -> Result<u64> {
+    pub fn get_agent_cpu_usage(&self, agent_id: AgentId) -> Result<CpuFuel> {
         let agent = self
             .agents
             .get(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
         Ok(agent.resource_usage.cpu_fuel_consumed)
     }
@@ -352,7 +370,7 @@ impl WasmRuntime {
         let agent = self
             .agents
             .get(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
         Ok(agent.sandbox.get_exposed_functions())
     }
@@ -382,13 +400,13 @@ impl WasmRuntime {
         let mut agent = self
             .agents
             .get_mut(&agent_id)
-            .ok_or_else(|| anyhow::anyhow!("Agent not found: {}", agent_id))?;
+            .ok_or_else(|| anyhow::anyhow!("Agent not found: {:?}", agent_id))?;
 
         // Transition through draining state
         let prev_state = agent.state.clone();
         agent.state = AgentState::Draining;
         info!(
-            "Agent {} ({}) transitioning from {:?} to {:?}",
+            "Agent {:?} ({:?}) transitioning from {:?} to {:?}",
             agent.name(),
             agent.id(),
             prev_state,
@@ -402,7 +420,7 @@ impl WasmRuntime {
         // Log resource usage on stop
         agent.resource_usage.increment_message_count();
         info!(
-            "Agent {} ({}) stopped after processing messages",
+            "Agent {:?} ({:?}) stopped after processing messages",
             agent.name(),
             agent.id()
         );
@@ -418,14 +436,22 @@ impl WasmRuntime {
         if let Some((_, mut agent)) = self.agents.remove(&agent_id) {
             match &agent.state {
                 AgentState::Running => {
-                    warn!("Removing running agent {} ({})", agent.name(), agent.id());
+                    warn!(
+                        "Removing running agent {:?} ({:?})",
+                        agent.name(),
+                        agent.id()
+                    );
                 }
                 AgentState::Unloaded => {
-                    debug!("Removing unloaded agent {} ({})", agent.name(), agent.id());
+                    debug!(
+                        "Removing unloaded agent {:?} ({:?})",
+                        agent.name(),
+                        agent.id()
+                    );
                 }
                 state => {
                     info!(
-                        "Removing agent {} ({}) in state {:?}",
+                        "Removing agent {:?} ({:?}) in state {:?}",
                         agent.name(),
                         agent.id(),
                         state
@@ -434,14 +460,14 @@ impl WasmRuntime {
             }
 
             // Track resource usage
-            agent.resource_usage.update_memory(0);
+            agent.resource_usage.update_memory(MemoryBytes::zero());
 
             self.active_count.fetch_sub(1, Ordering::SeqCst);
             self.resource_manager.cleanup_agent(agent_id);
-            info!("Agent {} removed", agent_id);
+            info!("Agent {:?} removed", agent_id);
             Ok(())
         } else {
-            bail!("Agent not found: {}", agent_id)
+            bail!("Agent not found: {:?}", agent_id)
         }
     }
 }
@@ -453,7 +479,7 @@ mod tests {
     #[tokio::test]
     async fn test_wasm_runtime_config_default() {
         let config = WasmRuntimeConfig::default();
-        assert_eq!(config.max_agents, 1000);
+        assert_eq!(config.max_agents.as_usize(), 1000);
         assert!(!config.enable_debug);
     }
 
@@ -482,37 +508,37 @@ mod tests {
     #[test]
     fn test_resource_usage_update_memory() {
         let mut usage = ResourceUsage::default();
-        assert_eq!(usage.memory_bytes, 0);
+        assert_eq!(usage.memory_bytes.as_usize(), 0);
 
-        usage.update_memory(1024);
-        assert_eq!(usage.memory_bytes, 1024);
+        usage.update_memory(MemoryBytes::try_new(1024).unwrap());
+        assert_eq!(usage.memory_bytes.as_usize(), 1024);
 
-        usage.update_memory(2048);
-        assert_eq!(usage.memory_bytes, 2048);
+        usage.update_memory(MemoryBytes::try_new(2048).unwrap());
+        assert_eq!(usage.memory_bytes.as_usize(), 2048);
     }
 
     #[test]
     fn test_resource_usage_update_cpu() {
         let mut usage = ResourceUsage::default();
-        assert_eq!(usage.cpu_fuel_consumed, 0);
+        assert_eq!(usage.cpu_fuel_consumed.as_u64(), 0);
 
-        usage.update_cpu(100);
-        assert_eq!(usage.cpu_fuel_consumed, 100);
+        usage.update_cpu(CpuFuel::try_new(100).unwrap());
+        assert_eq!(usage.cpu_fuel_consumed.as_u64(), 100);
 
-        usage.update_cpu(50);
-        assert_eq!(usage.cpu_fuel_consumed, 150);
+        usage.update_cpu(CpuFuel::try_new(50).unwrap());
+        assert_eq!(usage.cpu_fuel_consumed.as_u64(), 150);
     }
 
     #[test]
     fn test_resource_usage_increment_message_count() {
         let mut usage = ResourceUsage::default();
-        assert_eq!(usage.message_count, 0);
+        assert_eq!(usage.message_count.as_usize(), 0);
 
         usage.increment_message_count();
-        assert_eq!(usage.message_count, 1);
+        assert_eq!(usage.message_count.as_usize(), 1);
 
         usage.increment_message_count();
-        assert_eq!(usage.message_count, 2);
+        assert_eq!(usage.message_count.as_usize(), 2);
     }
 
     #[test]
@@ -531,11 +557,11 @@ mod tests {
     #[test]
     fn test_wasm_runtime_max_agents() {
         let config = WasmRuntimeConfig {
-            max_agents: 2,
+            max_agents: MaxAgents::try_new(2).unwrap(),
             ..Default::default()
         };
         let runtime = WasmRuntime::new(config).unwrap();
-        assert_eq!(runtime.config.max_agents, 2);
+        assert_eq!(runtime.config.max_agents.as_usize(), 2);
     }
 
     #[test]

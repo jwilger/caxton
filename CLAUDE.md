@@ -83,6 +83,103 @@ cargo install cargo-nextest --locked
 - **Test-First**: Write tests before implementation
 - **Clean Architecture**: Separate concerns
 - **Documentation**: Keep updated
+- **Domain-Driven Design**: Eliminate primitive obsession
+- **Parse Don't Validate**: Use strong types with validation
+
+## 🦀 Rust-Specific: Domain Types & nutype
+
+### MANDATORY: Eliminate Primitive Obsession
+**NEVER** use primitive types (String, i32, usize, etc.) for domain concepts. **ALWAYS** create domain types using the `nutype` crate.
+
+### nutype Usage Patterns
+
+1. **Domain Type Creation**:
+```rust
+#[nutype(
+    validate(len_char_min = 1, len_char_max = 255),
+    derive(Debug, Clone, Serialize, Deserialize, Display),
+)]
+pub struct AgentName(String);
+```
+
+2. **Construction Patterns**:
+- Types WITH validation: Use `try_new()` → Returns `Result<T, TError>`
+- Types WITHOUT validation: Use `new()` → Returns `T`
+- Always handle errors at system boundaries
+
+3. **Common Validations**:
+- Strings: `len_char_min`, `len_char_max`
+- Numbers: `greater_or_equal`, `less_or_equal`
+- Collections: `len_min`, `len_max`
+
+4. **Derives to Include**:
+- Always: `Debug, Clone, Serialize, Deserialize`
+- Often: `Display, PartialEq, Eq, Hash`
+- Numbers: `PartialOrd, Ord`
+- Optional: `Default` (with `default = value`)
+- Conversions: `TryFrom, Into`
+
+### Domain Type Best Practices
+
+1. **Primitives ONLY at System Boundaries**:
+   - External APIs (wasmtime, system calls)
+   - Serialization/deserialization boundaries
+   - User input/output
+   - Use `into_inner()` only when interfacing with external systems
+
+2. **All Internal APIs Use Domain Types**:
+   - Function parameters
+   - Return types
+   - Struct fields
+   - Never extract primitive just to pass to another internal function
+
+3. **Helper Methods on Domain Types**:
+```rust
+impl MemoryBytes {
+    pub fn from_mb(mb: usize) -> Result<Self, MemoryBytesError> {
+        Self::try_new(mb * 1024 * 1024)
+    }
+}
+```
+
+4. **Property-Based Testing**:
+   - Test domain type validations
+   - Test boundary conditions
+   - Use proptest for generated inputs
+
+### Example Refactoring Pattern
+
+❌ **WRONG** (Primitive Obsession):
+```rust
+pub fn allocate_memory(&self, agent_id: Uuid, bytes: usize) -> Result<()>
+pub fn consume_fuel(&self, agent_id: Uuid, fuel: u64) -> Result<()>
+```
+
+✅ **CORRECT** (Domain Types):
+```rust
+pub fn allocate_memory(&self, agent_id: AgentId, bytes: MemoryBytes) -> Result<()>
+pub fn consume_fuel(&self, agent_id: AgentId, fuel: CpuFuel) -> Result<()>
+```
+
+### Common Domain Types to Create
+
+- IDs: `AgentId`, `TaskId`, `SessionId`
+- Names: `AgentName`, `FunctionName`, `ModuleName`
+- Sizes: `MemoryBytes`, `MessageSize`, `BufferSize`
+- Counts: `MaxAgents`, `MessageCount`, `RetryCount`
+- Time: `ExecutionTime`, `Timeout`, `Duration`
+- Resources: `CpuFuel`, `NetworkBandwidth`
+
+### Testing with Domain Types
+
+```rust
+// Use try_new for validation testing
+let invalid_name = AgentName::try_new("").unwrap_err();
+let valid_name = AgentName::try_new("agent1").unwrap();
+
+// Use into_inner() only for assertions
+assert_eq!(memory.into_inner(), 1024);
+```
 
 ## 🚀 Available Agents (54 Total)
 

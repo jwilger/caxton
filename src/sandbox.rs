@@ -5,24 +5,25 @@ use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
 };
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tracing::{debug, warn};
-use uuid::Uuid;
 use wasmtime::{Engine, Linker, Module, ResourceLimiter, Store, StoreLimits, StoreLimitsBuilder};
+
+use crate::domain_types::{AgentId, HostFunctionName};
 
 use crate::resource_manager::ResourceLimits;
 use crate::runtime::ExecutionResult;
 
 /// Isolated execution environment for a single agent
 pub struct Sandbox {
-    id: Uuid,
+    id: AgentId,
     engine: Arc<Engine>,
     store: RwLock<Option<Store<SandboxState>>>,
     linker: Linker<SandboxState>,
     resource_limits: ResourceLimits,
     memory_usage: Arc<AtomicUsize>,
-    exposed_functions: Vec<String>,
+    exposed_functions: Vec<HostFunctionName>,
 }
 
 struct SandboxState {
@@ -73,8 +74,8 @@ impl Sandbox {
     /// # Errors
     ///
     /// Returns an error if host functions cannot be set up
-    pub fn new(id: Uuid, resource_limits: ResourceLimits, engine: Arc<Engine>) -> Result<Self> {
-        debug!("Creating sandbox for agent {}", id);
+    pub fn new(id: AgentId, resource_limits: ResourceLimits, engine: Arc<Engine>) -> Result<Self> {
+        debug!("Creating sandbox for agent {:?}", id);
 
         let mut linker = Linker::new(&engine);
 
@@ -91,7 +92,7 @@ impl Sandbox {
         })
     }
 
-    fn setup_host_functions(linker: &mut Linker<SandboxState>) -> Result<Vec<String>> {
+    fn setup_host_functions(linker: &mut Linker<SandboxState>) -> Result<Vec<HostFunctionName>> {
         let mut functions = Vec::new();
 
         linker.func_wrap(
@@ -102,7 +103,7 @@ impl Sandbox {
                 Ok(())
             },
         )?;
-        functions.push("log".to_string());
+        functions.push(HostFunctionName::try_new("log".to_string()).unwrap());
 
         linker.func_wrap(
             "env",
@@ -116,7 +117,7 @@ impl Sandbox {
                 i64::try_from(timestamp).unwrap_or(i64::MAX)
             },
         )?;
-        functions.push("get_time".to_string());
+        functions.push(HostFunctionName::try_new("get_time".to_string()).unwrap());
 
         linker.func_wrap(
             "env",
@@ -133,7 +134,7 @@ impl Sandbox {
                 0
             },
         )?;
-        functions.push("send_message".to_string());
+        functions.push(HostFunctionName::try_new("send_message".to_string()).unwrap());
 
         Ok(functions)
     }
@@ -144,10 +145,11 @@ impl Sandbox {
     ///
     /// Returns an error if the module cannot be instantiated
     pub async fn initialize(&mut self, module: &Module) -> Result<()> {
-        debug!("Initializing sandbox {}", self.id);
+        debug!("Initializing sandbox {:?}", self.id);
 
+        let max_memory: usize = self.resource_limits.max_memory_bytes.into_inner();
         let limits = StoreLimitsBuilder::new()
-            .memory_size(self.resource_limits.max_memory_bytes)
+            .memory_size(max_memory)
             .table_elements(10000)
             .instances(1)
             .tables(5)
@@ -158,18 +160,19 @@ impl Sandbox {
             limits,
             fuel_consumed: 0,
             start_time: Instant::now(),
-            max_memory: self.resource_limits.max_memory_bytes,
+            max_memory,
         };
 
         let mut store = Store::new(&self.engine, state);
         store.limiter(|state| state);
 
+        let max_fuel: u64 = self.resource_limits.max_cpu_fuel.into_inner();
         store
-            .set_fuel(self.resource_limits.max_cpu_fuel)
+            .set_fuel(max_fuel)
             .context("Failed to add fuel to store")?;
 
         let instance = self.linker.instantiate_async(&mut store, module).await
-            .with_context(|| format!("Failed to instantiate module - possible memory limit exceeded (limit: {} bytes)", self.resource_limits.max_memory_bytes))?;
+            .with_context(|| format!("Failed to instantiate module - possible memory limit exceeded (limit: {max_memory} bytes)"))?;
 
         if let Some(memory) = instance.get_memory(&mut store, "memory") {
             let memory_size = memory.data_size(&store);
@@ -193,7 +196,7 @@ impl Sandbox {
     ///
     /// Returns an error if the function is not found or execution fails
     pub async fn execute(&mut self, function: &str, _args: &[u8]) -> Result<ExecutionResult> {
-        debug!("Executing function '{}' in sandbox {}", function, self.id);
+        debug!("Executing function '{}' in sandbox {:?}", function, self.id);
 
         let mut store_guard = self.store.write().await;
         let store = store_guard
@@ -210,7 +213,7 @@ impl Sandbox {
             state.limits()
         );
 
-        let timeout = self.resource_limits.max_execution_time;
+        let timeout: Duration = self.resource_limits.max_execution_time.into();
 
         // Get the function and execute it
         let execution_future = async {
@@ -273,7 +276,10 @@ impl Sandbox {
 
     /// Gets the list of exposed host functions
     pub fn get_exposed_functions(&self) -> Vec<String> {
-        self.exposed_functions.clone()
+        self.exposed_functions
+            .iter()
+            .map(|name| name.clone().into_inner())
+            .collect()
     }
 
     /// Shuts down the sandbox and cleans up resources
@@ -282,7 +288,7 @@ impl Sandbox {
     ///
     /// Returns an error if shutdown fails
     pub async fn shutdown(&mut self) -> Result<()> {
-        debug!("Shutting down sandbox {}", self.id);
+        debug!("Shutting down sandbox {:?}", self.id);
         *self.store.write().await = None;
         Ok(())
     }
@@ -291,6 +297,7 @@ impl Sandbox {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain_types::AgentId;
     use std::time::Duration;
     use wasmtime::Config;
 
@@ -300,7 +307,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(Uuid::new_v4(), limits, engine);
+        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine);
         assert!(sandbox.is_ok());
     }
 
@@ -310,7 +317,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(Uuid::new_v4(), limits, engine).unwrap();
+        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
         assert_eq!(sandbox.get_memory_usage(), 0);
     }
 
@@ -320,7 +327,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(Uuid::new_v4(), limits, engine).unwrap();
+        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
         let functions = sandbox.get_exposed_functions();
         assert!(functions.contains(&"log".to_string()));
         assert!(functions.contains(&"get_time".to_string()));
@@ -345,7 +352,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let mut sandbox = Sandbox::new(Uuid::new_v4(), limits, engine).unwrap();
+        let mut sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
         let result = sandbox.shutdown().await;
         assert!(result.is_ok());
     }

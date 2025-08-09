@@ -21,7 +21,8 @@ async fn main() -> Result<()> {
     let config = WasmRuntimeConfig::default();
     info!(
         "Configuration loaded: max_agents={}, debug={}",
-        config.max_agents, config.enable_debug
+        config.max_agents.into_inner(),
+        config.enable_debug
     );
 
     // Initialize the runtime
