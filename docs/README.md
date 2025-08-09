@@ -15,22 +15,28 @@ Welcome to the Caxton documentation! Caxton is a production-ready server that or
 - [Dashboard Guide](user-guide/dashboard.md) - Web dashboard overview
 - [Deployment Guide](user-guide/deployment.md) - Deploy agents and manage versions
 - [Monitoring Guide](user-guide/monitoring.md) - Monitor agents and system health
+- [Clustering Guide](user-guide/clustering.md) - Multi-node cluster configuration
 
 ### 🛠️ Developer Guide
 - [API Reference](developer-guide/api-reference.md) - Complete API documentation
 - [Building Agents](developer-guide/building-agents.md) - Agent development in depth
 - [Message Protocols](developer-guide/message-protocols.md) - FIPA protocol implementation
 - [WebAssembly Integration](developer-guide/wasm-integration.md) - WASM module details
+- [Security Guide](developer-guide/security-guide.md) - Security features and best practices
 - [Testing Guide](developer-guide/testing.md) - Testing agents and integrations
+- [Testing Strategy](development/testing-strategy.md) - Comprehensive testing approach
 
 ### 🚀 Operations
 - [Production Deployment](operations/production-deployment.md) - Deploy Caxton to production
 - [DevOps & Security Guide](operations/devops-security-guide.md) - Security best practices
+- [Operational Runbook](operations/operational-runbook.md) - Step-by-step operational procedures
+- [Performance Tuning](operations/performance-tuning.md) - Optimize Caxton performance
 - [Kubernetes Guide](operations/kubernetes.md) - Run Caxton on Kubernetes
 - [Docker Guide](operations/docker.md) - Container deployment
 - [Troubleshooting](operations/troubleshooting.md) - Common issues and solutions
 
 ### 🏗️ Architecture
+- [Coordination-First Overview](architecture/coordination-first-overview.md) - Complete architecture guide
 - [Architecture Decision Records](adr/) - Key architectural decisions
   - [ADR-0001: Observability First](adr/0001-observability-first-architecture.md)
   - [ADR-0002: WebAssembly Isolation](adr/0002-webassembly-for-agent-isolation.md)
@@ -42,6 +48,14 @@ Welcome to the Caxton documentation! Caxton is a production-ready server that or
   - [ADR-0008: Agent Deployment](adr/0008-agent-deployment-model.md)
   - [ADR-0009: CLI Design](adr/0009-cli-tool-design.md)
   - [ADR-0010: External Routing](adr/0010-external-agent-routing-api.md)
+  - [ADR-0011: Capability Registration](adr/0011-capability-registration-in-code.md)
+  - [ADR-0012: Pragmatic FIPA Subset](adr/0012-pragmatic-fipa-subset.md)
+  - [ADR-0013: State Management](adr/0013-state-management-architecture.md) *(Superseded)*
+  - [ADR-0014: Coordination-First Architecture](adr/0014-coordination-first-architecture.md)
+  - [ADR-0015: Distributed Protocol Architecture](adr/0015-distributed-protocol-architecture.md)
+  - [ADR-0016: Security Architecture](adr/0016-security-architecture.md)
+  - [ADR-0017: Performance Requirements](adr/0017-performance-requirements.md)
+  - [ADR-0018: Operational Procedures](adr/0018-operational-procedures.md)
 
 ### 🔧 Development
 - [CLAUDE.md](development/CLAUDE.md) - Claude Code integration

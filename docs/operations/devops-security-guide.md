@@ -6,6 +6,8 @@ This guide outlines the comprehensive security and DevOps practices implemented 
 
 ## Security Architecture Review
 
+> **Note**: This guide complements the comprehensive security architecture defined in [ADR-0016: Security Architecture](../adr/0016-security-architecture.md). Refer to the ADR for detailed architectural decisions and rationale.
+
 ### WebAssembly Isolation Security
 
 **✅ Implementation Status: SECURE**
