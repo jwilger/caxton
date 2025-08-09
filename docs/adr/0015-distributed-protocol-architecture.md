@@ -362,9 +362,275 @@ impl MessageDelivery {
 3. **Phase 3**: Partition detection and handling
 4. **Phase 4**: Advanced features (consensus, exactly-once delivery)
 
+## Implementation Details
+
+### Technology Selection
+
+#### SWIM Implementation
+```toml
+[dependencies]
+# Primary choice: memberlist-rs (Rust port of HashiCorp's memberlist)
+memberlist = { git = "https://github.com/vectordotdev/memberlist-rs" }
+
+# Alternative: Build on swimmer (pure Rust SWIM)
+# swimmer = "0.1"
+
+# Network transport
+quinn = "0.10"  # QUIC for better performance
+tokio = { version = "1.0", features = ["full"] }
+```
+
+#### Message Serialization
+```toml
+# MessagePack for efficiency and schema evolution
+rmp-serde = "1.1"  # MessagePack serialization
+serde = { version = "1.0", features = ["derive"] }
+
+# Alternative: Protocol Buffers for stricter schemas
+# prost = "0.12"
+# prost-build = "0.12"
+```
+
+#### Network Transport
+```rust
+pub enum TransportLayer {
+    // TCP for reliability (default)
+    Tcp(TcpConfig),
+
+    // QUIC for performance (recommended)
+    Quic(QuicConfig),
+
+    // Unix sockets for local testing
+    Unix(UnixConfig),
+}
+
+pub struct TransportConfig {
+    // TCP Configuration
+    tcp: TcpConfig {
+        nodelay: true,        // Disable Nagle's algorithm
+        keepalive: Some(30s), // TCP keepalive
+        buffer_size: 64KB,    // Socket buffer size
+    },
+
+    // QUIC Configuration (recommended for production)
+    quic: QuicConfig {
+        max_streams: 100,
+        idle_timeout: 30s,
+        congestion_control: CongestionControl::Bbr,
+    },
+}
+```
+
+### SWIM Library Integration
+
+```rust
+use memberlist::{Memberlist, Config, Node, NodeState};
+
+pub struct SwimCluster {
+    memberlist: Arc<Memberlist>,
+    delegate: Arc<CaxtonDelegate>,
+}
+
+impl SwimCluster {
+    pub async fn new(config: ClusterConfig) -> Result<Self> {
+        let mut ml_config = Config::default();
+
+        // Configure SWIM parameters
+        ml_config.gossip_interval = config.gossip_interval;
+        ml_config.gossip_nodes = config.gossip_fanout;
+        ml_config.probe_interval = config.probe_interval;
+        ml_config.probe_timeout = config.probe_timeout;
+
+        // Set up delegates for custom behavior
+        let delegate = Arc::new(CaxtonDelegate::new());
+        ml_config.delegate = Some(delegate.clone());
+
+        // Initialize memberlist
+        let memberlist = Memberlist::create(ml_config).await?;
+
+        Ok(Self {
+            memberlist: Arc::new(memberlist),
+            delegate,
+        })
+    }
+
+    pub async fn join(&self, seeds: Vec<String>) -> Result<()> {
+        self.memberlist.join(seeds).await?;
+        Ok(())
+    }
+}
+
+// Custom delegate for Caxton-specific behavior
+struct CaxtonDelegate {
+    agent_registry: Arc<RwLock<AgentRegistry>>,
+    event_handler: Arc<EventHandler>,
+}
+
+impl memberlist::Delegate for CaxtonDelegate {
+    fn node_meta(&self, limit: usize) -> Vec<u8> {
+        // Include agent count and capabilities in metadata
+        let meta = NodeMetadata {
+            agent_count: self.agent_registry.read().len(),
+            capabilities: self.capabilities(),
+            version: env!("CARGO_PKG_VERSION"),
+        };
+        rmp_serde::to_vec(&meta).unwrap()
+    }
+
+    fn notify_msg(&self, msg: &[u8]) {
+        // Handle custom messages (agent updates, routing info)
+        if let Ok(update) = rmp_serde::from_slice::<AgentUpdate>(msg) {
+            self.handle_agent_update(update);
+        }
+    }
+
+    fn get_broadcast(&self, overhead: usize, limit: usize) -> Option<Vec<u8>> {
+        // Broadcast agent registry changes
+        self.agent_registry.read().get_pending_broadcasts(limit)
+    }
+}
+```
+
+### Message Serialization Format
+
+```rust
+use serde::{Serialize, Deserialize};
+use rmp_serde;
+
+// MessagePack serialization for FIPA messages
+#[derive(Serialize, Deserialize)]
+pub struct WireFipaMessage {
+    // Header fields (compact representation)
+    #[serde(rename = "p")]
+    performative: u8,  // Enum as u8 for compactness
+
+    #[serde(rename = "s")]
+    sender: CompactAgentId,
+
+    #[serde(rename = "r")]
+    receiver: CompactAgentId,
+
+    #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
+    conversation_id: Option<Uuid>,
+
+    // Payload
+    #[serde(rename = "b")]
+    body: Vec<u8>,  // Pre-serialized content
+}
+
+// Compact agent ID representation
+#[derive(Serialize, Deserialize)]
+pub struct CompactAgentId {
+    #[serde(rename = "n")]
+    node: u32,  // Node index in cluster
+
+    #[serde(rename = "a")]
+    agent: u32, // Agent index on node
+}
+
+impl WireFipaMessage {
+    pub fn serialize(&self) -> Result<Vec<u8>> {
+        rmp_serde::to_vec_named(self)
+            .map_err(|e| Error::Serialization(e))
+    }
+
+    pub fn deserialize(data: &[u8]) -> Result<Self> {
+        rmp_serde::from_slice(data)
+            .map_err(|e| Error::Deserialization(e))
+    }
+}
+```
+
+### Network Transport Details
+
+```rust
+// QUIC transport for better performance
+pub struct QuicTransport {
+    endpoint: quinn::Endpoint,
+    connections: Arc<RwLock<HashMap<NodeId, quinn::Connection>>>,
+}
+
+impl QuicTransport {
+    pub async fn new(config: QuicConfig) -> Result<Self> {
+        let mut endpoint_config = quinn::ServerConfig::with_crypto(
+            Arc::new(rustls::ServerConfig::builder()
+                .with_safe_defaults()
+                .with_no_client_auth()
+                .with_single_cert(cert_chain, key)?)
+        );
+
+        // Configure transport parameters
+        let mut transport_config = quinn::TransportConfig::default();
+        transport_config.max_concurrent_uni_streams(0_u8.into());
+        transport_config.max_concurrent_bidi_streams(100_u8.into());
+        transport_config.max_idle_timeout(Some(Duration::from_secs(30).try_into()?));
+
+        endpoint_config.transport = Arc::new(transport_config);
+
+        let endpoint = quinn::Endpoint::server(endpoint_config, addr)?;
+
+        Ok(Self {
+            endpoint,
+            connections: Arc::new(RwLock::new(HashMap::new())),
+        })
+    }
+
+    pub async fn send(&self, node: &NodeId, data: Vec<u8>) -> Result<()> {
+        let conn = self.get_or_create_connection(node).await?;
+        let mut stream = conn.open_uni().await?;
+        stream.write_all(&data).await?;
+        stream.finish().await?;
+        Ok(())
+    }
+}
+```
+
+### Bootstrap Configuration
+
+```yaml
+# Cluster bootstrap configuration
+coordination:
+  cluster:
+    # SWIM protocol settings
+    swim:
+      # Use memberlist-rs library
+      implementation: memberlist-rs
+
+      # Gossip parameters
+      gossip_interval: 200ms
+      gossip_fanout: 3
+      gossip_to_dead: 3
+
+      # Failure detection
+      probe_interval: 1s
+      probe_timeout: 500ms
+      suspicion_multiplier: 4
+
+    # Network transport
+    transport:
+      type: quic  # tcp | quic | unix
+      bind_addr: 0.0.0.0:7946
+      advertise_addr: auto  # auto-detect or specify
+
+    # Message serialization
+    serialization:
+      format: messagepack  # messagepack | protobuf
+      compression: lz4     # none | lz4 | zstd
+
+    # Security
+    security:
+      encryption: true
+      auth_key: ${CLUSTER_AUTH_KEY}
+```
+
 ## References
 - [SWIM Protocol Paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
 - [FIPA Agent Communication Language](http://www.fipa.org/specs/fipa00061/SC00061G.html)
 - [Distributed Systems: Principles and Paradigms](https://www.distributed-systems.net/index.php/books/ds3/)
+- [memberlist-rs](https://github.com/vectordotdev/memberlist-rs)
+- [MessagePack Specification](https://msgpack.org/)
+- [QUIC RFC 9000](https://datatracker.ietf.org/doc/html/rfc9000)
 - [ADR-0014: Coordination-First Architecture](0014-coordination-first-architecture.md)
 - [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md)
+- [ADR-0016: Security Architecture](0016-security-architecture.md)
+- [ADR-0017: Performance Requirements](0017-performance-requirements.md)

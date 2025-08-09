@@ -10,8 +10,11 @@ Get a multi-agent system running in under 3 minutes.
 ## 1. Start the Caxton Server
 
 ```bash
-# Start the server
+# Start the server (single instance mode)
 caxton server start
+
+# Or start with cluster coordination enabled
+caxton server start --cluster --seeds node1:7946,node2:7946
 
 # Verify it's running
 caxton server status
@@ -22,7 +25,10 @@ You should see:
 ✓ Server running at http://localhost:8080
 ✓ Dashboard available at http://localhost:8080/dashboard
 ✓ Metrics available at http://localhost:9090/metrics
+✓ Cluster coordination: enabled (3 nodes)
 ```
+
+> **Note**: Caxton uses a coordination-first architecture with no external dependencies. Each instance maintains its own local state while coordinating with other instances via the SWIM protocol. See [ADR-0014](../adr/0014-coordination-first-architecture.md) for details.
 
 ## 2. Deploy Example Agents
 
@@ -91,13 +97,13 @@ Create `hello.js`:
 // Simple JavaScript agent
 export function handle_message(message) {
     console.log(`Received: ${JSON.stringify(message)}`);
-    
+
     // Reply to the sender
     return {
         performative: 'inform',
         receiver: message.sender,
-        content: { 
-            text: `Hello! You said: ${message.content.text}` 
+        content: {
+            text: `Hello! You said: ${message.content.text}`
         }
     };
 }
@@ -124,7 +130,7 @@ def handle_message(message_json):
     """Handle incoming FIPA messages"""
     message = json.loads(message_json)
     print(f"Received: {message}")
-    
+
     # Create reply
     reply = {
         "performative": "inform",
@@ -133,7 +139,7 @@ def handle_message(message_json):
             "text": f"Hello! You said: {message['content']['text']}"
         }
     }
-    
+
     return json.dumps(reply)
 ```
 
