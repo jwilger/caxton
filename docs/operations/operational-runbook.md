@@ -1,6 +1,6 @@
 # Operational Runbook
 
-This runbook provides step-by-step procedures for operating Caxton in production. For architectural decisions behind these procedures, see [ADR-0018: Operational Procedures](../adr/0018-operational-procedures.md).
+This runbook provides step-by-step procedures for operating Caxton in production.
 
 ## Quick Reference
 
@@ -410,7 +410,7 @@ caxton config diff --baseline /etc/caxton/config.yaml
 
 ## References
 
-- [ADR-0018: Operational Procedures](../adr/0018-operational-procedures.md)
 - [Clustering Guide](../user-guide/clustering.md)
 - [Performance Requirements](../adr/0017-performance-requirements.md)
 - [Security Architecture](../adr/0016-security-architecture.md)
+- [Coordination-First Architecture](../adr/0014-coordination-first-architecture.md)
