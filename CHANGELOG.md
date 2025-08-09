@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/jwilger/caxton/compare/v0.1.3...v0.1.4) - 2025-08-09
+
+### Bug Fixes
+
+- remove claude-flow metrics from git and add to .gitignore
+- update Jekyll workflow to include all documentation
+- remove distracting animations from hero section
+- make debugging tools tags consistent with other feature cards
+- increase spacing between section titles and subtitles
+- improve Getting Started section layout for better readability
+- make Getting Started and Example sections visually consistent
+- improve ADR and documentation pages with proper sidebars
+- move release YAML generation to separate script
+- simplify release YAML generation in workflow
+- use line-by-line approach for YAML generation
+- improve release notes handling and update license info
+- remove theme toggle button and fix UI issues
+- unify step number styling across all examples
+- show foundation phase description instead of release notes
+- make Multi-Agent Example section identical to Getting Started
+- enhance documentation page styling and visual appeal
+- load documentation CSS for documentation pages
+- remove sidebar scrolling and apply documentation layout to all docs
+- make ADR sidebars flexible to fit content
+- remove sticky positioning from all sidebars
+- constrain sidebar widths to reasonable limits
+- align ADR card header elements horizontally
+- properly layout ADR card header with all elements inline
+- align ADR header elements vertically
+- fine-tune ADR header element alignment
+- align ADR header elements using baseline alignment
+- correct ADR dates from January to July/August
+- apply comprehensive styling to documentation pages
+- use documentation layout for all docs pages in Jekyll workflow
+- resolve code block formatting and add comprehensive UI enhancements
+- prevent duplicate Table of Contents on documentation pages
+- eliminate all dead links and add comprehensive documentation
+- correct ADR-0012 links to GitHub repository
+- correct Jekyll workflow to properly publish ADRs
+- add Jekyll front matter to ADRs for proper site publication
+- rename _adr to _adrs to match Jekyll collection config
+- add Jekyll front matter to SOURCE ADRs in docs/adr/
+- use consistent ADR title format in front matter
+- add logo to documentation pages and fix README logo path
+- replace README logo path with Jekyll relative URL during build
+- resolve Security Monitoring workflow failures
+- add security-events write permission for CodeQL
+- simplify CodeQL configuration for Rust
+- add missing CSS styling for distributed feature card tags
+- improve code block rendering in ADRs
+
+### Documentation
+
+- properly structure dual licensing files
+- reorganize documentation structure for clarity and cohesion
+- clarify capability registration pattern - single source of truth
+- simplify agent manifest to essential deployment config only
+- replace negative documentation with positive JSON Schema
+- move architectural rationale to ADR, focus docs on how-to
+- add ADR-0012 explaining pragmatic FIPA subset
+- make documentation pragmatic and accessible
+- remove work-in-progress disclaimers from README
+- address architecture review recommendations
+- implement coordination-first distributed architecture
+- complete architecture documentation with ADRs 16-18 and comprehensive guides
+- clean up ADRs and move procedures to operational runbook
+
+### Features
+
+- complete website redesign with enhanced UX and accessibility
+- dynamically fetch and display GitHub release information
+- add comprehensive development planning with 50 user stories
+- implement Story 001 - WebAssembly runtime with sandboxing ([#001](https://github.com/jwilger/caxton/pull/001))
+
+### Miscellaneous Tasks
+
+- remove ADR-0017 performance requirements
+
+### Refactoring
+
+- eliminate primitive obsession using nutype domain types
+- leverage Rust type system to eliminate test failures
+
 ## [0.1.3](https://github.com/jwilger/caxton/compare/v0.1.2...v0.1.3) - 2025-08-06
 
 ### Miscellaneous Tasks
