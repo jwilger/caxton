@@ -21,6 +21,22 @@ highlighter: rouge
 permalink: pretty
 timezone: UTC
 
+# Kramdown and Rouge configuration
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+    span:
+      line_numbers: false
+    block:
+      line_numbers: false
+      start_line: 1
+
+# Rouge configuration
+rouge:
+  css_class: 'highlight'
+
 # Jekyll plugins for GitHub Pages compatibility
 plugins:
   - jekyll-feed

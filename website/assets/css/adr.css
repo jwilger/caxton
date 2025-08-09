@@ -754,6 +754,9 @@
   margin: var(--space-8) 0;
   overflow-x: auto;
   position: relative;
+  white-space: pre;
+  word-wrap: normal;
+  word-break: normal;
 }
 
 .adr-content pre::before {
@@ -770,6 +773,7 @@
   text-transform: uppercase;
 }
 
+/* Inline code */
 .adr-content code {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
@@ -779,10 +783,47 @@
   border-radius: var(--radius-sm);
 }
 
+/* Code inside pre blocks */
 .adr-content pre code {
   background: transparent;
   padding: 0;
   color: var(--text-primary);
+  display: block;
+  white-space: pre;
+  word-wrap: normal;
+  word-break: normal;
+  overflow-x: auto;
+}
+
+/* Rouge highlight container in ADRs */
+.adr-content .highlight {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--color-surface1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin: var(--space-8) 0;
+  overflow-x: auto;
+}
+
+.adr-content .highlight pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  white-space: pre;
+  word-wrap: normal;
+  word-break: normal;
+}
+
+.adr-content .highlight code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  background: transparent;
+  padding: 0;
+  color: var(--text-primary);
+  white-space: pre;
+  display: block;
 }
 
 /* Decision Matrix Table */
