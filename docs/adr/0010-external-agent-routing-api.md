@@ -10,7 +10,7 @@ deciders: [Platform Systems Architect, UX Research Expert, Async Rust Expert, Ob
 # 0010. External Agent Routing API
 
 Date: 2025-01-03
-Status: Proposed
+Status: Accepted
 Deciders: Platform Systems Architect, UX Research Expert, Async Rust Expert, Observability Expert
 
 ## Context and Problem Statement
