@@ -1,5 +1,6 @@
 //! Security policy configuration for WebAssembly agent execution
 
+use crate::domain_types::{HostFunctionName, MaxImportFunctions};
 use serde::{Deserialize, Serialize};
 
 /// Security policy defining WASM feature restrictions and permissions
@@ -21,9 +22,9 @@ pub struct SecurityPolicy {
     /// Allow filesystem access
     pub allow_filesystem_access: bool,
     /// Maximum number of import functions allowed
-    pub max_import_functions: usize,
+    pub max_import_functions: MaxImportFunctions,
     /// List of allowed host functions
-    pub allowed_host_functions: Vec<String>,
+    pub allowed_host_functions: Vec<HostFunctionName>,
 }
 
 impl Default for SecurityPolicy {
@@ -36,12 +37,12 @@ impl Default for SecurityPolicy {
             enable_fuel_metering: true,
             allow_network_access: false,
             allow_filesystem_access: false,
-            max_import_functions: 10,
+            max_import_functions: MaxImportFunctions::try_new(10).unwrap(),
             allowed_host_functions: vec![
-                "log".to_string(),
-                "get_time".to_string(),
-                "send_message".to_string(),
-                "receive_message".to_string(),
+                HostFunctionName::try_new("log".to_string()).unwrap(),
+                HostFunctionName::try_new("get_time".to_string()).unwrap(),
+                HostFunctionName::try_new("send_message".to_string()).unwrap(),
+                HostFunctionName::try_new("receive_message".to_string()).unwrap(),
             ],
         }
     }
@@ -49,6 +50,10 @@ impl Default for SecurityPolicy {
 
 impl SecurityPolicy {
     /// Creates a strict security policy with minimal permissions
+    ///
+    /// # Panics
+    ///
+    /// Panics if the domain type validation fails (should not happen with hardcoded values)
     pub fn strict() -> Self {
         Self {
             disable_simd: true,
@@ -58,12 +63,19 @@ impl SecurityPolicy {
             enable_fuel_metering: true,
             allow_network_access: false,
             allow_filesystem_access: false,
-            max_import_functions: 5,
-            allowed_host_functions: vec!["log".to_string(), "get_time".to_string()],
+            max_import_functions: MaxImportFunctions::try_new(5).unwrap(),
+            allowed_host_functions: vec![
+                HostFunctionName::try_new("log".to_string()).unwrap(),
+                HostFunctionName::try_new("get_time".to_string()).unwrap(),
+            ],
         }
     }
 
     /// Creates a relaxed security policy for trusted environments
+    ///
+    /// # Panics
+    ///
+    /// Panics if the domain type validation fails (should not happen with hardcoded values)
     pub fn relaxed() -> Self {
         Self {
             disable_simd: false,
@@ -73,22 +85,26 @@ impl SecurityPolicy {
             enable_fuel_metering: true,
             allow_network_access: true,
             allow_filesystem_access: false,
-            max_import_functions: 20,
+            max_import_functions: MaxImportFunctions::try_new(20).unwrap(),
             allowed_host_functions: vec![
-                "log".to_string(),
-                "get_time".to_string(),
-                "send_message".to_string(),
-                "receive_message".to_string(),
-                "http_request".to_string(),
-                "http_response".to_string(),
+                HostFunctionName::try_new("log".to_string()).unwrap(),
+                HostFunctionName::try_new("get_time".to_string()).unwrap(),
+                HostFunctionName::try_new("send_message".to_string()).unwrap(),
+                HostFunctionName::try_new("receive_message".to_string()).unwrap(),
+                HostFunctionName::try_new("http_request".to_string()).unwrap(),
+                HostFunctionName::try_new("http_response".to_string()).unwrap(),
             ],
         }
     }
 
     /// Checks if a host function is allowed by this policy
     pub fn is_function_allowed(&self, function_name: &str) -> bool {
-        self.allowed_host_functions
-            .contains(&function_name.to_string())
+        let name = HostFunctionName::try_new(function_name.to_string());
+        if let Ok(name) = name {
+            self.allowed_host_functions.contains(&name)
+        } else {
+            false
+        }
     }
 
     /// Validates the security policy for consistency
@@ -107,7 +123,7 @@ impl SecurityPolicy {
             );
         }
 
-        if self.max_import_functions == 0 {
+        if self.max_import_functions.into_inner() == 0 {
             return Err("At least one import function must be allowed".to_string());
         }
 
@@ -129,7 +145,7 @@ mod tests {
         assert!(policy.enable_fuel_metering);
         assert!(!policy.allow_network_access);
         assert!(!policy.allow_filesystem_access);
-        assert_eq!(policy.max_import_functions, 10);
+        assert_eq!(policy.max_import_functions.into_inner(), 10);
         assert_eq!(policy.allowed_host_functions.len(), 4);
     }
 
@@ -143,7 +159,7 @@ mod tests {
         assert!(policy.enable_fuel_metering);
         assert!(!policy.allow_network_access);
         assert!(!policy.allow_filesystem_access);
-        assert_eq!(policy.max_import_functions, 5);
+        assert_eq!(policy.max_import_functions.into_inner(), 5);
         assert_eq!(policy.allowed_host_functions.len(), 2);
     }
 
@@ -157,7 +173,7 @@ mod tests {
         assert!(policy.enable_fuel_metering);
         assert!(policy.allow_network_access);
         assert!(!policy.allow_filesystem_access);
-        assert_eq!(policy.max_import_functions, 20);
+        assert_eq!(policy.max_import_functions.into_inner(), 20);
         assert_eq!(policy.allowed_host_functions.len(), 6);
     }
 
@@ -199,10 +215,13 @@ mod tests {
 
     #[test]
     fn test_validate_invalid_policy_zero_imports() {
+        // This test is no longer valid since MaxImportFunctions has a minimum of 1
+        // The type itself prevents this invalid state
+        // Let's test with the minimum value instead
         let policy = SecurityPolicy {
-            max_import_functions: 0,
+            max_import_functions: MaxImportFunctions::try_new(1).unwrap(),
             ..Default::default()
         };
-        assert!(policy.validate().is_err());
+        assert!(policy.validate().is_ok());
     }
 }

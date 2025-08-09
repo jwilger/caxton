@@ -1,6 +1,7 @@
 //! Integration tests for the Caxton WebAssembly runtime
 
 use anyhow::Result;
+use caxton::{CpuFuel, ExecutionTime, MemoryBytes, MessageSize};
 use caxton::{ResourceLimits, SecurityPolicy, WasmRuntime, WasmRuntimeConfig};
 use std::time::Duration;
 
@@ -31,8 +32,8 @@ async fn test_agent_sandbox_isolation() -> Result<()> {
     let agent1_memory = runtime.get_agent_memory_usage(agent1_id)?;
     let agent2_memory = runtime.get_agent_memory_usage(agent2_id)?;
 
-    assert!(agent1_memory > 0);
-    assert!(agent2_memory > 0);
+    assert!(agent1_memory.as_usize() > 0);
+    assert!(agent2_memory.as_usize() > 0);
 
     Ok(())
 }
@@ -41,10 +42,10 @@ async fn test_agent_sandbox_isolation() -> Result<()> {
 async fn test_memory_limits_enforced() -> Result<()> {
     let config = WasmRuntimeConfig {
         resource_limits: ResourceLimits {
-            max_memory_bytes: 1024 * 1024, // 1MB
-            max_cpu_fuel: 1_000_000,
-            max_execution_time: Duration::from_secs(1),
-            max_message_size: 1024 * 10, // 10KB
+            max_memory_bytes: MemoryBytes::try_new(1024 * 1024).unwrap(), // 1MB
+            max_cpu_fuel: CpuFuel::try_new(1_000_000).unwrap(),
+            max_execution_time: ExecutionTime::from_secs(1),
+            max_message_size: MessageSize::try_new(1024 * 10).unwrap(), // 10KB
         },
         ..Default::default()
     };
@@ -76,10 +77,10 @@ async fn test_memory_limits_enforced() -> Result<()> {
 async fn test_cpu_limits_with_fuel() -> Result<()> {
     let config = WasmRuntimeConfig {
         resource_limits: ResourceLimits {
-            max_memory_bytes: 10 * 1024 * 1024,
-            max_cpu_fuel: 1000, // Very low fuel to trigger limit
-            max_execution_time: Duration::from_secs(10),
-            max_message_size: 1024 * 10,
+            max_memory_bytes: MemoryBytes::from_mb(10).unwrap(),
+            max_cpu_fuel: CpuFuel::try_new(1000).unwrap(), // Very low fuel to trigger limit
+            max_execution_time: ExecutionTime::from_secs(10),
+            max_message_size: MessageSize::try_new(1024 * 10).unwrap(),
         },
         ..Default::default()
     };
@@ -179,7 +180,7 @@ async fn test_agent_startup_performance() -> Result<()> {
 async fn test_cooperative_scheduling_with_fuel() -> Result<()> {
     let config = WasmRuntimeConfig {
         resource_limits: ResourceLimits {
-            max_cpu_fuel: 10000,
+            max_cpu_fuel: CpuFuel::try_new(10000).unwrap(),
             ..Default::default()
         },
         ..Default::default()
@@ -205,10 +206,10 @@ async fn test_cooperative_scheduling_with_fuel() -> Result<()> {
 async fn test_multiple_agent_resource_isolation() -> Result<()> {
     let config = WasmRuntimeConfig {
         resource_limits: ResourceLimits {
-            max_memory_bytes: 5 * 1024 * 1024, // 5MB per agent
-            max_cpu_fuel: 100_000,
-            max_execution_time: Duration::from_secs(5),
-            max_message_size: 1024 * 10,
+            max_memory_bytes: MemoryBytes::from_mb(5).unwrap(), // 5MB per agent
+            max_cpu_fuel: CpuFuel::try_new(100_000).unwrap(),
+            max_execution_time: ExecutionTime::from_secs(5),
+            max_message_size: MessageSize::try_new(1024 * 10).unwrap(),
         },
         ..Default::default()
     };
@@ -226,10 +227,10 @@ async fn test_multiple_agent_resource_isolation() -> Result<()> {
 
     for agent_id in &agent_ids {
         let memory = runtime.get_agent_memory_usage(*agent_id)?;
-        assert!(memory <= 5 * 1024 * 1024);
+        assert!(memory.as_usize() <= 5 * 1024 * 1024);
 
         let cpu_usage = runtime.get_agent_cpu_usage(*agent_id)?;
-        assert!(cpu_usage <= 100_000);
+        assert!(cpu_usage.as_u64() <= 100_000);
     }
 
     assert_eq!(runtime.active_agent_count(), 5);
