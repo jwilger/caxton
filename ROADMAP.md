@@ -1,6 +1,6 @@
 # Caxton Roadmap
 
-This document outlines the development phases for Caxton, with concrete milestones and explicit non-goals.
+This document outlines the development phases for Caxton, with concrete milestones and explicit non-goals. It is aligned with the comprehensive user story backlog in [PLANNING.md](PLANNING.md).
 
 ## Vision
 
@@ -12,17 +12,20 @@ Build the simplest possible server for multi-agent systems, then let the communi
 
 **Goal**: Ship a production-ready orchestration server with baseline performance.
 
+**User Stories**: P0 (Stories 001-004) + P1 (Stories 005-010)
+- Critical foundation components
+- Essential features for MVP
+
 **Deliverables**:
-- [ ] WASM agent runtime with isolation guarantees
-- [ ] Async message router with FIPA ACL support
-- [ ] FIPA Contract Net Protocol (CNP) implementation for task delegation
-- [ ] External agent routing API (gRPC + REST gateway)
-- [ ] Management API for server operations
-- [ ] CLI tool for agent deployment and management
-- [ ] OpenTelemetry integration (traces, metrics, logs)
-- [ ] Structured logging with correlation IDs
-- [ ] Basic MCP tool integration
-- [ ] Health checks and readiness probes
+- [ ] WASM agent runtime with isolation guarantees (Story 001)
+- [ ] Async message router with FIPA ACL support (Stories 002, 005)
+- [ ] Agent lifecycle management (Story 003)
+- [ ] Local SQLite state storage (Story 004)
+- [ ] External agent routing API (gRPC + REST gateway) (Stories 006, 007)
+- [ ] CLI tool for agent deployment and management (Story 008)
+- [ ] OpenTelemetry integration (traces, metrics, logs) (Story 009)
+- [ ] Basic MCP tool integration (Story 010)
+- [ ] Health checks and readiness probes (Story 017)
 
 **Success Metrics**:
 - Time to first agent: < 10 minutes
@@ -43,30 +46,30 @@ Build the simplest possible server for multi-agent systems, then let the communi
 
 **Goal**: Double performance and provide pattern libraries (not in core).
 
+**User Stories**: P2 (Stories 011-017) + Selected P3 (Stories 018-025)
+- Standard production features
+- Enhanced security and operations
+
 **Deliverables**:
-- [ ] Advanced external API features:
-  - Streaming agent invocation patterns
-  - Batch job processing
-  - mTLS and RBAC authorization
-  - Advanced rate limiting and quotas
-- [ ] Example pattern library:
-  - Request-reply patterns
-  - Pub-sub patterns
-  - Basic workflow orchestration
-  - Circuit breakers
+- [ ] Contract Net Protocol implementation (Story 011)
+- [ ] Multi-stage deployment validation (Story 012)
+- [ ] Blue-green deployment strategy (Story 013)
+- [ ] External agent router enhancements (Story 014)
+- [ ] Capability-based discovery (Story 015)
+- [ ] Resource management and limits (Story 016)
+- [ ] SWIM cluster membership (Story 018)
+- [ ] Cross-instance message routing (Story 019)
+- [ ] Canary and shadow deployments (Stories 020, 021)
+- [ ] Security framework:
+  - mTLS inter-node security (Story 022)
+  - API authentication methods (Story 023)
+  - Role-based access control (Story 024)
+- [ ] Agent capability registration (Story 025)
 - [ ] Performance improvements:
-  - WASM instance pooling
-  - Zero-copy optimizations
-  - Message batching strategies
-  - Parallel message processing
-- [ ] Developer experience:
-  - Agent testing framework
-  - Local debugging tools
-  - Trace visualization
-- [ ] Language bindings for agents:
-  - JavaScript/TypeScript
-  - Python
-  - Go
+  - Message batching (Story 031)
+  - Agent instance pooling (Story 032)
+  - Circuit breakers (Story 029)
+  - Rate limiting (Story 030)
 
 **Success Metrics**:
 - 2x performance improvement (200K messages/sec)
@@ -75,6 +78,8 @@ Build the simplest possible server for multi-agent systems, then let the communi
 - Pattern library covers 80% of use cases
 - Agent development possible in 4+ languages
 - Production-ready security and auth integrations
+- < 30 second cluster convergence
+- Zero-downtime deployments
 
 **Still NOT in scope**:
 - Infrastructure-level consensus (Raft, Paxos, PBFT)
@@ -86,11 +91,23 @@ Build the simplest possible server for multi-agent systems, then let the communi
 
 **Goal**: Enable planet-scale agent systems through composability.
 
+**User Stories**: Remaining P3 + P4 (Stories 026-040)
+- Advanced scaling features
+- Enterprise capabilities
+- Ecosystem enablement
+
 **Deliverables**:
-- [ ] Clustering support (as optional module):
-  - Node discovery
-  - Message routing across nodes
-  - Cross-node messaging
+- [ ] Distributed agent registry (Story 026)
+- [ ] Performance monitoring dashboard (Story 027)
+- [ ] Automated backup and recovery (Story 028)
+- [ ] Cluster auto-scaling (Story 033)
+- [ ] Debug tracing interface (Story 034)
+- [ ] Chaos engineering support (Story 035)
+- [ ] Load testing framework (Story 036)
+- [ ] Compliance audit logging (Story 037)
+- [ ] Multi-tenancy support (Story 038)
+- [ ] Plugin architecture (Story 039)
+- [ ] GraphQL API layer (Story 040)
 - [ ] Advanced patterns:
   - Distributed workflows
   - State management patterns
@@ -109,6 +126,9 @@ Build the simplest possible server for multi-agent systems, then let the communi
 - 99.99% availability in production
 - 100+ community-contributed patterns
 - Major cloud providers offer Caxton
+- Complete multi-tenant isolation
+- Plugin ecosystem thriving
+- Enterprise compliance certified
 
 ## Permanent Non-Goals
 
@@ -165,6 +185,17 @@ We will **NEVER** add these to Caxton core:
 3. **Observability first** - If you can't debug it, it's broken
 4. **Composition over features** - Simple capabilities that combine well
 5. **Honest about tradeoffs** - No distributed systems magic
+
+## Implementation Planning
+
+For detailed implementation planning, see [PLANNING.md](PLANNING.md) which contains:
+- 40 comprehensive user stories with full acceptance criteria
+- Complete Definition of Done for each story
+- Priority-based backlog (P0-P4)
+- Coverage matrix mapping all ADRs to stories
+- Success metrics alignment
+
+Each story in PLANNING.md represents a complete vertical slice that can be independently developed, tested, and released.
 
 ## Questions?
 
