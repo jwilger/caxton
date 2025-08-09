@@ -20,6 +20,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   dependency-audit:
     name: Daily Dependency Audit
@@ -111,6 +116,10 @@ jobs:
     name: Code Security Scan
     runs-on: ubuntu-latest
     if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule'
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     env:
       CODEQL_ENABLE_EXPERIMENTAL_FEATURES: true
     steps:
