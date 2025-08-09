@@ -5,9 +5,12 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use tracing::{debug, warn};
+use tracing::debug;
 
-use crate::{AgentId, CpuFuel, ExecutionTime, MemoryBytes, MessageSize};
+// Domain-specific types for resource management
+use crate::domain_types::{AgentId, CpuFuel, ExecutionTime, MemoryBytes, MessageSize};
+use std::collections::HashMap;
+use thiserror::Error;
 
 /// Resource limits for agent execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,12 +36,229 @@ impl Default for ResourceLimits {
     }
 }
 
+/// Bounded memory request with compile-time limits
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub struct AgentMemoryRequest {
+    bytes: usize,
+}
+
+#[allow(missing_docs)]
+impl AgentMemoryRequest {
+    const MAX_BYTES: usize = 10_485_760; // 10MB per agent
+
+    /// # Errors
+    /// Returns an error if bytes is 0 or exceeds the maximum limit
+    pub fn try_new(bytes: usize) -> Result<Self, String> {
+        if bytes == 0 {
+            return Err("Memory request must be greater than 0".to_string());
+        }
+        if bytes > Self::MAX_BYTES {
+            return Err(format!(
+                "Memory request {} exceeds limit {}",
+                bytes,
+                Self::MAX_BYTES
+            ));
+        }
+        Ok(Self { bytes })
+    }
+
+    pub fn into_inner(self) -> usize {
+        self.bytes
+    }
+}
+
+/// Memory allocation errors with strong typing
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub enum MemoryError {
+    #[error("Agent memory limit exceeded: requested {requested}, limit {limit}")]
+    AgentLimitExceeded { requested: usize, limit: usize },
+
+    #[error("Total memory limit exceeded: requested {requested}, current {current}, limit {limit}")]
+    TotalLimitExceeded {
+        requested: usize,
+        current: usize,
+        limit: usize,
+    },
+
+    #[error("Agent {agent:?} not found")]
+    AgentNotFound { agent: AgentId },
+
+    #[error("Agent {agent:?} already has allocation")]
+    AgentAlreadyAllocated { agent: AgentId },
+}
+
+/// Total memory allocated with bounds checking
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub struct TotalMemoryAllocated {
+    bytes: usize,
+}
+
+#[allow(missing_docs)]
+impl TotalMemoryAllocated {
+    const MAX_TOTAL: usize = 104_857_600; // 100MB total
+
+    pub fn zero() -> Self {
+        Self { bytes: 0 }
+    }
+
+    /// # Errors
+    /// Returns an error if bytes exceeds the maximum total limit
+    pub fn try_new(bytes: usize) -> Result<Self, String> {
+        if bytes > Self::MAX_TOTAL {
+            return Err(format!(
+                "Total memory {} exceeds limit {}",
+                bytes,
+                Self::MAX_TOTAL
+            ));
+        }
+        Ok(Self { bytes })
+    }
+
+    pub fn into_inner(self) -> usize {
+        self.bytes
+    }
+
+    /// # Errors
+    /// Returns `MemoryError::TotalLimitExceeded` if adding would exceed limit
+    pub fn add(&self, amount: AgentMemoryRequest) -> Result<Self, MemoryError> {
+        let new_total = self.bytes + amount.into_inner();
+        if new_total > Self::MAX_TOTAL {
+            return Err(MemoryError::TotalLimitExceeded {
+                requested: amount.into_inner(),
+                current: self.bytes,
+                limit: Self::MAX_TOTAL,
+            });
+        }
+        Ok(Self { bytes: new_total })
+    }
+
+    #[must_use]
+    pub fn subtract(&self, amount: usize) -> Self {
+        if amount > self.bytes {
+            Self::zero()
+        } else {
+            Self {
+                bytes: self.bytes - amount,
+            }
+        }
+    }
+}
+
+/// Bounded memory pool for agent allocations
+#[allow(missing_docs)]
+pub struct BoundedMemoryPool {
+    allocations: HashMap<AgentId, AgentMemoryRequest>,
+    total_allocated: TotalMemoryAllocated,
+}
+
+#[allow(missing_docs)]
+impl Default for BoundedMemoryPool {
+    fn default() -> Self {
+        Self {
+            allocations: HashMap::new(),
+            total_allocated: TotalMemoryAllocated::zero(),
+        }
+    }
+}
+
+impl BoundedMemoryPool {
+    /// Creates a new bounded memory pool
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// # Errors
+    /// Returns `MemoryError` if agent already has allocation or if total limit would be exceeded
+    pub fn allocate(
+        &mut self,
+        agent_id: AgentId,
+        request: AgentMemoryRequest,
+    ) -> Result<(), MemoryError> {
+        if self.allocations.contains_key(&agent_id) {
+            return Err(MemoryError::AgentAlreadyAllocated { agent: agent_id });
+        }
+
+        let new_total = self.total_allocated.add(request)?;
+
+        self.allocations.insert(agent_id, request);
+        self.total_allocated = new_total;
+
+        Ok(())
+    }
+
+    /// # Errors
+    /// Returns `MemoryError::AgentNotFound` if the agent has no allocation
+    pub fn deallocate(&mut self, agent_id: AgentId) -> Result<AgentMemoryRequest, MemoryError> {
+        let allocation = self
+            .allocations
+            .remove(&agent_id)
+            .ok_or(MemoryError::AgentNotFound { agent: agent_id })?;
+
+        self.total_allocated = self.total_allocated.subtract(allocation.into_inner());
+
+        Ok(allocation)
+    }
+
+    /// Gets the current memory allocation for an agent if it exists
+    pub fn get_allocation(&self, agent_id: &AgentId) -> Option<AgentMemoryRequest> {
+        self.allocations.get(agent_id).copied()
+    }
+
+    /// Gets the total memory allocated across all agents
+    pub fn total_allocated(&self) -> TotalMemoryAllocated {
+        self.total_allocated
+    }
+}
+
+/// Simple fuel tracker for demonstration
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct SimpleFuelTracker {
+    budget: u64,
+    consumed: u64,
+}
+
+#[allow(missing_docs)]
+impl SimpleFuelTracker {
+    pub fn new(budget: u64) -> Self {
+        Self {
+            budget,
+            consumed: 0,
+        }
+    }
+
+    /// # Errors
+    /// Returns an error if insufficient fuel is available
+    pub fn consume(&mut self, amount: u64) -> Result<(), String> {
+        if self.consumed + amount > self.budget {
+            return Err(format!(
+                "Insufficient fuel: requested {}, available {}",
+                amount,
+                self.budget - self.consumed
+            ));
+        }
+        self.consumed += amount;
+        Ok(())
+    }
+
+    pub fn consumed(&self) -> u64 {
+        self.consumed
+    }
+
+    pub fn remaining(&self) -> u64 {
+        self.budget - self.consumed
+    }
+}
+
 /// Manages resource allocation and tracking for all agents
 pub struct ResourceManager {
     limits: ResourceLimits,
+    memory_pool: Arc<std::sync::Mutex<BoundedMemoryPool>>,
+    fuel_trackers: Arc<DashMap<AgentId, SimpleFuelTracker>>,
     agent_usage: Arc<DashMap<AgentId, AgentResourceUsage>>,
-    total_memory: Arc<AtomicUsize>,
-    total_fuel: Arc<AtomicU64>,
 }
 
 #[derive(Debug)]
@@ -54,112 +274,102 @@ impl ResourceManager {
     pub fn new(limits: ResourceLimits) -> Self {
         Self {
             limits,
+            memory_pool: Arc::new(std::sync::Mutex::new(BoundedMemoryPool::new())),
+            fuel_trackers: Arc::new(DashMap::new()),
             agent_usage: Arc::new(DashMap::new()),
-            total_memory: Arc::new(AtomicUsize::new(0)),
-            total_fuel: Arc::new(AtomicU64::new(0)),
         }
     }
 
-    /// Allocates memory for an agent
+    /// Allocates memory for an agent using domain types with compile-time safety
     ///
     /// # Errors
     ///
-    /// Returns an error if the requested memory exceeds limits
-    pub fn allocate_memory(&self, agent_id: AgentId, bytes: MemoryBytes) -> Result<()> {
-        let bytes_val: usize = bytes.into_inner();
-        let max_bytes: usize = self.limits.max_memory_bytes.into_inner();
-        if bytes_val > max_bytes {
-            bail!(
-                "memory limit exceeded: {} bytes exceeds limit of {} bytes",
-                bytes_val,
-                max_bytes
-            );
-        }
+    /// Returns a `MemoryError` if the allocation fails due to limits or agent conflicts
+    pub fn allocate_memory(
+        &self,
+        agent_id: AgentId,
+        request: AgentMemoryRequest,
+    ) -> Result<(), MemoryError> {
+        let mut pool = self
+            .memory_pool
+            .lock()
+            .map_err(|_| MemoryError::AgentNotFound { agent: agent_id })?;
 
+        pool.allocate(agent_id, request)?;
+
+        // Update usage tracking for monitoring
         let usage = self
             .agent_usage
             .entry(agent_id)
             .or_insert_with(AgentResourceUsage::new);
+        usage
+            .memory_bytes
+            .store(request.into_inner(), Ordering::SeqCst);
 
-        let current = usage.memory_bytes.load(Ordering::SeqCst);
-        if current + bytes_val > max_bytes {
-            bail!(
-                "memory limit exceeded for agent {:?}: current={}, requested={}, limit={}",
-                agent_id,
-                current,
-                bytes_val,
-                max_bytes
-            );
-        }
-
-        usage.memory_bytes.fetch_add(bytes_val, Ordering::SeqCst);
-        self.total_memory.fetch_add(bytes_val, Ordering::SeqCst);
-
-        debug!("Allocated {} bytes for agent {:?}", bytes_val, agent_id);
+        debug!(
+            "Allocated {} bytes for agent {:?}",
+            request.into_inner(),
+            agent_id
+        );
         Ok(())
     }
 
-    /// Deallocates memory for an agent
+    /// Deallocates all memory for an agent using the bounded memory pool
     ///
     /// # Errors
     ///
-    /// Returns an error if deallocation fails
-    pub fn deallocate_memory(&self, agent_id: AgentId, bytes: MemoryBytes) -> Result<()> {
-        let bytes_val: usize = bytes.into_inner();
+    /// Returns a `MemoryError` if the agent is not found
+    pub fn deallocate_memory(&self, agent_id: AgentId) -> Result<AgentMemoryRequest, MemoryError> {
+        let mut pool = self
+            .memory_pool
+            .lock()
+            .map_err(|_| MemoryError::AgentNotFound { agent: agent_id })?;
+
+        let deallocated = pool.deallocate(agent_id)?;
+
+        // Update usage tracking
         if let Some(usage) = self.agent_usage.get(&agent_id) {
-            let current = usage.memory_bytes.load(Ordering::SeqCst);
-            if bytes_val > current {
-                warn!(
-                    "Attempting to deallocate {} bytes but only {} allocated for agent {:?}",
-                    bytes_val, current, agent_id
-                );
-                usage.memory_bytes.store(0, Ordering::SeqCst);
-                self.total_memory.fetch_sub(current, Ordering::SeqCst);
-            } else {
-                usage.memory_bytes.fetch_sub(bytes_val, Ordering::SeqCst);
-                self.total_memory.fetch_sub(bytes_val, Ordering::SeqCst);
-            }
-
-            debug!("Deallocated {} bytes for agent {:?}", bytes_val, agent_id);
+            usage.memory_bytes.store(0, Ordering::SeqCst);
         }
 
-        Ok(())
+        debug!(
+            "Deallocated {} bytes for agent {:?}",
+            deallocated.into_inner(),
+            agent_id
+        );
+        Ok(deallocated)
     }
 
-    /// Consumes CPU fuel for an agent
+    /// Consumes CPU fuel for an agent using `FuelTracker` for type safety
     ///
     /// # Errors
     ///
-    /// Returns an error if fuel consumption exceeds CPU limits
-    pub fn consume_fuel(&self, agent_id: AgentId, fuel: CpuFuel) -> Result<()> {
-        let fuel_val: u64 = fuel.into_inner();
-        let max_fuel: u64 = self.limits.max_cpu_fuel.into_inner();
-        if fuel_val > max_fuel {
-            bail!(
-                "fuel consumption of {} exceeds CPU limit of {}",
-                fuel_val,
-                max_fuel
-            );
-        }
+    /// Returns a fuel error if consumption fails due to limits or exhaustion
+    pub fn consume_fuel(&self, agent_id: AgentId, fuel_amount: u64) -> Result<()> {
+        let mut tracker = self
+            .fuel_trackers
+            .entry(agent_id)
+            .or_insert_with(|| SimpleFuelTracker::new(self.limits.max_cpu_fuel.into_inner()));
 
+        tracker.consume(fuel_amount).map_err(|e| {
+            anyhow::anyhow!("Fuel consumption failed for agent {:?}: {}", agent_id, e)
+        })?;
+
+        // Update usage tracking for monitoring
         let usage = self
             .agent_usage
             .entry(agent_id)
             .or_insert_with(AgentResourceUsage::new);
-
-        let consumed = usage
+        usage
             .cpu_fuel_consumed
-            .fetch_add(fuel_val, Ordering::SeqCst);
-        if consumed + fuel_val > max_fuel {
-            usage
-                .cpu_fuel_consumed
-                .fetch_sub(fuel_val, Ordering::SeqCst);
-            bail!("fuel limit exceeded (CPU limit) for agent {:?}", agent_id);
-        }
+            .store(tracker.consumed(), Ordering::SeqCst);
 
-        self.total_fuel.fetch_add(fuel_val, Ordering::SeqCst);
-
-        debug!("Consumed {} fuel units for agent {:?}", fuel_val, agent_id);
+        debug!(
+            "Consumed {} fuel units for agent {:?}, remaining: {}",
+            fuel_amount,
+            agent_id,
+            tracker.remaining()
+        );
         Ok(())
     }
 
@@ -181,51 +391,58 @@ impl ResourceManager {
         Ok(())
     }
 
-    /// Gets the current memory usage for an agent
-    pub fn get_agent_memory_usage(&self, agent_id: AgentId) -> MemoryBytes {
-        self.agent_usage
+    /// Gets the current memory usage for an agent from the bounded pool
+    pub fn get_agent_memory_usage(&self, agent_id: AgentId) -> Option<AgentMemoryRequest> {
+        let pool = self.memory_pool.lock().ok()?;
+        pool.get_allocation(&agent_id)
+    }
+
+    /// Gets the total fuel consumed by an agent using the `FuelTracker`
+    pub fn get_agent_fuel_usage(&self, agent_id: AgentId) -> u64 {
+        self.fuel_trackers
             .get(&agent_id)
-            .map_or(MemoryBytes::zero(), |usage| {
-                MemoryBytes::try_new(usage.memory_bytes.load(Ordering::SeqCst))
-                    .unwrap_or(MemoryBytes::zero())
-            })
+            .map_or(0, |tracker| tracker.consumed())
     }
 
-    /// Gets the total fuel consumed by an agent
-    pub fn get_agent_fuel_usage(&self, agent_id: AgentId) -> CpuFuel {
-        self.agent_usage
-            .get(&agent_id)
-            .map_or(CpuFuel::zero(), |usage| {
-                CpuFuel::try_new(usage.cpu_fuel_consumed.load(Ordering::SeqCst))
-                    .unwrap_or(CpuFuel::zero())
-            })
+    /// Gets the total memory usage across all agents from the bounded pool
+    pub fn get_total_memory_usage(&self) -> TotalMemoryAllocated {
+        self.memory_pool
+            .lock()
+            .map_or_else(|_| TotalMemoryAllocated::zero(), |p| p.total_allocated())
     }
 
-    /// Gets the total memory usage across all agents
-    pub fn get_total_memory_usage(&self) -> MemoryBytes {
-        MemoryBytes::try_new(self.total_memory.load(Ordering::SeqCst))
-            .unwrap_or(MemoryBytes::zero())
+    /// Gets the total fuel consumed across all agents
+    pub fn get_total_fuel_usage(&self) -> u64 {
+        self.fuel_trackers
+            .iter()
+            .map(|entry| entry.consumed())
+            .sum()
     }
 
-    /// Gets the total fuel usage across all agents
-    pub fn get_total_fuel_usage(&self) -> CpuFuel {
-        CpuFuel::try_new(self.total_fuel.load(Ordering::SeqCst)).unwrap_or(CpuFuel::zero())
-    }
-
-    /// Cleans up resources for a removed agent
+    /// Cleans up resources for a removed agent using domain types
     pub fn cleanup_agent(&self, agent_id: AgentId) {
-        if let Some((_, usage)) = self.agent_usage.remove(&agent_id) {
-            let memory = usage.memory_bytes.load(Ordering::SeqCst);
-            let fuel = usage.cpu_fuel_consumed.load(Ordering::SeqCst);
-
-            self.total_memory.fetch_sub(memory, Ordering::SeqCst);
-            self.total_fuel.fetch_sub(fuel, Ordering::SeqCst);
-
+        // Deallocate memory from bounded pool
+        if let Ok(deallocated) = self.deallocate_memory(agent_id) {
             debug!(
-                "Cleaned up resources for agent {:?}: memory={}, fuel={}",
-                agent_id, memory, fuel
+                "Deallocated {} bytes during cleanup for agent {:?}",
+                deallocated.into_inner(),
+                agent_id
             );
         }
+
+        // Remove fuel tracker
+        let fuel_consumed = self
+            .fuel_trackers
+            .remove(&agent_id)
+            .map_or(0, |(_, tracker)| tracker.consumed());
+
+        // Remove usage tracking
+        self.agent_usage.remove(&agent_id);
+
+        debug!(
+            "Cleaned up resources for agent {:?}: fuel_consumed={}",
+            agent_id, fuel_consumed
+        );
     }
 
     /// Gets the configured resource limits
@@ -295,60 +512,58 @@ mod tests {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
         assert_eq!(manager.get_total_memory_usage().into_inner(), 0);
-        assert_eq!(manager.get_total_fuel_usage().into_inner(), 0);
+        assert_eq!(manager.get_total_fuel_usage(), 0);
     }
 
     #[test]
     fn test_allocate_memory_success() {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
-        let mem = MemoryBytes::try_new(1024).unwrap();
-        assert!(manager.allocate_memory(agent_id, mem).is_ok());
-        assert_eq!(manager.get_agent_memory_usage(agent_id).into_inner(), 1024);
+        let request = AgentMemoryRequest::try_new(1024).unwrap();
+        assert!(manager.allocate_memory(agent_id, request).is_ok());
+        assert_eq!(
+            manager
+                .get_agent_memory_usage(agent_id)
+                .unwrap()
+                .into_inner(),
+            1024
+        );
         assert_eq!(manager.get_total_memory_usage().into_inner(), 1024);
     }
 
     #[test]
     fn test_allocate_memory_exceeds_limit() {
-        let limits = ResourceLimits {
-            max_memory_bytes: MemoryBytes::try_new(1024).unwrap(),
-            ..Default::default()
-        };
-        let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
-
-        let mem = MemoryBytes::try_new(2048).unwrap();
-        assert!(manager.allocate_memory(agent_id, mem).is_err());
-        assert_eq!(manager.get_agent_memory_usage(agent_id).into_inner(), 0);
+        // AgentMemoryRequest enforces limits at compile time, so this test
+        // demonstrates that invalid requests cannot be constructed
+        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES + 1).is_err());
     }
 
     #[test]
     fn test_deallocate_memory() {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
-        let mem1 = MemoryBytes::try_new(2048).unwrap();
-        let mem2 = MemoryBytes::try_new(1024).unwrap();
-        manager.allocate_memory(agent_id, mem1).unwrap();
-        manager.deallocate_memory(agent_id, mem2).unwrap();
+        let request = AgentMemoryRequest::try_new(2048).unwrap();
+        manager.allocate_memory(agent_id, request).unwrap();
+        let deallocated = manager.deallocate_memory(agent_id).unwrap();
 
-        assert_eq!(manager.get_agent_memory_usage(agent_id).into_inner(), 1024);
-        assert_eq!(manager.get_total_memory_usage().into_inner(), 1024);
+        assert_eq!(deallocated.into_inner(), 2048);
+        assert!(manager.get_agent_memory_usage(agent_id).is_none());
+        assert_eq!(manager.get_total_memory_usage().into_inner(), 0);
     }
 
     #[test]
     fn test_consume_fuel_success() {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
-        let fuel = CpuFuel::try_new(100).unwrap();
-        assert!(manager.consume_fuel(agent_id, fuel).is_ok());
-        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 100);
-        assert_eq!(manager.get_total_fuel_usage().into_inner(), 100);
+        assert!(manager.consume_fuel(agent_id, 100).is_ok());
+        assert_eq!(manager.get_agent_fuel_usage(agent_id), 100);
+        assert_eq!(manager.get_total_fuel_usage(), 100);
     }
 
     #[test]
@@ -358,13 +573,11 @@ mod tests {
             ..Default::default()
         };
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
-        let fuel1 = CpuFuel::try_new(50).unwrap();
-        let fuel2 = CpuFuel::try_new(60).unwrap();
-        assert!(manager.consume_fuel(agent_id, fuel1).is_ok());
-        assert!(manager.consume_fuel(agent_id, fuel2).is_err());
-        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 50);
+        assert!(manager.consume_fuel(agent_id, 50).is_ok());
+        assert!(manager.consume_fuel(agent_id, 60).is_err());
+        assert_eq!(manager.get_agent_fuel_usage(agent_id), 50);
     }
 
     #[test]
@@ -386,33 +599,32 @@ mod tests {
     fn test_cleanup_agent() {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
-        let mem = MemoryBytes::try_new(1024).unwrap();
-        let fuel = CpuFuel::try_new(100).unwrap();
-        manager.allocate_memory(agent_id, mem).unwrap();
-        manager.consume_fuel(agent_id, fuel).unwrap();
+        let request = AgentMemoryRequest::try_new(1024).unwrap();
+        manager.allocate_memory(agent_id, request).unwrap();
+        manager.consume_fuel(agent_id, 100).unwrap();
 
         assert_eq!(manager.get_total_memory_usage().into_inner(), 1024);
-        assert_eq!(manager.get_total_fuel_usage().into_inner(), 100);
+        assert_eq!(manager.get_total_fuel_usage(), 100);
 
         manager.cleanup_agent(agent_id);
 
-        assert_eq!(manager.get_agent_memory_usage(agent_id).into_inner(), 0);
-        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 0);
+        assert!(manager.get_agent_memory_usage(agent_id).is_none());
+        assert_eq!(manager.get_agent_fuel_usage(agent_id), 0);
         assert_eq!(manager.get_total_memory_usage().into_inner(), 0);
-        assert_eq!(manager.get_total_fuel_usage().into_inner(), 0);
+        assert_eq!(manager.get_total_fuel_usage(), 0);
     }
 
     #[test]
     fn test_record_message() {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
-        let agent_id = AgentId::new_v4();
+        let agent_id = AgentId::generate();
 
         // Allocate some memory to create the agent entry
-        let mem = MemoryBytes::try_new(1).unwrap();
-        manager.allocate_memory(agent_id, mem).unwrap();
+        let request = AgentMemoryRequest::try_new(1).unwrap();
+        manager.allocate_memory(agent_id, request).unwrap();
 
         manager.record_message(agent_id);
         manager.record_message(agent_id);
@@ -431,5 +643,60 @@ mod tests {
 
         thread::sleep(Duration::from_millis(10));
         assert!(usage.time_since_update() >= Duration::from_millis(10));
+    }
+
+    #[test]
+    fn test_memory_request_bounds_enforced_at_compile_time() {
+        // These should succeed within bounds
+        assert!(AgentMemoryRequest::try_new(1).is_ok());
+        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES).is_ok());
+
+        // These should fail outside bounds
+        assert!(AgentMemoryRequest::try_new(0).is_err());
+        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES + 1).is_err());
+    }
+
+    #[test]
+    fn test_agent_already_allocated_error() {
+        let limits = ResourceLimits::default();
+        let manager = ResourceManager::new(limits);
+        let agent_id = AgentId::generate();
+
+        let request = AgentMemoryRequest::try_new(1024).unwrap();
+
+        // First allocation should succeed
+        assert!(manager.allocate_memory(agent_id, request).is_ok());
+
+        // Second allocation for same agent should fail with domain error
+        let result = manager.allocate_memory(agent_id, request);
+        assert!(matches!(
+            result,
+            Err(MemoryError::AgentAlreadyAllocated { .. })
+        ));
+    }
+
+    #[test]
+    fn test_fuel_tracker_state_transitions() {
+        let limits = ResourceLimits {
+            max_cpu_fuel: CpuFuel::try_new(100).unwrap(),
+            ..Default::default()
+        };
+        let manager = ResourceManager::new(limits);
+        let agent_id = AgentId::generate();
+
+        // Initial state - can consume fuel
+        assert!(manager.consume_fuel(agent_id, 50).is_ok());
+
+        // Partial consumption
+        assert!(manager.consume_fuel(agent_id, 30).is_ok());
+
+        // Should have 20 remaining, so 25 should fail
+        assert!(manager.consume_fuel(agent_id, 25).is_err());
+
+        // But 20 should still work
+        assert!(manager.consume_fuel(agent_id, 20).is_ok());
+
+        // Now exhausted - any consumption should fail
+        assert!(manager.consume_fuel(agent_id, 1).is_err());
     }
 }

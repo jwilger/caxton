@@ -195,8 +195,8 @@ async fn test_cooperative_scheduling_with_fuel() -> Result<()> {
         .execute_agent_with_fuel_tracking(agent_id, "long_computation", &[])
         .await?;
 
-    assert!(result.fuel_consumed > 0);
-    assert!(result.fuel_consumed <= 10000);
+    assert!(result.fuel_consumed.as_u64() > 0);
+    assert!(result.fuel_consumed.as_u64() <= 10000);
     assert!(result.completed_successfully);
 
     Ok(())

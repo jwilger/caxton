@@ -12,6 +12,7 @@ use wasmtime::{Engine, Linker, Module, ResourceLimiter, Store, StoreLimits, Stor
 
 use crate::domain_types::{AgentId, HostFunctionName};
 
+use crate::domain_types::CpuFuel;
 use crate::resource_manager::ResourceLimits;
 use crate::runtime::ExecutionResult;
 
@@ -239,11 +240,12 @@ impl Sandbox {
                 anyhow::bail!("fuel exhausted (CPU limit reached)");
             }
 
-            Ok::<ExecutionResult, anyhow::Error>(ExecutionResult {
-                fuel_consumed: simulated_fuel_consumed,
-                completed_successfully: true,
-                output: Some(vec![]),
-            })
+            let fuel_consumed =
+                CpuFuel::try_new(simulated_fuel_consumed).unwrap_or_else(|_| CpuFuel::zero());
+            Ok::<ExecutionResult, anyhow::Error>(ExecutionResult::success(
+                fuel_consumed,
+                Some(vec![]),
+            ))
         };
 
         let result = tokio::time::timeout(timeout, execution_future)
@@ -260,13 +262,9 @@ impl Sandbox {
         // Use the simulated fuel consumption from the execution result
         let fuel_consumed = result.fuel_consumed;
 
-        store.data_mut().fuel_consumed += fuel_consumed;
+        store.data_mut().fuel_consumed += fuel_consumed.as_u64();
 
-        Ok(ExecutionResult {
-            fuel_consumed,
-            completed_successfully: true,
-            output: result.output,
-        })
+        Ok(ExecutionResult::success(fuel_consumed, result.output))
     }
 
     /// Gets the current memory usage of the sandbox
@@ -307,7 +305,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine);
+        let sandbox = Sandbox::new(AgentId::generate(), limits, engine);
         assert!(sandbox.is_ok());
     }
 
@@ -317,7 +315,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
+        let sandbox = Sandbox::new(AgentId::generate(), limits, engine).unwrap();
         assert_eq!(sandbox.get_memory_usage(), 0);
     }
 
@@ -327,7 +325,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
+        let sandbox = Sandbox::new(AgentId::generate(), limits, engine).unwrap();
         let functions = sandbox.get_exposed_functions();
         assert!(functions.contains(&"log".to_string()));
         assert!(functions.contains(&"get_time".to_string()));
@@ -352,7 +350,7 @@ mod tests {
         config.async_support(true);
         let engine = Arc::new(Engine::new(&config).unwrap());
         let limits = ResourceLimits::default();
-        let mut sandbox = Sandbox::new(AgentId::new_v4(), limits, engine).unwrap();
+        let mut sandbox = Sandbox::new(AgentId::generate(), limits, engine).unwrap();
         let result = sandbox.shutdown().await;
         assert!(result.is_ok());
     }
