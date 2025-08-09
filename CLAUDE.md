@@ -49,6 +49,25 @@ This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Co
 - `npm run lint` - Linting
 - `npm run typecheck` - Type checking
 
+## 🚨 CRITICAL: Testing Commands for Rust
+
+**MANDATORY**: ALWAYS use `cargo nextest run` instead of `cargo test` for ALL test operations.
+
+### Test Commands (ALWAYS use nextest)
+- `cargo nextest run` - Run all tests (USE THIS, NOT cargo test)
+- `cargo nextest run --lib` - Run unit tests only
+- `cargo nextest run --tests` - Run integration tests only
+- `cargo nextest run --release` - Run tests in release mode
+- `cargo nextest run --no-fail-fast` - Continue after failures
+- `cargo nextest run -p <package>` - Run tests for specific package
+
+### Installing nextest (if needed)
+```bash
+cargo install cargo-nextest --locked
+```
+
+**WHY**: nextest provides better output, faster execution, and proper test isolation. NEVER use `cargo test` directly.
+
 ## SPARC Workflow Phases
 
 1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
@@ -173,12 +192,12 @@ npx claude-flow@alpha hooks session-end --export-metrics true
   mcp__claude-flow__agent_spawn { type: "researcher" }
   mcp__claude-flow__agent_spawn { type: "coder" }
   mcp__claude-flow__agent_spawn { type: "tester" }
-  
+
   // Spawn agents with Task tool
   Task("Research agent: Analyze requirements...")
   Task("Coder agent: Implement features...")
   Task("Tester agent: Create test suite...")
-  
+
   // Batch todos
   TodoWrite { todos: [
     {id: "1", content: "Research", status: "in_progress", priority: "high"},
@@ -187,7 +206,7 @@ npx claude-flow@alpha hooks session-end --export-metrics true
     {id: "4", content: "Test", status: "pending", priority: "medium"},
     {id: "5", content: "Document", status: "pending", priority: "low"}
   ]}
-  
+
   // File operations
   Bash "mkdir -p app/{src,tests,docs}"
   Write "app/src/index.js"
