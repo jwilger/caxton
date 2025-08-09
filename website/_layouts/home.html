@@ -12,8 +12,8 @@ layout: default
                     <span class="title-line gradient-text">That Don't Wake You Up</span>
                 </h1>
                 <p class="hero-subtitle">
-                    WebAssembly isolation. Observable by design. Production-ready from day one.
-                    Build resilient multi-agent systems with <span class="highlight">< 50μs overhead</span>.
+                    WebAssembly isolation. Observable by design. Zero external dependencies.
+                    Build distributed, resilient multi-agent systems with <span class="highlight">< 50μs overhead</span>.
                 </p>
                 <div class="hero-actions">
                     <a href="#getting-started" class="btn btn-primary">Get Started</a>
@@ -42,6 +42,8 @@ layout: default
                     <li>Debugging distributed agent state is a nightmare</li>
                     <li>Agent crashes affect the entire system</li>
                     <li>No standard communication protocols</li>
+                    <li>Network partitions break everything</li>
+                    <li>Requires external databases for coordination</li>
                     <li>Observability is an afterthought</li>
                 </ul>
             </div>
@@ -51,6 +53,8 @@ layout: default
                     <li>Built-in distributed tracing for every message</li>
                     <li>WebAssembly isolation with zero blast radius</li>
                     <li>FIPA standard protocols out of the box</li>
+                    <li>Graceful degradation during network partitions</li>
+                    <li>No external dependencies - SWIM protocol built-in</li>
                     <li>OpenTelemetry from day one</li>
                 </ul>
             </div>
@@ -75,11 +79,11 @@ layout: default
             <div class="feature-card">
                 <div class="feature-icon">💬</div>
                 <h3>FIPA Protocol Messaging</h3>
-                <p>Industry-standard agent communication protocols. Not just another message bus - semantic protocols with state machines.</p>
+                <p>Industry-standard agent communication protocols at the application layer. Semantic messaging that works across cluster boundaries.</p>
                 <div class="feature-protocols">
                     <span class="protocol">Contract Net</span>
                     <span class="protocol">Request/Reply</span>
-                    <span class="protocol">Subscribe/Notify</span>
+                    <span class="protocol">Cross-Cluster</span>
                 </div>
             </div>
             <div class="feature-card">
@@ -120,6 +124,16 @@ layout: default
                     <span class="integration">Database Tools</span>
                     <span class="integration">HTTP APIs</span>
                     <span class="integration">File Systems</span>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>Distributed & Resilient</h3>
+                <p>Built-in clustering with SWIM protocol. No external coordination service needed. Graceful handling of network partitions.</p>
+                <div class="feature-distributed">
+                    <span class="distributed">Auto-Discovery</span>
+                    <span class="distributed">Partition Tolerance</span>
+                    <span class="distributed">Self-Healing</span>
                 </div>
             </div>
         </div>
@@ -182,9 +196,11 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                 <p>Caxton follows type-driven development with a functional core and imperative shell architecture. Every architectural decision prioritizes debuggability and operational excellence.</p>
                 <ul>
                     <li><strong>Agent Runtime</strong> - WebAssembly-based isolation and execution</li>
-                    <li><strong>Message Router</strong> - FIPA protocol implementation with full tracing</li>
+                    <li><strong>Message Router</strong> - FIPA protocol for semantic agent messaging across clusters</li>
+                    <li><strong>Coordination Layer</strong> - SWIM protocol for membership, failure detection, and partition handling</li>
                     <li><strong>Observability Layer</strong> - OpenTelemetry integration from the ground up</li>
-                    <li><strong>Tool Bridge</strong> - MCP protocol for external integrations</li>
+                    <li><strong>Tool Bridge</strong> - MCP protocol for external integrations and state management</li>
+                    <li><strong>No External Dependencies</strong> - Everything built-in: SQLite for local state, SWIM for coordination</li>
                 </ul>
                 <div class="architecture-links">
                     <a href="{{ '/adr/' | relative_url }}" class="link-card">
@@ -262,10 +278,10 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                         </div>
                                     </div>
                                     <div class="data-layer">
-                                        <h5>Persistence Layer</h5>
+                                        <h5>Coordination Layer</h5>
                                         <div class="data-stores">
-                                            <div class="store">Event Store<br><small>PostgreSQL</small></div>
-                                            <div class="store">Agent State<br><small>RocksDB</small></div>
+                                            <div class="store">Local State<br><small>SQLite (embedded)</small></div>
+                                            <div class="store">Cluster Info<br><small>SWIM Protocol</small></div>
                                             <div class="store">Configuration<br><small>TOML files</small></div>
                                         </div>
                                     </div>

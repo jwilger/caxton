@@ -67,10 +67,11 @@ Caxton is a production-ready multi-agent orchestration server that provides WebA
 │  └─────────────────────────────────────────────────────┘ │
 │                                                           │
 │  ┌─────────────────────────────────────────────────────┐ │
-│  │               Storage Layer                         │ │
-│  │  • Agent State (Event Sourcing)                   │ │
-│  │  • Message Persistence                            │ │
-│  │  • Configuration Store                            │ │
+│  │           Coordination Layer                       │ │
+│  │  • Cluster Membership (SWIM Protocol)            │ │
+│  │  • Agent Registry (Gossip)                       │ │
+│  │  • Local State (SQLite)                          │ │
+│  │  • Partition Detection & Handling                │ │
 │  └─────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -82,6 +83,13 @@ Caxton is a production-ready multi-agent orchestration server that provides WebA
 3. **WebAssembly Isolation**: Complete sandboxing between agents
 4. **FIPA Compliance**: Standard agent communication protocols
 5. **Minimal Core**: Small, focused core with rich extension ecosystem
+6. **Coordination Over State**: Use lightweight protocols instead of shared databases (see [ADR-0014](docs/adr/0014-coordination-first-architecture.md))
+
+### Protocol Layering
+
+- **SWIM Protocol (Infrastructure)**: Handles cluster membership, failure detection, and routing information dissemination
+- **FIPA Protocol (Application)**: Manages semantic agent-to-agent messaging with conversation tracking
+- **Clear Separation**: These protocols operate at different layers and complement each other (see [ADR-0015](docs/adr/0015-distributed-protocol-architecture.md))
 
 ## Domain Model
 

@@ -22,12 +22,13 @@ Caxton is a distributed multi-agent platform built on WebAssembly sandboxing, FI
 
 ## Architecture Overview
 
-The Caxton platform is designed around four core architectural principles:
+The Caxton platform is designed around five core architectural principles:
 
 1. **Isolation**: WebAssembly-based sandboxing ensures secure agent execution
 2. **Communication**: FIPA-compliant message protocols enable standardized agent interaction
 3. **Observability**: OpenTelemetry integration provides comprehensive monitoring
 4. **Flexibility**: Multi-language runtime support accommodates diverse agent implementations
+5. **Coordination Over State**: Lightweight protocols instead of shared databases (see [ADR-0014](/adrs/0014-coordination-first-architecture))
 
 ## WebAssembly Agent Isolation
 
@@ -267,13 +268,13 @@ etcd is a distributed key-value store that provides the "source of truth" for cl
 - **Distributed Locking**: Coordination and consensus for cluster operations
 - **Watch API**: Configuration change notifications
 
-#### Message Store (Apache Kafka)
-Kafka provides durable message storage and streaming capabilities:
+#### Coordination Layer
+Caxton uses lightweight coordination protocols instead of heavy databases:
 
-- **Message Persistence**: Reliable message storage and replay
-- **Event Sourcing**: Audit trail and system state reconstruction
-- **Stream Processing**: Real-time message processing and analytics
-- **Partitioning**: Horizontal scaling and load distribution
+- **SWIM Protocol**: Scalable membership and failure detection
+- **Gossip Protocol**: Eventually consistent agent registry
+- **Local State**: Each instance uses embedded SQLite
+- **No External Dependencies**: No PostgreSQL, Kafka, or other databases required
 
 #### Metrics Database (Prometheus + InfluxDB)
 Time-series databases optimized for metrics and monitoring data:

@@ -151,7 +151,7 @@ Create a simple echo agent that responds to messages:
 ```rust
 // src/lib.rs
 use caxton_agent::{
-    Agent, AgentContext, FipaMessage, MessageHandler, 
+    Agent, AgentContext, FipaMessage, MessageHandler,
     AgentResult, AgentError
 };
 use serde::{Deserialize, Serialize};
@@ -167,7 +167,7 @@ impl EchoAgent {
     // Agent metadata - defined in code, not configuration
     const VERSION: &'static str = "1.0.0";
     const NAME: &'static str = "echo-agent";
-    
+
     pub fn new(id: String) -> Self {
         Self {
             id,
@@ -180,11 +180,11 @@ impl EchoAgent {
 impl Agent for EchoAgent {
     async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
         tracing::info!("Echo agent {} initializing", self.id);
-        
+
         // Register capabilities that this agent provides
         ctx.register_capability("echo").await?;
         ctx.register_capability("state_management").await?;
-        
+
         Ok(())
     }
 
@@ -341,7 +341,7 @@ impl EchoAgent {
 pub extern "C" fn create_agent(id: *const u8, id_len: usize) -> *mut EchoAgent {
     let id_slice = unsafe { std::slice::from_raw_parts(id, id_len) };
     let id_str = String::from_utf8_lossy(id_slice).to_string();
-    
+
     Box::into_raw(Box::new(EchoAgent::new(id_str)))
 }
 
@@ -495,22 +495,22 @@ impl Agent for MyAgent {
         // - Register capabilities
         // - Subscribe to topics
         // - Connect to external services
-        
+
         tracing::info!("Agent {} starting initialization", self.id);
-        
+
         // Register what this agent can do
         ctx.register_capability("data_processing").await?;
         ctx.register_capability("file_operations").await?;
-        
+
         // Subscribe to relevant topics
         ctx.subscribe("system.events").await?;
         ctx.subscribe("data.updates").await?;
-        
+
         // Initialize connections
         self.database_client = Some(DatabaseClient::new(
             ctx.get_config("database_url")?
         ).await?);
-        
+
         Ok(())
     }
 
@@ -526,7 +526,7 @@ impl Agent for MyAgent {
         // - Process request
         // - Send responses
         // - Update state
-        
+
         // Add correlation ID for tracing
         let span = tracing::info_span!(
             "handle_message",
@@ -534,7 +534,7 @@ impl Agent for MyAgent {
             performative = %message.performative,
             sender = %message.sender
         );
-        
+
         async move {
             match message.performative.as_str() {
                 "request" => self.handle_request(message, ctx).await,
@@ -552,10 +552,10 @@ impl Agent for MyAgent {
         // - Send periodic reports
         // - Health checks
         // - Maintenance tasks
-        
+
         self.cleanup_expired_cache().await?;
         self.send_health_report(ctx).await?;
-        
+
         Ok(())
     }
 
@@ -566,22 +566,22 @@ impl Agent for MyAgent {
         // - Save state
         // - Close connections
         // - Release resources
-        
+
         tracing::info!("Agent {} beginning shutdown", self.id);
-        
+
         // Finish processing queued work
         self.process_pending_work(ctx).await?;
-        
+
         // Persist important state
         if let Some(state) = &self.persistent_state {
             ctx.save_state(&self.id, state).await?;
         }
-        
+
         // Close external connections
         if let Some(client) = &mut self.database_client {
             client.close().await?;
         }
-        
+
         Ok(())
     }
 }
@@ -589,35 +589,38 @@ impl Agent for MyAgent {
 
 ### State Management
 
-Agents can maintain different types of state:
+Caxton follows a **coordination-first architecture** where agent state is the responsibility of the business domain, not Caxton itself. Agents requiring persistent state should use MCP tools:
 
 ```rust
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AgentState {
-    // Ephemeral state (lost on restart)
+    // Ephemeral state (in-memory only)
     pub cache: HashMap<String, CacheEntry>,
     pub active_conversations: HashMap<String, ConversationState>,
-    
-    // Persistent state (survives restart)
-    #[serde(skip)]
-    pub persistent: PersistentState,
 }
 
-impl AgentState {
-    pub async fn load(ctx: &AgentContext, agent_id: &str) -> AgentResult<Self> {
-        let persistent = ctx.load_state(agent_id)
-            .await
-            .unwrap_or_default();
-            
-        Ok(Self {
-            cache: HashMap::new(),
-            active_conversations: HashMap::new(),
-            persistent,
-        })
+// For persistence, use MCP StateTool
+pub struct PersistentAgent {
+    state: AgentState,
+    state_tool: Box<dyn McpStateTool>,
+}
+
+impl PersistentAgent {
+    pub async fn checkpoint(&self) -> Result<()> {
+        // Business decides storage backend (Redis, S3, etc.)
+        self.state_tool.store(
+            format!("agents/{}/checkpoint", self.id),
+            serde_json::to_value(&self.state)?
+        ).await
     }
-    
-    pub async fn save(&self, ctx: &AgentContext, agent_id: &str) -> AgentResult<()> {
-        ctx.save_state(agent_id, &self.persistent).await
+
+    pub async fn restore(&mut self) -> Result<()> {
+        if let Some(data) = self.state_tool.retrieve(
+            format!("agents/{}/checkpoint", self.id)
+        ).await? {
+            self.state = serde_json::from_value(data)?;
+        }
+        Ok(())
     }
 }
 ```
@@ -636,17 +639,17 @@ pub struct FipaMessage {
     pub sender: String,           // Sender agent ID
     pub receiver: String,         // Receiver agent ID
     pub content: serde_json::Value, // Message payload
-    
+
     // Optional conversation management
     pub conversation_id: Option<String>,  // Groups related messages
     pub reply_with: Option<String>,       // Expected reply identifier
     pub in_reply_to: Option<String>,      // References previous message
-    
+
     // Protocol and semantic information
     pub ontology: Option<String>,    // Domain vocabulary
     pub language: Option<String>,    // Content language
     pub protocol: Option<String>,    // Interaction protocol
-    
+
     // System fields (managed by Caxton)
     pub message_id: String,         // Unique message identifier
     pub timestamp: DateTime<Utc>,   // Message creation time
@@ -661,37 +664,37 @@ impl FipaMessage {
     pub fn new_request(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "request", content)
     }
-    
+
     // Inform about facts or events
     pub fn new_inform(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "inform", content)
     }
-    
+
     // Ask for information
     pub fn new_query(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "query-if", content)
     }
-    
+
     // Positive response to a request
     pub fn new_agree(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "agree", content)
     }
-    
-    // Negative response to a request  
+
+    // Negative response to a request
     pub fn new_refuse(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "refuse", content)
     }
-    
+
     // Report successful completion
     pub fn new_inform_done(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "inform-done", content)
     }
-    
+
     // Report failure
     pub fn new_failure(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "failure", content)
     }
-    
+
     // Indicate message not understood
     pub fn new_not_understood(sender: &str, receiver: &str, content: Value) -> Self {
         Self::new(sender, receiver, "not-understood", content)
@@ -721,7 +724,7 @@ async fn request_data_processing(
 
     // Send request and wait for reply
     let reply = ctx.send_and_wait(request, Duration::from_secs(30)).await?;
-    
+
     match reply.performative.as_str() {
         "inform-done" => {
             Ok(serde_json::from_value(reply.content)?)
@@ -744,7 +747,7 @@ async fn handle_processing_request(
     ctx: &AgentContext
 ) -> AgentResult<()> {
     let request: ProcessingRequest = serde_json::from_value(message.content)?;
-    
+
     // Process the data
     match self.process_data(&request).await {
         Ok(result) => {
@@ -755,7 +758,7 @@ async fn handle_processing_request(
             )
             .with_conversation_id(message.conversation_id.clone())
             .with_in_reply_to(message.reply_with.clone());
-            
+
             ctx.send_message(reply).await?;
         }
         Err(error) => {
@@ -766,11 +769,11 @@ async fn handle_processing_request(
             )
             .with_conversation_id(message.conversation_id.clone())
             .with_in_reply_to(message.reply_with.clone());
-            
+
             ctx.send_message(reply).await?;
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -786,21 +789,21 @@ async fn distribute_task(
     ctx: &AgentContext
 ) -> AgentResult<String> {
     let conversation_id = format!("cnp-{}", Uuid::new_v4());
-    
+
     // Send call for proposals
     let cfp_content = json!({
         "task": task,
         "deadline": chrono::Utc::now() + chrono::Duration::minutes(5)
     });
-    
+
     for participant in participants {
         let cfp = FipaMessage::new_cfp(&self.id, participant, cfp_content.clone())
             .with_conversation_id(&conversation_id)
             .with_protocol("fipa-contract-net");
-        
+
         ctx.send_message(cfp).await?;
     }
-    
+
     // Collect proposals
     let proposals = ctx.collect_responses(
         &conversation_id,
@@ -808,10 +811,10 @@ async fn distribute_task(
         participants.len(),
         Duration::from_secs(30)
     ).await?;
-    
+
     // Select best proposal
     let best_proposal = self.evaluate_proposals(&proposals)?;
-    
+
     // Accept winning proposal, reject others
     for (participant, proposal) in proposals {
         if participant == best_proposal.sender {
@@ -822,7 +825,7 @@ async fn distribute_task(
             )
             .with_conversation_id(&conversation_id)
             .with_in_reply_to(proposal.reply_with.clone());
-            
+
             ctx.send_message(accept).await?;
         } else {
             let reject = FipaMessage::new_reject_proposal(
@@ -832,11 +835,11 @@ async fn distribute_task(
             )
             .with_conversation_id(&conversation_id)
             .with_in_reply_to(proposal.reply_with.clone());
-            
+
             ctx.send_message(reject).await?;
         }
     }
-    
+
     Ok(best_proposal.sender)
 }
 ```
@@ -856,10 +859,10 @@ mod tests {
     async fn test_echo_functionality() {
         let mut agent = EchoAgent::new("test-agent".to_string());
         let ctx = TestAgentContext::new();
-        
+
         // Initialize agent
         agent.initialize(&ctx).await.unwrap();
-        
+
         // Create test message
         let message = TestMessage::new_request(
             "client",
@@ -869,14 +872,14 @@ mod tests {
                 "text": "Hello, World!"
             })
         );
-        
+
         // Handle message
         agent.handle_message(message.into(), &ctx).await.unwrap();
-        
+
         // Verify response
         let sent_messages = ctx.get_sent_messages();
         assert_eq!(sent_messages.len(), 1);
-        
+
         let response = &sent_messages[0];
         assert_eq!(response.performative, "inform");
         assert_eq!(
@@ -889,9 +892,9 @@ mod tests {
     async fn test_state_management() {
         let mut agent = EchoAgent::new("test-agent".to_string());
         let ctx = TestAgentContext::new();
-        
+
         agent.initialize(&ctx).await.unwrap();
-        
+
         // Store a value
         let store_msg = TestMessage::new_request(
             "client",
@@ -902,22 +905,22 @@ mod tests {
                 "value": "test-value"
             })
         );
-        
+
         agent.handle_message(store_msg.into(), &ctx).await.unwrap();
-        
+
         // Query the value
         let query_msg = TestMessage::new_query(
             "client",
             "test-agent",
             json!({ "key": "test-key" })
         );
-        
+
         agent.handle_message(query_msg.into(), &ctx).await.unwrap();
-        
+
         // Verify stored and retrieved value
         let responses = ctx.get_sent_messages();
         assert_eq!(responses.len(), 2);
-        
+
         let query_response = &responses[1];
         assert_eq!(query_response.performative, "inform");
         assert_eq!(
@@ -941,7 +944,7 @@ async fn test_agent_deployment_and_communication() {
     // Start test Caxton server
     let server = caxton_testing::TestServer::new().await;
     let client = CaxtonClient::new(server.endpoint()).await.unwrap();
-    
+
     // Deploy test agent
     let wasm_bytes = include_bytes!("../target/wasm32-wasi/release/echo_agent.wasm");
     let agent = client.deploy_agent(
@@ -955,10 +958,10 @@ async fn test_agent_deployment_and_communication() {
             ..Default::default()
         }
     ).await.unwrap();
-    
+
     // Wait for agent to be ready
     tokio::time::sleep(Duration::from_millis(100)).await;
-    
+
     // Send test message
     let response = client.send_message_and_wait(
         FipaMessage::new_request(
@@ -971,14 +974,14 @@ async fn test_agent_deployment_and_communication() {
         ),
         Duration::from_secs(5)
     ).await.unwrap();
-    
+
     // Verify response
     assert_eq!(response.performative, "inform");
     assert_eq!(
         response.content["echoed_text"].as_str().unwrap(),
         "Integration test message"
     );
-    
+
     // Cleanup
     client.remove_agent(&agent.id).await.unwrap();
 }
@@ -992,14 +995,14 @@ use caxton_agent::testing::TestAgentContext;
 
 fn bench_message_processing(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    
+
     c.bench_function("echo_message_processing", |b| {
         b.to_async(&runtime).iter(|| async {
             let mut agent = EchoAgent::new("bench-agent".to_string());
             let ctx = TestAgentContext::new();
-            
+
             agent.initialize(&ctx).await.unwrap();
-            
+
             let message = TestMessage::new_request(
                 "client",
                 "bench-agent",
@@ -1008,7 +1011,7 @@ fn bench_message_processing(c: &mut Criterion) {
                     "text": black_box("Benchmark message")
                 })
             );
-            
+
             agent.handle_message(message.into(), &ctx).await.unwrap();
         });
     });
@@ -1033,17 +1036,17 @@ impl EchoAgent {
         ctx: &AgentContext,
     ) -> AgentResult<()> {
         debug!("Processing request: {:?}", message.content);
-        
+
         let processing_start = std::time::Instant::now();
-        
+
         // ... processing logic ...
-        
+
         let processing_time = processing_start.elapsed();
         info!(
             processing_time_ms = processing_time.as_millis(),
             "Request processed successfully"
         );
-        
+
         Ok(())
     }
 }
@@ -1074,26 +1077,26 @@ async fn complex_operation(
     ctx: &AgentContext
 ) -> AgentResult<ProcessingResult> {
     let tracer = global::tracer("echo-agent");
-    
+
     let span = tracer.start("data_processing");
     let _guard = span.set_current();
-    
+
     // Add custom attributes
     span.set_attribute("data_size", data.size() as i64);
     span.set_attribute("operation_type", "echo");
-    
+
     // Simulate processing with child spans
     let result = {
         let child_span = tracer.start("validation");
         let _child_guard = child_span.set_current();
-        
+
         self.validate_data(data).await?
     };
-    
+
     {
         let child_span = tracer.start("processing");
         let _child_guard = child_span.set_current();
-        
+
         self.process_validated_data(&result).await
     }
 }
@@ -1157,7 +1160,7 @@ async fn good_request_handler(&mut self, msg: FipaMessage, ctx: &AgentContext) {
     let task_handle = ctx.spawn_task(async move {
         // Process without blocking message handler
     });
-    
+
     // Store task handle for later retrieval
     self.pending_tasks.insert(msg.message_id, task_handle);
 }
@@ -1177,13 +1180,13 @@ use smallvec::SmallVec; // Stack-allocated vectors
 pub struct OptimizedAgent {
     // Use compact strings for small text
     id: CompactString,
-    
+
     // Immutable collections for shared state
     config: ImHashMap<CompactString, String>,
-    
+
     // Stack-allocated for small collections
     recent_messages: SmallVec<[MessageId; 8]>,
-    
+
     // Pool reusable objects
     message_pool: Vec<FipaMessage>,
 }
@@ -1193,7 +1196,7 @@ impl OptimizedAgent {
         self.message_pool.pop()
             .unwrap_or_else(|| FipaMessage::default())
     }
-    
+
     fn return_message(&mut self, mut msg: FipaMessage) {
         // Clear and return to pool
         msg.clear();
@@ -1210,25 +1213,25 @@ impl Agent for BatchProcessor {
     async fn handle_message(&mut self, message: FipaMessage, ctx: &AgentContext) -> AgentResult<()> {
         // Add to batch instead of processing immediately
         self.message_batch.push(message);
-        
+
         // Process in batches
         if self.message_batch.len() >= BATCH_SIZE {
             self.process_batch(ctx).await?;
         }
-        
+
         Ok(())
     }
-    
+
     async fn process_batch(&mut self, ctx: &AgentContext) -> AgentResult<()> {
         let messages = std::mem::take(&mut self.message_batch);
-        
+
         // Process all messages in parallel
         let results: Vec<_> = stream::iter(messages)
             .map(|msg| self.process_single_message(msg, ctx))
             .buffer_unordered(10) // Limit concurrency
             .collect()
             .await;
-        
+
         // Handle results...
         Ok(())
     }
@@ -1264,7 +1267,7 @@ pub struct InstrumentedAgent {
     messages_processed: Counter,
     processing_duration: Histogram,
     active_conversations: Gauge,
-    
+
     // Business metrics
     successful_operations: Counter,
     failed_operations: Counter,
@@ -1291,17 +1294,17 @@ impl Agent for InstrumentedAgent {
     async fn handle_message(&mut self, message: FipaMessage, ctx: &AgentContext) -> AgentResult<()> {
         let start_time = std::time::Instant::now();
         self.messages_processed.increment(1);
-        
+
         let result = self.process_message_impl(message, ctx).await;
-        
+
         let duration = start_time.elapsed();
         self.processing_duration.record(duration.as_millis() as f64);
-        
+
         match result {
             Ok(_) => self.successful_operations.increment(1),
             Err(_) => self.failed_operations.increment(1),
         }
-        
+
         result
     }
 }
@@ -1409,14 +1412,14 @@ impl DataPipelineAgent {
     async fn run_pipeline(&mut self, ctx: &AgentContext) -> AgentResult<()> {
         while let Some(data_item) = self.input_queue.recv().await {
             let mut current_data = data_item;
-            
+
             // Process through pipeline stages
             for processor in &self.processors {
                 match processor.process(current_data).await {
                     Ok(processed) => current_data = processed,
                     Err(error) => {
                         tracing::error!("Pipeline processing failed: {:?}", error);
-                        
+
                         // Notify about failure
                         let failure_msg = FipaMessage::new_inform(
                             &self.id,
@@ -1427,19 +1430,19 @@ impl DataPipelineAgent {
                                 "stage": processor.name()
                             }),
                         );
-                        
+
                         ctx.send_message(failure_msg).await?;
                         continue;
                     }
                 }
             }
-            
+
             // Send processed data
             if let Err(_) = self.output_queue.try_send(ProcessedData::from(current_data)) {
                 tracing::warn!("Output queue full, dropping processed data");
             }
         }
-        
+
         Ok(())
     }
 }
@@ -1462,7 +1465,7 @@ impl TeamCoordinator {
         while let Some(task) = self.task_queue.pop_front() {
             // Find available worker
             let available_worker = self.find_available_worker(ctx).await?;
-            
+
             if let Some(worker_id) = available_worker {
                 // Assign task
                 let assignment = Assignment {
@@ -1470,7 +1473,7 @@ impl TeamCoordinator {
                     worker_id: worker_id.clone(),
                     started_at: chrono::Utc::now(),
                 };
-                
+
                 let work_request = FipaMessage::new_request(
                     &self.id,
                     &worker_id,
@@ -1478,7 +1481,7 @@ impl TeamCoordinator {
                 )
                 .with_conversation_id(&task.id)
                 .with_protocol("work-assignment");
-                
+
                 ctx.send_message(work_request).await?;
                 self.active_assignments.insert(task.id.clone(), assignment);
             } else {
@@ -1487,10 +1490,10 @@ impl TeamCoordinator {
                 break;
             }
         }
-        
+
         Ok(())
     }
-    
+
     async fn find_available_worker(&self, ctx: &AgentContext) -> AgentResult<Option<String>> {
         for worker_id in &self.workers {
             // Query worker status
@@ -1499,19 +1502,19 @@ impl TeamCoordinator {
                 worker_id,
                 json!({ "query": "status" })
             );
-            
+
             let response = ctx.send_and_wait(
                 status_query,
                 Duration::from_secs(5)
             ).await?;
-            
+
             if let Some(available) = response.content.get("available") {
                 if available.as_bool().unwrap_or(false) {
                     return Ok(Some(worker_id.clone()));
                 }
             }
         }
-        
+
         Ok(None)
     }
 }

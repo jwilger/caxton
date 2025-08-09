@@ -23,6 +23,14 @@ FIPA (Foundation for Intelligent Physical Agents) specifications were developed 
 
 Caxton needs reliable agent coordination, not academic purity.
 
+### Relationship to SWIM Protocol
+FIPA operates at the **application layer** for semantic agent messaging, while SWIM operates at the **infrastructure layer** for cluster coordination. They are complementary:
+- **SWIM**: Manages which Caxton instances are alive and where agents are located
+- **FIPA**: Defines how agents communicate once SWIM has established routing
+- **Clear Separation**: SWIM handles infrastructure concerns, FIPA handles business logic
+
+See [ADR-0015: Distributed Protocol Architecture](0015-distributed-protocol-architecture.md) for detailed protocol interaction.
+
 ## Decision
 Caxton implements a pragmatic subset of FIPA, keeping what's useful and discarding academic baggage.
 
