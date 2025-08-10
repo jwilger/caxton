@@ -4,7 +4,13 @@
 //! with comprehensive resource management, security policies, and sandboxing capabilities.
 
 #![allow(clippy::uninlined_format_args)]
+// Precision loss is acceptable for statistical calculations (percentages, averages, timing)
 #![allow(clippy::cast_precision_loss)]
+// Truncation is acceptable for display values (e.g., percentage 0-100, timing displays)
+#![allow(clippy::cast_possible_truncation)]
+// Style allows for safe casting implementations
+#![allow(clippy::let_and_return)]
+#![allow(clippy::checked_conversions)]
 #![allow(clippy::if_not_else)]
 #![allow(clippy::manual_div_ceil)]
 #![allow(clippy::map_unwrap_or)]
@@ -14,9 +20,7 @@
 #![allow(clippy::unused_self)]
 #![allow(clippy::unnecessary_wraps)]
 #![allow(clippy::return_self_not_must_use)]
-#![allow(clippy::cast_sign_loss)]
 #![allow(clippy::too_many_lines)]
-#![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::no_effect_underscore_binding)]

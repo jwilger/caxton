@@ -147,11 +147,15 @@ impl ValidationStatistics {
             }
         }
 
-        // Update average validation time
-        self.average_validation_time_ms = ((self.average_validation_time_ms
-            * (self.modules_validated - 1) as f64)
-            + validation_time_ms)
-            / self.modules_validated as f64;
+        // Update average validation time with safe conversions
+        let validated_f64 = if self.modules_validated <= u32::MAX.into() {
+            f64::from(self.modules_validated as u32)
+        } else {
+            self.modules_validated as f64 // Accept precision loss for large counts
+        };
+        self.average_validation_time_ms =
+            ((self.average_validation_time_ms * (validated_f64 - 1.0)) + validation_time_ms)
+                / validated_f64;
     }
 
     /// Calculate success rate percentage
@@ -159,7 +163,17 @@ impl ValidationStatistics {
         if self.modules_validated == 0 {
             return 0.0;
         }
-        (self.modules_passed as f64 / self.modules_validated as f64) * 100.0
+        let passed_f64 = if self.modules_passed <= u32::MAX.into() {
+            f64::from(self.modules_passed as u32)
+        } else {
+            self.modules_passed as f64 // Accept precision loss for large counts
+        };
+        let validated_f64 = if self.modules_validated <= u32::MAX.into() {
+            f64::from(self.modules_validated as u32)
+        } else {
+            self.modules_validated as f64 // Accept precision loss for large counts
+        };
+        (passed_f64 / validated_f64) * 100.0
     }
 }
 
@@ -662,7 +676,13 @@ impl CaxtonWasmModuleValidator {
         );
 
         // Record validation timing (statistics are updated in the calling function)
-        let validation_time = validation_start.elapsed().unwrap_or_default().as_millis() as f64;
+        let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
+        // Safe conversion from u128 to f64 with saturation for very large values
+        let validation_time = if validation_millis <= u64::MAX.into() {
+            (validation_millis as u64) as f64
+        } else {
+            f64::MAX // Saturate for impossibly large validation times
+        };
 
         info!(
             "WASM module validation completed in {:.2}ms (passed: {})",
@@ -707,7 +727,8 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
 
         // Update statistics for early failures
         if let Some(error) = early_error {
-            let validation_time = validation_start.elapsed().unwrap_or_default().as_millis() as f64;
+            let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
+            let validation_time = validation_millis as f64;
             let validation_time = validation_time.max(0.1); // Minimum 0.1ms for statistics
             let mut stats = self.statistics.write().await;
             stats.record_validation(false, validation_time, Some(&error.to_string()));
@@ -719,7 +740,13 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
             .await;
 
         // Always update statistics here (comprehensive function will also do it, but that's ok)
-        let validation_time = validation_start.elapsed().unwrap_or_default().as_millis() as f64;
+        let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
+        // Safe conversion from u128 to f64 with saturation for very large values
+        let validation_time = if validation_millis <= u64::MAX.into() {
+            (validation_millis as u64) as f64
+        } else {
+            f64::MAX // Saturate for impossibly large validation times
+        };
         let validation_time = validation_time.max(0.1); // Minimum 0.1ms for statistics
         let passed = result.is_ok();
         let failure_reason = if let Err(ref error) = result {

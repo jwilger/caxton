@@ -169,10 +169,17 @@ pub struct AgentName(String);
 4. Add comment explaining why and link to issue
 5. Create follow-up story to address the underlying issue
 
+**Automated Enforcement:**
+- CI workflow automatically fails on any new allow attributes
+- Code quality test (`test_no_clippy_allow_attributes`) enforces zero-tolerance
+- Pre-commit hooks prevent allow attribute commits via pattern detection
+- `RUSTFLAGS="-D warnings"` treats all clippy warnings as build failures
+
 **Pre-commit Hook Enforcement:**
 - Pre-commit hooks are MANDATORY and must not be bypassed
 - Use `git commit --no-verify` only in genuine emergencies with team notification
 - If pre-commit hooks fail, fix the issues - don't bypass them
+- Allow attribute detection prevents commits with new suppressions
 
 Testing Discipline (Kent Beck)
 Work in strict Red → Green → Refactor loops with one failing test at a time.

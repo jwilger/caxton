@@ -284,8 +284,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
-            #[allow(clippy::cast_possible_truncation)]
-            timeout_ms: self.default_timeout.as_millis() as u64,
+            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?
         .map_err(|e| LifecycleError::ValidationFailed {
             reason: e.to_string(),
@@ -343,8 +342,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
-            #[allow(clippy::cast_possible_truncation)]
-            timeout_ms: self.default_timeout.as_millis() as u64,
+            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?;
 
         // Clean up active deployment tracking
@@ -476,8 +474,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
-            #[allow(clippy::cast_possible_truncation)]
-            timeout_ms: self.default_timeout.as_millis() as u64,
+            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?
         .map_err(|e| LifecycleError::ValidationFailed {
             reason: e.to_string(),
@@ -522,8 +519,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
-            #[allow(clippy::cast_possible_truncation)]
-            timeout_ms: self.default_timeout.as_millis() as u64,
+            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?;
 
         // Clean up active hot reload tracking

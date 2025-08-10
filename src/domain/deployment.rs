@@ -98,11 +98,9 @@ impl BatchSize {
             return Err(Self::try_new(101).unwrap_err()); // This will trigger the validation error
         }
 
-        #[allow(clippy::cast_precision_loss)]
-        let total_as_f32 = total_instances as f32;
-        let calculated = (total_as_f32 * f32::from(percentage) / 100.0).ceil();
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let batch_size = (calculated as u8).max(1);
+        // Use integer arithmetic to avoid precision loss entirely
+        let calculated_size = (total_instances * usize::from(percentage) + 99) / 100; // Integer ceiling division
+        let batch_size = u8::try_from(calculated_size).unwrap_or(u8::MAX).max(1);
         Self::try_new(batch_size)
     }
 }
@@ -612,9 +610,13 @@ impl DeploymentMetrics {
         if total == 0 {
             return 0.0;
         }
-        #[allow(clippy::cast_precision_loss)]
         {
-            (self.instances_deployed as f32 / total as f32) * 100.0
+            // Use higher precision arithmetic: precision loss is acceptable for percentage display
+            let deployed_f64 = f64::from(self.instances_deployed);
+            let total_f64 = f64::from(total);
+            let result = deployed_f64 / total_f64 * 100.0;
+            // Safe truncation for percentage display - values will be 0.0-100.0
+            result as f32
         }
     }
 

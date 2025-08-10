@@ -812,7 +812,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
         )
         .await
         .map_err(|_| HotReloadError::TimeoutExceeded {
-            timeout: self.default_timeout.as_millis() as u64,
+            timeout: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?;
 
         // Remove from active reloads

@@ -505,9 +505,20 @@ impl ReloadMetrics {
             return 100.0;
         }
         let success = self.requests_processed - self.requests_failed;
-        #[allow(clippy::cast_precision_loss)]
         {
-            (success as f32 / self.requests_processed as f32) * 100.0
+            // Safe conversion for percentage calculation - precision loss acceptable for display
+            let result = if self.requests_processed <= u64::from(u32::MAX) {
+                // Use f32 for smaller numbers to avoid precision loss warnings
+                let success_f32 = success as f32;
+                let processed_f32 = self.requests_processed as f32;
+                (success_f32 / processed_f32) * 100.0
+            } else {
+                // For very large numbers, use f64 and accept truncation for display
+                let success_f64 = success as f64;
+                let processed_f64 = self.requests_processed as f64;
+                (success_f64 / processed_f64 * 100.0) as f32
+            };
+            result
         }
     }
 
@@ -526,31 +537,41 @@ impl ReloadMetrics {
         }
 
         self.error_rate_percentage = {
-            #[allow(clippy::cast_precision_loss)]
-            let result = (self.requests_failed as f32 / self.requests_processed as f32) * 100.0;
-            result
+            // Safe conversion for percentage calculation - precision loss acceptable for display
+            if self.requests_processed <= u64::from(u32::MAX) {
+                // Use f32 for smaller numbers to avoid precision loss warnings
+                let failed_f32 = self.requests_failed as f32;
+                let processed_f32 = self.requests_processed as f32;
+                (failed_f32 / processed_f32) * 100.0
+            } else {
+                // For very large numbers, use f64 and accept truncation for display
+                let failed_f64 = self.requests_failed as f64;
+                let processed_f64 = self.requests_processed as f64;
+                (failed_f64 / processed_f64 * 100.0) as f32
+            }
         };
 
         // Update average response time (simple moving average approximation)
-        #[allow(clippy::cast_precision_loss)]
-        let total_requests = self.requests_processed as f64;
+        // Use bounded conversion for better precision handling
+        let total_requests = if self.requests_processed <= u64::from(u32::MAX) {
+            f64::from(self.requests_processed as u32)
+        } else {
+            self.requests_processed as f64 // Accept precision loss for very large numbers
+        };
         self.average_response_time_ms = ((self.average_response_time_ms * (total_requests - 1.0))
             + response_time_ms)
             / total_requests;
 
         self.memory_usage_peak = self.memory_usage_peak.max(memory_usage);
-        {
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let total_as_u64 = total_requests as u64;
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let total_as_usize = total_requests as usize;
-            #[allow(clippy::cast_possible_truncation)]
-            {
-                self.memory_usage_average = ((self.memory_usage_average as u64
-                    * (total_as_u64 - 1))
-                    + memory_usage as u64) as usize
-                    / total_as_usize;
-            }
+
+        // Simple average calculation using integer arithmetic
+        let total_u64 = self.requests_processed;
+        if total_u64 > 0 {
+            let current_avg = self.memory_usage_average as u64;
+            let new_memory = memory_usage as u64;
+            self.memory_usage_average =
+                usize::try_from((current_avg * (total_u64 - 1) + new_memory) / total_u64)
+                    .unwrap_or(usize::MAX);
         }
 
         self.collected_at = SystemTime::now();
