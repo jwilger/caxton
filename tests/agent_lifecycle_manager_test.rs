@@ -786,7 +786,7 @@ async fn test_deployment_timeout() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LifecycleError::OperationTimeout { .. }
+        LifecycleError::DeploymentError(DeploymentError::TimeoutExceeded { .. })
     ));
 }
 
@@ -863,7 +863,7 @@ async fn test_hot_reload_timeout() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LifecycleError::OperationTimeout { .. }
+        LifecycleError::HotReloadError(HotReloadError::TimeoutExceeded { .. })
     ));
 }
 

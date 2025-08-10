@@ -3,40 +3,151 @@
 use crate::domain_types::{HostFunctionName, MaxImportFunctions};
 use serde::{Deserialize, Serialize};
 
+/// WebAssembly features that can be enabled or disabled
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WasmFeatures {
+    /// Enable SIMD (Single Instruction, Multiple Data) instructions
+    pub simd: bool,
+    /// Enable reference types (anyref, funcref)
+    pub reference_types: bool,
+    /// Enable bulk memory operations
+    pub bulk_memory: bool,
+    /// Enable threading support
+    pub threads: bool,
+}
+
+impl WasmFeatures {
+    /// Strict security: all advanced features disabled
+    pub fn strict() -> Self {
+        Self {
+            simd: false,
+            reference_types: false,
+            bulk_memory: false,
+            threads: false,
+        }
+    }
+
+    /// Relaxed security: all features enabled
+    pub fn relaxed() -> Self {
+        Self {
+            simd: true,
+            reference_types: true,
+            bulk_memory: true,
+            threads: true,
+        }
+    }
+
+    /// Development: enable common features but keep threads disabled
+    pub fn development() -> Self {
+        Self {
+            simd: true,
+            reference_types: true,
+            bulk_memory: true,
+            threads: false,
+        }
+    }
+}
+
+impl Default for WasmFeatures {
+    fn default() -> Self {
+        Self::strict()
+    }
+}
+
+/// System access permissions for agents
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AccessPermissions {
+    /// Allow network access (HTTP, TCP, etc.)
+    pub network: bool,
+    /// Allow filesystem access (read/write files)
+    pub filesystem: bool,
+}
+
+impl AccessPermissions {
+    /// No external access permitted
+    pub fn none() -> Self {
+        Self {
+            network: false,
+            filesystem: false,
+        }
+    }
+
+    /// Network access only
+    pub fn network_only() -> Self {
+        Self {
+            network: true,
+            filesystem: false,
+        }
+    }
+
+    /// Full system access
+    pub fn full() -> Self {
+        Self {
+            network: true,
+            filesystem: true,
+        }
+    }
+}
+
+impl Default for AccessPermissions {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
 /// Security policy defining WASM feature restrictions and permissions
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::struct_excessive_bools)] // Security policies inherently need multiple boolean flags
 pub struct SecurityPolicy {
-    /// Disable SIMD instructions
-    pub disable_simd: bool,
-    /// Disable reference types
-    pub disable_reference_types: bool,
-    /// Disable bulk memory operations
-    pub disable_bulk_memory: bool,
-    /// Disable threading support
-    pub disable_threads: bool,
+    /// WebAssembly features configuration
+    pub wasm_features: WasmFeatures,
+    /// System access permissions
+    pub access_permissions: AccessPermissions,
     /// Enable fuel-based metering
     pub enable_fuel_metering: bool,
-    /// Allow network access
-    pub allow_network_access: bool,
-    /// Allow filesystem access
-    pub allow_filesystem_access: bool,
     /// Maximum number of import functions allowed
     pub max_import_functions: MaxImportFunctions,
     /// List of allowed host functions
     pub allowed_host_functions: Vec<HostFunctionName>,
 }
 
+impl SecurityPolicy {
+    /// Backward compatibility: check if SIMD is disabled
+    pub fn disable_simd(&self) -> bool {
+        !self.wasm_features.simd
+    }
+
+    /// Backward compatibility: check if reference types are disabled
+    pub fn disable_reference_types(&self) -> bool {
+        !self.wasm_features.reference_types
+    }
+
+    /// Backward compatibility: check if bulk memory is disabled
+    pub fn disable_bulk_memory(&self) -> bool {
+        !self.wasm_features.bulk_memory
+    }
+
+    /// Backward compatibility: check if threads are disabled
+    pub fn disable_threads(&self) -> bool {
+        !self.wasm_features.threads
+    }
+
+    /// Backward compatibility: check if network access is allowed
+    pub fn allow_network_access(&self) -> bool {
+        self.access_permissions.network
+    }
+
+    /// Backward compatibility: check if filesystem access is allowed
+    pub fn allow_filesystem_access(&self) -> bool {
+        self.access_permissions.filesystem
+    }
+}
+
 impl Default for SecurityPolicy {
     fn default() -> Self {
         Self {
-            disable_simd: true,
-            disable_reference_types: true,
-            disable_bulk_memory: true,
-            disable_threads: true,
+            wasm_features: WasmFeatures::default(),
+            access_permissions: AccessPermissions::default(),
             enable_fuel_metering: true,
-            allow_network_access: false,
-            allow_filesystem_access: false,
             max_import_functions: MaxImportFunctions::try_new(10).unwrap(),
             allowed_host_functions: vec![
                 HostFunctionName::try_new("log".to_string()).unwrap(),
@@ -56,13 +167,9 @@ impl SecurityPolicy {
     /// Panics if the domain type validation fails (should not happen with hardcoded values)
     pub fn strict() -> Self {
         Self {
-            disable_simd: true,
-            disable_reference_types: true,
-            disable_bulk_memory: true,
-            disable_threads: true,
+            wasm_features: WasmFeatures::strict(),
+            access_permissions: AccessPermissions::none(),
             enable_fuel_metering: true,
-            allow_network_access: false,
-            allow_filesystem_access: false,
             max_import_functions: MaxImportFunctions::try_new(5).unwrap(),
             allowed_host_functions: vec![
                 HostFunctionName::try_new("log".to_string()).unwrap(),
@@ -78,13 +185,9 @@ impl SecurityPolicy {
     /// Panics if the domain type validation fails (should not happen with hardcoded values)
     pub fn relaxed() -> Self {
         Self {
-            disable_simd: false,
-            disable_reference_types: false,
-            disable_bulk_memory: false,
-            disable_threads: false,
+            wasm_features: WasmFeatures::relaxed(),
+            access_permissions: AccessPermissions::network_only(),
             enable_fuel_metering: true,
-            allow_network_access: true,
-            allow_filesystem_access: false,
             max_import_functions: MaxImportFunctions::try_new(20).unwrap(),
             allowed_host_functions: vec![
                 HostFunctionName::try_new("log".to_string()).unwrap(),
@@ -113,11 +216,11 @@ impl SecurityPolicy {
     ///
     /// Returns an error if the policy configuration is invalid
     pub fn validate(&self) -> Result<(), String> {
-        if !self.enable_fuel_metering && !self.disable_threads {
+        if !self.enable_fuel_metering && self.wasm_features.threads {
             return Err("Fuel metering must be enabled when threads are allowed".to_string());
         }
 
-        if self.allow_filesystem_access && self.allowed_host_functions.is_empty() {
+        if self.access_permissions.filesystem && self.allowed_host_functions.is_empty() {
             return Err(
                 "Filesystem access requires at least one allowed host function".to_string(),
             );
@@ -138,13 +241,13 @@ mod tests {
     #[test]
     fn test_default_security_policy() {
         let policy = SecurityPolicy::default();
-        assert!(policy.disable_simd);
-        assert!(policy.disable_reference_types);
-        assert!(policy.disable_bulk_memory);
-        assert!(policy.disable_threads);
+        assert!(policy.disable_simd());
+        assert!(policy.disable_reference_types());
+        assert!(policy.disable_bulk_memory());
+        assert!(policy.disable_threads());
         assert!(policy.enable_fuel_metering);
-        assert!(!policy.allow_network_access);
-        assert!(!policy.allow_filesystem_access);
+        assert!(!policy.allow_network_access());
+        assert!(!policy.allow_filesystem_access());
         assert_eq!(policy.max_import_functions.into_inner(), 10);
         assert_eq!(policy.allowed_host_functions.len(), 4);
     }
@@ -152,13 +255,13 @@ mod tests {
     #[test]
     fn test_strict_security_policy() {
         let policy = SecurityPolicy::strict();
-        assert!(policy.disable_simd);
-        assert!(policy.disable_reference_types);
-        assert!(policy.disable_bulk_memory);
-        assert!(policy.disable_threads);
+        assert!(policy.disable_simd());
+        assert!(policy.disable_reference_types());
+        assert!(policy.disable_bulk_memory());
+        assert!(policy.disable_threads());
         assert!(policy.enable_fuel_metering);
-        assert!(!policy.allow_network_access);
-        assert!(!policy.allow_filesystem_access);
+        assert!(!policy.allow_network_access());
+        assert!(!policy.allow_filesystem_access());
         assert_eq!(policy.max_import_functions.into_inner(), 5);
         assert_eq!(policy.allowed_host_functions.len(), 2);
     }
@@ -166,13 +269,13 @@ mod tests {
     #[test]
     fn test_relaxed_security_policy() {
         let policy = SecurityPolicy::relaxed();
-        assert!(!policy.disable_simd);
-        assert!(!policy.disable_reference_types);
-        assert!(!policy.disable_bulk_memory);
-        assert!(!policy.disable_threads);
+        assert!(!policy.disable_simd());
+        assert!(!policy.disable_reference_types());
+        assert!(!policy.disable_bulk_memory());
+        assert!(!policy.disable_threads());
         assert!(policy.enable_fuel_metering);
-        assert!(policy.allow_network_access);
-        assert!(!policy.allow_filesystem_access);
+        assert!(policy.allow_network_access());
+        assert!(!policy.allow_filesystem_access());
         assert_eq!(policy.max_import_functions.into_inner(), 20);
         assert_eq!(policy.allowed_host_functions.len(), 6);
     }
@@ -197,7 +300,10 @@ mod tests {
     fn test_validate_invalid_policy_threads_without_fuel() {
         let policy = SecurityPolicy {
             enable_fuel_metering: false,
-            disable_threads: false,
+            wasm_features: WasmFeatures {
+                threads: true,
+                ..WasmFeatures::default()
+            },
             ..Default::default()
         };
         assert!(policy.validate().is_err());
@@ -206,7 +312,10 @@ mod tests {
     #[test]
     fn test_validate_invalid_policy_filesystem_no_functions() {
         let policy = SecurityPolicy {
-            allow_filesystem_access: true,
+            access_permissions: AccessPermissions {
+                filesystem: true,
+                ..AccessPermissions::default()
+            },
             allowed_host_functions: vec![],
             ..Default::default()
         };

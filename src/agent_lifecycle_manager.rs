@@ -249,38 +249,16 @@ impl AgentLifecycleManager {
         manager
     }
 
-    /// Deploy a new agent with comprehensive validation and state management
-    ///
-    /// # Errors
-    ///
-    /// Returns `DeploymentError` if:
-    /// - Agent validation fails
-    /// - Resource allocation fails
-    /// - WASM module is invalid
-    /// - Agent instance creation fails
-    ///
-    /// # Panics
-    ///
-    /// May panic if internal failure reason creation fails (should not happen in normal operation).
-    #[tracing::instrument(skip(self, wasm_module_bytes))]
-    #[allow(clippy::too_many_lines)]
-    pub async fn deploy_agent(
+    /// Validate WASM module with timeout
+    async fn validate_wasm_module_with_timeout(
         &self,
-        agent_id: AgentId,
+        wasm_bytes: &[u8],
         agent_name: Option<AgentName>,
-        version: AgentVersion,
-        version_number: VersionNumber,
-        config: DeploymentConfig,
-        wasm_module_bytes: Vec<u8>,
-    ) -> Result<DeploymentResult> {
-        let start_time = SystemTime::now();
-        info!("Starting agent deployment for agent_id: {}", agent_id);
-
-        // Validate WASM module first
+    ) -> Result<WasmModule> {
         let validated_module = timeout(
             self.default_timeout,
             self.module_validator
-                .validate_module(&wasm_module_bytes, agent_name.clone()),
+                .validate_module(wasm_bytes, agent_name),
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
@@ -298,20 +276,34 @@ impl AgentLifecycleManager {
             return Err(LifecycleError::ValidationFailed { reason: reasons });
         }
 
-        // Create agent lifecycle state
-        let mut lifecycle =
-            AgentLifecycle::new(agent_id, agent_name.clone(), version, version_number);
+        Ok(validated_module)
+    }
 
-        // Transition to loaded state
+    /// Create and store initial agent lifecycle state
+    async fn create_agent_lifecycle_state(
+        &self,
+        agent_id: AgentId,
+        agent_name: Option<AgentName>,
+        version: AgentVersion,
+        version_number: VersionNumber,
+    ) -> Result<()> {
+        let mut lifecycle = AgentLifecycle::new(agent_id, agent_name, version, version_number);
         lifecycle.transition_to(AgentLifecycleState::Loaded, None)?;
 
-        // Store initial lifecycle state
-        {
-            let mut agents = self.agents.write().await;
-            agents.insert(agent_id, lifecycle.clone());
-        }
+        let mut agents = self.agents.write().await;
+        agents.insert(agent_id, lifecycle);
+        Ok(())
+    }
 
-        // Create deployment request
+    /// Create and validate deployment request
+    fn create_deployment_request(
+        agent_id: AgentId,
+        agent_name: Option<AgentName>,
+        version: AgentVersion,
+        version_number: VersionNumber,
+        config: DeploymentConfig,
+        wasm_module_bytes: Vec<u8>,
+    ) -> Result<DeploymentRequest> {
         let deployment_request = DeploymentRequest::new(
             agent_id,
             agent_name,
@@ -322,95 +314,330 @@ impl AgentLifecycleManager {
             wasm_module_bytes,
         );
 
-        // Validate deployment request
         deployment_request
             .validate()
             .map_err(DeploymentError::ValidationFailed)?;
 
+        Ok(deployment_request)
+    }
+
+    /// Track active deployment
+    async fn track_active_deployment(
+        &self,
+        deployment_request: &DeploymentRequest,
+    ) -> DeploymentId {
         let deployment_id = deployment_request.deployment_id;
+        let mut active = self.active_deployments.lock().await;
+        active.insert(deployment_id, deployment_request.clone());
+        deployment_id
+    }
 
-        // Track active deployment
-        {
-            let mut active = self.active_deployments.lock().await;
-            active.insert(deployment_id, deployment_request.clone());
-        }
+    /// Clean up deployment tracking
+    async fn cleanup_deployment_tracking(&self, deployment_id: DeploymentId) {
+        let mut active = self.active_deployments.lock().await;
+        active.remove(&deployment_id);
+    }
 
-        // Execute deployment
-        let deployment_result = timeout(
+    /// Execute deployment with timeout
+    async fn execute_deployment_with_timeout(
+        &self,
+        deployment_request: DeploymentRequest,
+    ) -> std::result::Result<DeploymentResult, DeploymentError> {
+        timeout(
             self.default_timeout,
             self.deployment_manager.deploy_agent(deployment_request),
         )
         .await
-        .map_err(|_| LifecycleError::OperationTimeout {
-            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
-        })?;
+        .map_err(|_| DeploymentError::TimeoutExceeded {
+            timeout: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
+        })?
+    }
 
-        // Clean up active deployment tracking
-        {
-            let mut active = self.active_deployments.lock().await;
-            active.remove(&deployment_id);
-        }
-
+    /// Process deployment result and update agent state
+    async fn process_deployment_result(
+        &self,
+        agent_id: AgentId,
+        deployment_id: DeploymentId,
+        deployment_result: std::result::Result<DeploymentResult, DeploymentError>,
+    ) -> Result<DeploymentResult> {
         match deployment_result {
             Ok(result) => {
-                // Update lifecycle state based on deployment result
-                {
-                    let mut agents = self.agents.write().await;
-                    if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
-                        if result.status.is_success() {
-                            if let Err(e) =
-                                agent_lifecycle.transition_to(AgentLifecycleState::Ready, None)
-                            {
-                                warn!("Failed to transition agent to Ready state: {}", e);
-                            }
-                        } else {
-                            let failure_reason =
-                                AgentFailureReason::from_error(&DeploymentError::ValidationFailed(
-                                    crate::domain::DeploymentValidationError::InvalidStrategy,
-                                ))
-                                .unwrap_or_else(|_| {
-                                    AgentFailureReason::try_new("Deployment failed".to_string())
-                                        .unwrap()
-                                });
-                            if let Err(e) = agent_lifecycle.fail(failure_reason) {
-                                warn!("Failed to mark agent as failed: {}", e);
-                            }
-                        }
-                    }
-                }
-
-                // Update agent status
+                self.update_agent_lifecycle_on_success(agent_id, &result)
+                    .await;
                 self.update_agent_status(agent_id, Some(deployment_id), None)
                     .await;
-
-                info!(
-                    "Agent deployment completed successfully in {:?}",
-                    start_time.elapsed().unwrap_or_default()
-                );
                 Ok(result)
             }
             Err(e) => {
-                // Mark agent as failed
-                {
-                    let mut agents = self.agents.write().await;
-                    if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
-                        let failure_reason =
-                            AgentFailureReason::from_error(&e).unwrap_or_else(|_| {
-                                AgentFailureReason::try_new(e.to_string()).unwrap_or_else(|_| {
-                                    AgentFailureReason::try_new(
-                                        "Unknown deployment failure".to_string(),
-                                    )
-                                    .unwrap()
-                                })
-                            });
-                        if let Err(transition_err) = agent_lifecycle.fail(failure_reason) {
-                            error!("Failed to mark agent as failed: {}", transition_err);
-                        }
+                self.update_agent_lifecycle_on_failure(agent_id, &e).await;
+                Err(LifecycleError::DeploymentError(e))
+            }
+        }
+    }
+
+    /// Update agent lifecycle on successful deployment
+    async fn update_agent_lifecycle_on_success(
+        &self,
+        agent_id: AgentId,
+        result: &DeploymentResult,
+    ) {
+        let mut agents = self.agents.write().await;
+        if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
+            if result.status.is_success() {
+                if let Err(e) = agent_lifecycle.transition_to(AgentLifecycleState::Ready, None) {
+                    warn!("Failed to transition agent to Ready state: {}", e);
+                }
+            } else {
+                let failure_reason =
+                    AgentFailureReason::from_error(&DeploymentError::ValidationFailed(
+                        crate::domain::DeploymentValidationError::InvalidStrategy,
+                    ))
+                    .unwrap_or_else(|_| {
+                        AgentFailureReason::try_new("Deployment failed".to_string()).unwrap()
+                    });
+                if let Err(e) = agent_lifecycle.fail(failure_reason) {
+                    warn!("Failed to mark agent as failed: {}", e);
+                }
+            }
+        }
+    }
+
+    /// Update agent lifecycle on deployment failure
+    async fn update_agent_lifecycle_on_failure(&self, agent_id: AgentId, error: &DeploymentError) {
+        let mut agents = self.agents.write().await;
+        if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
+            let failure_reason = AgentFailureReason::from_error(error).unwrap_or_else(|_| {
+                AgentFailureReason::try_new(error.to_string()).unwrap_or_else(|_| {
+                    AgentFailureReason::try_new("Unknown deployment failure".to_string()).unwrap()
+                })
+            });
+            if let Err(transition_err) = agent_lifecycle.fail(failure_reason) {
+                error!("Failed to mark agent as failed: {}", transition_err);
+            }
+        }
+    }
+
+    /// Deploy a new agent with comprehensive validation and state management
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentError` if:
+    /// - Agent validation fails
+    /// - Resource allocation fails
+    /// - WASM module is invalid
+    /// - Agent instance creation fails
+    ///
+    /// # Panics
+    ///
+    /// May panic if internal failure reason creation fails (should not happen in normal operation).
+    #[tracing::instrument(skip(self, wasm_module_bytes))]
+    pub async fn deploy_agent(
+        &self,
+        agent_id: AgentId,
+        agent_name: Option<AgentName>,
+        version: AgentVersion,
+        version_number: VersionNumber,
+        config: DeploymentConfig,
+        wasm_module_bytes: Vec<u8>,
+    ) -> Result<DeploymentResult> {
+        let start_time = SystemTime::now();
+        info!("Starting agent deployment for agent_id: {}", agent_id);
+
+        // Functional pipeline approach
+        let _result = self
+            .validate_wasm_module_with_timeout(&wasm_module_bytes, agent_name.clone())
+            .await?;
+
+        self.create_agent_lifecycle_state(agent_id, agent_name.clone(), version, version_number)
+            .await?;
+
+        let deployment_request = Self::create_deployment_request(
+            agent_id,
+            agent_name,
+            version,
+            version_number,
+            config,
+            wasm_module_bytes,
+        )?;
+
+        let deployment_id = self.track_active_deployment(&deployment_request).await;
+
+        let deployment_result = self
+            .execute_deployment_with_timeout(deployment_request)
+            .await;
+
+        self.cleanup_deployment_tracking(deployment_id).await;
+
+        let result = self
+            .process_deployment_result(agent_id, deployment_id, deployment_result)
+            .await?;
+
+        info!(
+            "Agent deployment completed successfully in {:?}",
+            start_time.elapsed().unwrap_or_default()
+        );
+
+        Ok(result)
+    }
+
+    /// Validate agent state and get agent name for hot reload
+    async fn validate_agent_for_hot_reload(&self, agent_id: AgentId) -> Result<Option<AgentName>> {
+        let agents = self.agents.read().await;
+        let agent = agents
+            .get(&agent_id)
+            .ok_or(LifecycleError::AgentNotFound { agent_id })?;
+
+        if !agent.current_state.can_start() && agent.current_state != AgentLifecycleState::Running {
+            return Err(LifecycleError::InvalidStateTransition(
+                StateTransitionError::InvalidTransition {
+                    from: agent.current_state,
+                    to: AgentLifecycleState::Running,
+                },
+            ));
+        }
+
+        Ok(agent.agent_name.clone())
+    }
+
+    /// Create and validate hot reload request
+    fn create_hot_reload_request(
+        agent_id: AgentId,
+        agent_name: Option<AgentName>,
+        from_version: AgentVersion,
+        to_version: AgentVersion,
+        to_version_number: VersionNumber,
+        config: HotReloadConfig,
+        wasm_module_bytes: Vec<u8>,
+    ) -> Result<HotReloadRequest> {
+        let hot_reload_request = HotReloadRequest::new(
+            agent_id,
+            agent_name,
+            from_version,
+            to_version,
+            to_version_number,
+            config,
+            wasm_module_bytes,
+        );
+
+        hot_reload_request
+            .validate()
+            .map_err(HotReloadError::ValidationFailed)?;
+
+        Ok(hot_reload_request)
+    }
+
+    /// Track active hot reload
+    async fn track_active_hot_reload(&self, hot_reload_request: &HotReloadRequest) -> HotReloadId {
+        let reload_id = hot_reload_request.reload_id;
+        let mut active = self.active_hot_reloads.lock().await;
+        active.insert(reload_id, hot_reload_request.clone());
+        reload_id
+    }
+
+    /// Clean up hot reload tracking
+    async fn cleanup_hot_reload_tracking(&self, reload_id: HotReloadId) {
+        let mut active = self.active_hot_reloads.lock().await;
+        active.remove(&reload_id);
+    }
+
+    /// Execute hot reload with timeout
+    async fn execute_hot_reload_with_timeout(
+        &self,
+        hot_reload_request: HotReloadRequest,
+    ) -> std::result::Result<HotReloadResult, HotReloadError> {
+        timeout(
+            self.default_timeout,
+            self.hot_reload_manager.hot_reload_agent(hot_reload_request),
+        )
+        .await
+        .map_err(|_| HotReloadError::TimeoutExceeded {
+            timeout: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
+        })?
+    }
+
+    /// Process hot reload result and update agent state
+    async fn process_hot_reload_result(
+        &self,
+        agent_id: AgentId,
+        reload_id: HotReloadId,
+        to_version: AgentVersion,
+        to_version_number: VersionNumber,
+        hot_reload_result: std::result::Result<HotReloadResult, HotReloadError>,
+    ) -> Result<HotReloadResult> {
+        match hot_reload_result {
+            Ok(result) => {
+                self.update_agent_lifecycle_on_hot_reload_success(
+                    agent_id,
+                    &result,
+                    to_version,
+                    to_version_number,
+                )
+                .await;
+                self.update_agent_status(agent_id, None, Some(reload_id))
+                    .await;
+                Ok(result)
+            }
+            Err(e) => {
+                self.update_agent_lifecycle_on_hot_reload_failure(agent_id, &e)
+                    .await;
+                Err(LifecycleError::HotReloadError(e))
+            }
+        }
+    }
+
+    /// Update agent lifecycle on successful hot reload
+    async fn update_agent_lifecycle_on_hot_reload_success(
+        &self,
+        agent_id: AgentId,
+        result: &HotReloadResult,
+        to_version: AgentVersion,
+        to_version_number: VersionNumber,
+    ) {
+        let mut agents = self.agents.write().await;
+        if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
+            if result.status.is_success() {
+                // Update version information
+                agent_lifecycle.version = to_version;
+                agent_lifecycle.version_number = to_version_number;
+
+                // Ensure agent is in running state after successful hot reload
+                if agent_lifecycle.current_state != AgentLifecycleState::Running {
+                    if let Err(e) = agent_lifecycle.start() {
+                        warn!("Failed to start agent after hot reload: {}", e);
                     }
                 }
+            } else {
+                let failure_reason = AgentFailureReason::try_new(
+                    result
+                        .error_message
+                        .clone()
+                        .unwrap_or_else(|| "Hot reload failed".to_string()),
+                )
+                .unwrap_or_else(|_| {
+                    AgentFailureReason::try_new("Unknown hot reload failure".to_string()).unwrap()
+                });
+                if let Err(e) = agent_lifecycle.fail(failure_reason) {
+                    warn!("Failed to mark agent as failed after hot reload: {}", e);
+                }
+            }
+        }
+    }
 
-                error!("Agent deployment failed: {}", e);
-                Err(LifecycleError::DeploymentError(e))
+    /// Update agent lifecycle on hot reload failure
+    async fn update_agent_lifecycle_on_hot_reload_failure(
+        &self,
+        agent_id: AgentId,
+        error: &HotReloadError,
+    ) {
+        let mut agents = self.agents.write().await;
+        if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
+            let failure_reason = AgentFailureReason::from_error(error).unwrap_or_else(|_| {
+                AgentFailureReason::try_new(error.to_string()).unwrap_or_else(|_| {
+                    AgentFailureReason::try_new("Unknown hot reload failure".to_string()).unwrap()
+                })
+            });
+            if let Err(transition_err) = agent_lifecycle.fail(failure_reason) {
+                error!("Failed to mark agent as failed: {}", transition_err);
             }
         }
     }
@@ -429,7 +656,6 @@ impl AgentLifecycleManager {
     ///
     /// May panic if internal failure reason creation fails (should not happen in normal operation).
     #[tracing::instrument(skip(self, wasm_module_bytes))]
-    #[allow(clippy::too_many_lines)]
     pub async fn hot_reload_agent(
         &self,
         agent_id: AgentId,
@@ -445,51 +671,13 @@ impl AgentLifecycleManager {
             agent_id, from_version, to_version
         );
 
-        // Validate agent exists and is in correct state
-        let agent_name = {
-            let agents = self.agents.read().await;
-            let agent = agents
-                .get(&agent_id)
-                .ok_or(LifecycleError::AgentNotFound { agent_id })?;
+        // Functional pipeline approach
+        let agent_name = self.validate_agent_for_hot_reload(agent_id).await?;
 
-            if !agent.current_state.can_start()
-                && agent.current_state != AgentLifecycleState::Running
-            {
-                return Err(LifecycleError::InvalidStateTransition(
-                    StateTransitionError::InvalidTransition {
-                        from: agent.current_state,
-                        to: AgentLifecycleState::Running,
-                    },
-                ));
-            }
+        self.validate_wasm_module_with_timeout(&wasm_module_bytes, agent_name.clone())
+            .await?;
 
-            agent.agent_name.clone()
-        };
-
-        // Validate new WASM module
-        let validated_module = timeout(
-            self.default_timeout,
-            self.module_validator
-                .validate_module(&wasm_module_bytes, agent_name.clone()),
-        )
-        .await
-        .map_err(|_| LifecycleError::OperationTimeout {
-            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
-        })?
-        .map_err(|e| LifecycleError::ValidationFailed {
-            reason: e.to_string(),
-        })?;
-
-        if !validated_module.is_valid() {
-            let reasons = validated_module
-                .validation_result
-                .error_messages()
-                .join(", ");
-            return Err(LifecycleError::ValidationFailed { reason: reasons });
-        }
-
-        // Create hot reload request
-        let hot_reload_request = HotReloadRequest::new(
+        let hot_reload_request = Self::create_hot_reload_request(
             agent_id,
             agent_name,
             from_version,
@@ -497,108 +685,32 @@ impl AgentLifecycleManager {
             to_version_number,
             config,
             wasm_module_bytes,
+        )?;
+
+        let reload_id = self.track_active_hot_reload(&hot_reload_request).await;
+
+        let hot_reload_result = self
+            .execute_hot_reload_with_timeout(hot_reload_request)
+            .await;
+
+        self.cleanup_hot_reload_tracking(reload_id).await;
+
+        let result = self
+            .process_hot_reload_result(
+                agent_id,
+                reload_id,
+                to_version,
+                to_version_number,
+                hot_reload_result,
+            )
+            .await?;
+
+        info!(
+            "Hot reload completed successfully in {:?}",
+            start_time.elapsed().unwrap_or_default()
         );
 
-        // Validate hot reload request
-        hot_reload_request
-            .validate()
-            .map_err(HotReloadError::ValidationFailed)?;
-
-        let reload_id = hot_reload_request.reload_id;
-
-        // Track active hot reload
-        {
-            let mut active = self.active_hot_reloads.lock().await;
-            active.insert(reload_id, hot_reload_request.clone());
-        }
-
-        // Execute hot reload
-        let hot_reload_result = timeout(
-            self.default_timeout,
-            self.hot_reload_manager.hot_reload_agent(hot_reload_request),
-        )
-        .await
-        .map_err(|_| LifecycleError::OperationTimeout {
-            timeout_ms: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
-        })?;
-
-        // Clean up active hot reload tracking
-        {
-            let mut active = self.active_hot_reloads.lock().await;
-            active.remove(&reload_id);
-        }
-
-        match hot_reload_result {
-            Ok(result) => {
-                // Update agent lifecycle based on hot reload result
-                {
-                    let mut agents = self.agents.write().await;
-                    if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
-                        if result.status.is_success() {
-                            // Update version information
-                            agent_lifecycle.version = to_version;
-                            agent_lifecycle.version_number = to_version_number;
-
-                            // Ensure agent is in running state after successful hot reload
-                            if agent_lifecycle.current_state != AgentLifecycleState::Running {
-                                if let Err(e) = agent_lifecycle.start() {
-                                    warn!("Failed to start agent after hot reload: {}", e);
-                                }
-                            }
-                        } else {
-                            let failure_reason = AgentFailureReason::try_new(
-                                result
-                                    .error_message
-                                    .clone()
-                                    .unwrap_or_else(|| "Hot reload failed".to_string()),
-                            )
-                            .unwrap_or_else(|_| {
-                                AgentFailureReason::try_new(
-                                    "Unknown hot reload failure".to_string(),
-                                )
-                                .unwrap()
-                            });
-                            if let Err(e) = agent_lifecycle.fail(failure_reason) {
-                                warn!("Failed to mark agent as failed after hot reload: {}", e);
-                            }
-                        }
-                    }
-                }
-
-                // Update agent status
-                self.update_agent_status(agent_id, None, Some(reload_id))
-                    .await;
-
-                info!(
-                    "Hot reload completed successfully in {:?}",
-                    start_time.elapsed().unwrap_or_default()
-                );
-                Ok(result)
-            }
-            Err(e) => {
-                // Mark agent as failed if hot reload fails critically
-                {
-                    let mut agents = self.agents.write().await;
-                    if let Some(agent_lifecycle) = agents.get_mut(&agent_id) {
-                        let failure_reason =
-                            AgentFailureReason::from_error(&e).unwrap_or_else(|_| {
-                                AgentFailureReason::try_new(e.to_string()).unwrap_or_else(|_| {
-                                    AgentFailureReason::try_new(
-                                        "Unknown hot reload failure".to_string(),
-                                    )
-                                    .unwrap()
-                                })
-                            });
-                        if let Err(transition_err) = agent_lifecycle.fail(failure_reason) {
-                            error!("Failed to mark agent as failed: {}", transition_err);
-                        }
-                    }
-                }
-
-                error!("Hot reload failed: {}", e);
-                Err(LifecycleError::HotReloadError(e))
-            }
-        }
+        Ok(result)
     }
 
     /// Start an agent (transition from Ready to Running)

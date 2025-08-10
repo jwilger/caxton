@@ -147,10 +147,10 @@ async fn test_security_features_disabled() -> Result<()> {
     let runtime = WasmRuntime::new(config)?;
     let policy = runtime.get_security_policy();
 
-    assert!(policy.disable_simd);
-    assert!(policy.disable_reference_types);
-    assert!(policy.disable_bulk_memory);
-    assert!(policy.disable_threads);
+    assert!(policy.disable_simd());
+    assert!(policy.disable_reference_types());
+    assert!(policy.disable_bulk_memory());
+    assert!(policy.disable_threads());
     assert!(policy.enable_fuel_metering);
 
     Ok(())
