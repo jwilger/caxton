@@ -20,10 +20,11 @@ repos:
 
       - id: cargo-test
         name: cargo test
-        entry: cargo nextest run --workspace
+        entry: cargo nextest run --workspace --fail-fast
         language: system
         types: [rust]
         pass_filenames: false
+        fail_fast: true
 
       - id: cargo-check
         name: cargo check
