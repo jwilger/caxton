@@ -1,0 +1,212 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Development Commands
+
+### Testing
+
+Always use `cargo nextest run` instead of `cargo test`:
+
+```bash
+cargo nextest run                    # Run all tests
+cargo nextest run --lib             # Unit tests only
+cargo nextest run --tests           # Integration tests only
+cargo nextest run --nocapture       # Show test output
+RUST_BACKTRACE=1 cargo nextest run  # With backtrace on failure
+```
+
+### Building and Linting
+
+```bash
+cargo build                          # Build the project
+cargo build --release              # Release build
+cargo check                         # Fast syntax/type checking
+cargo clippy                        # Linting (strict rules enabled)
+cargo fmt                          # Format code
+```
+
+### Development Tools
+
+```bash
+cargo watch -x test                 # Auto-run tests on changes
+cargo expand                       # Macro expansion
+cargo edit                         # Dependency management
+```
+
+## Architecture Overview
+
+Caxton is a **multi-agent orchestration server** that provides WebAssembly-based agent isolation, FIPA-compliant messaging, and comprehensive observability. It runs as a standalone server process (like PostgreSQL or Redis) rather than a library.
+
+### Core Components
+
+- **Agent Runtime Environment**: Manages WebAssembly agent lifecycle with sandboxing and resource limits
+- **FIPA Message Router**: High-performance async message routing between agents with conversation tracking
+- **Security & Sandboxing**: WebAssembly isolation with CPU/memory limits and host function restrictions
+- **Observability Layer**: Built-in structured logging, metrics (Prometheus), and distributed tracing (OpenTelemetry)
+- **Agent Lifecycle Management**: Deployment strategies including blue-green, canary, and shadow deployments
+
+### Domain Model Philosophy
+
+The codebase follows **type-driven development** principles:
+
+- Illegal states are unrepresentable through the type system
+- Phantom types for agent state transitions (`Agent<Unloaded>` → `Agent<Loaded>` → `Agent<Running>`)
+- Smart constructors with validation (e.g., `AgentId`, `Percentage`)
+- Comprehensive error types with domain-specific variants
+- nutype crate for eliminating primitive obsession
+
+### Key Domain Types
+
+Located in `src/domain_types.rs` and `src/domain/`:
+
+- **Agent Identity**: `AgentId`, `AgentName` with validation
+- **Resources**: `CpuFuel`, `MemoryBytes`, `MaxAgentMemory` with limits
+- **Messaging**: `MessageId`, `ConversationId`, `Performative` for FIPA compliance
+- **Deployment**: `DeploymentId`, `DeploymentStrategy`, `DeploymentStatus` for lifecycle management
+- **Security**: `WasmSecurityPolicy`, `ResourceLimits`, `ValidationRule` for sandboxing
+
+## Code Structure
+
+### Core Modules
+
+- `src/sandbox.rs` - WebAssembly agent sandboxing with resource limits
+- `src/security.rs` - Security policies and validation
+- `src/resource_manager.rs` - CPU/memory resource management
+- `src/message_router/` - FIPA message routing with conversation management
+- `src/runtime/` - Agent runtime environment
+- `src/host_functions.rs` - Safe host function registry
+
+### Agent Lifecycle Management
+
+- `src/agent_lifecycle_manager.rs` - Orchestrates agent operations
+- `src/deployment_manager.rs` - Handles deployment strategies
+- `src/hot_reload_manager.rs` - Zero-downtime agent updates
+- `src/wasm_module_validator.rs` - Validates WASM modules before deployment
+
+### Domain Layer
+
+- `src/domain/` - Rich domain types with business logic
+- `src/domain_types.rs` - Primitive obsession elimination with nutype
+
+### Test Structure
+
+- **Unit tests**: In `#[cfg(test)]` modules within source files
+- **Integration tests**: In `tests/` directory
+- **Fixtures**: WASM test modules in `tests/fixtures/`
+- **Property-based testing**: Using proptest for validation logic
+
+## Testing Patterns
+
+The project uses comprehensive testing with nextest for better performance:
+
+- **47 total tests** (37 unit + 10 integration)
+- Property-based testing for domain validation
+- WASM fixture generation for integration tests
+- Resource limit testing with controlled memory/CPU consumption
+
+## Key Architectural Decisions
+
+Reference the ADR documentation in `docs/adr/` for detailed rationales:
+
+1. **Observability First** (ADR-0001): Every operation is instrumented with tracing
+2. **WebAssembly Isolation** (ADR-0002): Agents run in secure WASM sandboxes
+3. **FIPA Messaging** (ADR-0003): Standard agent communication protocols
+4. **Type Safety** (ADR-0018): Domain types with nutype to prevent primitive obsession
+5. **Coordination First** (ADR-0014): Lightweight coordination instead of shared databases
+
+## Development Conventions
+
+- **Error Handling**: Use `CaxtonResult<T>` with comprehensive domain errors
+- **Tracing**: Instrument all async functions with `#[instrument]`
+- **Resource Safety**: Always validate resource limits before allocation
+- **State Machines**: Use phantom types for compile-time state validation
+- **Testing**: Write property-based tests for validation logic
+
+## External Dependencies
+
+The project uses Nix for development environment management:
+
+- Rust toolchain: 1.88.0 with clippy, rustfmt, rust-analyzer
+- Development tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit
+- Optional: just for task automation
+- Ad-hoc: use `nix shell` to use a tool that is not currently installed.
+- Update Flake: For tools you regularly use, consider adding them to the flake.nix file
+
+## Rust Type-Driven Rules
+
+- **Illegal states are unrepresentable**: prefer domain types over primitives.
+- All new domain types use `nutype` with `sanitize(...)` and `validate(...)`. Derive at least: `Clone, Debug, Eq, PartialEq, Display`; add `Serialize, Deserialize` where needed.
+- Prefer `Result<T, DomainError>` over panics. Panics only for truly unreachable states.
+
+### Example
+
+```rust
+#[nutype(
+  sanitize(trim),
+  validate(len(min = 1, max = 64)),
+  derive(Clone, Debug, Eq, PartialEq, Display)
+)]
+pub struct AgentName(String);
+```
+
+Testing Discipline (Kent Beck)
+Work in strict Red → Green → Refactor loops with one failing test at a time.
+
+Use cargo nextest run for all tests; treat clippy warnings as errors.
+
+Functional Core / Imperative Shell
+Put pure logic in the core (no I/O, no mutation beyond local scope).
+
+Keep an imperative shell for I/O; inject dependencies via traits.
+
+Model workflows as Result pipelines (railway style).
+
+## GitHub PR Workflow
+
+The SPARC workflow integrates with GitHub pull requests to ensure professional development practices:
+
+### Story Development Flow
+
+1. **Story Selection**: Choose from PLANNING.md
+2. **Branch Creation**: `story-{id}-{slug}` feature branches
+3. **Standard SPARC**: Research → Plan → Implement → Expert
+4. **PR Creation**: Draft PRs with comprehensive descriptions
+5. **Review Loop**: Address feedback with Claude Code attribution
+6. **Human Merge**: Only humans mark PRs ready-for-review
+
+### Branch Management
+
+- Feature branches: `story-001-wasm-runtime-foundation`
+- Never commit to main during story development
+- Branch/story mapping tracked in `.claude/branch.info`
+- Automatic protection against closed PR branches
+
+### PR Safety & Attribution
+
+All GitHub comments from Claude Code include attribution:
+```markdown
+<!-- Generated by Claude Code -->
+**🤖 Claude Code**: [response content]
+
+*This comment was generated automatically...*
+```
+
+PRs created in **draft status only** - humans control ready-for-review.
+
+### Commands & Agents
+
+Primary commands:
+- `/sparc` - Full story workflow with PR integration
+- `/sparc:pr` - Create draft PR for completed story
+- `/sparc:review` - Respond to PR feedback
+- `/sparc:status` - Check branch/PR/story status
+
+Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, pr-manager.
+
+After each story: run cargo clippy -- -D warnings, cargo fmt, and cargo nextest run.
+
+Property-Based Testing
+Use proptest for invariants of domain types and parsers.
+
+When a test reveals a representational gap, strengthen types so the failure becomes impossible.
