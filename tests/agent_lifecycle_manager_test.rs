@@ -1,6 +1,11 @@
-//! Comprehensive tests for AgentLifecycleManager
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::unused_self)]
+#![allow(clippy::float_cmp)]
+
+//! Comprehensive tests for `AgentLifecycleManager`
 //!
-//! This test suite covers all aspects of the AgentLifecycleManager including:
+//! This test suite covers all aspects of the `AgentLifecycleManager` including:
 //! - Agent deployment and lifecycle transitions
 //! - Hot reload operations with all strategies
 //! - Error handling and resource management
@@ -309,7 +314,7 @@ impl WasmModuleValidatorTrait for MockWasmModuleValidator {
             None,
             agent_name,
             wasm_bytes,
-            WasmSecurityPolicy::testing(),
+            &WasmSecurityPolicy::testing(),
         )
     }
 

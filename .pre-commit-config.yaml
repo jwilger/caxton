@@ -50,5 +50,7 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-json
+        exclude: '\.devcontainer/devcontainer\.json$'
       - id: pretty-format-json
         args: ["--autofix", "--indent=2"]
+        exclude: '\.devcontainer/devcontainer\.json$'

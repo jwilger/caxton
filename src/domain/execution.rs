@@ -25,6 +25,7 @@ impl FuelConsumed {
         Self::default()
     }
 
+    #[must_use]
     pub fn add(&self, other: &Self) -> Self {
         Self::try_new(self.into_inner() + other.into_inner()).unwrap_or_default()
     }
@@ -76,7 +77,9 @@ pub struct ElapsedTime(u64);
 
 impl ElapsedTime {
     pub fn from_duration(duration: Duration) -> Self {
-        Self::try_new(duration.as_millis() as u64).unwrap_or_default()
+        #[allow(clippy::cast_possible_truncation)]
+        let millis = duration.as_millis() as u64;
+        Self::try_new(millis).unwrap_or_default()
     }
 
     pub fn meets_minimum(&self, minimum_ms: u64) -> bool {

@@ -150,6 +150,30 @@ The project uses Nix for development environment management:
 pub struct AgentName(String);
 ```
 
+## Code Quality Enforcement - CRITICAL
+
+**NEVER ADD ALLOW ATTRIBUTES** - This is a hard rule with zero exceptions without team approval.
+
+- **NEVER** use `#![allow(clippy::...)]` or `#[allow(clippy::...)]` without explicit team approval
+- **NEVER** bypass pre-commit hooks or ignore clippy warnings/errors
+- **ALWAYS** fix the underlying issue causing the warning instead of suppressing it
+- Pre-commit hooks MUST pass with `-D warnings` (treat warnings as errors)
+- If build fails with warnings, FIX the warnings - don't suppress them
+- When facing extensive warnings, create a GitHub issue and systematic plan to address them
+- The only acceptable temporary measure is to create a focused story (like Story 053) to address them systematically
+
+**Exception Process (Rare):**
+1. Create GitHub issue explaining why the warning cannot be fixed
+2. Get team approval in issue comments
+3. Use the most targeted allow possible (function-level, not module-level)
+4. Add comment explaining why and link to issue
+5. Create follow-up story to address the underlying issue
+
+**Pre-commit Hook Enforcement:**
+- Pre-commit hooks are MANDATORY and must not be bypassed
+- Use `git commit --no-verify` only in genuine emergencies with team notification
+- If pre-commit hooks fail, fix the issues - don't bypass them
+
 Testing Discipline (Kent Beck)
 Work in strict Red → Green → Refactor loops with one failing test at a time.
 
@@ -206,7 +230,25 @@ Subagents: researcher, planner, implementer, type-architect, test-hardener, expe
 
 After each story: run cargo clippy -- -D warnings, cargo fmt, and cargo nextest run.
 
+**CRITICAL: Code Quality Gates**
+- All clippy warnings MUST be fixed, not suppressed with allow attributes
+- Pre-commit hooks MUST pass without `--no-verify` bypasses
+- If extensive warnings exist, create a systematic cleanup story (see Story 053)
+- Never commit code that adds new allow attributes without explicit team approval
+
 Property-Based Testing
 Use proptest for invariants of domain types and parsers.
 
 When a test reveals a representational gap, strengthen types so the failure becomes impossible.
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+**CRITICAL CODE QUALITY RULES:**
+- NEVER add clippy allow attributes (`#[allow(clippy::...)]` or `#![allow(clippy::...)]`) without explicit team approval
+- NEVER bypass pre-commit hooks with `--no-verify` unless it's a genuine emergency with team notification
+- ALWAYS fix clippy warnings instead of suppressing them
+- If facing many warnings, create a systematic cleanup story and plan - don't suppress them

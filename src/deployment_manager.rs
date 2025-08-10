@@ -234,7 +234,7 @@ impl DeploymentManager for CaxtonDeploymentManager {
             deployment_id,
             AgentId::generate(),
             Some(SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             Some(target_version),
         ))
     }

@@ -592,7 +592,7 @@ impl CaxtonWasmModuleValidator {
                     None,
                     agent_name.clone(),
                     wasm_bytes,
-                    config.security_policy.clone(),
+                    &config.security_policy,
                 )
                 .unwrap_or_else(|_| {
                     // Create a minimal module for custom rule evaluation
@@ -637,7 +637,7 @@ impl CaxtonWasmModuleValidator {
             None,
             agent_name,
             wasm_bytes,
-            config.security_policy.clone(),
+            &config.security_policy,
         )?;
 
         // Override validation result with comprehensive analysis

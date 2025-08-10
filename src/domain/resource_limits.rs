@@ -17,6 +17,11 @@ pub const TOTAL_MEMORY_LIMIT: usize = 104_857_600;
 pub struct AgentMemoryRequest(usize);
 
 impl AgentMemoryRequest {
+    /// Create agent memory request from megabytes
+    ///
+    /// # Errors
+    ///
+    /// Returns `AgentMemoryRequestError` if the resulting memory request exceeds limits.
     pub fn from_mb(mb: usize) -> Result<Self, AgentMemoryRequestError> {
         Self::try_new(mb * 1024 * 1024)
     }
@@ -34,6 +39,11 @@ impl TotalMemoryAllocated {
         Self::default()
     }
 
+    /// Add memory allocation to the total
+    ///
+    /// # Errors
+    ///
+    /// Returns `MemoryError` if the addition would exceed total memory limits.
     pub fn add(&self, amount: AgentMemoryRequest) -> Result<Self, MemoryError> {
         let new_total = self.into_inner() + amount.into_inner();
         Self::try_new(new_total).map_err(|_| MemoryError::TotalLimitExceeded {
@@ -43,6 +53,8 @@ impl TotalMemoryAllocated {
         })
     }
 
+    /// Subtract memory allocation from the total
+    #[must_use]
     pub fn subtract(&self, amount: usize) -> Self {
         let current = self.into_inner();
         if amount > current {
@@ -77,7 +89,14 @@ pub struct BoundedMemoryPool {
     total_allocated: TotalMemoryAllocated,
 }
 
+impl Default for BoundedMemoryPool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BoundedMemoryPool {
+    /// Create a new bounded memory pool
     pub fn new() -> Self {
         Self {
             allocations: HashMap::new(),
@@ -85,6 +104,11 @@ impl BoundedMemoryPool {
         }
     }
 
+    /// Allocate memory for an agent
+    ///
+    /// # Errors
+    ///
+    /// Returns `MemoryError` if the agent already has an allocation or if total limits are exceeded.
     pub fn allocate(
         &mut self,
         agent_id: AgentId,
@@ -102,6 +126,11 @@ impl BoundedMemoryPool {
         Ok(())
     }
 
+    /// Deallocate memory for an agent
+    ///
+    /// # Errors
+    ///
+    /// Returns `MemoryError` if the agent was not found.
     pub fn deallocate(&mut self, agent_id: AgentId) -> Result<AgentMemoryRequest, MemoryError> {
         let allocation = self
             .allocations
@@ -131,7 +160,14 @@ pub struct ResourceLimits<const MAX_MEM: usize, const MAX_FUEL: u64> {
     max_cpu_fuel: PhantomData<u64>,
 }
 
+impl<const MAX_MEM: usize, const MAX_FUEL: u64> Default for ResourceLimits<MAX_MEM, MAX_FUEL> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const MAX_MEM: usize, const MAX_FUEL: u64> ResourceLimits<MAX_MEM, MAX_FUEL> {
+    /// Create new resource limits with compile-time constants
     pub const fn new() -> Self {
         Self {
             max_memory_bytes: PhantomData,
@@ -155,9 +191,18 @@ pub struct WasmRuntimeConfig<L> {
     resource_limits: L,
 }
 
+impl<const MAX_MEM: usize, const MAX_FUEL: u64> Default
+    for WasmRuntimeConfig<ResourceLimits<MAX_MEM, MAX_FUEL>>
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const MAX_MEM: usize, const MAX_FUEL: u64>
     WasmRuntimeConfig<ResourceLimits<MAX_MEM, MAX_FUEL>>
 {
+    /// Create new WASM runtime configuration
     pub fn new() -> Self {
         Self {
             resource_limits: ResourceLimits::new(),

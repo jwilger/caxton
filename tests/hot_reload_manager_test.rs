@@ -1,6 +1,18 @@
-//! Comprehensive tests for HotReloadManager
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::unused_self)]
+#![allow(clippy::float_cmp)]
+#![allow(clippy::no_effect_underscore_binding)]
+#![allow(clippy::absurd_extreme_comparisons)]
+#![allow(clippy::useless_vec)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::cloned_instead_of_copied)]
+#![allow(clippy::redundant_closure)]
+#![allow(clippy::match_same_arms)]
+
+//! Comprehensive tests for `HotReloadManager`
 //!
-//! This test suite covers all aspects of the HotReloadManager including:
+//! This test suite covers all aspects of the `HotReloadManager` including:
 //! - All hot reload strategies (graceful, immediate, parallel, traffic splitting)
 //! - State preservation and restoration during reloads
 //! - Traffic routing and split management

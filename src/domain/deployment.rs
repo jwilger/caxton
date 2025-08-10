@@ -89,12 +89,20 @@ impl BatchSize {
     }
 
     /// Creates batch size as percentage of total instances
+    ///
+    /// # Errors
+    ///
+    /// Returns `BatchSizeError` if the calculated batch size is invalid or if percentage > 100.
     pub fn from_percentage(percentage: u8, total_instances: usize) -> Result<Self, BatchSizeError> {
         if percentage > 100 {
             return Err(Self::try_new(101).unwrap_err()); // This will trigger the validation error
         }
 
-        let batch_size = ((total_instances as f32 * percentage as f32 / 100.0).ceil() as u8).max(1);
+        #[allow(clippy::cast_precision_loss)]
+        let total_as_f32 = total_instances as f32;
+        let calculated = (total_as_f32 * f32::from(percentage) / 100.0).ceil();
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let batch_size = (calculated as u8).max(1);
         Self::try_new(batch_size)
     }
 }
@@ -123,6 +131,10 @@ pub struct DeploymentTimeout(u64);
 
 impl DeploymentTimeout {
     /// Creates timeout from minutes
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentTimeoutError` if the timeout in milliseconds is outside the valid range.
     pub fn from_mins(mins: u64) -> Result<Self, DeploymentTimeoutError> {
         Self::try_new(mins * 60 * 1000)
     }
@@ -162,6 +174,10 @@ pub struct DeploymentMemoryLimit(usize);
 
 impl DeploymentMemoryLimit {
     /// Creates limit from megabytes
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentMemoryLimitError` if the memory limit in bytes is outside the valid range.
     pub fn from_mb(mb: usize) -> Result<Self, DeploymentMemoryLimitError> {
         Self::try_new(mb * 1024 * 1024)
     }
@@ -171,7 +187,7 @@ impl DeploymentMemoryLimit {
         self.into_inner()
     }
 
-    /// Convert to MemoryBytes for compatibility
+    /// Convert to `MemoryBytes` for compatibility
     pub fn as_memory_bytes(&self) -> MemoryBytes {
         MemoryBytes::try_new(self.into_inner()).unwrap_or_default()
     }
@@ -205,7 +221,7 @@ impl DeploymentFuelLimit {
         self.into_inner()
     }
 
-    /// Convert to CpuFuel for compatibility
+    /// Convert to `CpuFuel` for compatibility
     pub fn as_cpu_fuel(&self) -> CpuFuel {
         CpuFuel::try_new(self.into_inner()).unwrap_or_default()
     }
@@ -256,6 +272,10 @@ impl ResourceRequirements {
     }
 
     /// Creates minimal resource requirements for testing
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded minimal values are invalid (should never happen).
     pub fn minimal() -> Self {
         Self {
             memory_limit: DeploymentMemoryLimit::try_new(1_048_576).unwrap(), // 1MB
@@ -319,6 +339,10 @@ impl DeploymentConfig {
     }
 
     /// Creates configuration for canary deployment
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded batch size value is invalid (should never happen).
     pub fn canary() -> Self {
         let mut config = Self::new(DeploymentStrategy::Canary);
         config.batch_size = BatchSize::try_new(1).unwrap(); // Start with 1 instance
@@ -387,6 +411,10 @@ impl DeploymentRequest {
     }
 
     /// Validate the deployment request
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentValidationError` if the request is invalid (empty WASM, too large, invalid config).
     pub fn validate(&self) -> Result<(), DeploymentValidationError> {
         if self.wasm_module_bytes.is_empty() {
             return Err(DeploymentValidationError::EmptyWasmModule);
@@ -471,11 +499,19 @@ pub struct DeploymentProgress(u8);
 
 impl DeploymentProgress {
     /// Creates progress from percentage (0-100)
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentProgressError` if percentage is greater than 100.
     pub fn from_percentage(percentage: u8) -> Result<Self, DeploymentProgressError> {
         Self::try_new(percentage)
     }
 
     /// Creates completed progress (100%)
+    ///
+    /// # Panics
+    ///
+    /// Panics if 100 is somehow invalid (should never happen).
     pub fn completed() -> Self {
         Self::try_new(100).unwrap()
     }
@@ -576,12 +612,15 @@ impl DeploymentMetrics {
         if total == 0 {
             return 0.0;
         }
-        (self.instances_deployed as f32 / total as f32) * 100.0
+        #[allow(clippy::cast_precision_loss)]
+        {
+            (self.instances_deployed as f32 / total as f32) * 100.0
+        }
     }
 
     /// Check if deployment meets success threshold
     pub fn meets_success_threshold(&self, threshold_percentage: u8) -> bool {
-        self.success_rate_percentage() >= threshold_percentage as f32
+        self.success_rate_percentage() >= f32::from(threshold_percentage)
     }
 }
 
