@@ -1,4 +1,3 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
 #![allow(clippy::float_cmp)]
@@ -100,7 +99,7 @@ impl TestFixture {
     ) -> CustomValidationRule {
         CustomValidationRule {
             name: name.to_string(),
-            description: format!("Test rule: {}", name),
+            description: format!("Test rule: {name}"),
             rule_type,
             parameters: HashMap::new(),
         }
@@ -786,7 +785,7 @@ async fn test_validation_error_scenarios() {
     for (description, wasm_bytes, expected_error_type) in test_cases {
         let result = fixture.validator.validate_module(&wasm_bytes, None).await;
 
-        assert!(result.is_err(), "Expected error for: {}", description);
+        assert!(result.is_err(), "Expected error for: {description}");
 
         let error = result.unwrap_err();
         match (&error, &expected_error_type) {
@@ -795,7 +794,7 @@ async fn test_validation_error_scenarios() {
                 WasmValidationError::InvalidFormat { .. },
                 WasmValidationError::InvalidFormat { .. },
             ) => {}
-            _ => panic!("Unexpected error type for {}: {:?}", description, error),
+            _ => panic!("Unexpected error type for {description}: {error:?}"),
         }
     }
 }
@@ -816,15 +815,13 @@ async fn test_validator_with_all_configurations() {
         let result = validator.validate_module(&wasm_bytes, None).await;
         assert!(
             result.is_ok(),
-            "Validation failed for {} configuration",
-            config_name
+            "Validation failed for {config_name} configuration"
         );
 
         let module = result.unwrap();
         assert!(
             module.is_valid() || module.validation_result.has_warnings(),
-            "Module should be valid or have warnings for {} configuration",
-            config_name
+            "Module should be valid or have warnings for {config_name} configuration"
         );
     }
 }
@@ -890,8 +887,7 @@ async fn test_comprehensive_metadata_extraction() {
     for field in expected_fields {
         assert!(
             metadata.contains_key(field),
-            "Missing metadata field: {}",
-            field
+            "Missing metadata field: {field}"
         );
     }
 

@@ -1,4 +1,3 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
 #![allow(clippy::float_cmp)]
@@ -174,7 +173,7 @@ impl RuntimeManager for MockRuntimeManager {
     ) -> Result<Vec<u8>, HotReloadError> {
         let instances = self.instances.lock().await;
         if instances.contains_key(&(agent_id, version)) {
-            let state_data = format!("state-{}-{}", agent_id, version).into_bytes();
+            let state_data = format!("state-{agent_id}-{version}").into_bytes();
             drop(instances);
 
             let mut preserved = self.preserved_states.lock().await;
@@ -758,7 +757,7 @@ async fn test_hot_reload_empty_wasm_module() {
     match result.unwrap_err() {
         HotReloadError::StatePreservationFailed { .. } => {}
         HotReloadError::ValidationFailed { .. } => {}
-        other => panic!("Unexpected error: {:?}", other),
+        other => panic!("Unexpected error: {other:?}"),
     }
 }
 
@@ -1143,8 +1142,7 @@ async fn test_all_hot_reload_strategies() {
 
         assert!(
             result.is_ok(),
-            "Hot reload failed for strategy: {:?}",
-            strategy
+            "Hot reload failed for strategy: {strategy:?}"
         );
         let reload_result = result.unwrap();
         assert!(reload_result.status.is_success());

@@ -32,6 +32,13 @@ repos:
         types: [rust]
         pass_filenames: false
 
+      - id: check-no-allows
+        name: check no clippy allows
+        entry: ./scripts/check-no-allows.sh
+        language: system
+        types: [rust]
+        pass_filenames: false
+
   # Conventional commits enforcement
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.13.0

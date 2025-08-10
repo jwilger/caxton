@@ -2,7 +2,6 @@
 //!
 //! This test suite covers all aspects of the `DeploymentManager` including:
 
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
 #![allow(clippy::float_cmp)]
@@ -174,7 +173,7 @@ impl InstanceManager for MockInstanceManager {
 
         let result = InstanceDeploymentResult {
             success,
-            instance_id: format!("instance-{}", agent_id),
+            instance_id: format!("instance-{agent_id}"),
             duration: delay,
             error: if success {
                 None
@@ -227,7 +226,7 @@ impl InstanceManager for MockInstanceManager {
             Ok((instance.memory_used, instance.fuel_consumed))
         } else {
             Err(DeploymentError::InsufficientResources {
-                resource: format!("Instance not found: instance-{}", agent_id),
+                resource: format!("Instance not found: instance-{agent_id}"),
             })
         }
     }
@@ -952,13 +951,13 @@ async fn test_deployment_error_scenarios() {
         let request = fixture.create_test_deployment_request();
         let result = fixture.deployment_manager.deploy_agent(request).await;
 
-        assert!(result.is_err(), "Expected failure for: {}", description);
+        assert!(result.is_err(), "Expected failure for: {description}");
 
         match result.unwrap_err() {
             DeploymentError::InsufficientResources { .. } if allocator_fails => {}
             DeploymentError::WasmValidationFailed { .. } if instance_fails && !allocator_fails => {}
             DeploymentError::InsufficientResources { .. } if allocator_fails && instance_fails => {}
-            other => panic!("Unexpected error for {}: {:?}", description, other),
+            other => panic!("Unexpected error for {description}: {other:?}"),
         }
     }
 }

@@ -2,8 +2,6 @@
 //!
 //! A minimal test to validate the basic integration works
 
-#![allow(clippy::uninlined_format_args)]
-
 use std::sync::Arc;
 use std::time::Duration;
 use test_log::test;
@@ -61,7 +59,7 @@ impl DeploymentManagerTrait for SimpleMockDeploymentManager {
             deployment_id,
             AgentId::generate(),
             Some(std::time::SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             Some(target_version),
         ))
     }
@@ -116,7 +114,7 @@ impl HotReloadManagerTrait for SimpleMockHotReloadManager {
             AgentVersion::generate(),
             AgentVersion::generate(),
             Some(std::time::SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             None,
         ))
     }

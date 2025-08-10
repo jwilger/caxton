@@ -1,4 +1,3 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
 #![allow(clippy::float_cmp)]
@@ -140,7 +139,7 @@ impl DeploymentManagerTrait for MockDeploymentManager {
             deployment_id,
             AgentId::generate(),
             Some(SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             Some(target_version),
         ))
     }
@@ -249,7 +248,7 @@ impl HotReloadManagerTrait for MockHotReloadManager {
             AgentVersion::generate(),
             AgentVersion::generate(),
             Some(SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             None,
         ))
     }
@@ -875,7 +874,7 @@ async fn test_concurrent_deployments() {
         .map(|i| {
             let (agent_id, _, version, version_number, config, wasm_bytes) =
                 fixture.create_test_agent_data();
-            let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+            let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
             (
                 agent_id,
                 agent_name,
@@ -1143,7 +1142,7 @@ async fn test_multiple_agents_independence() {
     for i in 0..3 {
         let (agent_id, _, version, version_number, config, wasm_bytes) =
             fixture.create_test_agent_data();
-        let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+        let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
 
         fixture
             .manager

@@ -1,4 +1,3 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
 #![allow(clippy::float_cmp)]
@@ -209,7 +208,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
         if wasm_bytes.is_empty() || !self.system.deployment_should_succeed.load(Ordering::SeqCst) {
             return Ok(InstanceDeploymentResult {
                 success: false,
-                instance_id: format!("failed-instance-{}", agent_id),
+                instance_id: format!("failed-instance-{agent_id}"),
                 duration: delay,
                 error: Some("Mock deployment failure".to_string()),
                 memory_used: 0,
@@ -235,7 +234,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
 
         Ok(InstanceDeploymentResult {
             success: true,
-            instance_id: format!("instance-{}", agent_id),
+            instance_id: format!("instance-{agent_id}"),
             duration: delay,
             error: None,
             memory_used: resources.memory_limit.into_inner(),
@@ -281,7 +280,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
             ))
         } else {
             Err(DeploymentError::InsufficientResources {
-                resource: format!("Instance not found: instance-{}", agent_id),
+                resource: format!("Instance not found: instance-{agent_id}"),
             })
         }
     }
@@ -376,7 +375,7 @@ impl RuntimeManager for IntegratedMockRuntimeManager {
         let deployed = self.system.deployed_agents.lock().await;
 
         if deployed.contains_key(&agent_id) {
-            Ok(format!("state-{}-{}", agent_id, version).into_bytes())
+            Ok(format!("state-{agent_id}-{version}").into_bytes())
         } else {
             Err(HotReloadError::StatePreservationFailed {
                 reason: "Agent not found for state preservation".to_string(),
@@ -1273,7 +1272,7 @@ async fn test_multi_agent_isolation_and_independence() {
     for i in 0..3 {
         let (agent_id, _, version, version_number, config, wasm_bytes) =
             fixture.create_test_agent_data();
-        let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+        let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
 
         fixture
             .lifecycle_manager
