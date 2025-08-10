@@ -42,6 +42,16 @@
           }
         ],
         "matcher": "Edit|Write|MultiEdit|Bash"
+      },
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/prevent_no_verify.py",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "UserPromptSubmit": [
