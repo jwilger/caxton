@@ -38,7 +38,14 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Install cargo-nextest
-      run: cargo install cargo-nextest --locked
+      run: |
+        # Check if cargo-nextest is already installed (from cache)
+        if ! command -v cargo-nextest &> /dev/null; then
+          echo "Installing cargo-nextest..."
+          cargo install cargo-nextest --locked || cargo install cargo-nextest
+        else
+          echo "cargo-nextest already installed"
+        fi
 
     - name: Check code formatting
       run: cargo fmt --all -- --check
