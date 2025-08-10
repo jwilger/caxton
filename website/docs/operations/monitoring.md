@@ -64,13 +64,13 @@ processors:
   batch:
     timeout: 1s
     send_batch_size: 1024
-  
+
   resource:
     attributes:
       - key: environment
         value: production
         action: upsert
-  
+
   tail_sampling:
     decision_wait: 10s
     num_traces: 100
@@ -92,12 +92,12 @@ exporters:
     namespace: caxton
     const_labels:
       environment: production
-  
+
   jaeger:
     endpoint: jaeger-collector:14250
     tls:
       insecure: true
-  
+
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
     tenant_id: caxton
@@ -108,12 +108,12 @@ service:
       receivers: [otlp]
       processors: [resource, tail_sampling, batch]
       exporters: [jaeger]
-    
+
     metrics:
       receivers: [otlp]
       processors: [resource, batch]
       exporters: [prometheus]
-    
+
     logs:
       receivers: [otlp]
       processors: [resource, batch]
@@ -187,7 +187,7 @@ scrape_configs:
       - targets: ['caxton-runtime:9090']
     scrape_interval: 10s
     metrics_path: /metrics
-    
+
   - job_name: 'caxton-kubernetes'
     kubernetes_sd_configs:
       - role: pod
@@ -231,10 +231,10 @@ async fn execute_task(&self, task: Task) -> Result<TaskResult> {
     let span = tracer.start("task.processing");
     span.set_attribute("task.type", task.task_type.clone());
     span.set_attribute("task.priority", task.priority as i64);
-    
+
     // Process task
     let result = self.process_task_internal(task).await;
-    
+
     match &result {
         Ok(_) => span.set_status(Status::Ok),
         Err(e) => {
@@ -243,7 +243,7 @@ async fn execute_task(&self, task: Task) -> Result<TaskResult> {
             });
         }
     }
-    
+
     result
 }
 ```
@@ -759,12 +759,12 @@ export default function() {
     agent_type: 'test-agent',
     config: { test: true }
   });
-  
+
   check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 1000ms': (r) => r.timings.duration < 1000,
   });
-  
+
   sleep(1);
 }
 ```

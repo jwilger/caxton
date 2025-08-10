@@ -110,11 +110,11 @@ struct ProcessResponse {
 #[wasm_bindgen]
 pub fn agent_init() -> i32 {
     console_log("Agent initializing...");
-    
+
     // Register message handlers
     register_handler("process_data", handle_process_data);
     register_handler("get_status", handle_get_status);
-    
+
     0 // Success
 }
 
@@ -127,10 +127,10 @@ pub fn agent_shutdown() {
 // Message handler
 #[wasm_bindgen]
 pub fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
-    let msg_bytes = unsafe { 
-        std::slice::from_raw_parts(msg_ptr, msg_len) 
+    let msg_bytes = unsafe {
+        std::slice::from_raw_parts(msg_ptr, msg_len)
     };
-    
+
     match serde_json::from_slice::<FipaMessage>(msg_bytes) {
         Ok(message) => {
             match message.performative.as_str() {
@@ -183,7 +183,7 @@ fn process_data(request: ProcessRequest) -> ProcessResponse {
         "reverse" => request.data.chars().rev().collect(),
         _ => format!("Unknown operation: {}", request.operation),
     };
-    
+
     ProcessResponse {
         result,
         timestamp: current_timestamp(),
@@ -217,28 +217,28 @@ export function handle_message(msgPtr: i32, msgLen: i32): i32 {
     const msgBuffer = new ArrayBuffer(msgLen);
     memory.copy(changetype<usize>(msgBuffer), msgPtr, msgLen);
     const msgStr = String.UTF8.decode(msgBuffer);
-    
+
     // Parse FIPA message
     const jsonObj = JSON.parse(msgStr);
     const performative = jsonObj.getString("performative");
-    
+
     if (performative == "request") {
         return handleRequest(jsonObj);
     } else if (performative == "inform") {
         return handleInform(jsonObj);
     }
-    
+
     return 1; // Error
 }
 
 function handleRequest(message: JSON.Obj): i32 {
     const content = message.getObj("content");
     const action = content?.getString("action");
-    
+
     if (action == "process_data") {
         const data = content!.getString("data");
         const operation = content!.getString("operation");
-        
+
         let result: string;
         if (operation == "uppercase") {
             result = data.toUpperCase();
@@ -247,12 +247,12 @@ function handleRequest(message: JSON.Obj): i32 {
         } else {
             result = "Unknown operation";
         }
-        
+
         // Send response back to host
         sendInformResponse(message, result);
         return 0;
     }
-    
+
     return 1;
 }
 
@@ -262,15 +262,15 @@ function sendInformResponse(originalMessage: JSON.Obj, result: string): void {
     response.set("sender", originalMessage.getString("receiver"));
     response.set("receiver", originalMessage.getString("sender"));
     response.set("in_reply_to", originalMessage.getString("reply_with"));
-    
+
     const content = new JSON.Obj();
     content.set("result", result);
     content.set("timestamp", getCurrentTimestamp().toString());
     response.set("content", content);
-    
+
     const responseStr = response.toString();
     const responseBytes = String.UTF8.encode(responseStr);
-    
+
     // Send to host via imported function
     send_message(changetype<i32>(responseBytes), responseBytes.byteLength);
 }
@@ -309,13 +309,13 @@ func agentShutdown() {
 func handleMessage(msgPtr uintptr, msgLen int32) int32 {
     // Convert WASM memory to Go slice
     msgBytes := (*[1 << 30]byte)(unsafe.Pointer(msgPtr))[:msgLen:msgLen]
-    
+
     var message FipaMessage
     if err := json.Unmarshal(msgBytes, &message); err != nil {
         println("Failed to parse message:", err.Error())
         return 1
     }
-    
+
     switch message.Performative {
     case "request":
         return handleRequest(&message)
@@ -353,7 +353,7 @@ func handleRequest(message *FipaMessage) int32 {
         sendFailure(message, "Missing action field")
         return 1
     }
-    
+
     switch action {
     case "process_data":
         dataInterface, exists := message.Content["data"]
@@ -361,23 +361,23 @@ func handleRequest(message *FipaMessage) int32 {
             sendFailure(message, "Missing data field")
             return 1
         }
-        
+
         dataBytes, _ := json.Marshal(dataInterface)
         var request ProcessRequest
         if err := json.Unmarshal(dataBytes, &request); err != nil {
             sendFailure(message, "Invalid data format")
             return 1
         }
-        
+
         response := processData(&request)
         sendInformResponse(message, response)
         return 0
-        
+
     case "get_status":
         status := getAgentStatus()
         sendInformResponse(message, status)
         return 0
-        
+
     default:
         sendNotUnderstood(message)
         return 1
@@ -386,7 +386,7 @@ func handleRequest(message *FipaMessage) int32 {
 
 func processData(request *ProcessRequest) *ProcessResponse {
     var result string
-    
+
     switch request.Operation {
     case "uppercase":
         result = strings.ToUpper(request.Data)
@@ -401,7 +401,7 @@ func processData(request *ProcessRequest) *ProcessResponse {
     default:
         result = "Unknown operation: " + request.Operation
     }
-    
+
     return &ProcessResponse{
         Result:    result,
         Timestamp: getCurrentTimestamp(),
@@ -422,7 +422,7 @@ func sendInformResponse(originalMessage *FipaMessage, response interface{}) {
         Content:      map[string]interface{}{"result": response},
         InReplyTo:    originalMessage.ReplyWith,
     }
-    
+
     responseBytes, _ := json.Marshal(responseMsg)
     sendMessage(uintptr(unsafe.Pointer(&responseBytes[0])), int32(len(responseBytes)))
 }
@@ -465,7 +465,7 @@ sudo dpkg -i tinygo.deb
 # Build
 tinygo build -target=wasi -o agent.wasm main.go
 
-# Optimize  
+# Optimize
 wasm-opt -Os -o agent_optimized.wasm agent.wasm
 ```
 
@@ -480,22 +480,22 @@ Caxton extends WASI with custom host functions for agent communication and syste
 extern "C" {
     /// Send a FIPA message to another agent
     fn send_message(msg_ptr: *const u8, msg_len: usize) -> i32;
-    
+
     /// Subscribe to messages matching a filter
     fn subscribe_messages(filter_ptr: *const u8, filter_len: usize) -> i32;
-    
+
     /// Get current timestamp (microseconds since Unix epoch)
     fn current_timestamp() -> u64;
-    
+
     /// Log a message (for debugging)
     fn console_log(msg_ptr: *const u8, msg_len: usize);
-    
+
     /// Report an error
     fn console_error(msg_ptr: *const u8, msg_len: usize);
-    
+
     /// Generate a random number
     fn random_u32() -> u32;
-    
+
     /// Sleep for specified microseconds
     fn sleep_micros(micros: u64);
 }
@@ -504,16 +504,16 @@ extern "C" {
 extern "C" {
     /// Called when agent is loaded
     fn agent_init() -> i32;
-    
+
     /// Called when agent is being unloaded
     fn agent_shutdown();
-    
+
     /// Handle incoming FIPA message
     fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32;
-    
+
     /// Handle timer events
     fn handle_timer(timer_id: u32) -> i32;
-    
+
     /// Provide agent capabilities description
     fn get_capabilities(caps_ptr: *mut u8, caps_len: usize) -> i32;
 }
@@ -525,19 +525,19 @@ extern "C" {
 pub struct ResourceLimits {
     /// Maximum memory in bytes (0 = unlimited)
     pub max_memory_bytes: u64,
-    
+
     /// Maximum CPU time per execution quantum (microseconds)
     pub max_cpu_micros: u64,
-    
+
     /// Maximum execution time for single message (microseconds)
     pub max_execution_time_micros: u64,
-    
+
     /// Maximum number of host function calls per execution
     pub max_host_calls: u32,
-    
+
     /// Maximum outgoing messages per second
     pub max_messages_per_second: u32,
-    
+
     /// Maximum memory allocations per execution
     pub max_allocations: u32,
 }
@@ -563,19 +563,19 @@ impl Default for ResourceLimits {
 pub struct AgentCapabilities {
     /// Agent version
     pub version: String,
-    
+
     /// Supported FIPA performatives
     pub performatives: Vec<String>,
-    
+
     /// Supported protocols
     pub protocols: Vec<String>,
-    
+
     /// Supported ontologies
     pub ontologies: Vec<String>,
-    
+
     /// Resource requirements
     pub resource_requirements: ResourceRequirements,
-    
+
     /// Service descriptions
     pub services: Vec<ServiceDescription>,
 }
@@ -609,13 +609,13 @@ Agents can persist state between executions:
 #[link(wasm_import_module = "caxton")]
 extern "C" {
     /// Store persistent data
-    fn store_data(key_ptr: *const u8, key_len: usize, 
+    fn store_data(key_ptr: *const u8, key_len: usize,
                   data_ptr: *const u8, data_len: usize) -> i32;
-    
-    /// Retrieve persistent data  
+
+    /// Retrieve persistent data
     fn load_data(key_ptr: *const u8, key_len: usize,
                  data_ptr: *mut u8, data_len: usize) -> i32;
-    
+
     /// Delete persistent data
     fn delete_data(key_ptr: *const u8, key_len: usize) -> i32;
 }
@@ -633,7 +633,7 @@ impl AgentState {
     fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let serialized = serde_json::to_vec(self)?;
         let key = b"agent_state";
-        
+
         let result = unsafe {
             store_data(
                 key.as_ptr(),
@@ -642,14 +642,14 @@ impl AgentState {
                 serialized.len(),
             )
         };
-        
+
         if result == 0 { Ok(()) } else { Err("Failed to save state".into()) }
     }
-    
+
     fn load() -> Result<AgentState, Box<dyn std::error::Error>> {
         let key = b"agent_state";
         let mut buffer = vec![0u8; 4096]; // Max state size
-        
+
         let result = unsafe {
             load_data(
                 key.as_ptr(),
@@ -658,7 +658,7 @@ impl AgentState {
                 buffer.len(),
             )
         };
-        
+
         if result > 0 {
             buffer.truncate(result as usize);
             let state: AgentState = serde_json::from_slice(&buffer)?;
@@ -686,7 +686,7 @@ pub struct HostTimer {
 
 impl Future for HostTimer {
     type Output = ();
-    
+
     fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.completed {
             Poll::Ready(())
@@ -707,12 +707,12 @@ extern "C" {
 #[wasm_bindgen]
 pub fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
     let message = parse_message(msg_ptr, msg_len);
-    
+
     match message.content.get("action").and_then(|v| v.as_str()) {
         Some("long_operation") => {
             // Start async operation
             start_long_operation(&message);
-            
+
             // Return immediately - result will be sent via timer
             0
         }
@@ -726,7 +726,7 @@ pub fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
 fn start_long_operation(message: &FipaMessage) {
     // Set timer for 5 seconds
     let timer_id = unsafe { set_timer(5_000_000) };
-    
+
     // Store operation context
     store_operation_context(timer_id, message);
 }
@@ -736,14 +736,14 @@ pub fn handle_timer(timer_id: u32) -> i32 {
     if let Some(context) = load_operation_context(timer_id) {
         // Complete the operation
         let result = complete_long_operation(&context);
-        
+
         // Send result back
         send_inform_response(&context.original_message, &result);
-        
+
         // Cleanup
         cleanup_operation_context(timer_id);
     }
-    
+
     0
 }
 ```
@@ -759,7 +759,7 @@ extern "C" {
     /// Send message to local agent (shared memory)
     fn send_local_message(agent_id_ptr: *const u8, agent_id_len: usize,
                          msg_ptr: *const u8, msg_len: usize) -> i32;
-    
+
     /// Broadcast message to multiple agents
     fn broadcast_message(filter_ptr: *const u8, filter_len: usize,
                         msg_ptr: *const u8, msg_len: usize) -> i32;
@@ -769,7 +769,7 @@ extern "C" {
 pub fn send_to_agent(agent_id: &str, message: &FipaMessage) -> Result<(), String> {
     let agent_bytes = agent_id.as_bytes();
     let msg_bytes = serde_json::to_vec(message).map_err(|e| e.to_string())?;
-    
+
     let result = unsafe {
         send_local_message(
             agent_bytes.as_ptr(),
@@ -778,7 +778,7 @@ pub fn send_to_agent(agent_id: &str, message: &FipaMessage) -> Result<(), String
             msg_bytes.len(),
         )
     };
-    
+
     if result == 0 {
         Ok(())
     } else {
@@ -795,7 +795,7 @@ pub fn broadcast_to_capability(capability: &str, message: &FipaMessage) -> Resul
     });
     let filter_bytes = serde_json::to_vec(&filter).map_err(|e| e.to_string())?;
     let msg_bytes = serde_json::to_vec(message).map_err(|e| e.to_string())?;
-    
+
     let result = unsafe {
         broadcast_message(
             filter_bytes.as_ptr(),
@@ -804,7 +804,7 @@ pub fn broadcast_to_capability(capability: &str, message: &FipaMessage) -> Resul
             msg_bytes.len(),
         )
     };
-    
+
     if result >= 0 {
         Ok(result as u32)
     } else {
@@ -838,11 +838,11 @@ impl WasmAllocator {
             allocation_count: 0,
         }
     }
-    
+
     pub fn allocate(&mut self, size: usize, align: usize) -> *mut u8 {
         let layout = Layout::from_size_align(size, align).unwrap();
         let ptr = unsafe { alloc(layout) };
-        
+
         if !ptr.is_null() {
             self.allocated += size;
             self.allocation_count += 1;
@@ -850,17 +850,17 @@ impl WasmAllocator {
                 self.max_allocated = self.allocated;
             }
         }
-        
+
         ptr
     }
-    
+
     pub fn deallocate(&mut self, ptr: *mut u8, size: usize, align: usize) {
         let layout = Layout::from_size_align(size, align).unwrap();
         unsafe { dealloc(ptr, layout) };
-        
+
         self.allocated -= size;
     }
-    
+
     pub fn stats(&self) -> AllocationStats {
         AllocationStats {
             current_allocated: self.allocated,
@@ -873,7 +873,7 @@ impl WasmAllocator {
 // Use stack allocation for small, short-lived data
 pub fn process_small_message(data: &[u8]) -> Vec<u8> {
     const STACK_SIZE: usize = 1024;
-    
+
     if data.len() <= STACK_SIZE {
         // Use stack allocation
         let mut stack_buffer = [0u8; STACK_SIZE];
@@ -895,11 +895,11 @@ pub fn process_small_message(data: &[u8]) -> Vec<u8> {
 // Optimize hot paths with manual loop unrolling
 pub fn fast_data_transform(input: &[u8], output: &mut [u8]) {
     assert_eq!(input.len(), output.len());
-    
+
     let len = input.len();
     let chunks = len / 4;
     let remainder = len % 4;
-    
+
     // Process 4 bytes at a time (loop unrolling)
     for i in 0..chunks {
         let base = i * 4;
@@ -908,7 +908,7 @@ pub fn fast_data_transform(input: &[u8], output: &mut [u8]) {
         output[base + 2] = transform_byte(input[base + 2]);
         output[base + 3] = transform_byte(input[base + 3]);
     }
-    
+
     // Handle remaining bytes
     for i in 0..remainder {
         let idx = chunks * 4 + i;
@@ -954,15 +954,15 @@ impl AgentFlags {
     const ACTIVE: u32 = 1 << 0;
     const PERSISTENT: u32 = 1 << 1;
     const HIGH_PRIORITY: u32 = 1 << 2;
-    
+
     pub fn new() -> Self {
         Self { flags: 0 }
     }
-    
+
     pub fn is_active(&self) -> bool {
         self.flags & Self::ACTIVE != 0
     }
-    
+
     pub fn set_active(&mut self, active: bool) {
         if active {
             self.flags |= Self::ACTIVE;
@@ -985,7 +985,7 @@ impl<const N: usize> FixedBuffer<N> {
             len: 0,
         }
     }
-    
+
     pub fn push(&mut self, byte: u8) -> Result<(), &'static str> {
         if self.len >= N {
             Err("Buffer full")
@@ -995,7 +995,7 @@ impl<const N: usize> FixedBuffer<N> {
             Ok(())
         }
     }
-    
+
     pub fn as_slice(&self) -> &[u8] {
         &self.data[..self.len]
     }
@@ -1016,10 +1016,10 @@ use std::collections::HashMap;
 struct MessageContent {
     #[serde(deserialize_with = "validate_action")]
     action: String,
-    
+
     #[serde(default, deserialize_with = "validate_data")]
     data: Option<serde_json::Value>,
-    
+
     #[serde(default, deserialize_with = "validate_parameters")]
     parameters: HashMap<String, serde_json::Value>,
 }
@@ -1029,7 +1029,7 @@ where
     D: serde::Deserializer<'de>,
 {
     let action = String::deserialize(deserializer)?;
-    
+
     // Whitelist allowed actions
     match action.as_str() {
         "process_data" | "get_status" | "calculate" | "transform" => Ok(action),
@@ -1044,19 +1044,19 @@ where
     D: serde::Deserializer<'de>,
 {
     let data = Option::<serde_json::Value>::deserialize(deserializer)?;
-    
+
     if let Some(ref value) = data {
         // Limit size of incoming data
         let size = estimate_json_size(value);
         if size > 1024 * 1024 { // 1MB limit
             return Err(serde::de::Error::custom("Data too large"));
         }
-        
+
         // Validate data structure
         validate_json_structure(value)
             .map_err(|e| serde::de::Error::custom(e))?;
     }
-    
+
     Ok(data)
 }
 
@@ -1128,37 +1128,37 @@ impl ResourceMonitor {
             start_time: unsafe { current_timestamp() },
         }
     }
-    
+
     pub fn check_limits(&self, limits: &ResourceLimits) -> Result<(), ResourceError> {
         if self.memory_usage > limits.max_memory_bytes as usize {
             return Err(ResourceError::MemoryLimitExceeded);
         }
-        
+
         if self.cpu_time_micros > limits.max_cpu_micros {
             return Err(ResourceError::CpuLimitExceeded);
         }
-        
+
         let elapsed = unsafe { current_timestamp() } - self.start_time;
         if elapsed > limits.max_execution_time_micros {
             return Err(ResourceError::TimeoutExceeded);
         }
-        
+
         if self.allocation_count > limits.max_allocations {
             return Err(ResourceError::AllocationLimitExceeded);
         }
-        
+
         Ok(())
     }
-    
+
     pub fn record_allocation(&mut self, size: usize) {
         self.memory_usage += size;
         self.allocation_count += 1;
     }
-    
+
     pub fn record_deallocation(&mut self, size: usize) {
         self.memory_usage = self.memory_usage.saturating_sub(size);
     }
-    
+
     pub fn record_message_sent(&mut self) {
         self.message_count += 1;
     }
@@ -1187,7 +1187,7 @@ use serde_json::json;
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_message_processing() {
         // Mock message
@@ -1204,34 +1204,34 @@ mod tests {
             },
             "reply_with": "test_001"
         });
-        
+
         let message_bytes = serde_json::to_vec(&message).unwrap();
-        
+
         // Test agent message handling
         let result = handle_message(
             message_bytes.as_ptr(),
             message_bytes.len()
         );
-        
+
         assert_eq!(result, 0); // Success
     }
-    
+
     #[test]
     fn test_invalid_message_format() {
         let invalid_message = b"invalid json";
-        
+
         let result = handle_message(
             invalid_message.as_ptr(),
             invalid_message.len()
         );
-        
+
         assert_ne!(result, 0); // Should fail
     }
-    
+
     #[test]
     fn test_resource_limits() {
         let large_data = "x".repeat(1024 * 1024 * 2); // 2MB
-        
+
         let message = json!({
             "performative": "request",
             "sender": "test_client",
@@ -1241,14 +1241,14 @@ mod tests {
                 "data": large_data
             }
         });
-        
+
         let message_bytes = serde_json::to_vec(&message).unwrap();
-        
+
         let result = handle_message(
             message_bytes.as_ptr(),
             message_bytes.len()
         );
-        
+
         assert_ne!(result, 0); // Should fail due to size limit
     }
 }
@@ -1267,10 +1267,10 @@ use tokio::time::{timeout, Duration};
 #[tokio::test]
 async fn test_agent_deployment_and_communication() {
     let client = CaxtonClient::new("http://localhost:8080").await.unwrap();
-    
+
     // Load WASM agent
     let wasm_bytes = fs::read("target/wasm32-wasi/release/test_agent.wasm").unwrap();
-    
+
     // Deploy agent
     let deployment = client.deploy_agent(DeployAgentRequest {
         wasm_module: wasm_bytes,
@@ -1281,10 +1281,10 @@ async fn test_agent_deployment_and_communication() {
             ..Default::default()
         },
     }).await.unwrap();
-    
+
     // Wait for agent to be ready
     tokio::time::sleep(Duration::from_millis(100)).await;
-    
+
     // Send test message
     let response = client.send_message_and_wait(FipaMessage {
         performative: "request".to_string(),
@@ -1300,14 +1300,14 @@ async fn test_agent_deployment_and_communication() {
         reply_with: Some("test_001".to_string()),
         ..Default::default()
     }, Duration::from_secs(10)).await.unwrap();
-    
+
     // Verify response
     assert_eq!(response.performative, "inform");
     assert_eq!(
         response.content["result"]["result"].as_str().unwrap(),
         "HELLO WORLD"
     );
-    
+
     // Cleanup
     client.remove_agent(&deployment.agent_id).await.unwrap();
 }
@@ -1316,7 +1316,7 @@ async fn test_agent_deployment_and_communication() {
 async fn test_agent_resource_limits() {
     let client = CaxtonClient::new("http://localhost:8080").await.unwrap();
     let wasm_bytes = fs::read("target/wasm32-wasi/release/memory_hungry_agent.wasm").unwrap();
-    
+
     // Deploy agent with strict memory limits
     let deployment = client.deploy_agent(DeployAgentRequest {
         wasm_module: wasm_bytes,
@@ -1329,7 +1329,7 @@ async fn test_agent_resource_limits() {
             ..Default::default()
         },
     }).await.unwrap();
-    
+
     // Send message that should exceed memory limit
     let result = timeout(
         Duration::from_secs(5),
@@ -1345,7 +1345,7 @@ async fn test_agent_resource_limits() {
             ..Default::default()
         }, Duration::from_secs(10))
     ).await;
-    
+
     match result {
         Ok(Ok(response)) => {
             // Should receive failure message
@@ -1354,7 +1354,7 @@ async fn test_agent_resource_limits() {
         }
         _ => panic!("Expected memory limit error"),
     }
-    
+
     client.remove_agent(&deployment.agent_id).await.unwrap();
 }
 ```
@@ -1386,7 +1386,7 @@ impl DebugLogger {
             log_level: LogLevel::Info,
         }
     }
-    
+
     pub fn error(&self, msg: &str) {
         if self.enabled && self.log_level >= LogLevel::Error {
             let full_msg = format!("[ERROR] {}", msg);
@@ -1395,7 +1395,7 @@ impl DebugLogger {
             }
         }
     }
-    
+
     pub fn warn(&self, msg: &str) {
         if self.enabled && self.log_level >= LogLevel::Warn {
             let full_msg = format!("[WARN] {}", msg);
@@ -1404,7 +1404,7 @@ impl DebugLogger {
             }
         }
     }
-    
+
     pub fn info(&self, msg: &str) {
         if self.enabled && self.log_level >= LogLevel::Info {
             let full_msg = format!("[INFO] {}", msg);
@@ -1413,7 +1413,7 @@ impl DebugLogger {
             }
         }
     }
-    
+
     pub fn debug(&self, msg: &str) {
         if self.enabled && self.log_level >= LogLevel::Debug {
             let full_msg = format!("[DEBUG] {}", msg);
@@ -1437,25 +1437,25 @@ impl Profiler {
             enabled: cfg!(debug_assertions),
         }
     }
-    
+
     pub fn start(&mut self, name: &str) {
         if self.enabled {
             let timestamp = unsafe { current_timestamp() };
             self.checkpoints.insert(name.to_string(), timestamp);
         }
     }
-    
+
     pub fn end(&mut self, name: &str) -> Option<u64> {
         if self.enabled {
             let end_time = unsafe { current_timestamp() };
             if let Some(start_time) = self.checkpoints.remove(name) {
                 let duration = end_time - start_time;
-                
+
                 let log_msg = format!("Profile [{}]: {} microseconds", name, duration);
                 unsafe {
                     console_log(log_msg.as_ptr(), log_msg.len());
                 }
-                
+
                 Some(duration)
             } else {
                 None
@@ -1476,7 +1476,7 @@ pub fn agent_init() -> i32 {
         LOGGER = Some(DebugLogger::new());
         PROFILER = Some(Profiler::new());
     }
-    
+
     log_info("Agent initialized successfully");
     0
 }
@@ -1484,7 +1484,7 @@ pub fn agent_init() -> i32 {
 #[wasm_bindgen]
 pub fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
     profile_start("message_handling");
-    
+
     let result = match parse_and_handle_message(msg_ptr, msg_len) {
         Ok(_) => {
             log_debug("Message handled successfully");
@@ -1495,7 +1495,7 @@ pub fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
             1
         }
     };
-    
+
     profile_end("message_handling");
     result
 }
@@ -1569,7 +1569,7 @@ pub extern "C" fn __wbindgen_malloc(size: usize) -> *mut u8 {
         if ALLOCATED_BYTES > 50 * 1024 * 1024 { // 50MB limit
             return std::ptr::null_mut(); // Signal allocation failure
         }
-        
+
         std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(size, 1))
     }
 }
