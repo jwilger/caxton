@@ -61,6 +61,8 @@ impl MockDeploymentManager {
         self.call_count.load(Ordering::SeqCst)
     }
 
+    // Helper method for accessing deployment results - not currently used in tests
+    // Kept for potential future test expansion
     #[allow(dead_code)]
     async fn get_deployment_result(&self, deployment_id: DeploymentId) -> Option<DeploymentResult> {
         self.deployment_results
@@ -269,6 +271,8 @@ impl MockWasmModuleValidator {
         self.should_succeed.store(succeed, Ordering::SeqCst);
     }
 
+    // Helper method for controlling validation timing in tests - not currently used
+    // Kept for potential performance testing scenarios
     #[allow(dead_code)]
     async fn set_validation_delay(&self, delay: Duration) {
         *self.validation_delay.lock().await = delay;

@@ -48,9 +48,10 @@ struct MockRuntimeManager {
     call_count: Arc<AtomicU64>,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct InstanceData {
+    // Timestamp field for potential future tests - currently unused
+    #[allow(dead_code)]
     created_at: SystemTime,
     memory_usage: usize,
     fuel_consumed: u64,
@@ -92,6 +93,8 @@ impl MockRuntimeManager {
             .contains_key(&(agent_id, version))
     }
 
+    // Helper method for verifying instance count - not currently used
+    // Kept for potential concurrency tests
     #[allow(dead_code)]
     async fn get_instance_count(&self) -> usize {
         self.instances.lock().await.len()

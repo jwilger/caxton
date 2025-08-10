@@ -58,14 +58,17 @@ struct IntegratedMockSystem {
     validation_count: Arc<AtomicU64>,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct DeployedAgentState {
+    // Fields for comprehensive agent state tracking - some not currently used
+    #[allow(dead_code)]
     agent_id: AgentId,
+    #[allow(dead_code)]
     agent_name: Option<AgentName>,
     current_version: AgentVersion,
     wasm_module: Vec<u8>,
     resources: ResourceRequirements,
+    #[allow(dead_code)]
     deployed_at: SystemTime,
     is_healthy: bool,
 }
@@ -134,6 +137,8 @@ impl IntegratedMockSystem {
         self.deployed_agents.lock().await.contains_key(&agent_id)
     }
 
+    // Helper method for retrieving agent version - not currently used
+    // Kept for potential version tracking tests
     #[allow(dead_code)]
     async fn get_agent_version(&self, agent_id: AgentId) -> Option<AgentVersion> {
         self.active_versions.lock().await.get(&agent_id).cloned()

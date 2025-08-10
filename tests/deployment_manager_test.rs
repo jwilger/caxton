@@ -66,6 +66,8 @@ impl MockResourceAllocator {
             .cloned()
     }
 
+    // Helper method for verifying resource allocation count - not currently used
+    // Kept for potential resource management tests
     #[allow(dead_code)]
     async fn get_allocated_count(&self) -> usize {
         self.allocated_resources.lock().await.len()
@@ -142,6 +144,8 @@ impl MockInstanceManager {
         self.call_count.load(Ordering::SeqCst)
     }
 
+    // Helper method for verifying health check invocations - not currently used
+    // Kept for potential health monitoring tests
     #[allow(dead_code)]
     fn get_health_check_count(&self) -> u64 {
         self.health_check_count.load(Ordering::SeqCst)
