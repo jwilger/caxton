@@ -61,7 +61,7 @@
             echo "   - --no-verify is blocked (use /usr/bin/git for emergencies)"
             echo ""
 
-            # Ensure claude code and claude-flow are available
+            # Ensure claude code is available
             # First check if claude code is installed
             if ! command -v claude &> /dev/null; then
               npx @anthropic-ai/claude-code install --force latest
