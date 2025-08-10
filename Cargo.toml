@@ -43,6 +43,8 @@ dashmap = "6.1"
 bytes = "1.9"
 wat = "1.223"
 nutype = { version = "0.6.2", features = ["serde"] }
+num_cpus = "1.16"
+futures = "0.3"
 
 [dev-dependencies]
 criterion = "0.5"
