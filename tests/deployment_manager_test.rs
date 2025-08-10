@@ -4,13 +4,13 @@
 
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 //! - Resource allocation and instance deployment
 //! - Deployment strategies (immediate, rolling, blue-green, canary)
 //! - Health checks and deployment validation
 //! - Performance requirements and error handling
 //! - Resource cleanup and failure isolation
 
+use approx::assert_relative_eq;
 use proptest::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -365,7 +365,7 @@ async fn test_deployment_with_metrics() {
     assert!(metrics.total_duration <= elapsed + Duration::from_millis(10)); // Allow small variance
     assert!(metrics.memory_usage_peak > 0);
     assert!(metrics.fuel_consumed > 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 }
 
 #[test(tokio::test)]
@@ -843,7 +843,7 @@ async fn test_full_deployment_lifecycle() {
     let metrics = deployment_result.metrics.unwrap();
     assert_eq!(metrics.instances_deployed, 1);
     assert_eq!(metrics.instances_failed, 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 
     // 9. Perform health check
     let health = fixture
@@ -927,7 +927,7 @@ async fn test_deployment_metrics_accuracy() {
     // Verify instance metrics
     assert_eq!(metrics.instances_deployed, 1);
     assert_eq!(metrics.instances_failed, 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 }
 
 #[test(tokio::test)]

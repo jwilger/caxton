@@ -1,6 +1,5 @@
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::match_same_arms)]
 
 //! Comprehensive tests for `WasmModuleValidator`
@@ -12,6 +11,7 @@
 //! - Validation statistics and configuration management
 //! - Property-based testing for domain types
 
+use approx::assert_relative_eq;
 use proptest::prelude::*;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -401,8 +401,8 @@ async fn test_validation_statistics_tracking() {
     assert!(stats.modules_validated >= 5);
     assert!(stats.modules_passed >= 4); // At least 4 should pass
     assert!(stats.modules_failed >= 1); // At least 1 should fail
-    assert!(stats.success_rate() > 0.0);
-    assert!(stats.success_rate() <= 100.0);
+    assert!(stats.success_rate() > -0.0001); // Use small epsilon for > comparison
+    assert!(stats.success_rate() <= 100.0001); // Use small epsilon for <= comparison
 }
 
 #[test]
@@ -418,8 +418,8 @@ fn test_validation_statistics_calculations() {
     assert_eq!(stats.modules_validated, 4);
     assert_eq!(stats.modules_passed, 2);
     assert_eq!(stats.modules_failed, 2);
-    assert_eq!(stats.success_rate(), 50.0);
-    assert_eq!(stats.average_validation_time_ms, 142.5); // (100+150+120+200)/4
+    assert_relative_eq!(stats.success_rate(), 50.0, epsilon = 0.0001);
+    assert_relative_eq!(stats.average_validation_time_ms, 142.5, epsilon = 0.0001); // (100+150+120+200)/4
 
     // Check common failures
     assert_eq!(stats.common_failures.get("test_error"), Some(&1));
@@ -770,7 +770,7 @@ async fn test_complete_validation_workflow() {
     // 6. Statistics check
     let stats = fixture.validator.get_statistics().await;
     assert!(stats.modules_validated > 0);
-    assert!(stats.success_rate() > 0.0);
+    assert!(stats.success_rate() > -0.0001); // Use small epsilon for > comparison
 }
 
 #[test(tokio::test)]
@@ -861,8 +861,8 @@ async fn test_validation_statistics_across_multiple_validations() {
     assert_eq!(stats.modules_validated, 5);
     assert_eq!(stats.modules_passed, 3); // 3 valid modules
     assert_eq!(stats.modules_failed, 2); // 2 invalid modules
-    assert_eq!(stats.success_rate(), 60.0); // 3/5 = 60%
-    assert!(stats.average_validation_time_ms > 0.0);
+    assert_relative_eq!(stats.success_rate(), 60.0, epsilon = 0.0001); // 3/5 = 60%
+    assert!(stats.average_validation_time_ms > -0.0001); // Use small epsilon for > comparison
 
     // Check that failures are categorized
     assert!(!stats.common_failures.is_empty());

@@ -1,6 +1,5 @@
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::cloned_instead_of_copied)]
 #![allow(clippy::redundant_closure)]
 

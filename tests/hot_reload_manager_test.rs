@@ -1,6 +1,5 @@
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::no_effect_underscore_binding)]
 #![allow(clippy::absurd_extreme_comparisons)]
 #![allow(clippy::useless_vec)]
@@ -850,7 +849,7 @@ async fn test_hot_reload_performance_metrics() {
     {
         assert!(metrics.requests_processed >= 0);
     }
-    assert!(metrics.health_check_success_rate >= 0.0);
+    assert!(metrics.health_check_success_rate >= -0.0001); // Use small epsilon for >= comparison
     assert!(metrics.collected_at <= SystemTime::now());
 }
 

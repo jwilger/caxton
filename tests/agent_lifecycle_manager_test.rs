@@ -1,6 +1,5 @@
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 
 //! Comprehensive tests for `AgentLifecycleManager`
 //!
