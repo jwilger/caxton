@@ -37,6 +37,16 @@ All GitHub comments MUST use this exact format:
 - Verify working on feature branch, not main
 - Check GitHub auth before operations
 
+### 5. Branch Cleanup (Post-Merge)
+- Monitor for merged PRs using `gh pr list --state merged`
+- Automatically clean up local branches after PR merge:
+  - Switch to main branch: `git checkout main`
+  - Delete merged feature branch: `git branch -d {branch-name}`
+  - Clean up remote tracking: `git remote prune origin`
+- Update `.claude/branch.info` to mark branch as cleaned
+- Only clean up branches that were created through SPARC workflow
+- Preserve branches with uncommitted changes or unmerged work
+
 ## Branch Naming Convention
 Format: `story-{zero-padded-id}-{kebab-case-slug}`
 Examples:
@@ -48,6 +58,8 @@ Use `gh` CLI for all GitHub operations:
 - `gh pr create --draft --title "..." --body "..."`
 - `gh pr comment {pr-number} --body "..."`
 - `gh pr view {pr-number} --json state,reviewRequests,comments`
+- `gh pr list --state merged --limit 10`
+- `gh pr view {pr-number} --json state,mergeable,mergedAt`
 - `gh repo view --json defaultBranch`
 
 For advanced operations not covered by built-in commands, use GraphQL API directly:
@@ -81,8 +93,15 @@ Maintain `.claude/branch.info` with:
   "branch_name": "story-001-wasm-runtime-foundation",
   "pr_number": 42,
   "pr_state": "draft",
-  "created_at": "2025-01-10T15:30:00Z"
+  "created_at": "2025-01-10T15:30:00Z",
+  "merged_at": null,
+  "cleaned_up": false
 }
 ```
+
+State transitions:
+1. **Created**: `pr_state: "draft", cleaned_up: false`
+2. **Merged**: `pr_state: "merged", merged_at: "2025-01-10T16:45:00Z", cleaned_up: false`
+3. **Cleaned**: `cleaned_up: true`
 
 Always verify state before operations and update after changes.
