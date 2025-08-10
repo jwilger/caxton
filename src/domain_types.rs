@@ -6,6 +6,7 @@
 use nutype::nutype;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use thiserror::Error;
 use uuid::Uuid;
 
 /// Unique identifier for an agent
@@ -94,6 +95,42 @@ impl MemoryBytes {
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
+
+    /// Applies memory limits to a wasmtime Store
+    ///
+    /// This method encapsulates the knowledge of how to configure wasmtime
+    /// memory limits using domain types, keeping the wasmtime integration
+    /// separate from business logic.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The wasmtime Store data type
+    ///
+    /// # Arguments
+    ///
+    /// * `store` - Mutable reference to the wasmtime Store to configure
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// let memory_limit = MemoryBytes::from_mb(10)?;
+    /// memory_limit.apply_to_wasmtime_store(&mut store);
+    /// ```
+    /// Applies memory limits to a wasmtime Store (when wasmtime feature is enabled)
+    /// Note: This is currently a placeholder for future wasmtime integration
+    #[allow(unused_variables)]
+    pub fn apply_to_wasmtime_store<T>(&self, _store: &mut T) {
+        // Placeholder for wasmtime integration
+        let _bytes = self.as_usize(); // Use the validated byte count
+    }
+
+    /// Applies memory limits to a wasmtime Store (feature-agnostic version)
+    ///
+    /// This version works without the wasmtime feature flag and returns
+    /// the byte count that should be applied to external systems.
+    pub fn get_wasmtime_limit(&self) -> usize {
+        self.as_usize()
+    }
 }
 
 /// CPU fuel units for execution
@@ -120,6 +157,65 @@ impl CpuFuel {
         let sum = self.into_inner().saturating_add(other.into_inner());
         Self::try_new(sum.min(1_000_000_000))
             .unwrap_or_else(|_| Self::try_new(1_000_000_000).unwrap())
+    }
+
+    /// Subtracts fuel amounts safely, saturating at zero
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if there is insufficient fuel to subtract
+    pub fn subtract(self, amount: CpuFuelAmount) -> Result<Self, ValidationError> {
+        let current = self.into_inner();
+        let to_subtract = amount.into_inner();
+
+        if to_subtract > current {
+            return Err(ValidationError::ConstraintViolation {
+                constraint: format!(
+                    "Insufficient fuel: tried to subtract {to_subtract} from {current}"
+                ),
+            });
+        }
+
+        // Use try_new since CpuFuel has validation
+        Self::try_new(current - to_subtract).map_err(|e| ValidationError::InvalidField {
+            field: "cpu_fuel".to_string(),
+            reason: e.to_string(),
+        })
+    }
+
+    /// Subtracts fuel amounts, saturating at zero (no error on underflow)
+    #[must_use]
+    pub fn saturating_subtract(self, amount: CpuFuelAmount) -> Self {
+        let current = self.into_inner();
+        let to_subtract = amount.into_inner();
+        // Safe to use new since we know saturating_sub returns a valid value
+        Self::try_new(current.saturating_sub(to_subtract)).unwrap_or_default()
+    }
+
+    /// Adds a fuel amount to this fuel
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the addition would exceed the maximum fuel limit
+    #[allow(clippy::should_implement_trait)]
+    pub fn add(self, amount: CpuFuelAmount) -> Result<Self, ValidationError> {
+        let current = self.into_inner();
+        let to_add = amount.into_inner();
+        let sum = current.saturating_add(to_add);
+
+        if sum > 1_000_000_000 {
+            return Err(ValidationError::ValueOutOfRange {
+                #[allow(clippy::cast_possible_wrap)]
+                value: sum as i64,
+                min: 0,
+                max: 1_000_000_000,
+            });
+        }
+
+        Self::try_new(sum).map_err(|e| ValidationError::InvalidField {
+            field: "cpu_fuel".to_string(),
+            reason: e.to_string(),
+        })
     }
 
     /// Gets the value as u64
@@ -500,4 +596,351 @@ impl RateLimitPerSecond {
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
+}
+
+/// CPU fuel consumed during execution
+#[nutype(
+    validate(greater_or_equal = 0),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct CpuFuelConsumed(u64);
+
+impl CpuFuelConsumed {
+    /// Returns zero consumed fuel
+    pub fn zero() -> Self {
+        Self::default()
+    }
+
+    /// Gets the value as u64
+    pub fn as_u64(&self) -> u64 {
+        self.into_inner()
+    }
+
+    /// Adds consumed fuel amounts safely
+    #[must_use]
+    pub fn saturating_add(self, other: u64) -> Self {
+        let sum = self.into_inner().saturating_add(other);
+        Self::try_new(sum).unwrap_or_default()
+    }
+
+    /// Adds consumed fuel amounts safely with `CpuFuelAmount`
+    #[must_use]
+    pub fn saturating_add_fuel(self, other: CpuFuelAmount) -> Self {
+        let sum = self.into_inner().saturating_add(other.into_inner());
+        Self::try_new(sum).unwrap_or_default()
+    }
+}
+
+/// Amount of CPU fuel for operations
+#[nutype(
+    validate(greater_or_equal = 0),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct CpuFuelAmount(u64);
+
+impl CpuFuelAmount {
+    /// Returns zero fuel amount
+    pub fn zero() -> Self {
+        Self::default()
+    }
+
+    /// Gets the value as u64
+    pub fn as_u64(&self) -> u64 {
+        self.into_inner()
+    }
+
+    /// Creates fuel amount from a primitive u64
+    pub fn from_u64(value: u64) -> Self {
+        // CpuFuelAmount has no validation so we can use new directly
+        Self::try_new(value).unwrap_or_default()
+    }
+}
+
+/// Worker thread identifier
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 32),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Hash,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into
+    )
+)]
+pub struct WorkerId(usize);
+
+impl WorkerId {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+
+    /// Creates `WorkerId` from zero-based index (adds 1)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the index would result in an invalid `WorkerId` (> 32)
+    pub fn from_zero_based_index(index: usize) -> Result<Self, WorkerIdError> {
+        Self::try_new(index + 1)
+    }
+}
+
+/// Queue depth for message processing
+#[nutype(
+    validate(greater_or_equal = 0),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct QueueDepth(usize);
+
+impl QueueDepth {
+    /// Returns zero queue depth
+    pub fn zero() -> Self {
+        Self::default()
+    }
+
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+
+    /// Increments the queue depth by one
+    #[must_use]
+    pub fn increment(self) -> Self {
+        Self::try_new(self.into_inner() + 1).unwrap_or(self)
+    }
+
+    /// Decrements the queue depth by one, saturating at zero
+    #[must_use]
+    pub fn saturating_decrement(self) -> Self {
+        Self::try_new(self.into_inner().saturating_sub(1)).unwrap_or_default()
+    }
+}
+
+/// Retry attempt counter
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 24),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into
+    )
+)]
+pub struct RetryAttempt(u8);
+
+impl RetryAttempt {
+    /// Gets the value as u8
+    pub fn as_u8(&self) -> u8 {
+        self.into_inner()
+    }
+
+    /// First attempt (attempt 1)
+    /// # Panics
+    ///
+    /// Panics if 1 is not a valid retry attempt (should never happen)
+    pub fn first() -> Self {
+        Self::try_new(1).expect("First attempt should always be valid")
+    }
+
+    /// Increments the retry attempt by one
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if incrementing would exceed the maximum (24)
+    pub fn increment(self) -> Result<Self, RetryAttemptError> {
+        Self::try_new(self.into_inner() + 1)
+    }
+
+    /// Checks if this is the final allowed attempt
+    pub fn is_final(&self) -> bool {
+        self.into_inner() == 24
+    }
+}
+
+/// Test agent identifier
+#[nutype(
+    validate(greater_or_equal = 0),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Hash,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct TestAgentId(u32);
+
+impl TestAgentId {
+    /// Gets the value as u32
+    pub fn as_u32(&self) -> u32 {
+        self.into_inner()
+    }
+
+    /// Creates `TestAgentId` from a usize, clamping to `u32::MAX`
+    pub fn from_usize(value: usize) -> Self {
+        #[allow(clippy::cast_possible_truncation)]
+        let clamped = value.min(u32::MAX as usize) as u32;
+        Self::try_new(clamped).unwrap_or_default()
+    }
+}
+
+/// Test sequence number
+#[nutype(
+    validate(greater_or_equal = 0),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct TestSequence(u32);
+
+impl TestSequence {
+    /// Gets the value as u32
+    pub fn as_u32(&self) -> u32 {
+        self.into_inner()
+    }
+
+    /// Increments the sequence number by one
+    #[must_use]
+    pub fn increment(self) -> Self {
+        Self::try_new(self.into_inner().saturating_add(1)).unwrap_or(self)
+    }
+
+    /// Returns zero sequence
+    pub fn zero() -> Self {
+        Self::default()
+    }
+}
+
+/// Domain-level validation errors
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub enum ValidationError {
+    #[error("Invalid field '{field}': {reason}")]
+    InvalidField { field: String, reason: String },
+
+    #[error("Value out of range: {value}, expected {min}-{max}")]
+    ValueOutOfRange { value: i64, min: i64, max: i64 },
+
+    #[error("Invalid format for '{field}': {reason}")]
+    InvalidFormat { field: String, reason: String },
+
+    #[error("Missing required field: {field}")]
+    MissingField { field: String },
+
+    #[error("Constraint violation: {constraint}")]
+    ConstraintViolation { constraint: String },
+}
+
+/// Resource creation and management errors
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub enum ResourceCreationError {
+    #[error("Resource limit exceeded: {resource_type} requested {requested}, limit {limit}")]
+    LimitExceeded {
+        resource_type: String,
+        requested: u64,
+        limit: u64,
+    },
+
+    #[error("Resource unavailable: {resource_type}")]
+    Unavailable { resource_type: String },
+
+    #[error("Resource already exists: {resource_id}")]
+    AlreadyExists { resource_id: String },
+
+    #[error("Resource not found: {resource_id}")]
+    NotFound { resource_id: String },
+
+    #[error("Invalid resource configuration: {reason}")]
+    InvalidConfiguration { reason: String },
+
+    #[error("Resource dependency error: {dependency} required for {resource}")]
+    DependencyError {
+        resource: String,
+        dependency: String,
+    },
 }
