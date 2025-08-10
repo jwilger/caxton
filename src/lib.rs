@@ -9,6 +9,8 @@ pub mod domain_types;
 // pub mod domain; // TODO: Fix compilation issues before enabling
 /// Host function registry and management
 pub mod host_functions;
+/// High-performance async message router for agent communication
+pub mod message_router;
 /// Resource management and limit enforcement
 pub mod resource_manager;
 /// WebAssembly runtime module for agent lifecycle management

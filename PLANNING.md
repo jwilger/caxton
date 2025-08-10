@@ -19,7 +19,7 @@ This document contains the complete, prioritized backlog of user stories for the
 ### P0 - Critical Foundation
 
 - [X] Story 001: WebAssembly Runtime Foundation
-- [ ] Story 002: Core Message Router
+- [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec - See docs/story-002-verification-report.md)
 - [ ] Story 003: Agent Lifecycle Management
 - [ ] Story 004: Local State Storage
 
