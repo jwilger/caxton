@@ -21,6 +21,8 @@ This document contains the complete, prioritized backlog of user stories for the
 - [X] Story 001: WebAssembly Runtime Foundation
 - [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec - See docs/story-002-verification-report.md)
 - [x] Story 003: Agent Lifecycle Management ✅ (COMPLETED - All acceptance criteria implemented and verified. 375 tests passing with comprehensive WASM validation, deployment management, hot reload, and lifecycle management)
+- [ ] Story 051: Full CI/CD Pipeline Setup - Set up comprehensive GitHub Actions CI build pipeline to test on all supported platforms (Linux, macOS, Windows) with matrix testing, security scanning, and automated releases
+- [ ] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected dependency vulnerability to maintain security posture and prepare for production deployment
 - [ ] Story 004: Local State Storage
 
 ### P1 - Essential Features
@@ -157,6 +159,57 @@ This document contains the complete, prioritized backlog of user stories for the
 - Resource cleanup is verified
 - API provides lifecycle operations
 - Documentation covers deployment patterns
+
+### Story 051: Full CI/CD Pipeline Setup
+
+**As a** development team
+**I want** comprehensive GitHub Actions CI/CD pipeline
+**So that** all code is tested on every platform we support with automated security scanning
+
+**Acceptance Criteria:**
+
+- [ ] Matrix testing across Linux, macOS, Windows
+- [ ] Multiple Rust versions tested (stable, beta, nightly)
+- [ ] Cargo clippy, fmt, and test run on all platforms
+- [ ] Security vulnerability scanning integrated
+- [ ] Automated dependency updates with testing
+- [ ] Release automation with semantic versioning
+- [ ] Performance regression testing
+- [ ] Documentation builds verified
+
+**Definition of Done:**
+
+- All tests pass on all supported platforms
+- Security scans show zero high/critical vulnerabilities
+- CI completes in < 10 minutes
+- Releases are fully automated
+- Badge status visible in README
+- Performance benchmarks tracked over time
+
+### Story 052: Dependency Vulnerability Resolution
+
+**As a** security-conscious development team
+**I want** all dependency vulnerabilities resolved
+**So that** our production system has minimal security exposure
+
+**Acceptance Criteria:**
+
+- [ ] GitHub-detected vulnerability investigated and understood
+- [ ] Vulnerability impact assessed for our use case
+- [ ] Dependency updated to patched version if available
+- [ ] Alternative dependency evaluated if no patch exists
+- [ ] Security advisory created if workaround needed
+- [ ] Automated vulnerability monitoring configured
+- [ ] Documentation updated with security practices
+
+**Definition of Done:**
+
+- Zero high/critical vulnerabilities in GitHub security tab
+- All dependencies on supported versions
+- Security monitoring alerts configured
+- Team trained on vulnerability response process
+- Security practices documented
+- Regular security reviews scheduled
 
 ### Story 004: Local State Storage
 
