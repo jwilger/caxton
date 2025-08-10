@@ -3,28 +3,15 @@
 //! This crate provides a secure, isolated execution environment for WebAssembly-based agents
 //! with comprehensive resource management, security policies, and sandboxing capabilities.
 
-#![allow(clippy::uninlined_format_args)]
 // Precision loss is acceptable for statistical calculations (percentages, averages, timing)
 #![allow(clippy::cast_precision_loss)]
 // Truncation is acceptable for display values (e.g., percentage 0-100, timing displays)
 #![allow(clippy::cast_possible_truncation)]
 // Style allows for safe casting implementations
-#![allow(clippy::let_and_return)]
 #![allow(clippy::checked_conversions)]
 #![allow(clippy::if_not_else)]
 #![allow(clippy::manual_div_ceil)]
-#![allow(clippy::map_unwrap_or)]
-#![allow(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::struct_excessive_bools)]
-#![allow(clippy::new_without_default)]
-#![allow(clippy::unused_self)]
-#![allow(clippy::unnecessary_wraps)]
-#![allow(clippy::return_self_not_must_use)]
-#![allow(clippy::too_many_lines)]
-#![allow(clippy::doc_markdown)]
-#![allow(clippy::match_same_arms)]
-#![allow(clippy::no_effect_underscore_binding)]
-#![allow(clippy::absurd_extreme_comparisons)]
 #![allow(clippy::useless_vec)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::float_cmp)]

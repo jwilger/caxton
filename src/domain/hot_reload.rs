@@ -507,7 +507,8 @@ impl ReloadMetrics {
         let success = self.requests_processed - self.requests_failed;
         {
             // Safe conversion for percentage calculation - precision loss acceptable for display
-            let result = if self.requests_processed <= u64::from(u32::MAX) {
+
+            if self.requests_processed <= u64::from(u32::MAX) {
                 // Use f32 for smaller numbers to avoid precision loss warnings
                 let success_f32 = success as f32;
                 let processed_f32 = self.requests_processed as f32;
@@ -517,8 +518,7 @@ impl ReloadMetrics {
                 let success_f64 = success as f64;
                 let processed_f64 = self.requests_processed as f64;
                 (success_f64 / processed_f64 * 100.0) as f32
-            };
-            result
+            }
         }
     }
 
