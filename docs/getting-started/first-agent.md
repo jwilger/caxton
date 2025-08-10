@@ -10,6 +10,16 @@ Every Caxton agent must:
 3. Return valid FIPA responses (or null)
 4. Compile to WebAssembly
 
+## Agent Lifecycle
+
+Agents follow a managed lifecycle:
+- **Deployment**: WASM modules are validated and loaded
+- **Execution**: Agents process messages in isolated sandboxes
+- **Management**: Hot reload enables zero-downtime updates
+- **Monitoring**: Resource usage and health are tracked
+
+For production deployment and management, see [Agent Lifecycle Management](../operations/agent-lifecycle-management.md).
+
 ## JavaScript Agent
 
 ### Simple Echo Agent
@@ -21,9 +31,9 @@ Create `echo-agent.js`:
 export function handle_message(message_bytes) {
     // Parse the incoming message
     const message = JSON.parse(new TextDecoder().decode(message_bytes));
-    
+
     console.log(`[${message.receiver}] Received from ${message.sender}: ${message.content.text}`);
-    
+
     // Create response
     const response = {
         performative: 'inform',
@@ -36,7 +46,7 @@ export function handle_message(message_bytes) {
             timestamp: Date.now()
         }
     };
-    
+
     // Return encoded response
     return new TextEncoder().encode(JSON.stringify(response));
 }
@@ -78,7 +88,7 @@ const state = new Map();
 
 export function handle_message(message_bytes) {
     const message = JSON.parse(new TextDecoder().decode(message_bytes));
-    
+
     switch(message.performative) {
         case 'request':
             return handleRequest(message);
@@ -93,7 +103,7 @@ export function handle_message(message_bytes) {
 
 function handleRequest(message) {
     const { action, params } = message.content;
-    
+
     switch(action) {
         case 'increment':
             counter += params.amount || 1;
@@ -105,7 +115,7 @@ function handleRequest(message) {
             counter = 0;
             break;
     }
-    
+
     return createResponse(message, {
         status: 'success',
         counter: counter
@@ -128,7 +138,7 @@ function createResponse(originalMessage, content) {
         in_reply_to: originalMessage.id,
         content: content
     };
-    
+
     return new TextEncoder().encode(JSON.stringify(response));
 }
 ```
@@ -154,7 +164,7 @@ from datetime import datetime
 
 class WeatherAgent:
     """Simulated weather information agent"""
-    
+
     def __init__(self):
         self.cities = {
             'london': {'temp_base': 15, 'variance': 5},
@@ -162,15 +172,15 @@ class WeatherAgent:
             'tokyo': {'temp_base': 18, 'variance': 6},
             'sydney': {'temp_base': 22, 'variance': 4}
         }
-    
+
     def get_weather(self, city):
         """Generate simulated weather data"""
         if city.lower() not in self.cities:
             return None
-        
+
         city_data = self.cities[city.lower()]
         temp = city_data['temp_base'] + random.uniform(-city_data['variance'], city_data['variance'])
-        
+
         return {
             'city': city,
             'temperature': round(temp, 1),
@@ -188,7 +198,7 @@ def handle_message(message_bytes):
     try:
         # Decode and parse message
         message = json.loads(message_bytes.decode('utf-8'))
-        
+
         # Handle different performatives
         if message['performative'] == 'query':
             return handle_query(message)
@@ -196,7 +206,7 @@ def handle_message(message_bytes):
             return handle_request(message)
         else:
             return create_not_understood(message)
-    
+
     except Exception as e:
         return create_failure(message, str(e))
 
@@ -204,12 +214,12 @@ def handle_query(message):
     """Handle weather queries"""
     content = message.get('content', {})
     city = content.get('city')
-    
+
     if not city:
         return create_failure(message, "No city specified")
-    
+
     weather = agent.get_weather(city)
-    
+
     if weather:
         response = {
             'performative': 'inform',
@@ -232,7 +242,7 @@ def handle_query(message):
                 'error': f"Unknown city: {city}"
             }
         }
-    
+
     return json.dumps(response).encode('utf-8')
 
 def create_not_understood(message):
@@ -321,30 +331,30 @@ func handle_message(messagePtr *byte, messageLen int) (*byte, int) {
     for i := 0; i < messageLen; i++ {
         messageBytes[i] = *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(messagePtr)) + uintptr(i)))
     }
-    
+
     // Parse message
     var msg Message
     if err := json.Unmarshal(messageBytes, &msg); err != nil {
         return nil, 0
     }
-    
+
     // Handle calculation requests
     if msg.Performative == "request" {
         response := processCalculation(msg)
         responseBytes, _ := json.Marshal(response)
         return &responseBytes[0], len(responseBytes)
     }
-    
+
     return nil, 0
 }
 
 func processCalculation(msg Message) Message {
     operation, _ := msg.Content["operation"].(string)
     operands, _ := msg.Content["operands"].([]interface{})
-    
+
     var result float64
     var err error
-    
+
     switch operation {
     case "add":
         result = add(operands)
@@ -359,7 +369,7 @@ func processCalculation(msg Message) Message {
     default:
         err = fmt.Errorf("unknown operation: %s", operation)
     }
-    
+
     response := Message{
         Performative:   "inform",
         Sender:         msg.Receiver,
@@ -367,7 +377,7 @@ func processCalculation(msg Message) Message {
         ConversationID: msg.ConversationID,
         InReplyTo:      msg.ReplyWith,
     }
-    
+
     if err != nil {
         response.Performative = "failure"
         response.Content = map[string]interface{}{
@@ -379,7 +389,7 @@ func processCalculation(msg Message) Message {
             "operation": operation,
         }
     }
-    
+
     return response
 }
 
@@ -489,18 +499,18 @@ pub extern "C" fn init() -> i32 {
 #[no_mangle]
 pub extern "C" fn handle_message(ptr: *const u8, len: usize) -> *const u8 {
     let bytes = unsafe { std::slice::from_raw_parts(ptr, len) };
-    
+
     let message: Message = match serde_json::from_slice(bytes) {
         Ok(msg) => msg,
         Err(_) => return std::ptr::null(),
     };
-    
+
     let response = match message.performative.as_str() {
         "request" => handle_request(message),
         "query" => handle_query(message),
         _ => create_not_understood(message),
     };
-    
+
     match response {
         Some(resp) => {
             let json = serde_json::to_vec(&resp).unwrap();
@@ -512,24 +522,24 @@ pub extern "C" fn handle_message(ptr: *const u8, len: usize) -> *const u8 {
 
 fn handle_request(msg: Message) -> Option<Message> {
     let state = unsafe { STATE.as_mut()? };
-    
+
     let action = msg.content.get("action")?.as_str()?;
-    
+
     match action {
         "transfer" => {
             let from = msg.content.get("from")?.as_str()?;
             let to = msg.content.get("to")?.as_str()?;
             let amount = msg.content.get("amount")?.as_u64()?;
-            
+
             // Perform transfer
             let from_balance = state.balances.entry(from.to_string()).or_insert(0);
             if *from_balance < amount {
                 return create_failure(msg, "Insufficient balance");
             }
-            
+
             *from_balance -= amount;
             *state.balances.entry(to.to_string()).or_insert(0) += amount;
-            
+
             Some(Message {
                 performative: "inform".to_string(),
                 sender: msg.receiver,
@@ -547,10 +557,10 @@ fn handle_request(msg: Message) -> Option<Message> {
         "mint" => {
             let to = msg.content.get("to")?.as_str()?;
             let amount = msg.content.get("amount")?.as_u64()?;
-            
+
             *state.balances.entry(to.to_string()).or_insert(0) += amount;
             state.total_supply += amount;
-            
+
             Some(Message {
                 performative: "inform".to_string(),
                 sender: msg.receiver,
@@ -571,14 +581,14 @@ fn handle_request(msg: Message) -> Option<Message> {
 
 fn handle_query(msg: Message) -> Option<Message> {
     let state = unsafe { STATE.as_ref()? };
-    
+
     let query_type = msg.content.get("type")?.as_str()?;
-    
+
     match query_type {
         "balance" => {
             let account = msg.content.get("account")?.as_str()?;
             let balance = state.balances.get(account).unwrap_or(&0);
-            
+
             Some(Message {
                 performative: "inform".to_string(),
                 sender: msg.receiver,
@@ -673,11 +683,11 @@ function test_echo() {
         receiver: 'echo-agent',
         content: { text: 'Hello' }
     };
-    
+
     const input = new TextEncoder().encode(JSON.stringify(testMessage));
     const output = handle_message(input);
     const response = JSON.parse(new TextDecoder().decode(output));
-    
+
     console.assert(response.content.text === 'Echo: Hello');
     console.log('✓ Echo test passed');
 }

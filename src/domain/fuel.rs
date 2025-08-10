@@ -5,20 +5,52 @@ use thiserror::Error;
 
 #[nutype(
     validate(greater = 0),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize
+    )
 )]
 pub struct NonZeroCpuFuel(u64);
 
 #[nutype(
     validate(greater_or_equal = 0),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Default
+    ),
     default = 0
 )]
 pub struct CpuFuelBudget(u64);
 
 #[nutype(
     validate(greater_or_equal = 0),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Default
+    ),
     default = 0
 )]
 pub struct CpuFuelRemaining(u64);
@@ -124,8 +156,8 @@ impl ExecutionContext<NonZeroCpuFuel> {
         }
 
         let remaining = current - cost;
-        self.fuel_state = NonZeroCpuFuel::try_new(remaining)
-            .map_err(|_| FuelError::FuelExhausted)?;
+        self.fuel_state =
+            NonZeroCpuFuel::try_new(remaining).map_err(|_| FuelError::FuelExhausted)?;
 
         Ok(())
     }

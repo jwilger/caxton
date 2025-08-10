@@ -3,10 +3,10 @@
 //! This crate provides a secure, isolated execution environment for WebAssembly-based agents
 //! with comprehensive resource management, security policies, and sandboxing capabilities.
 
+/// Advanced domain types for type-safe state management
+pub mod domain;
 /// Domain types for preventing primitive obsession
 pub mod domain_types;
-/// Advanced domain types for type-safe state management
-// pub mod domain; // TODO: Fix compilation issues before enabling
 /// Host function registry and management
 pub mod host_functions;
 /// High-performance async message router for agent communication
@@ -20,6 +20,17 @@ pub mod sandbox;
 /// Security policy configuration and enforcement
 pub mod security;
 
+/// Core agent lifecycle management orchestration
+pub mod agent_lifecycle_manager;
+/// Agent deployment operations and strategies
+pub mod deployment_manager;
+/// Hot reload operations with zero downtime
+pub mod hot_reload_manager;
+/// Time abstraction layer for testable time operations
+pub mod time_provider;
+/// WASM module validation and security analysis
+pub mod wasm_module_validator;
+
 pub use domain_types::{
     AgentId, AgentName, ConnectionPoolSize, CpuFuel, CpuFuelAmount, CpuFuelConsumed, ExecutionTime,
     FunctionDescription, FunctionModuleName, HostFunctionName, MaxAgentMemory, MaxAgents,
@@ -27,7 +38,28 @@ pub use domain_types::{
     MessageSize, PermissionName, QueueDepth, RateLimitPerSecond, ResourceCreationError,
     RetryAttempt, StorageCleanupIntervalMs, TestAgentId, TestSequence, ValidationError, WorkerId,
 };
+// Re-export key domain types at the crate level
+pub use domain::{
+    AgentLifecycle, AgentLifecycleState, AgentVersion, CustomValidationRule, DeploymentConfig,
+    DeploymentError, DeploymentId, DeploymentRequest, DeploymentResult, DeploymentStatus,
+    DeploymentStrategy, HotReloadConfig, HotReloadError, HotReloadId, HotReloadRequest,
+    HotReloadResult, HotReloadStatus, HotReloadStrategy, ResourceRequirements,
+    TrafficSplitPercentage, ValidationFailure, ValidationResult, ValidationRuleType,
+    ValidationWarning, VersionNumber, WasmModule, WasmSecurityPolicy, WasmValidationError,
+};
 pub use resource_manager::ResourceLimits;
 pub use runtime::{WasmRuntime, WasmRuntimeConfig};
 pub use sandbox::Sandbox;
 pub use security::SecurityPolicy;
+
+// Re-export Agent Lifecycle Management components
+pub use agent_lifecycle_manager::{
+    AgentLifecycleManager, AgentStatus, DeploymentManager as DeploymentManagerTrait, HealthStatus,
+    HotReloadManager as HotReloadManagerTrait, LifecycleError, OperationResult,
+    WasmModuleValidator as WasmModuleValidatorTrait,
+};
+pub use deployment_manager::{CaxtonDeploymentManager, InstanceManager, ResourceAllocator};
+pub use hot_reload_manager::{CaxtonHotReloadManager, RuntimeManager, TrafficRouter};
+pub use wasm_module_validator::{
+    CaxtonWasmModuleValidator, ValidationConfig, ValidationStatistics,
+};
