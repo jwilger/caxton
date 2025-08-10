@@ -544,8 +544,14 @@ impl CaxtonWasmModuleValidator {
             &config,
         );
 
-        self.finalize_validation(wasm_bytes, agent_name, validation_result, validation_start)
-            .await
+        self.finalize_validation(
+            wasm_bytes,
+            agent_name,
+            validation_result,
+            validation_start,
+            (structural, security, performance),
+        )
+        .await
     }
 
     /// Validate basic WASM format
@@ -643,12 +649,11 @@ impl CaxtonWasmModuleValidator {
         agent_name: Option<AgentName>,
         validation_result: ValidationResult,
         validation_start: SystemTime,
+        analysis_results: (StructuralAnalysis, SecurityAnalysis, PerformanceAnalysis),
     ) -> Result<WasmModule, WasmValidationError> {
         let validation_duration = validation_start.elapsed().unwrap_or_default().as_millis() as f64;
 
-        // Update statistics
-        self.update_validation_statistics(&validation_result, validation_duration)
-            .await;
+        // Note: Statistics are handled by the caller (validate_module trait implementation)
 
         let config = self.config.read().await;
         let mut final_module = WasmModule::from_bytes(
@@ -663,31 +668,31 @@ impl CaxtonWasmModuleValidator {
         // Override validation result with comprehensive analysis
         final_module.validation_result = validation_result.clone();
 
+        // Populate metadata with analysis results
+        let (structural, security, performance) = analysis_results;
+        final_module.metadata.insert(
+            "estimated_memory_usage".to_string(),
+            performance.estimated_memory_usage.to_string(),
+        );
+        final_module.metadata.insert(
+            "estimated_execution_cost".to_string(),
+            performance.estimated_execution_cost.to_string(),
+        );
+        final_module.metadata.insert(
+            "security_score".to_string(),
+            security.security_score.to_string(),
+        );
+        final_module.metadata.insert(
+            "complexity_score".to_string(),
+            structural.complexity_score.to_string(),
+        );
+
         info!(
             "WASM module validation completed in {:.2}ms with result: {:?}",
             validation_duration, final_module.validation_result
         );
 
         Ok(final_module)
-    }
-
-    /// Update validation statistics
-    async fn update_validation_statistics(
-        &self,
-        validation_result: &ValidationResult,
-        duration: f64,
-    ) {
-        let mut stats = self.statistics.write().await;
-        stats.modules_validated += 1;
-        match validation_result {
-            ValidationResult::Valid | ValidationResult::Warning { .. } => stats.modules_passed += 1,
-            ValidationResult::Invalid { .. } => stats.modules_failed += 1,
-        }
-
-        let total_validations = stats.modules_validated as f64;
-        stats.average_validation_time_ms =
-            ((stats.average_validation_time_ms * (total_validations - 1.0)) + duration)
-                / total_validations;
     }
 }
 
