@@ -1,7 +1,0 @@
-GREEN PHASE: Pre-commit hook is working correctly
-
-✅ Created /workspaces/caxton/scripts/check-no-allows.sh
-✅ Updated .pre-commit-config.yaml with the hook
-✅ Tested hook functionality - it correctly detects and blocks new allows
-
-Next: Fix uninlined_format_args in test files systematically
