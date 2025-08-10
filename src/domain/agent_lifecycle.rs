@@ -36,7 +36,7 @@ impl AgentVersion {
     /// Creates a version from a string representation
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the string is not a valid UUID format.
     pub fn parse(s: &str) -> Result<Self, String> {
         let uuid = Uuid::parse_str(s).map_err(|e| format!("Invalid UUID format: {e}"))?;
@@ -68,7 +68,7 @@ impl VersionNumber {
     /// First version number
     ///
     /// # Panics
-    /// 
+    ///
     /// This function panics if version 1 is not valid, which should never happen.
     pub fn first() -> Self {
         Self::try_new(1).expect("Version 1 should always be valid")
@@ -77,7 +77,7 @@ impl VersionNumber {
     /// Increment to next version
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the next version number would overflow or be invalid.
     pub fn next(&self) -> Result<Self, VersionNumberError> {
         Self::try_new(self.into_inner() + 1)
@@ -193,7 +193,7 @@ impl TransitionTimeout {
     /// Creates timeout from seconds
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the timeout value is invalid or too large.
     pub fn from_secs(secs: u64) -> Result<Self, TransitionTimeoutError> {
         Self::try_new(secs * 1000)
@@ -236,7 +236,7 @@ impl DrainTimeout {
     /// Creates timeout from seconds
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the timeout value is invalid or too large.
     pub fn from_secs(secs: u64) -> Result<Self, DrainTimeoutError> {
         Self::try_new(secs * 1000)
@@ -284,7 +284,7 @@ impl PendingRequestCount {
     /// Increment count by one
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if incrementing would overflow the count.
     pub fn increment(&self) -> Result<Self, PendingRequestCountError> {
         Self::try_new(self.into_inner() + 1)
@@ -334,7 +334,7 @@ impl FailureReason {
     /// Creates failure reason from error
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the error message is too long or invalid.
     pub fn from_error<E: std::error::Error>(error: &E) -> Result<Self, FailureReasonError> {
         Self::try_new(error.to_string())
@@ -343,7 +343,7 @@ impl FailureReason {
     /// Creates failure reason from string
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the reason string is invalid.
     pub fn from_reason(reason: &str) -> Result<Self, FailureReasonError> {
         Self::try_new(reason.to_string())
@@ -390,7 +390,7 @@ impl AgentLifecycle {
     /// Attempts to transition to a new state
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the state transition is invalid.
     pub fn transition_to(
         &mut self,
@@ -414,7 +414,7 @@ impl AgentLifecycle {
     /// Starts the agent (Ready -> Running)
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the agent cannot transition to Running state.
     pub fn start(&mut self) -> Result<(), StateTransitionError> {
         self.transition_to(AgentLifecycleState::Running, None)
@@ -423,7 +423,7 @@ impl AgentLifecycle {
     /// Begins draining the agent (Running -> Draining)
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the agent cannot transition to Draining state.
     pub fn start_draining(&mut self) -> Result<(), StateTransitionError> {
         self.transition_to(AgentLifecycleState::Draining, None)
@@ -432,7 +432,7 @@ impl AgentLifecycle {
     /// Stops the agent (Running/Draining/Ready -> Stopped)
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the agent cannot transition to Stopped state.
     pub fn stop(&mut self) -> Result<(), StateTransitionError> {
         self.transition_to(AgentLifecycleState::Stopped, None)
@@ -441,7 +441,7 @@ impl AgentLifecycle {
     /// Marks agent as failed with reason
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the agent cannot transition to Failed state.
     pub fn fail(&mut self, reason: FailureReason) -> Result<(), StateTransitionError> {
         self.transition_to(AgentLifecycleState::Failed, Some(reason))
@@ -450,7 +450,7 @@ impl AgentLifecycle {
     /// Increments pending request count
     ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if too many requests are pending.
     pub fn add_pending_request(&mut self) -> Result<(), StateTransitionError> {
         self.pending_requests = self.pending_requests.increment().map_err(|_| {

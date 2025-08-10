@@ -1,0 +1,66 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/format_and_test.sh",
+            "timeout": 180,
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/enforce_plan_mode.py",
+            "timeout": 60,
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit"
+      },
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/require_red_first.py",
+            "timeout": 60,
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit"
+      },
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/check_branch_status.py",
+            "timeout": 30,
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write|MultiEdit|Bash"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/prompt_guard.py",
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/verify_pr_state.py",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

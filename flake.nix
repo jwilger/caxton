@@ -29,6 +29,8 @@
           buildInputs = with pkgs; [
             rustToolchain
             nodejs
+            python3
+            uv
             git
             gh
             pre-commit
@@ -45,24 +47,10 @@
 
           # Configure npm to use local directory for global packages
           shellHook = ''
-            export NPM_CONFIG_PREFIX="$PWD/.npm-global"
-            export PATH="$PWD/.npm-global/bin:$PATH"
-
-            # Create the directory if it doesn't exist
-            mkdir -p "$PWD/.npm-global"
-
-            # Set npm cache to also be local
-            export NPM_CONFIG_CACHE="$PWD/.npm-cache"
-            mkdir -p "$PWD/.npm-cache"
-
             # Ensure claude code and claude-flow are available
             # First check if claude code is installed
             if ! command -v claude &> /dev/null; then
-              npm install -g @anthropic-ai/claude-code
-            fi
-            # Ensure claude-flow is available
-            if ! command -v claude-flow &> /dev/null; then
-              npm install -g claude-flow@alpha
+              npx @anthropic-ai/claude-code install --force latest
             fi
           '';
         };
