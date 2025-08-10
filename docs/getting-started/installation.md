@@ -243,7 +243,7 @@ sudo firewall-cmd --reload
    ```bash
    # Check what's using the port
    sudo lsof -i :8080
-   
+
    # Change port in config.yaml
    ```
 

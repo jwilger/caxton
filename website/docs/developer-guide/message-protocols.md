@@ -22,7 +22,7 @@ FIPA (Foundation for Intelligent Physical Agents) provides proven patterns that 
 ### Why Use Structured Message Types?
 
 - **Clear Intent**: Both sender and receiver know exactly what's expected
-- **Error Handling**: Standardized ways to handle failures and rejections  
+- **Error Handling**: Standardized ways to handle failures and rejections
 - **Conversations**: Group related messages together for complex workflows
 - **Timeouts**: Built-in support for request deadlines
 
@@ -34,7 +34,7 @@ Every FIPA message in Caxton follows this standardized structure:
 {
   "performative": "request",
   "sender": "agent_123",
-  "receiver": "agent_456", 
+  "receiver": "agent_456",
   "content": {
     "action": "process_data",
     "parameters": {"data_type": "json", "size": 1024}
@@ -232,7 +232,7 @@ let agree = FipaMessage::agree()
     .in_reply_to("process_req_001")
     .build();
 
-// Negative response  
+// Negative response
 let refuse = FipaMessage::refuse()
     .sender("processor")
     .receiver("client")
@@ -286,9 +286,9 @@ async fn request_data_processing(client: &FipaClient) -> Result<ProcessingResult
         .content(json!({"file": "data.csv", "operation": "analyze"}))
         .reply_with("req_001")
         .build();
-    
+
     client.send(request).await?;
-    
+
     // Wait for AGREE/REFUSE
     let response = client.wait_for_reply("req_001").await?;
     match response.performative {
@@ -318,7 +318,7 @@ async fn handle_request(server: &FipaServer, message: FipaMessage) {
                 .in_reply_to(&message.reply_with.unwrap())
                 .build();
             server.send(agree).await.unwrap();
-            
+
             // Process and send result
             match process_data(&message.content).await {
                 Ok(result) => {
@@ -389,7 +389,7 @@ let proposal = FipaMessage::propose()
 Caxton implements a pragmatic subset of FIPA protocols, focusing on the most commonly needed message patterns while maintaining compatibility with the broader FIPA ecosystem. Our approach prioritizes:
 
 - **Simplicity**: Use only the message types you actually need
-- **Performance**: Efficient serialization and routing  
+- **Performance**: Efficient serialization and routing
 - **Reliability**: Built-in timeouts and error handling
 - **Debuggability**: Clear message tracing and logging
 
@@ -447,7 +447,7 @@ let status_update = FipaMessage::inform()
 client.send(status_update).await?;
 ```
 
-### Ask a Simple Question  
+### Ask a Simple Question
 
 ```rust
 // Check if a service is available
@@ -514,7 +514,7 @@ let message = FipaMessage::request()
 
 // Implement retry logic
 async fn send_with_retry(
-    client: &FipaClient, 
+    client: &FipaClient,
     message: FipaMessage
 ) -> Result<FipaMessage> {
     for attempt in 1..=3 {
@@ -573,9 +573,9 @@ impl MessageTracer {
             conversation_id: message.conversation_id.clone(),
             protocol: message.protocol.clone(),
         };
-        
+
         self.logs.push(entry);
-        
+
         // Log to structured logger
         info!(
             message.sender = %message.sender,
@@ -597,16 +597,16 @@ pub fn analyze_conversation(
     messages: &[FipaMessage]
 ) -> ConversationAnalysis {
     let mut analysis = ConversationAnalysis::new(conversation_id);
-    
+
     for message in messages {
         analysis.add_message(message);
     }
-    
+
     // Detect patterns
     analysis.detect_protocol_violations();
     analysis.calculate_latency_metrics();
     analysis.identify_performance_bottlenecks();
-    
+
     analysis
 }
 ```

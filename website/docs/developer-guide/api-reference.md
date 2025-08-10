@@ -634,7 +634,7 @@ ws.onmessage = (event) => {
 {"type": "agent.deployed", "agent_id": "agent_123"}
 {"type": "agent.failed", "agent_id": "agent_123", "error": "timeout"}
 
-// Message events  
+// Message events
 {"type": "message.sent", "from": "agent_123", "to": "agent_456"}
 
 // Task events

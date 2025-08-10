@@ -314,7 +314,7 @@ class DeadLinkChecker {
         ];
 
         const urlInfo = this.checkedUrls.get(linkUrl);
-        
+
         // Check if URL is whitelisted
         if (whitelistedUrls.some(whitelisted => linkUrl.startsWith(whitelisted))) {
             urlInfo.status = 'working';

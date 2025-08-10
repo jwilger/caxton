@@ -39,7 +39,7 @@ Caxton implements a strict allowlist of permitted system calls:
 # Allowed WASI calls
 allowed_wasi_calls = [
     "fd_read",
-    "fd_write", 
+    "fd_write",
     "fd_close",
     "clock_time_get",
     "random_get"
@@ -91,35 +91,35 @@ pub struct SecureValidator {
 impl SecureValidator {
     pub fn new() -> Self {
         let mut config = Config::new();
-        
+
         // Security hardening
         config.wasm_threads(false);          // Disable threads
         config.wasm_reference_types(false);  // Disable reference types
         config.wasm_simd(false);            // Disable SIMD
         config.wasm_bulk_memory(false);     // Disable bulk memory ops
-        
+
         // Resource limits
         config.max_wasm_stack(1024 * 1024); // 1MB stack
         config.consume_fuel(true);          // Enable fuel metering
         config.epoch_interruption(true);   // Enable interruption
-        
+
         Self { config }
     }
-    
+
     pub fn validate_module(&self, wasm_bytes: &[u8]) -> Result<Module, SecurityError> {
         let engine = Engine::new(&self.config)?;
-        
+
         // Parse and validate
         let module = Module::from_binary(&engine, wasm_bytes)?;
-        
+
         // Additional security checks
         self.check_imports(&module)?;
         self.check_exports(&module)?;
         self.check_memory_usage(&module)?;
-        
+
         Ok(module)
     }
-    
+
     fn check_imports(&self, module: &Module) -> Result<(), SecurityError> {
         for import in module.imports() {
             match (import.module(), import.name()) {
@@ -218,7 +218,7 @@ iptables -X
 
 # Default policies
 iptables -P INPUT DROP
-iptables -P FORWARD DROP  
+iptables -P FORWARD DROP
 iptables -P OUTPUT ACCEPT
 
 # Allow loopback
@@ -260,7 +260,7 @@ spec:
   policyTypes:
   - Ingress
   - Egress
-  
+
   ingress:
   # Allow traffic from load balancer
   - from:
@@ -270,7 +270,7 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
-  
+
   # Allow monitoring scraping
   - from:
     - namespaceSelector:
@@ -279,14 +279,14 @@ spec:
     ports:
     - protocol: TCP
       port: 9090
-  
+
   egress:
   # Allow DNS resolution
   - to: []
     ports:
     - protocol: UDP
       port: 53
-  
+
   # Allow Redis access
   - to:
     - namespaceSelector:
@@ -298,7 +298,7 @@ spec:
     ports:
     - protocol: TCP
       port: 6379
-  
+
   # Allow external HTTPS for webhooks
   - to: []
     ports:
@@ -340,7 +340,7 @@ policy_file = "/etc/caxton/policies/rbac.conf"
 [security.roles]
 admin = [
     "agent:create",
-    "agent:delete", 
+    "agent:delete",
     "agent:update",
     "system:configure",
     "metrics:view"
@@ -516,14 +516,14 @@ spec:
             - |
               # Check for security updates
               apt list --upgradable | grep -i security
-              
+
               # Update security packages only
               apt-get update
               apt-get upgrade -y \
                 -o Dpkg::Options::="--force-confdef" \
                 -o Dpkg::Options::="--force-confold" \
                 $(apt list --upgradable 2>/dev/null | grep -i security | cut -d'/' -f1)
-              
+
               # Restart Caxton if needed
               if [ -f /var/run/reboot-required ]; then
                 kubectl rollout restart deployment/caxton-runtime
@@ -550,19 +550,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: 'caxton/caxton:latest'
         format: 'sarif'
         output: 'trivy-results.sarif'
-    
+
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: 'trivy-results.sarif'
-    
+
     - name: Run Snyk security scan
       uses: snyk/actions/docker@master
       env:
@@ -588,13 +588,13 @@ IMAGES=(
 
 for image in "${IMAGES[@]}"; do
     echo "Scanning $image..."
-    
+
     # Trivy scan
     trivy image --severity HIGH,CRITICAL --format json $image > "${image//\//_}-trivy.json"
-    
+
     # Grype scan
     grype $image --fail-on high
-    
+
     # Clair scan (if available)
     if command -v clair-scanner &> /dev/null; then
         clair-scanner --ip $(hostname -I | awk '{print $1}') $image
@@ -647,33 +647,33 @@ case $INCIDENT_TYPE in
         echo "Responding to unauthorized access..."
         # Revoke all active sessions
         kubectl exec -it caxton-runtime-0 -- caxton admin revoke-all-sessions
-        
+
         # Change API keys
         vault kv put secret/caxton/api-keys key="$(openssl rand -hex 32)"
-        
+
         # Force pod restart
         kubectl rollout restart deployment/caxton-runtime
         ;;
-        
+
     "suspicious-agent")
         AGENT_ID=${2:-""}
         echo "Responding to suspicious agent: $AGENT_ID"
-        
+
         # Quarantine agent
         kubectl exec -it caxton-runtime-0 -- caxton admin quarantine-agent $AGENT_ID
-        
+
         # Collect forensic data
         kubectl exec -it caxton-runtime-0 -- caxton admin dump-agent-state $AGENT_ID > /tmp/agent-$AGENT_ID-dump.json
         ;;
-        
+
     "data-breach")
         echo "Responding to data breach..."
         # Rotate all secrets
         ./rotate-all-secrets.sh
-        
+
         # Enable audit logging
         kubectl patch configmap caxton-config -p '{"data":{"audit_level":"debug"}}'
-        
+
         # Notify security team
         curl -X POST "$SLACK_WEBHOOK" -d '{"text":"SECURITY INCIDENT: Data breach detected in Caxton system"}'
         ;;
@@ -737,7 +737,7 @@ find /etc/caxton -newer /tmp/baseline -ls > "$EVIDENCE_DIR/config-changes.txt"
 
 # Memory dump (if needed)
 if [[ "$2" == "full" ]]; then
-    kubectl exec -it caxton-runtime-0 -- gcore $(pgrep caxton) 
+    kubectl exec -it caxton-runtime-0 -- gcore $(pgrep caxton)
     kubectl cp caxton-runtime-0:core.* "$EVIDENCE_DIR/"
 fi
 
@@ -805,7 +805,7 @@ data:
           type: security
         annotations:
           summary: "Suspicious agent behavior detected"
-          
+
       - alert: UnauthorizedAPIAccess
         expr: rate(caxton_http_requests_total{status=~"401|403"}[5m]) > 5
         for: 1m
@@ -814,7 +814,7 @@ data:
           type: security
         annotations:
           summary: "Multiple unauthorized API access attempts"
-          
+
       - alert: AnomalousNetworkTraffic
         expr: rate(caxton_network_bytes_total[5m]) > 1000000  # 1MB/s
         for: 5m
@@ -839,7 +839,7 @@ audit_log_file = "/var/log/caxton/audit.log"
 # Events to audit
 audit_events = [
     "authentication",
-    "authorization", 
+    "authorization",
     "agent_creation",
     "agent_deletion",
     "configuration_change",
@@ -869,19 +869,19 @@ def generate_compliance_report():
         "report_date": datetime.utcnow().isoformat(),
         "compliance_checks": []
     }
-    
+
     # Check TLS configuration
     tls_check = check_tls_configuration()
     report["compliance_checks"].append(tls_check)
-    
+
     # Check access controls
     access_check = check_access_controls()
     report["compliance_checks"].append(access_check)
-    
+
     # Check audit logging
     audit_check = check_audit_logging()
     report["compliance_checks"].append(audit_check)
-    
+
     # Generate report file
     with open(f"/opt/caxton/reports/compliance-{datetime.now().strftime('%Y%m%d')}.json", "w") as f:
         json.dump(report, f, indent=2)
