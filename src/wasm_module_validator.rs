@@ -10,22 +10,47 @@ use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
 use crate::agent_lifecycle_manager::WasmModuleValidator;
+#[cfg(test)]
+use crate::domain::ValidationRuleType;
 use crate::domain::{
-    AgentVersion, CustomValidationRule, ValidationFailure, ValidationResult, ValidationRuleType,
-    ValidationWarning, VersionNumber, WasmFeature, WasmModule, WasmSecurityPolicy,
-    WasmValidationError,
+    AgentVersion, CustomValidationRule, ValidationFailure, ValidationResult, ValidationWarning,
+    VersionNumber, WasmModule, WasmSecurityPolicy, WasmValidationError, millis_to_f64_for_stats,
+    u64_to_f64_for_stats,
 };
 use crate::domain_types::AgentName;
 
+/// Validation modes for different validation types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ValidationMode {
+    /// Validation is enabled
+    Enabled,
+    /// Validation is disabled
+    Disabled,
+}
+
+/// Strictness level for validation
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StrictnessLevel {
+    /// Strict validation with all checks enabled
+    Strict,
+    /// Relaxed validation with some checks bypassed
+    Relaxed,
+}
+
 /// Validation configuration for different environments
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
 pub struct ValidationConfig {
+    /// Security policy to apply during validation
     pub security_policy: WasmSecurityPolicy,
-    pub enable_structural_validation: bool,
-    pub enable_security_validation: bool,
-    pub enable_performance_analysis: bool,
-    pub strict_mode: bool,
+    /// Whether to perform structural validation
+    pub structural_validation: ValidationMode,
+    /// Whether to perform security validation
+    pub security_validation: ValidationMode,
+    /// Whether to perform performance analysis
+    pub performance_analysis: ValidationMode,
+    /// Strictness level for validation
+    pub strictness: StrictnessLevel,
+    /// Maximum time allowed for validation in milliseconds
     pub max_validation_time_ms: u64,
 }
 
@@ -34,10 +59,10 @@ impl ValidationConfig {
     pub fn strict() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::strict(),
-            enable_structural_validation: true,
-            enable_security_validation: true,
-            enable_performance_analysis: true,
-            strict_mode: true,
+            structural_validation: ValidationMode::Enabled,
+            security_validation: ValidationMode::Enabled,
+            performance_analysis: ValidationMode::Enabled,
+            strictness: StrictnessLevel::Strict,
             max_validation_time_ms: 30_000, // 30 seconds
         }
     }
@@ -46,10 +71,10 @@ impl ValidationConfig {
     pub fn permissive() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::permissive(),
-            enable_structural_validation: true,
-            enable_security_validation: false,
-            enable_performance_analysis: false,
-            strict_mode: false,
+            structural_validation: ValidationMode::Enabled,
+            security_validation: ValidationMode::Disabled,
+            performance_analysis: ValidationMode::Disabled,
+            strictness: StrictnessLevel::Relaxed,
             max_validation_time_ms: 10_000, // 10 seconds
         }
     }
@@ -58,10 +83,10 @@ impl ValidationConfig {
     pub fn testing() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::testing(),
-            enable_structural_validation: true,
-            enable_security_validation: true,
-            enable_performance_analysis: true, // Enable for comprehensive testing
-            strict_mode: false,
+            structural_validation: ValidationMode::Enabled,
+            security_validation: ValidationMode::Enabled,
+            performance_analysis: ValidationMode::Enabled, // Enable for comprehensive testing
+            strictness: StrictnessLevel::Relaxed,
             max_validation_time_ms: 5_000, // 5 seconds
         }
     }
@@ -75,31 +100,26 @@ impl Default for ValidationConfig {
 
 /// Structural analysis results
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct StructuralAnalysis {
     pub function_count: usize,
     pub import_count: usize,
     pub export_count: usize,
     pub memory_pages: u32,
     pub table_elements: u32,
-    pub global_count: usize,
     pub complexity_score: f64,
 }
 
 /// Security analysis results
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct SecurityAnalysis {
     pub unauthorized_imports: Vec<String>,
     pub missing_exports: Vec<String>,
-    pub forbidden_features: Vec<WasmFeature>,
     pub policy_violations: Vec<String>,
     pub security_score: f64,
 }
 
 /// Performance analysis results
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct PerformanceAnalysis {
     pub estimated_memory_usage: usize,
     pub estimated_execution_cost: u64,
@@ -154,11 +174,7 @@ impl ValidationStatistics {
         }
 
         // Update average validation time with safe conversions
-        let validated_f64 = if self.modules_validated <= u32::MAX.into() {
-            f64::from(self.modules_validated as u32)
-        } else {
-            self.modules_validated as f64 // Accept precision loss for large counts
-        };
+        let validated_f64 = u64_to_f64_for_stats(self.modules_validated);
         self.average_validation_time_ms =
             ((self.average_validation_time_ms * (validated_f64 - 1.0)) + validation_time_ms)
                 / validated_f64;
@@ -169,29 +185,18 @@ impl ValidationStatistics {
         if self.modules_validated == 0 {
             return 0.0;
         }
-        let passed_f64 = if self.modules_passed <= u32::MAX.into() {
-            f64::from(self.modules_passed as u32)
-        } else {
-            self.modules_passed as f64 // Accept precision loss for large counts
-        };
-        let validated_f64 = if self.modules_validated <= u32::MAX.into() {
-            f64::from(self.modules_validated as u32)
-        } else {
-            self.modules_validated as f64 // Accept precision loss for large counts
-        };
+        let passed_f64 = u64_to_f64_for_stats(self.modules_passed);
+        let validated_f64 = u64_to_f64_for_stats(self.modules_validated);
         (passed_f64 / validated_f64) * 100.0
     }
 }
 
 /// Core WASM module validator implementation
-#[allow(dead_code)]
 pub struct CaxtonWasmModuleValidator {
     /// Validation configuration
     config: Arc<RwLock<ValidationConfig>>,
     /// Validation statistics
     statistics: Arc<RwLock<ValidationStatistics>>,
-    /// Cached security policies by name
-    policy_cache: Arc<RwLock<HashMap<String, WasmSecurityPolicy>>>,
     /// Custom validation rules
     custom_rules: Arc<RwLock<Vec<CustomValidationRule>>>,
 }
@@ -199,17 +204,9 @@ pub struct CaxtonWasmModuleValidator {
 impl CaxtonWasmModuleValidator {
     /// Creates a new WASM module validator
     pub fn new(config: ValidationConfig) -> Self {
-        let mut policy_cache = HashMap::new();
-
-        // Pre-populate with built-in policies
-        policy_cache.insert("strict".to_string(), WasmSecurityPolicy::strict());
-        policy_cache.insert("permissive".to_string(), WasmSecurityPolicy::permissive());
-        policy_cache.insert("testing".to_string(), WasmSecurityPolicy::testing());
-
         Self {
             config: Arc::new(RwLock::new(config)),
             statistics: Arc::new(RwLock::new(ValidationStatistics::new())),
-            policy_cache: Arc::new(RwLock::new(policy_cache)),
             custom_rules: Arc::new(RwLock::new(Vec::new())),
         }
     }
@@ -286,7 +283,6 @@ impl CaxtonWasmModuleValidator {
             export_count: 3,
             memory_pages: 16,
             table_elements: 0,
-            global_count: 5,
             complexity_score: 0.3, // Low complexity
         }
     }
@@ -303,7 +299,6 @@ impl CaxtonWasmModuleValidator {
         let mut security_analysis = SecurityAnalysis {
             unauthorized_imports: Vec::new(),
             missing_exports: Vec::new(),
-            forbidden_features: Vec::new(),
             policy_violations: Vec::new(),
             security_score: 95.0, // High security score
         };
@@ -350,56 +345,6 @@ impl CaxtonWasmModuleValidator {
             potential_bottlenecks: bottlenecks,
             optimization_suggestions: suggestions,
         }
-    }
-
-    /// Apply custom validation rules
-    #[allow(dead_code)]
-    async fn apply_custom_rules(
-        &self,
-        _wasm_bytes: &[u8],
-        _module: &WasmModule,
-    ) -> Result<Vec<ValidationWarning>, ValidationFailure> {
-        let rules = self.custom_rules.read().await;
-        let warnings = Vec::new();
-
-        // Apply each custom rule
-        for rule in rules.iter() {
-            match &rule.rule_type {
-                ValidationRuleType::FunctionNamePattern => {
-                    // Check function name patterns
-                    if let Some(pattern) = rule.parameters.get("pattern") {
-                        debug!("Applying function name pattern rule: {}", pattern);
-                        // In a real implementation, would check actual function names
-                    }
-                }
-                ValidationRuleType::ImportWhitelist => {
-                    // Check import whitelist
-                    debug!("Applying import whitelist rule: {}", rule.name);
-                }
-                ValidationRuleType::ExportBlacklist => {
-                    // Check export blacklist
-                    debug!("Applying export blacklist rule: {}", rule.name);
-                }
-                ValidationRuleType::InstructionCount => {
-                    // Check instruction count limits
-                    if let Some(max_count) = rule.parameters.get("max_count") {
-                        debug!("Applying instruction count rule: max {}", max_count);
-                    }
-                }
-                ValidationRuleType::CallDepth => {
-                    // Check call depth limits
-                    if let Some(max_depth) = rule.parameters.get("max_depth") {
-                        debug!("Applying call depth rule: max {}", max_depth);
-                    }
-                }
-                ValidationRuleType::Custom(_) => {
-                    // Apply custom rule logic
-                    debug!("Applying custom rule: {}", rule.name);
-                }
-            }
-        }
-
-        Ok(warnings)
     }
 
     /// Create comprehensive validation result
@@ -456,7 +401,7 @@ impl CaxtonWasmModuleValidator {
         }
 
         // Add performance warnings if enabled
-        if config.enable_performance_analysis {
+        if config.performance_analysis == ValidationMode::Enabled {
             for bottleneck in &performance.potential_bottlenecks {
                 warnings.push(ValidationWarning::PerformanceWarning {
                     warning: bottleneck.clone(),
@@ -488,7 +433,7 @@ impl CaxtonWasmModuleValidator {
         metadata.insert("size_bytes".to_string(), wasm_bytes.len().to_string());
         metadata.insert(
             "size_kb".to_string(),
-            ((wasm_bytes.len() + 1023) / 1024).to_string(),
+            wasm_bytes.len().div_ceil(1024).to_string(),
         );
 
         // Extract format info
@@ -574,7 +519,7 @@ impl CaxtonWasmModuleValidator {
         config: &ValidationConfig,
     ) -> (StructuralAnalysis, SecurityAnalysis, PerformanceAnalysis) {
         // Step 2: Structural analysis
-        let structural = if config.enable_structural_validation {
+        let structural = if config.structural_validation == ValidationMode::Enabled {
             Self::analyze_structure(wasm_bytes)
         } else {
             StructuralAnalysis {
@@ -583,7 +528,6 @@ impl CaxtonWasmModuleValidator {
                 export_count: 0,
                 memory_pages: 0,
                 table_elements: 0,
-                global_count: 0,
                 complexity_score: 0.0,
             }
         };
@@ -594,13 +538,12 @@ impl CaxtonWasmModuleValidator {
         );
 
         // Step 3: Security analysis
-        let security = if config.enable_security_validation {
+        let security = if config.security_validation == ValidationMode::Enabled {
             Self::analyze_security(wasm_bytes, &config.security_policy, &structural)
         } else {
             SecurityAnalysis {
                 unauthorized_imports: Vec::new(),
                 missing_exports: Vec::new(),
-                forbidden_features: Vec::new(),
                 policy_violations: Vec::new(),
                 security_score: 100.0,
             }
@@ -612,7 +555,7 @@ impl CaxtonWasmModuleValidator {
         );
 
         // Step 4: Performance analysis
-        let performance = if config.enable_performance_analysis {
+        let performance = if config.performance_analysis == ValidationMode::Enabled {
             Self::analyze_performance(wasm_bytes, &structural)
         } else {
             PerformanceAnalysis {
@@ -651,7 +594,9 @@ impl CaxtonWasmModuleValidator {
         validation_start: SystemTime,
         analysis_results: (StructuralAnalysis, SecurityAnalysis, PerformanceAnalysis),
     ) -> Result<WasmModule, WasmValidationError> {
-        let validation_duration = validation_start.elapsed().unwrap_or_default().as_millis() as f64;
+        let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
+        // Convert u128 to f64 with controlled precision loss for timing statistics
+        let validation_duration = millis_to_f64_for_stats(validation_millis);
 
         // Note: Statistics are handled by the caller (validate_module trait implementation)
 
@@ -722,7 +667,8 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
         // Update statistics for early failures
         if let Some(error) = early_error {
             let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
-            let validation_time = validation_millis as f64;
+            // Convert u128 to f64 with controlled precision loss for timing statistics
+            let validation_time = millis_to_f64_for_stats(validation_millis);
             let validation_time = validation_time.max(0.1); // Minimum 0.1ms for statistics
             let mut stats = self.statistics.write().await;
             stats.record_validation(false, validation_time, Some(&error.to_string()));
@@ -736,11 +682,7 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
         // Always update statistics here (comprehensive function will also do it, but that's ok)
         let validation_millis = validation_start.elapsed().unwrap_or_default().as_millis();
         // Safe conversion from u128 to f64 with saturation for very large values
-        let validation_time = if validation_millis <= u64::MAX.into() {
-            (validation_millis as u64) as f64
-        } else {
-            f64::MAX // Saturate for impossibly large validation times
-        };
+        let validation_time = millis_to_f64_for_stats(validation_millis);
         let validation_time = validation_time.max(0.1); // Minimum 0.1ms for statistics
         let passed = result.is_ok();
         let failure_reason = if let Err(ref error) = result {
@@ -772,7 +714,7 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
 
         let config = self.config.read().await;
 
-        if !config.enable_security_validation {
+        if config.security_validation != ValidationMode::Enabled {
             debug!("Security validation disabled, returning valid");
             return Ok(ValidationResult::Valid);
         }
@@ -828,7 +770,7 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
 
         // Add structural analysis metadata if enabled
         let config = self.config.read().await;
-        if config.enable_structural_validation {
+        if config.structural_validation == ValidationMode::Enabled {
             let structural = Self::analyze_structure(wasm_bytes);
             metadata.insert(
                 "function_count".to_string(),
@@ -857,7 +799,7 @@ impl WasmModuleValidator for CaxtonWasmModuleValidator {
         }
 
         // Add performance metadata if enabled
-        if config.enable_performance_analysis {
+        if config.performance_analysis == ValidationMode::Enabled {
             let structural = Self::analyze_structure(wasm_bytes);
             let performance = Self::analyze_performance(wasm_bytes, &structural);
             metadata.insert(
@@ -1020,16 +962,19 @@ mod tests {
     #[test]
     fn test_validation_config_creation() {
         let strict_config = ValidationConfig::strict();
-        assert!(strict_config.strict_mode);
-        assert!(strict_config.enable_security_validation);
+        assert!(strict_config.strictness == StrictnessLevel::Strict);
+        assert!(strict_config.security_validation == ValidationMode::Enabled);
 
         let permissive_config = ValidationConfig::permissive();
-        assert!(!permissive_config.strict_mode);
-        assert!(!permissive_config.enable_security_validation);
+        assert_eq!(permissive_config.strictness, StrictnessLevel::Relaxed);
+        assert_eq!(
+            permissive_config.security_validation,
+            ValidationMode::Disabled
+        );
 
         let testing_config = ValidationConfig::testing();
-        assert!(!testing_config.strict_mode);
-        assert!(testing_config.enable_security_validation);
+        assert_eq!(testing_config.strictness, StrictnessLevel::Relaxed);
+        assert_eq!(testing_config.security_validation, ValidationMode::Enabled);
     }
 
     #[test]

@@ -22,6 +22,7 @@ use caxton::domain::{
     CustomValidationRule, ModuleSize, ValidationResult, ValidationRuleType, WasmValidationError,
 };
 use caxton::domain_types::AgentName;
+use caxton::wasm_module_validator::{StrictnessLevel, ValidationMode};
 use caxton::{
     CaxtonWasmModuleValidator, ValidationConfig, ValidationStatistics, WasmModuleValidatorTrait,
 };
@@ -577,7 +578,7 @@ async fn test_permissive_security_policy() {
 #[test(tokio::test)]
 async fn test_security_validation_disabled() {
     let mut config = ValidationConfig::permissive();
-    config.enable_security_validation = false;
+    config.security_validation = ValidationMode::Disabled;
 
     let fixture = TestFixture::with_config(config);
     let wasm_bytes = TestFixture::create_valid_wasm_bytes();
@@ -597,24 +598,36 @@ async fn test_security_validation_disabled() {
 #[test]
 fn test_validation_config_creation() {
     let strict_config = ValidationConfig::strict();
-    assert!(strict_config.strict_mode);
-    assert!(strict_config.enable_security_validation);
-    assert!(strict_config.enable_structural_validation);
-    assert!(strict_config.enable_performance_analysis);
+    assert_eq!(strict_config.strictness, StrictnessLevel::Strict);
+    assert_eq!(strict_config.security_validation, ValidationMode::Enabled);
+    assert_eq!(strict_config.structural_validation, ValidationMode::Enabled);
+    assert_eq!(strict_config.performance_analysis, ValidationMode::Enabled);
     assert_eq!(strict_config.max_validation_time_ms, 30_000);
 
     let permissive_config = ValidationConfig::permissive();
-    assert!(!permissive_config.strict_mode);
-    assert!(!permissive_config.enable_security_validation);
-    assert!(permissive_config.enable_structural_validation);
-    assert!(!permissive_config.enable_performance_analysis);
+    assert_eq!(permissive_config.strictness, StrictnessLevel::Relaxed);
+    assert_eq!(
+        permissive_config.security_validation,
+        ValidationMode::Disabled
+    );
+    assert_eq!(
+        permissive_config.structural_validation,
+        ValidationMode::Enabled
+    );
+    assert_eq!(
+        permissive_config.performance_analysis,
+        ValidationMode::Disabled
+    );
     assert_eq!(permissive_config.max_validation_time_ms, 10_000);
 
     let testing_config = ValidationConfig::testing();
-    assert!(!testing_config.strict_mode);
-    assert!(testing_config.enable_security_validation);
-    assert!(testing_config.enable_structural_validation);
-    assert!(testing_config.enable_performance_analysis); // Changed to true for comprehensive testing
+    assert_eq!(testing_config.strictness, StrictnessLevel::Relaxed);
+    assert_eq!(testing_config.security_validation, ValidationMode::Enabled);
+    assert_eq!(
+        testing_config.structural_validation,
+        ValidationMode::Enabled
+    );
+    assert_eq!(testing_config.performance_analysis, ValidationMode::Enabled); // Changed to true for comprehensive testing
     assert_eq!(testing_config.max_validation_time_ms, 5_000);
 }
 
@@ -623,10 +636,10 @@ fn test_validation_config_default() {
     let default_config = ValidationConfig::default();
     let strict_config = ValidationConfig::strict();
 
-    assert_eq!(default_config.strict_mode, strict_config.strict_mode);
+    assert_eq!(default_config.strictness, strict_config.strictness);
     assert_eq!(
-        default_config.enable_security_validation,
-        strict_config.enable_security_validation
+        default_config.security_validation,
+        strict_config.security_validation
     );
 }
 
