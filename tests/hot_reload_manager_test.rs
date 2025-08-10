@@ -26,7 +26,6 @@ use std::time::{Duration, SystemTime};
 use test_log::test;
 use tokio::sync::Mutex;
 
-#[allow(unused_imports)]
 use caxton::domain::{
     AgentVersion, HotReloadConfig, HotReloadError, HotReloadRequest, HotReloadStatus,
     HotReloadStrategy, TrafficSplitPercentage, VersionNumber,

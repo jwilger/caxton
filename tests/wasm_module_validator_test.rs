@@ -17,7 +17,6 @@ use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 use test_log::test;
 
-#[allow(unused_imports)]
 use caxton::domain::{
     CustomValidationRule, ModuleSize, ValidationResult, ValidationRuleType, WasmValidationError,
 };

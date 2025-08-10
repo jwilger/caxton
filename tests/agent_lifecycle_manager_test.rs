@@ -18,17 +18,13 @@ use std::time::{Duration, SystemTime};
 use test_log::test;
 use tokio::sync::{Mutex, RwLock};
 
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentFailureReason, AgentLifecycle, AgentLifecycleState, AgentVersion, DeploymentConfig,
-    DeploymentError, DeploymentId, DeploymentRequest, DeploymentResult, DeploymentStatus,
-    DeploymentStrategy, HotReloadConfig, HotReloadError, HotReloadId, HotReloadRequest,
-    HotReloadResult, HotReloadStatus, HotReloadStrategy, ResourceRequirements,
-    StateTransitionError, TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule,
-    WasmSecurityPolicy,
+    AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError, DeploymentId,
+    DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy, HotReloadConfig,
+    HotReloadError, HotReloadId, HotReloadRequest, HotReloadResult, HotReloadStatus,
+    HotReloadStrategy, ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy,
 };
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
+use caxton::domain_types::{AgentId, AgentName, MemoryBytes};
 use caxton::{
     AgentLifecycleManager, DeploymentManagerTrait, HealthStatus, HotReloadManagerTrait,
     LifecycleError, WasmModuleValidatorTrait,

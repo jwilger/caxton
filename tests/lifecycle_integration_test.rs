@@ -22,17 +22,12 @@ use test_log::test;
 use tokio::sync::Mutex;
 
 use caxton::deployment_manager::{HealthCheckResult, InstanceDeploymentResult};
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentLifecycle, AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError,
-    DeploymentId, DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy,
-    HotReloadConfig, HotReloadError, HotReloadId, HotReloadRequest, HotReloadResult,
-    HotReloadStatus, HotReloadStrategy, ReloadMetrics, ResourceRequirements,
-    TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy,
-    WasmValidationError,
+    AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError, HotReloadConfig,
+    HotReloadError, HotReloadStrategy, ResourceRequirements, TrafficSplitPercentage,
+    ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy, WasmValidationError,
 };
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
+use caxton::domain_types::{AgentId, AgentName};
 use caxton::{
     AgentLifecycleManager, CaxtonDeploymentManager, CaxtonHotReloadManager, HealthStatus,
     InstanceManager, LifecycleError, ResourceAllocator, RuntimeManager, TrafficRouter,

@@ -6,16 +6,13 @@ use std::sync::Arc;
 use std::time::Duration;
 use test_log::test;
 
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
-#[allow(unused_imports)]
+use caxton::domain_types::{AgentId, AgentName};
 use caxton::{
     AgentLifecycleManager, AgentVersion, DeploymentConfig, DeploymentError, DeploymentId,
     DeploymentManagerTrait, DeploymentRequest, DeploymentResult, DeploymentStatus,
     DeploymentStrategy, HotReloadConfig, HotReloadError, HotReloadId, HotReloadManagerTrait,
-    HotReloadRequest, HotReloadResult, HotReloadStatus, HotReloadStrategy, ResourceRequirements,
-    TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule, WasmModuleValidatorTrait,
-    WasmSecurityPolicy, WasmValidationError,
+    HotReloadRequest, HotReloadResult, HotReloadStatus, HotReloadStrategy, ValidationResult,
+    VersionNumber, WasmModule, WasmModuleValidatorTrait, WasmSecurityPolicy, WasmValidationError,
 };
 
 // Simple mock implementations

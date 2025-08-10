@@ -15,18 +15,14 @@ use proptest::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-#[allow(unused_imports)]
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use test_log::test;
 use tokio::sync::Mutex;
 
-#[allow(unused_imports)]
 use caxton::deployment_manager::{HealthCheckResult, InstanceDeploymentResult};
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentVersion, DeploymentConfig, DeploymentError, DeploymentId, DeploymentMetrics,
-    DeploymentProgress, DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy,
-    DeploymentValidationError, ResourceRequirements, VersionNumber,
+    AgentVersion, DeploymentConfig, DeploymentError, DeploymentRequest, DeploymentStatus,
+    DeploymentStrategy, ResourceRequirements, VersionNumber,
 };
 use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
 use caxton::{CaxtonDeploymentManager, DeploymentManagerTrait, InstanceManager, ResourceAllocator};
