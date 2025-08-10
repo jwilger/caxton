@@ -297,3 +297,207 @@ impl From<ExecutionTime> for Duration {
         time.0
     }
 }
+
+/// Maximum memory per agent for sandboxing
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 10_485_760), // Max 10MB per agent, allowing 0
+    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Display, Default, TryFrom, Into),
+    default = 1_048_576 // Default 1MB
+)]
+pub struct MaxAgentMemory(usize);
+
+impl MaxAgentMemory {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}
+
+/// Maximum total memory for all agents
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 104_857_600), // Max 100MB total, allowing 0
+    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Display, Default, TryFrom, Into),
+    default = 104_857_600 // Default 100MB
+)]
+pub struct MaxTotalMemory(usize);
+
+impl MaxTotalMemory {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}
+
+/// Maximum table entries for WASM
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 100_000),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 10_000
+)]
+pub struct MaxTableEntries(usize);
+
+impl MaxTableEntries {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}
+
+/// Function module name
+#[nutype(
+    validate(len_char_min = 1, len_char_max = 100),
+    derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into
+    )
+)]
+pub struct FunctionModuleName(String);
+
+/// Function description
+#[nutype(
+    validate(len_char_min = 1, len_char_max = 1000),
+    derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into
+    )
+)]
+pub struct FunctionDescription(String);
+
+/// Permission name for host functions
+#[nutype(
+    validate(len_char_min = 1, len_char_max = 100),
+    derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        Serialize,
+        Deserialize,
+        Display,
+        TryFrom,
+        Into
+    )
+)]
+pub struct PermissionName(String);
+
+/// Connection pool size
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 1000),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 10
+)]
+pub struct ConnectionPoolSize(usize);
+
+impl ConnectionPoolSize {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}
+
+/// Storage cleanup interval in milliseconds
+#[nutype(
+    validate(greater_or_equal = 60_000, less_or_equal = 86_400_000), // 1 min to 24 hours
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 3_600_000 // 1 hour
+)]
+pub struct StorageCleanupIntervalMs(u64);
+
+impl StorageCleanupIntervalMs {
+    /// Converts to Duration
+    pub fn as_duration(&self) -> Duration {
+        Duration::from_millis(self.into_inner())
+    }
+
+    /// Gets the value as u64
+    pub fn as_u64(&self) -> u64 {
+        self.into_inner()
+    }
+}
+
+/// Rate limit for messages per second
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 100_000),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 1000
+)]
+pub struct RateLimitPerSecond(usize);
+
+impl RateLimitPerSecond {
+    /// Gets the value as usize
+    pub fn as_usize(&self) -> usize {
+        self.into_inner()
+    }
+}

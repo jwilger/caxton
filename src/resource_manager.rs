@@ -8,7 +8,9 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use tracing::debug;
 
 // Domain-specific types for resource management
-use crate::domain_types::{AgentId, CpuFuel, ExecutionTime, MemoryBytes, MessageSize};
+use crate::domain_types::{
+    AgentId, CpuFuel, ExecutionTime, MaxAgentMemory, MaxTotalMemory, MemoryBytes, MessageSize,
+};
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -36,34 +38,32 @@ impl Default for ResourceLimits {
     }
 }
 
-/// Bounded memory request with compile-time limits
+/// Bounded memory request with compile-time limits using domain types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub struct AgentMemoryRequest {
-    bytes: usize,
+    bytes: MaxAgentMemory,
 }
 
 #[allow(missing_docs)]
 impl AgentMemoryRequest {
-    const MAX_BYTES: usize = 10_485_760; // 10MB per agent
-
     /// # Errors
     /// Returns an error if bytes is 0 or exceeds the maximum limit
     pub fn try_new(bytes: usize) -> Result<Self, String> {
         if bytes == 0 {
             return Err("Memory request must be greater than 0".to_string());
         }
-        if bytes > Self::MAX_BYTES {
-            return Err(format!(
-                "Memory request {} exceeds limit {}",
-                bytes,
-                Self::MAX_BYTES
-            ));
-        }
-        Ok(Self { bytes })
+        let max_memory =
+            MaxAgentMemory::try_new(bytes).map_err(|e| format!("Invalid memory request: {e}"))?;
+        Ok(Self { bytes: max_memory })
     }
 
     pub fn into_inner(self) -> usize {
+        self.bytes.into_inner()
+    }
+
+    /// Gets the max memory as a domain type
+    pub fn as_max_memory(&self) -> MaxAgentMemory {
         self.bytes
     }
 }
@@ -89,60 +89,68 @@ pub enum MemoryError {
     AgentAlreadyAllocated { agent: AgentId },
 }
 
-/// Total memory allocated with bounds checking
+/// Total memory allocated with bounds checking using domain types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub struct TotalMemoryAllocated {
-    bytes: usize,
+    bytes: MaxTotalMemory,
 }
 
 #[allow(missing_docs)]
 impl TotalMemoryAllocated {
-    const MAX_TOTAL: usize = 104_857_600; // 100MB total
-
+    /// Creates a zero memory allocation
+    ///
+    /// # Panics
+    /// Panics if zero is not a valid value for `MaxTotalMemory` (should never happen)
     pub fn zero() -> Self {
-        Self { bytes: 0 }
+        Self {
+            bytes: MaxTotalMemory::try_new(0)
+                .expect("Zero should always be valid for MaxTotalMemory"),
+        }
     }
 
     /// # Errors
     /// Returns an error if bytes exceeds the maximum total limit
     pub fn try_new(bytes: usize) -> Result<Self, String> {
-        if bytes > Self::MAX_TOTAL {
-            return Err(format!(
-                "Total memory {} exceeds limit {}",
-                bytes,
-                Self::MAX_TOTAL
-            ));
-        }
-        Ok(Self { bytes })
+        let max_total =
+            MaxTotalMemory::try_new(bytes).map_err(|e| format!("Invalid total memory: {e}"))?;
+        Ok(Self { bytes: max_total })
     }
 
     pub fn into_inner(self) -> usize {
+        self.bytes.into_inner()
+    }
+
+    /// Gets the max total memory as a domain type
+    pub fn as_max_total_memory(&self) -> MaxTotalMemory {
         self.bytes
     }
 
     /// # Errors
     /// Returns `MemoryError::TotalLimitExceeded` if adding would exceed limit
     pub fn add(&self, amount: AgentMemoryRequest) -> Result<Self, MemoryError> {
-        let new_total = self.bytes + amount.into_inner();
-        if new_total > Self::MAX_TOTAL {
-            return Err(MemoryError::TotalLimitExceeded {
+        let new_total = self.bytes.into_inner() + amount.into_inner();
+        match MaxTotalMemory::try_new(new_total) {
+            Ok(max_total) => Ok(Self { bytes: max_total }),
+            Err(_) => Err(MemoryError::TotalLimitExceeded {
                 requested: amount.into_inner(),
-                current: self.bytes,
-                limit: Self::MAX_TOTAL,
-            });
+                current: self.bytes.into_inner(),
+                limit: MaxTotalMemory::default().into_inner(),
+            }),
         }
-        Ok(Self { bytes: new_total })
     }
 
+    /// Subtracts the given amount from total memory
+    ///
+    /// # Panics
+    /// Panics if creating a zero `MaxTotalMemory` fails (should never happen)
     #[must_use]
     pub fn subtract(&self, amount: usize) -> Self {
-        if amount > self.bytes {
-            Self::zero()
-        } else {
-            Self {
-                bytes: self.bytes - amount,
-            }
+        let current = self.bytes.into_inner();
+        let new_value = current.saturating_sub(amount);
+        Self {
+            bytes: MaxTotalMemory::try_new(new_value)
+                .unwrap_or_else(|_| MaxTotalMemory::try_new(0).unwrap()),
         }
     }
 }
@@ -537,7 +545,12 @@ mod tests {
     fn test_allocate_memory_exceeds_limit() {
         // AgentMemoryRequest enforces limits at compile time, so this test
         // demonstrates that invalid requests cannot be constructed
-        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES + 1).is_err());
+        assert!(
+            AgentMemoryRequest::try_new(
+                MaxAgentMemory::try_new(10_485_760).unwrap().as_usize() + 1
+            )
+            .is_err()
+        );
     }
 
     #[test]
@@ -592,7 +605,7 @@ mod tests {
         let size2 = MessageSize::try_new(1024).unwrap();
         assert!(manager.check_message_size(size1).is_ok());
         assert!(manager.check_message_size(size2).is_ok());
-        // Can't create MessageSize > 10MB, so we can't test the error case directly
+        // MessageSize domain type enforces limits at compile time
     }
 
     #[test]
@@ -649,11 +662,16 @@ mod tests {
     fn test_memory_request_bounds_enforced_at_compile_time() {
         // These should succeed within bounds
         assert!(AgentMemoryRequest::try_new(1).is_ok());
-        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES).is_ok());
+        assert!(AgentMemoryRequest::try_new(MaxAgentMemory::default().as_usize()).is_ok());
 
         // These should fail outside bounds
         assert!(AgentMemoryRequest::try_new(0).is_err());
-        assert!(AgentMemoryRequest::try_new(AgentMemoryRequest::MAX_BYTES + 1).is_err());
+        assert!(
+            AgentMemoryRequest::try_new(
+                MaxAgentMemory::try_new(10_485_760).unwrap().as_usize() + 1
+            )
+            .is_err()
+        );
     }
 
     #[test]

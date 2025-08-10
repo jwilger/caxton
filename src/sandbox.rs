@@ -10,9 +10,7 @@ use tokio::sync::RwLock;
 use tracing::{debug, warn};
 use wasmtime::{Engine, Linker, Module, ResourceLimiter, Store, StoreLimits, StoreLimitsBuilder};
 
-use crate::domain_types::{AgentId, HostFunctionName};
-
-use crate::domain_types::CpuFuel;
+use crate::domain_types::{AgentId, CpuFuel, HostFunctionName, MaxAgentMemory, MaxTableEntries};
 use crate::resource_manager::ResourceLimits;
 use crate::runtime::ExecutionResult;
 
@@ -29,9 +27,9 @@ pub struct Sandbox {
 
 struct SandboxState {
     limits: StoreLimits,
-    fuel_consumed: u64,
+    fuel_consumed: CpuFuel,
     start_time: Instant,
-    max_memory: usize,
+    max_memory: MaxAgentMemory,
 }
 
 impl SandboxState {
@@ -51,8 +49,12 @@ impl ResourceLimiter for SandboxState {
         desired: usize,
         _maximum: Option<usize>,
     ) -> Result<bool> {
-        if desired > self.max_memory {
-            warn!("Memory growth denied: {} > {}", desired, self.max_memory);
+        if desired > self.max_memory.as_usize() {
+            warn!(
+                "Memory growth denied: {} > {}",
+                desired,
+                self.max_memory.as_usize()
+            );
             return Ok(false); // Deny the memory growth
         }
         Ok(true)
@@ -64,8 +66,8 @@ impl ResourceLimiter for SandboxState {
         desired: usize,
         _maximum: Option<usize>,
     ) -> Result<bool> {
-        let max_tables = 10000;
-        Ok(desired <= max_tables)
+        let max_tables = MaxTableEntries::default();
+        Ok(desired <= max_tables.as_usize())
     }
 }
 
@@ -148,10 +150,13 @@ impl Sandbox {
     pub async fn initialize(&mut self, module: &Module) -> Result<()> {
         debug!("Initializing sandbox {:?}", self.id);
 
-        let max_memory: usize = self.resource_limits.max_memory_bytes.into_inner();
+        let max_memory =
+            MaxAgentMemory::try_new(self.resource_limits.max_memory_bytes.into_inner())
+                .context("Invalid max memory configuration")?;
+        let max_table_entries = MaxTableEntries::default();
         let limits = StoreLimitsBuilder::new()
-            .memory_size(max_memory)
-            .table_elements(10000)
+            .memory_size(max_memory.as_usize())
+            .table_elements(max_table_entries.as_usize())
             .instances(1)
             .tables(5)
             .memories(1)
@@ -159,7 +164,7 @@ impl Sandbox {
 
         let state = SandboxState {
             limits,
-            fuel_consumed: 0,
+            fuel_consumed: CpuFuel::zero(),
             start_time: Instant::now(),
             max_memory,
         };
@@ -167,13 +172,13 @@ impl Sandbox {
         let mut store = Store::new(&self.engine, state);
         store.limiter(|state| state);
 
-        let max_fuel: u64 = self.resource_limits.max_cpu_fuel.into_inner();
+        let max_fuel = self.resource_limits.max_cpu_fuel;
         store
-            .set_fuel(max_fuel)
+            .set_fuel(max_fuel.into_inner())
             .context("Failed to add fuel to store")?;
 
         let instance = self.linker.instantiate_async(&mut store, module).await
-            .with_context(|| format!("Failed to instantiate module - possible memory limit exceeded (limit: {max_memory} bytes)"))?;
+            .with_context(|| format!("Failed to instantiate module - possible memory limit exceeded (limit: {} bytes)", max_memory.as_usize()))?;
 
         if let Some(memory) = instance.get_memory(&mut store, "memory") {
             let memory_size = memory.data_size(&store);
@@ -262,7 +267,8 @@ impl Sandbox {
         // Use the simulated fuel consumption from the execution result
         let fuel_consumed = result.fuel_consumed;
 
-        store.data_mut().fuel_consumed += fuel_consumed.as_u64();
+        store.data_mut().fuel_consumed =
+            store.data_mut().fuel_consumed.saturating_add(fuel_consumed);
 
         Ok(ExecutionResult::success(fuel_consumed, result.output))
     }
@@ -336,9 +342,9 @@ mod tests {
     fn test_sandbox_state_elapsed() {
         let state = SandboxState {
             limits: StoreLimitsBuilder::new().build(),
-            fuel_consumed: 0,
+            fuel_consumed: CpuFuel::zero(),
             start_time: Instant::now(),
-            max_memory: 1024 * 1024,
+            max_memory: MaxAgentMemory::try_new(1024 * 1024).unwrap(),
         };
         std::thread::sleep(Duration::from_millis(10));
         assert!(state.elapsed() >= Duration::from_millis(10));

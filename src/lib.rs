@@ -21,8 +21,10 @@ pub mod sandbox;
 pub mod security;
 
 pub use domain_types::{
-    AgentId, AgentName, CpuFuel, ExecutionTime, HostFunctionName, MaxAgents, MaxExports,
-    MaxImportFunctions, MemoryBytes, MessageCount, MessageSize,
+    AgentId, AgentName, ConnectionPoolSize, CpuFuel, ExecutionTime, FunctionDescription,
+    FunctionModuleName, HostFunctionName, MaxAgentMemory, MaxAgents, MaxExports,
+    MaxImportFunctions, MaxTableEntries, MaxTotalMemory, MemoryBytes, MessageCount, MessageSize,
+    PermissionName, RateLimitPerSecond, StorageCleanupIntervalMs,
 };
 pub use resource_manager::ResourceLimits;
 pub use runtime::{WasmRuntime, WasmRuntimeConfig};
