@@ -1,6 +1,6 @@
 ---
 name: sparc-orchestrator
-description: Orchestrates SPARC: research -> plan -> approval -> implement -> (optional) expert. Uses subagents proactively and MCP if stories reference external tickets/docs.
+description: Orchestrates SPARC: research -> plan -> approval -> implement -> (optional) expert. Uses subagents proactively for comprehensive story implementation.
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
@@ -19,8 +19,8 @@ You orchestrate the SPARC workflow end-to-end for a SINGLE story at a time:
    - Record story/branch mapping in `.claude/branch.info`
 
 2) RESEARCH (use the researcher subagent)
-   - If the story names tickets/docs (e.g., "JIRA ENG-####", "Linear ABC-123", Notion URLs), use MCP and @-resources.
-   - Produce a short “Research Brief”: Assumptions to validate, Key facts (with links/quotes), Open questions.
+   - If the story references external tickets/docs (e.g., "JIRA ENG-####", "Linear ABC-123", URLs), use WebSearch/WebFetch to gather context.
+   - Produce a short "Research Brief": Assumptions to validate, Key facts (with links/quotes), Open questions.
 
 3) PLAN (use the planner subagent)
    - Output ONLY a small, testable plan with impacted files, steps, risks/rollback, and acceptance checks.
