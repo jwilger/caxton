@@ -11,8 +11,57 @@ use tracing::debug;
 use crate::domain_types::{
     AgentId, CpuFuel, ExecutionTime, MaxAgentMemory, MaxTotalMemory, MemoryBytes, MessageSize,
 };
+use nutype::nutype;
 use std::collections::HashMap;
 use thiserror::Error;
+
+/// CPU fuel amount for consumption operations
+#[nutype(derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    Display
+))]
+pub struct CpuFuelAmount(u64);
+
+/// CPU fuel budget for tracking
+#[nutype(
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default
+    ),
+    default = 0
+)]
+pub struct CpuFuelBudget(u64);
+
+/// CPU fuel consumed tracking - import from `domain_types` to avoid conflict
+pub use crate::domain_types::CpuFuelConsumed;
+
+/// Error types for fuel operations
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[allow(missing_docs)]
+pub enum FuelError {
+    #[error("Insufficient fuel: requested {requested}, available {available}")]
+    InsufficientFuel { requested: u64, available: u64 },
+
+    #[error("Fuel already exhausted")]
+    FuelExhausted,
+}
 
 /// Resource limits for agent execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,13 +122,16 @@ impl AgentMemoryRequest {
 #[allow(missing_docs)]
 pub enum MemoryError {
     #[error("Agent memory limit exceeded: requested {requested}, limit {limit}")]
-    AgentLimitExceeded { requested: usize, limit: usize },
+    AgentLimitExceeded {
+        requested: MaxAgentMemory,
+        limit: MaxAgentMemory,
+    },
 
     #[error("Total memory limit exceeded: requested {requested}, current {current}, limit {limit}")]
     TotalLimitExceeded {
-        requested: usize,
-        current: usize,
-        limit: usize,
+        requested: MaxAgentMemory,
+        current: MaxTotalMemory,
+        limit: MaxTotalMemory,
     },
 
     #[error("Agent {agent:?} not found")]
@@ -133,9 +185,9 @@ impl TotalMemoryAllocated {
         match MaxTotalMemory::try_new(new_total) {
             Ok(max_total) => Ok(Self { bytes: max_total }),
             Err(_) => Err(MemoryError::TotalLimitExceeded {
-                requested: amount.into_inner(),
-                current: self.bytes.into_inner(),
-                limit: MaxTotalMemory::default().into_inner(),
+                requested: amount.as_max_memory(),
+                current: self.bytes,
+                limit: MaxTotalMemory::default(),
             }),
         }
     }
@@ -221,43 +273,49 @@ impl BoundedMemoryPool {
     }
 }
 
-/// Simple fuel tracker for demonstration
+/// Simple fuel tracker with domain types
 #[derive(Debug, Clone)]
 #[allow(missing_docs)]
 pub struct SimpleFuelTracker {
-    budget: u64,
-    consumed: u64,
+    budget: CpuFuelBudget,
+    consumed: CpuFuelConsumed,
 }
 
 #[allow(missing_docs)]
 impl SimpleFuelTracker {
-    pub fn new(budget: u64) -> Self {
+    pub fn new(budget: CpuFuelBudget) -> Self {
         Self {
             budget,
-            consumed: 0,
+            consumed: CpuFuelConsumed::zero(),
         }
     }
 
     /// # Errors
     /// Returns an error if insufficient fuel is available
-    pub fn consume(&mut self, amount: u64) -> Result<(), String> {
-        if self.consumed + amount > self.budget {
-            return Err(format!(
-                "Insufficient fuel: requested {}, available {}",
-                amount,
-                self.budget - self.consumed
-            ));
+    pub fn consume(&mut self, amount: CpuFuelAmount) -> Result<(), FuelError> {
+        let current_consumed = self.consumed.into_inner();
+        let budget = self.budget.into_inner();
+        let amount_val = amount.into_inner();
+
+        if current_consumed + amount_val > budget {
+            return Err(FuelError::InsufficientFuel {
+                requested: amount_val,
+                available: budget - current_consumed,
+            });
         }
-        self.consumed += amount;
+
+        self.consumed = self.consumed.saturating_add(amount_val);
         Ok(())
     }
 
-    pub fn consumed(&self) -> u64 {
+    pub fn consumed(&self) -> CpuFuelConsumed {
         self.consumed
     }
 
-    pub fn remaining(&self) -> u64 {
-        self.budget - self.consumed
+    pub fn remaining(&self) -> CpuFuelBudget {
+        let budget = self.budget.into_inner();
+        let consumed = self.consumed.into_inner();
+        CpuFuelBudget::new(budget - consumed)
     }
 }
 
@@ -348,16 +406,17 @@ impl ResourceManager {
         Ok(deallocated)
     }
 
-    /// Consumes CPU fuel for an agent using `FuelTracker` for type safety
+    /// Consumes CPU fuel for an agent using domain types for type safety
     ///
     /// # Errors
     ///
     /// Returns a fuel error if consumption fails due to limits or exhaustion
-    pub fn consume_fuel(&self, agent_id: AgentId, fuel_amount: u64) -> Result<()> {
+    pub fn consume_fuel(&self, agent_id: AgentId, fuel_amount: CpuFuelAmount) -> Result<()> {
+        let budget = CpuFuelBudget::new(self.limits.max_cpu_fuel.into_inner());
         let mut tracker = self
             .fuel_trackers
             .entry(agent_id)
-            .or_insert_with(|| SimpleFuelTracker::new(self.limits.max_cpu_fuel.into_inner()));
+            .or_insert_with(|| SimpleFuelTracker::new(budget));
 
         tracker.consume(fuel_amount).map_err(|e| {
             anyhow::anyhow!("Fuel consumption failed for agent {:?}: {}", agent_id, e)
@@ -370,7 +429,7 @@ impl ResourceManager {
             .or_insert_with(AgentResourceUsage::new);
         usage
             .cpu_fuel_consumed
-            .store(tracker.consumed(), Ordering::SeqCst);
+            .store(tracker.consumed().into_inner(), Ordering::SeqCst);
 
         debug!(
             "Consumed {} fuel units for agent {:?}, remaining: {}",
@@ -406,10 +465,10 @@ impl ResourceManager {
     }
 
     /// Gets the total fuel consumed by an agent using the `FuelTracker`
-    pub fn get_agent_fuel_usage(&self, agent_id: AgentId) -> u64 {
+    pub fn get_agent_fuel_usage(&self, agent_id: AgentId) -> CpuFuelConsumed {
         self.fuel_trackers
             .get(&agent_id)
-            .map_or(0, |tracker| tracker.consumed())
+            .map_or(CpuFuelConsumed::zero(), |tracker| tracker.consumed())
     }
 
     /// Gets the total memory usage across all agents from the bounded pool
@@ -420,11 +479,13 @@ impl ResourceManager {
     }
 
     /// Gets the total fuel consumed across all agents
-    pub fn get_total_fuel_usage(&self) -> u64 {
-        self.fuel_trackers
+    pub fn get_total_fuel_usage(&self) -> CpuFuelConsumed {
+        let total: u64 = self
+            .fuel_trackers
             .iter()
-            .map(|entry| entry.consumed())
-            .sum()
+            .map(|entry| entry.consumed().into_inner())
+            .sum();
+        CpuFuelConsumed::try_new(total).unwrap_or_default()
     }
 
     /// Cleans up resources for a removed agent using domain types
@@ -442,7 +503,7 @@ impl ResourceManager {
         let fuel_consumed = self
             .fuel_trackers
             .remove(&agent_id)
-            .map_or(0, |(_, tracker)| tracker.consumed());
+            .map_or(CpuFuelConsumed::zero(), |(_, tracker)| tracker.consumed());
 
         // Remove usage tracking
         self.agent_usage.remove(&agent_id);
@@ -520,7 +581,7 @@ mod tests {
         let limits = ResourceLimits::default();
         let manager = ResourceManager::new(limits);
         assert_eq!(manager.get_total_memory_usage().into_inner(), 0);
-        assert_eq!(manager.get_total_fuel_usage(), 0);
+        assert_eq!(manager.get_total_fuel_usage().into_inner(), 0);
     }
 
     #[test]
@@ -574,9 +635,10 @@ mod tests {
         let manager = ResourceManager::new(limits);
         let agent_id = AgentId::generate();
 
-        assert!(manager.consume_fuel(agent_id, 100).is_ok());
-        assert_eq!(manager.get_agent_fuel_usage(agent_id), 100);
-        assert_eq!(manager.get_total_fuel_usage(), 100);
+        let fuel_amount = CpuFuelAmount::new(100);
+        assert!(manager.consume_fuel(agent_id, fuel_amount).is_ok());
+        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 100);
+        assert_eq!(manager.get_total_fuel_usage().into_inner(), 100);
     }
 
     #[test]
@@ -588,9 +650,11 @@ mod tests {
         let manager = ResourceManager::new(limits);
         let agent_id = AgentId::generate();
 
-        assert!(manager.consume_fuel(agent_id, 50).is_ok());
-        assert!(manager.consume_fuel(agent_id, 60).is_err());
-        assert_eq!(manager.get_agent_fuel_usage(agent_id), 50);
+        let fuel_50 = CpuFuelAmount::new(50);
+        let fuel_60 = CpuFuelAmount::new(60);
+        assert!(manager.consume_fuel(agent_id, fuel_50).is_ok());
+        assert!(manager.consume_fuel(agent_id, fuel_60).is_err());
+        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 50);
     }
 
     #[test]
@@ -615,18 +679,19 @@ mod tests {
         let agent_id = AgentId::generate();
 
         let request = AgentMemoryRequest::try_new(1024).unwrap();
+        let fuel_amount = CpuFuelAmount::new(100);
         manager.allocate_memory(agent_id, request).unwrap();
-        manager.consume_fuel(agent_id, 100).unwrap();
+        manager.consume_fuel(agent_id, fuel_amount).unwrap();
 
         assert_eq!(manager.get_total_memory_usage().into_inner(), 1024);
-        assert_eq!(manager.get_total_fuel_usage(), 100);
+        assert_eq!(manager.get_total_fuel_usage().into_inner(), 100);
 
         manager.cleanup_agent(agent_id);
 
         assert!(manager.get_agent_memory_usage(agent_id).is_none());
-        assert_eq!(manager.get_agent_fuel_usage(agent_id), 0);
+        assert_eq!(manager.get_agent_fuel_usage(agent_id).into_inner(), 0);
         assert_eq!(manager.get_total_memory_usage().into_inner(), 0);
-        assert_eq!(manager.get_total_fuel_usage(), 0);
+        assert_eq!(manager.get_total_fuel_usage().into_inner(), 0);
     }
 
     #[test]
@@ -703,18 +768,24 @@ mod tests {
         let agent_id = AgentId::generate();
 
         // Initial state - can consume fuel
-        assert!(manager.consume_fuel(agent_id, 50).is_ok());
+        let fuel_50 = CpuFuelAmount::new(50);
+        let fuel_30 = CpuFuelAmount::new(30);
+        let fuel_25 = CpuFuelAmount::new(25);
+        let fuel_20 = CpuFuelAmount::new(20);
+        let fuel_1 = CpuFuelAmount::new(1);
+
+        assert!(manager.consume_fuel(agent_id, fuel_50).is_ok());
 
         // Partial consumption
-        assert!(manager.consume_fuel(agent_id, 30).is_ok());
+        assert!(manager.consume_fuel(agent_id, fuel_30).is_ok());
 
         // Should have 20 remaining, so 25 should fail
-        assert!(manager.consume_fuel(agent_id, 25).is_err());
+        assert!(manager.consume_fuel(agent_id, fuel_25).is_err());
 
         // But 20 should still work
-        assert!(manager.consume_fuel(agent_id, 20).is_ok());
+        assert!(manager.consume_fuel(agent_id, fuel_20).is_ok());
 
         // Now exhausted - any consumption should fail
-        assert!(manager.consume_fuel(agent_id, 1).is_err());
+        assert!(manager.consume_fuel(agent_id, fuel_1).is_err());
     }
 }
