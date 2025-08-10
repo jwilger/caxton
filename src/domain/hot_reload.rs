@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use super::agent_lifecycle::{AgentVersion, VersionNumber};
 use super::deployment::{DeploymentId, DeploymentTimeout, ResourceRequirements};
+use super::statistics::{calculate_percentage_f32, u64_to_f64_for_stats};
 use crate::domain_types::{AgentId, AgentName};
 
 /// Unique identifier for a hot reload operation
@@ -505,21 +506,7 @@ impl ReloadMetrics {
             return 100.0;
         }
         let success = self.requests_processed - self.requests_failed;
-        {
-            // Safe conversion for percentage calculation - precision loss acceptable for display
-
-            if self.requests_processed <= u64::from(u32::MAX) {
-                // Use f32 for smaller numbers to avoid precision loss warnings
-                let success_f32 = success as f32;
-                let processed_f32 = self.requests_processed as f32;
-                (success_f32 / processed_f32) * 100.0
-            } else {
-                // For very large numbers, use f64 and accept truncation for display
-                let success_f64 = success as f64;
-                let processed_f64 = self.requests_processed as f64;
-                (success_f64 / processed_f64 * 100.0) as f32
-            }
-        }
+        calculate_percentage_f32(success, self.requests_processed)
     }
 
     /// Check if metrics indicate healthy operation
@@ -536,28 +523,11 @@ impl ReloadMetrics {
             self.requests_failed += 1;
         }
 
-        self.error_rate_percentage = {
-            // Safe conversion for percentage calculation - precision loss acceptable for display
-            if self.requests_processed <= u64::from(u32::MAX) {
-                // Use f32 for smaller numbers to avoid precision loss warnings
-                let failed_f32 = self.requests_failed as f32;
-                let processed_f32 = self.requests_processed as f32;
-                (failed_f32 / processed_f32) * 100.0
-            } else {
-                // For very large numbers, use f64 and accept truncation for display
-                let failed_f64 = self.requests_failed as f64;
-                let processed_f64 = self.requests_processed as f64;
-                (failed_f64 / processed_f64 * 100.0) as f32
-            }
-        };
+        self.error_rate_percentage =
+            calculate_percentage_f32(self.requests_failed, self.requests_processed);
 
         // Update average response time (simple moving average approximation)
-        // Use bounded conversion for better precision handling
-        let total_requests = if self.requests_processed <= u64::from(u32::MAX) {
-            f64::from(self.requests_processed as u32)
-        } else {
-            self.requests_processed as f64 // Accept precision loss for very large numbers
-        };
+        let total_requests = u64_to_f64_for_stats(self.requests_processed);
         self.average_response_time_ms = ((self.average_response_time_ms * (total_requests - 1.0))
             + response_time_ms)
             / total_requests;

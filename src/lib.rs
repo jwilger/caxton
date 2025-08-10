@@ -3,19 +3,6 @@
 //! This crate provides a secure, isolated execution environment for WebAssembly-based agents
 //! with comprehensive resource management, security policies, and sandboxing capabilities.
 
-// Precision loss is acceptable for statistical calculations (percentages, averages, timing)
-#![allow(clippy::cast_precision_loss)]
-// Truncation is acceptable for display values (e.g., percentage 0-100, timing displays)
-#![allow(clippy::cast_possible_truncation)]
-// Style allows for safe casting implementations
-#![allow(clippy::checked_conversions)]
-#![allow(clippy::if_not_else)]
-#![allow(clippy::manual_div_ceil)]
-#![allow(clippy::struct_excessive_bools)]
-#![allow(clippy::useless_vec)]
-#![allow(clippy::type_complexity)]
-#![allow(clippy::float_cmp)]
-
 /// Advanced domain types for type-safe state management
 pub mod domain;
 /// Domain types for preventing primitive obsession

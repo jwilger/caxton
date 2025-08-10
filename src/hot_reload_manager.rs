@@ -323,7 +323,9 @@ impl CaxtonHotReloadManager {
         // Step 7: Drain old version
         context.status = HotReloadStatus::InProgress;
 
-        if !self.time_provider.should_skip_delays() {
+        if self.time_provider.should_skip_delays() {
+            debug!("Skipping drain wait in test mode");
+        } else {
             info!(
                 "Draining old version for {:?}",
                 context.request.config.drain_timeout.as_duration()
@@ -340,8 +342,6 @@ impl CaxtonHotReloadManager {
                 // Check if drain is complete (placeholder for real implementation)
                 // if self.is_drain_complete(agent_id, old_version).await { break; }
             }
-        } else {
-            debug!("Skipping drain wait in test mode");
         }
 
         // Step 8: Switch traffic to new version

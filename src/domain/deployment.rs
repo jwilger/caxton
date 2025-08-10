@@ -10,6 +10,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use super::agent_lifecycle::{AgentVersion, VersionNumber};
+use super::statistics::calculate_percentage_f32;
 use crate::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
 
 /// Unique identifier for a deployment operation
@@ -99,7 +100,7 @@ impl BatchSize {
         }
 
         // Use integer arithmetic to avoid precision loss entirely
-        let calculated_size = (total_instances * usize::from(percentage) + 99) / 100; // Integer ceiling division
+        let calculated_size = (total_instances * usize::from(percentage)).div_ceil(100);
         let batch_size = u8::try_from(calculated_size).unwrap_or(u8::MAX).max(1);
         Self::try_new(batch_size)
     }
@@ -610,14 +611,7 @@ impl DeploymentMetrics {
         if total == 0 {
             return 0.0;
         }
-        {
-            // Use higher precision arithmetic: precision loss is acceptable for percentage display
-            let deployed_f64 = f64::from(self.instances_deployed);
-            let total_f64 = f64::from(total);
-            let result = deployed_f64 / total_f64 * 100.0;
-            // Safe truncation for percentage display - values will be 0.0-100.0
-            result as f32
-        }
+        calculate_percentage_f32(u64::from(self.instances_deployed), u64::from(total))
     }
 
     /// Check if deployment meets success threshold

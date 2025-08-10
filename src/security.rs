@@ -3,47 +3,56 @@
 use crate::domain_types::{HostFunctionName, MaxImportFunctions};
 use serde::{Deserialize, Serialize};
 
+/// Feature enablement state
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FeatureState {
+    /// Feature is enabled
+    Enabled,
+    /// Feature is disabled
+    Disabled,
+}
+
 /// WebAssembly features that can be enabled or disabled
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WasmFeatures {
     /// Enable SIMD (Single Instruction, Multiple Data) instructions
-    pub simd: bool,
+    pub simd: FeatureState,
     /// Enable reference types (anyref, funcref)
-    pub reference_types: bool,
+    pub reference_types: FeatureState,
     /// Enable bulk memory operations
-    pub bulk_memory: bool,
+    pub bulk_memory: FeatureState,
     /// Enable threading support
-    pub threads: bool,
+    pub threads: FeatureState,
 }
 
 impl WasmFeatures {
     /// Strict security: all advanced features disabled
     pub fn strict() -> Self {
         Self {
-            simd: false,
-            reference_types: false,
-            bulk_memory: false,
-            threads: false,
+            simd: FeatureState::Disabled,
+            reference_types: FeatureState::Disabled,
+            bulk_memory: FeatureState::Disabled,
+            threads: FeatureState::Disabled,
         }
     }
 
     /// Relaxed security: all features enabled
     pub fn relaxed() -> Self {
         Self {
-            simd: true,
-            reference_types: true,
-            bulk_memory: true,
-            threads: true,
+            simd: FeatureState::Enabled,
+            reference_types: FeatureState::Enabled,
+            bulk_memory: FeatureState::Enabled,
+            threads: FeatureState::Enabled,
         }
     }
 
     /// Development: enable common features but keep threads disabled
     pub fn development() -> Self {
         Self {
-            simd: true,
-            reference_types: true,
-            bulk_memory: true,
-            threads: false,
+            simd: FeatureState::Enabled,
+            reference_types: FeatureState::Enabled,
+            bulk_memory: FeatureState::Enabled,
+            threads: FeatureState::Disabled,
         }
     }
 }
@@ -113,22 +122,22 @@ pub struct SecurityPolicy {
 impl SecurityPolicy {
     /// Backward compatibility: check if SIMD is disabled
     pub fn disable_simd(&self) -> bool {
-        !self.wasm_features.simd
+        self.wasm_features.simd == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if reference types are disabled
     pub fn disable_reference_types(&self) -> bool {
-        !self.wasm_features.reference_types
+        self.wasm_features.reference_types == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if bulk memory is disabled
     pub fn disable_bulk_memory(&self) -> bool {
-        !self.wasm_features.bulk_memory
+        self.wasm_features.bulk_memory == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if threads are disabled
     pub fn disable_threads(&self) -> bool {
-        !self.wasm_features.threads
+        self.wasm_features.threads == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if network access is allowed
@@ -216,7 +225,7 @@ impl SecurityPolicy {
     ///
     /// Returns an error if the policy configuration is invalid
     pub fn validate(&self) -> Result<(), String> {
-        if !self.enable_fuel_metering && self.wasm_features.threads {
+        if !self.enable_fuel_metering && self.wasm_features.threads == FeatureState::Enabled {
             return Err("Fuel metering must be enabled when threads are allowed".to_string());
         }
 
@@ -301,7 +310,7 @@ mod tests {
         let policy = SecurityPolicy {
             enable_fuel_metering: false,
             wasm_features: WasmFeatures {
-                threads: true,
+                threads: FeatureState::Enabled,
                 ..WasmFeatures::default()
             },
             ..Default::default()
