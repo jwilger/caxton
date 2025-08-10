@@ -16,5 +16,14 @@ if [[ "$*" == *"commit"* ]] && [[ "$*" == *"--no-verify"* ]]; then
     exit 1
 fi
 
-# Pass through to real git
+# If we're already in a Nix shell, use the Nix-provided git directly
+if [ -n "$IN_NIX_SHELL" ]; then
+    # Find the nix store git (avoiding our wrapper)
+    NIX_GIT=$(which -a git 2>/dev/null | grep -E '^/nix/store' | head -n1)
+    if [ -n "$NIX_GIT" ]; then
+        exec "$NIX_GIT" "$@"
+    fi
+fi
+
+# Fall back to system git
 exec /usr/bin/git "$@"
