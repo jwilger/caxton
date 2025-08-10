@@ -4,7 +4,18 @@ use std::time::Duration;
 
 #[nutype(
     validate(greater_or_equal = 0),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Default
+    ),
     default = 0
 )]
 pub struct FuelConsumed(u64);
@@ -15,8 +26,7 @@ impl FuelConsumed {
     }
 
     pub fn add(&self, other: &Self) -> Self {
-        Self::try_new(self.into_inner() + other.into_inner())
-            .unwrap_or_default()
+        Self::try_new(self.into_inner() + other.into_inner()).unwrap_or_default()
     }
 }
 
@@ -48,7 +58,18 @@ pub struct FailureReason(String);
 
 #[nutype(
     validate(greater_or_equal = 0),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Default
+    ),
     default = 0
 )]
 pub struct ElapsedTime(u64);

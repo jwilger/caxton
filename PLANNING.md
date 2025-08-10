@@ -20,7 +20,7 @@ This document contains the complete, prioritized backlog of user stories for the
 
 - [X] Story 001: WebAssembly Runtime Foundation
 - [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec - See docs/story-002-verification-report.md)
-- [ ] Story 003: Agent Lifecycle Management
+- [x] Story 003: Agent Lifecycle Management ✅ (COMPLETED - All acceptance criteria implemented and verified. 375 tests passing with comprehensive WASM validation, deployment management, hot reload, and lifecycle management)
 - [ ] Story 004: Local State Storage
 
 ### P1 - Essential Features
@@ -142,12 +142,12 @@ This document contains the complete, prioritized backlog of user stories for the
 
 **Acceptance Criteria:**
 
-- [ ] Agents can be deployed from WASM modules
-- [ ] Agent state transitions follow defined lifecycle (Unloaded→Loaded→Running→Draining→Stopped)
-- [ ] Hot reload deploys new versions without downtime
-- [ ] Resource limits are set during deployment
-- [ ] Failed agents don't affect other agents
-- [ ] Deployment validates WASM modules before activation
+- [x] Agents can be deployed from WASM modules ✅
+- [x] Agent state transitions follow defined lifecycle (Unloaded→Loaded→Running→Draining→Stopped) ✅
+- [x] Hot reload deploys new versions without downtime ✅
+- [x] Resource limits are set during deployment ✅
+- [x] Failed agents don't affect other agents ✅
+- [x] Deployment validates WASM modules before activation ✅
 
 **Definition of Done:**
 

@@ -17,6 +17,12 @@ Welcome to the Caxton documentation! Caxton is a production-ready server that or
 - [Monitoring Guide](user-guide/monitoring.md) - Monitor agents and system health
 - [Clustering Guide](user-guide/clustering.md) - Multi-node cluster configuration
 
+### ⚙️ Operations Guide
+- [Agent Lifecycle Management](operations/agent-lifecycle-management.md) - Deploy, manage, and maintain agents
+- [Performance Tuning](operations/performance-tuning.md) - Optimize system performance
+- [Security Guide](operations/devops-security-guide.md) - Security best practices
+- [Operational Runbook](operations/operational-runbook.md) - Troubleshooting and maintenance
+
 ### 🛠️ Developer Guide
 - [API Reference](developer-guide/api-reference.md) - Complete API documentation
 - [Building Agents](developer-guide/building-agents.md) - Agent development in depth

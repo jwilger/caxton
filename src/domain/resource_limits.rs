@@ -1,11 +1,11 @@
+#[allow(unused_imports)]
+use crate::domain_types::{AgentId, MemoryBytes};
 use nutype::nutype;
 #[allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use thiserror::Error;
-#[allow(unused_imports)]
-use crate::domain_types::{AgentId, MemoryBytes};
 
 pub const AGENT_MEMORY_LIMIT: usize = 10_485_760;
 pub const TOTAL_MEMORY_LIMIT: usize = 104_857_600;
@@ -155,7 +155,9 @@ pub struct WasmRuntimeConfig<L> {
     resource_limits: L,
 }
 
-impl<const MAX_MEM: usize, const MAX_FUEL: u64> WasmRuntimeConfig<ResourceLimits<MAX_MEM, MAX_FUEL>> {
+impl<const MAX_MEM: usize, const MAX_FUEL: u64>
+    WasmRuntimeConfig<ResourceLimits<MAX_MEM, MAX_FUEL>>
+{
     pub fn new() -> Self {
         Self {
             resource_limits: ResourceLimits::new(),

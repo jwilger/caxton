@@ -28,7 +28,7 @@ grpcurl -H "authorization: Bearer your-token" localhost:50051 caxton.v1.AgentSer
 
 ### Deploy Agent
 
-Deploy a new WebAssembly agent to the server.
+Deploy a new WebAssembly agent with comprehensive lifecycle management.
 
 #### REST
 
@@ -39,7 +39,7 @@ POST /api/v1/agents
 curl -X POST http://localhost:8080/api/v1/agents \
   -H "Content-Type: multipart/form-data" \
   -F "wasm=@agent.wasm" \
-  -F "config={\"name\":\"my-agent\",\"resources\":{\"memory\":\"50MB\"}}"
+  -F "config={\"name\":\"my-agent\",\"strategy\":\"immediate\",\"resources\":{\"memory\":\"50MB\",\"cpu\":\"100000\"}}"
 
 # Response
 {
@@ -47,9 +47,59 @@ curl -X POST http://localhost:8080/api/v1/agents \
   "name": "my-agent",
   "status": "running",
   "deployed_at": "2024-01-15T10:30:00Z",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "deployment_id": "deploy_456",
+  "lifecycle_state": "running",
+  "resource_limits": {
+    "memory": "50MB",
+    "cpu_fuel": 100000
+  }
 }
 ```
+
+#### Deployment Strategies
+
+Available deployment strategies:
+
+- **`immediate`**: Replace agent instantly (brief interruption)
+- **`rolling`**: Gradual replacement with configurable batch size
+- **`blue_green`**: Deploy to parallel environment, switch traffic
+- **`canary`**: Deploy to subset, gradually increase traffic
+
+### Hot Reload Agent
+
+Update an existing agent without downtime:
+
+```bash
+PUT /api/v1/agents/{agent_id}/reload
+
+# Request
+curl -X PUT http://localhost:8080/api/v1/agents/agent_123/reload \
+  -H "Content-Type: multipart/form-data" \
+  -F "wasm=@agent-v2.wasm" \
+  -F "config={\"strategy\":\"graceful\",\"traffic_split\":10}"
+
+# Response
+{
+  "hot_reload_id": "reload_789",
+  "status": "in_progress",
+  "from_version": "1.0.0",
+  "to_version": "2.0.0",
+  "strategy": "graceful",
+  "started_at": "2024-01-15T10:45:00Z"
+}
+```
+
+### Agent Lifecycle States
+
+Agents progress through defined states:
+
+- **`unloaded`**: Not present in system
+- **`loaded`**: WASM module loaded, not executing
+- **`running`**: Actively processing messages
+- **`draining`**: Finishing current work before shutdown
+- **`stopped`**: Cleanly shut down
+- **`failed`**: Encountered error and terminated
 
 #### gRPC
 
@@ -778,7 +828,7 @@ func main() {
         caxton.WithEndpoint("localhost:50051"),
         caxton.WithAPIKey("your-api-key"),
     )
-    
+
     // Deploy agent
     agent, err := client.DeployAgent(ctx, &caxton.DeployRequest{
         WasmModule: wasmBytes,
@@ -789,7 +839,7 @@ func main() {
             },
         },
     })
-    
+
     // Send message
     resp, err := client.SendMessage(ctx, &caxton.Message{
         Performative: "request",

@@ -1,8 +1,8 @@
+use crate::domain_types::{MaxExports, MaxImportFunctions};
 use nutype::nutype;
 #[allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use crate::domain_types::{MaxImportFunctions, MaxExports};
 
 #[nutype(
     validate(len_char_min = 1, len_char_max = 255),
@@ -23,7 +23,7 @@ impl SafeFunctionName {
             "agent_message_send",
             "agent_message_receive",
         ];
-        STANDARD_FUNCTIONS.contains(&self.to_string())
+        STANDARD_FUNCTIONS.contains(&self.to_string().as_str())
     }
 }
 
@@ -95,10 +95,7 @@ pub struct StrictSecurityPolicy {
 }
 
 impl StrictSecurityPolicy {
-    pub fn new(
-        max_import_functions: MaxImportFunctions,
-        max_exports: MaxExports,
-    ) -> Self {
+    pub fn new(max_import_functions: MaxImportFunctions, max_exports: MaxExports) -> Self {
         let allowed_functions = vec![
             SafeFunctionName::try_new("agent_get_id".to_string()).unwrap(),
             SafeFunctionName::try_new("agent_get_timestamp".to_string()).unwrap(),
@@ -150,16 +147,32 @@ impl RelaxedSecurityPolicy {
     ) -> Self {
         let mut allowed_functions = HashSet::new();
 
-        allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("agent_get_id".to_string()).unwrap()));
-        allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("agent_get_timestamp".to_string()).unwrap()));
-        allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("agent_log".to_string()).unwrap()));
-        allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("agent_message_send".to_string()).unwrap()));
-        allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("agent_message_receive".to_string()).unwrap()));
+        allowed_functions.insert(FunctionName::Safe(
+            SafeFunctionName::try_new("agent_get_id".to_string()).unwrap(),
+        ));
+        allowed_functions.insert(FunctionName::Safe(
+            SafeFunctionName::try_new("agent_get_timestamp".to_string()).unwrap(),
+        ));
+        allowed_functions.insert(FunctionName::Safe(
+            SafeFunctionName::try_new("agent_log".to_string()).unwrap(),
+        ));
+        allowed_functions.insert(FunctionName::Safe(
+            SafeFunctionName::try_new("agent_message_send".to_string()).unwrap(),
+        ));
+        allowed_functions.insert(FunctionName::Safe(
+            SafeFunctionName::try_new("agent_message_receive".to_string()).unwrap(),
+        ));
 
         if enable_networking {
-            allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("network_connect".to_string()).unwrap()));
-            allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("network_send".to_string()).unwrap()));
-            allowed_functions.insert(FunctionName::Safe(SafeFunctionName::try_new("network_receive".to_string()).unwrap()));
+            allowed_functions.insert(FunctionName::Safe(
+                SafeFunctionName::try_new("network_connect".to_string()).unwrap(),
+            ));
+            allowed_functions.insert(FunctionName::Safe(
+                SafeFunctionName::try_new("network_send".to_string()).unwrap(),
+            ));
+            allowed_functions.insert(FunctionName::Safe(
+                SafeFunctionName::try_new("network_receive".to_string()).unwrap(),
+            ));
         }
 
         Self {
@@ -190,13 +203,12 @@ impl SecurityLevel {
     pub fn validate(&self) -> bool {
         match self {
             SecurityLevel::Strict(policy) => {
-                policy.max_import_functions.into_inner() > 0 &&
-                policy.max_exports.into_inner() > 0
+                policy.max_import_functions.into_inner() > 0 && policy.max_exports.into_inner() > 0
             }
             SecurityLevel::Relaxed(policy) => {
-                policy.max_import_functions.into_inner() > 0 &&
-                policy.max_exports.into_inner() > 0 &&
-                !(policy.enable_threads && !policy.enable_fuel_metering())
+                policy.max_import_functions.into_inner() > 0
+                    && policy.max_exports.into_inner() > 0
+                    && !(policy.enable_threads && !policy.enable_fuel_metering())
             }
         }
     }

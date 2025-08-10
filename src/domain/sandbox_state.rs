@@ -1,9 +1,9 @@
+use super::fuel::FuelTracker;
+use crate::domain_types::{AgentId, MemoryBytes};
 use nutype::nutype;
 #[allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
-use crate::domain_types::{AgentId, MemoryBytes};
-use super::fuel::FuelTracker;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Uninitialized;
@@ -30,7 +30,18 @@ pub struct Stopped;
 
 #[nutype(
     validate(greater_or_equal = 0, less_or_equal = 1000),
-    derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Default
+    ),
     default = 0
 )]
 pub struct MessageCount(u32);
@@ -50,6 +61,7 @@ impl MessageCount {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sandbox<S> {
     id: AgentId,
     state: S,

@@ -49,19 +49,36 @@
 //! ## Usage Example
 //!
 //! ```rust,no_run
-//! use caxton::message_router::{MessageRouter, RouterConfig, FipaMessage};
+//! use caxton::message_router::{MessageRouter, MessageRouterImpl, RouterConfig, FipaMessage,
+//!     Performative, MessageContent, MessageId, MessageTimestamp, DeliveryOptions};
+//! use caxton::domain_types::AgentId;
 //!
 //! # #[tokio::main]
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create router with production configuration
 //! let config = RouterConfig::production();
-//! let router = MessageRouter::new(config).await?;
+//! let router = MessageRouterImpl::new(config).await?;
 //!
 //! // Start background processing
 //! router.start().await?;
 //!
 //! // Route a message
-//! let message = FipaMessage::new(/* ... */);
+//! let message = FipaMessage {
+//!     performative: Performative::Inform,
+//!     sender: AgentId::generate(),
+//!     receiver: AgentId::generate(),
+//!     content: MessageContent::try_new("Hello, world!".to_string().into_bytes()).unwrap(),
+//!     language: None,
+//!     ontology: None,
+//!     protocol: None,
+//!     conversation_id: None,
+//!     reply_with: None,
+//!     in_reply_to: None,
+//!     message_id: MessageId::generate(),
+//!     created_at: MessageTimestamp::now(),
+//!     trace_context: None,
+//!     delivery_options: DeliveryOptions::default(),
+//! };
 //! let message_id = router.route_message(message).await?;
 //! println!("Message routed with ID: {}", message_id);
 //!
@@ -76,8 +93,9 @@
 //! The router supports development and production configurations:
 //!
 //! ```rust,no_run
-//! use caxton::message_router::RouterConfig;
+//! use caxton::message_router::{RouterConfig, ChannelCapacity, MessageTimeoutMs};
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Development: High observability, smaller queues
 //! let dev_config = RouterConfig::development();
 //!
@@ -86,9 +104,11 @@
 //!
 //! // Custom configuration
 //! let custom_config = RouterConfig::builder()
-//!     .inbound_queue_size(50_000)
-//!     .message_timeout_ms(15_000)
+//!     .inbound_queue_size(ChannelCapacity::try_new(50_000).unwrap())
+//!     .message_timeout_ms(MessageTimeoutMs::try_new(15_000).unwrap())
 //!     .build()?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Error Handling
