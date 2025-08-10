@@ -2,6 +2,8 @@
 //!
 //! A minimal test to validate the basic integration works
 
+#![allow(clippy::uninlined_format_args)]
+
 use std::sync::Arc;
 use std::time::Duration;
 use test_log::test;
@@ -139,7 +141,7 @@ impl WasmModuleValidatorTrait for SimpleMockWasmModuleValidator {
             None,
             agent_name,
             wasm_bytes,
-            WasmSecurityPolicy::testing(),
+            &WasmSecurityPolicy::testing(),
         )
     }
 

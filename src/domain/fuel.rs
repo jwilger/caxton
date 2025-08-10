@@ -98,6 +98,11 @@ impl FuelTracker {
         Self { budget, remaining }
     }
 
+    /// Consumes fuel from the remaining budget
+    ///
+    /// # Errors
+    ///
+    /// Returns `FuelError` if there is insufficient fuel or if fuel is already exhausted.
     pub fn consume(&mut self, amount: u64) -> Result<CpuFuelRemaining, FuelError> {
         let current = self.remaining.into_inner();
 
@@ -146,6 +151,11 @@ impl ExecutionContext<FuelState> {
 }
 
 impl ExecutionContext<NonZeroCpuFuel> {
+    /// Executes a function with the given fuel cost
+    ///
+    /// # Errors
+    ///
+    /// Returns `FuelError` if there is insufficient fuel or if fuel is exhausted.
     pub fn execute_with_fuel(&mut self, _function: &str, cost: u64) -> Result<(), FuelError> {
         let current = self.fuel_state.into_inner();
         if cost > current {

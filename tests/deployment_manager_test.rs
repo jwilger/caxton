@@ -1,6 +1,11 @@
-//! Comprehensive tests for DeploymentManager
+//! Comprehensive tests for `DeploymentManager`
 //!
-//! This test suite covers all aspects of the DeploymentManager including:
+//! This test suite covers all aspects of the `DeploymentManager` including:
+
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::unused_self)]
+#![allow(clippy::float_cmp)]
 //! - Resource allocation and instance deployment
 //! - Deployment strategies (immediate, rolling, blue-green, canary)
 //! - Health checks and deployment validation

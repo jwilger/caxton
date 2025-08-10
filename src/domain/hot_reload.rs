@@ -96,21 +96,37 @@ impl TrafficSplitPercentage {
     }
 
     /// Creates percentage for A/B testing (50/50)
+    ///
+    /// # Panics
+    ///
+    /// Panics if 50 is somehow invalid (should never happen).
     pub fn half() -> Self {
         Self::try_new(50).unwrap()
     }
 
     /// Creates percentage for full traffic to new version
+    ///
+    /// # Panics
+    ///
+    /// Panics if 100 is somehow invalid (should never happen).
     pub fn full() -> Self {
         Self::try_new(100).unwrap()
     }
 
     /// Creates percentage for canary deployment (5%)
+    ///
+    /// # Panics
+    ///
+    /// Panics if 5 is somehow invalid (should never happen).
     pub fn canary() -> Self {
         Self::try_new(5).unwrap()
     }
 
     /// Increment traffic percentage by specified amount
+    ///
+    /// # Errors
+    ///
+    /// Returns `TrafficSplitPercentageError` if the new percentage would be invalid.
     pub fn increment_by(&self, amount: u8) -> Result<Self, TrafficSplitPercentageError> {
         let new_value = self.into_inner().saturating_add(amount).min(100);
         Self::try_new(new_value)
@@ -134,6 +150,10 @@ pub struct RollbackCapability {
 
 impl RollbackCapability {
     /// Creates new rollback capability with defaults
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded timeout value is invalid (should never happen).
     pub fn new() -> Self {
         Self {
             enabled: true,
@@ -149,6 +169,10 @@ impl RollbackCapability {
     }
 
     /// Creates minimal rollback capability (manual only)
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded timeout value is invalid (should never happen).
     pub fn manual_only() -> Self {
         Self {
             enabled: true,
@@ -160,6 +184,10 @@ impl RollbackCapability {
     }
 
     /// Disables all rollback capabilities
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded timeout value is invalid (should never happen).
     pub fn disabled() -> Self {
         Self {
             enabled: false,
@@ -241,6 +269,11 @@ pub struct HotReloadConfig {
 
 impl HotReloadConfig {
     /// Creates new hot reload configuration
+    /// Creates a new hot reload configuration with the given strategy
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded drain timeout value is invalid (should never happen).
     pub fn new(strategy: HotReloadStrategy) -> Self {
         Self {
             strategy,
@@ -255,6 +288,10 @@ impl HotReloadConfig {
     }
 
     /// Creates configuration for graceful hot reload
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded drain timeout value is invalid (should never happen).
     pub fn graceful() -> Self {
         let mut config = Self::new(HotReloadStrategy::Graceful);
         config.drain_timeout = DeploymentTimeout::try_new(120_000).unwrap(); // 2 minutes
@@ -262,6 +299,10 @@ impl HotReloadConfig {
     }
 
     /// Creates configuration for immediate hot reload
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded drain timeout value is invalid (should never happen).
     pub fn immediate() -> Self {
         let mut config = Self::new(HotReloadStrategy::Immediate);
         config.drain_timeout = DeploymentTimeout::try_new(30_000).unwrap(); // 30 seconds (minimum allowed)
@@ -340,6 +381,7 @@ impl HotReloadRequest {
     }
 
     /// Associate with a deployment
+    #[must_use]
     pub fn with_deployment(mut self, deployment_id: DeploymentId) -> Self {
         self.deployment_id = Some(deployment_id);
         self
@@ -351,6 +393,10 @@ impl HotReloadRequest {
     }
 
     /// Validate the hot reload request
+    ///
+    /// # Errors
+    ///
+    /// Returns `HotReloadValidationError` if the request is invalid.
     pub fn validate(&self) -> Result<(), HotReloadValidationError> {
         if self.new_wasm_module.is_empty() {
             return Err(HotReloadValidationError::EmptyWasmModule);
@@ -459,7 +505,10 @@ impl ReloadMetrics {
             return 100.0;
         }
         let success = self.requests_processed - self.requests_failed;
-        (success as f32 / self.requests_processed as f32) * 100.0
+        #[allow(clippy::cast_precision_loss)]
+        {
+            (success as f32 / self.requests_processed as f32) * 100.0
+        }
     }
 
     /// Check if metrics indicate healthy operation
@@ -476,20 +525,33 @@ impl ReloadMetrics {
             self.requests_failed += 1;
         }
 
-        self.error_rate_percentage =
-            (self.requests_failed as f32 / self.requests_processed as f32) * 100.0;
+        self.error_rate_percentage = {
+            #[allow(clippy::cast_precision_loss)]
+            let result = (self.requests_failed as f32 / self.requests_processed as f32) * 100.0;
+            result
+        };
 
         // Update average response time (simple moving average approximation)
+        #[allow(clippy::cast_precision_loss)]
         let total_requests = self.requests_processed as f64;
         self.average_response_time_ms = ((self.average_response_time_ms * (total_requests - 1.0))
             + response_time_ms)
             / total_requests;
 
         self.memory_usage_peak = self.memory_usage_peak.max(memory_usage);
-        self.memory_usage_average = ((self.memory_usage_average as u64
-            * (total_requests as u64 - 1))
-            + memory_usage as u64) as usize
-            / total_requests as usize;
+        {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let total_as_u64 = total_requests as u64;
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let total_as_usize = total_requests as usize;
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                self.memory_usage_average = ((self.memory_usage_average as u64
+                    * (total_as_u64 - 1))
+                    + memory_usage as u64) as usize
+                    / total_as_usize;
+            }
+        }
 
         self.collected_at = SystemTime::now();
     }
@@ -731,15 +793,15 @@ mod tests {
         metrics.update(true, 100.0, 1024);
         assert_eq!(metrics.requests_processed, 1);
         assert_eq!(metrics.requests_failed, 0);
-        assert_eq!(metrics.error_rate_percentage, 0.0);
-        assert_eq!(metrics.average_response_time_ms, 100.0);
+        assert!((metrics.error_rate_percentage - 0.0).abs() < f32::EPSILON);
+        assert!((metrics.average_response_time_ms - 100.0).abs() < f64::EPSILON);
 
         // Process failed request
         metrics.update(false, 200.0, 2048);
         assert_eq!(metrics.requests_processed, 2);
         assert_eq!(metrics.requests_failed, 1);
-        assert_eq!(metrics.error_rate_percentage, 50.0);
-        assert_eq!(metrics.average_response_time_ms, 150.0);
+        assert!((metrics.error_rate_percentage - 50.0).abs() < f32::EPSILON);
+        assert!((metrics.average_response_time_ms - 150.0).abs() < f64::EPSILON);
         assert_eq!(metrics.memory_usage_peak, 2048);
     }
 

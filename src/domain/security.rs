@@ -50,7 +50,12 @@ pub enum FunctionName {
 }
 
 impl FunctionName {
-    pub fn from_str(name: &str) -> Self {
+    /// Create a function name from string, categorizing as safe or unsafe
+    ///
+    /// # Panics
+    ///
+    /// Panics if the function name cannot be created (should never happen for valid strings).
+    pub fn categorize_function(name: &str) -> Self {
         const UNSAFE_FUNCTIONS: &[&str] = &[
             "memory_grow",
             "memory_copy",
@@ -67,11 +72,10 @@ impl FunctionName {
         if UNSAFE_FUNCTIONS.contains(&name) {
             FunctionName::Unsafe(UnsafeFunctionName::try_new(name.to_string()).unwrap())
         } else {
-            SafeFunctionName::try_new(name.to_string())
-                .map(FunctionName::Safe)
-                .unwrap_or_else(|_| {
-                    FunctionName::Unsafe(UnsafeFunctionName::try_new(name.to_string()).unwrap())
-                })
+            SafeFunctionName::try_new(name.to_string()).map_or_else(
+                |_| FunctionName::Unsafe(UnsafeFunctionName::try_new(name.to_string()).unwrap()),
+                FunctionName::Safe,
+            )
         }
     }
 
@@ -95,6 +99,11 @@ pub struct StrictSecurityPolicy {
 }
 
 impl StrictSecurityPolicy {
+    /// Create a new strict security policy
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded function names are invalid (should never happen).
     pub fn new(max_import_functions: MaxImportFunctions, max_exports: MaxExports) -> Self {
         let allowed_functions = vec![
             SafeFunctionName::try_new("agent_get_id".to_string()).unwrap(),
@@ -139,6 +148,11 @@ pub struct RelaxedSecurityPolicy {
 }
 
 impl RelaxedSecurityPolicy {
+    /// Create a new relaxed security policy
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded function names are invalid (should never happen).
     pub fn new(
         max_import_functions: MaxImportFunctions,
         max_exports: MaxExports,
@@ -206,9 +220,9 @@ impl SecurityLevel {
                 policy.max_import_functions.into_inner() > 0 && policy.max_exports.into_inner() > 0
             }
             SecurityLevel::Relaxed(policy) => {
-                policy.max_import_functions.into_inner() > 0
+                (policy.enable_fuel_metering() || !policy.enable_threads)
                     && policy.max_exports.into_inner() > 0
-                    && !(policy.enable_threads && !policy.enable_fuel_metering())
+                    && policy.max_import_functions.into_inner() > 0
             }
         }
     }

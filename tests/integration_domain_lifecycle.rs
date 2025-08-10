@@ -124,7 +124,7 @@ fn test_wasm_module_creation_and_validation() {
         None,
         None,
         wasm_bytes,
-        security_policy,
+        &security_policy,
     )
     .unwrap();
 
@@ -178,7 +178,7 @@ fn test_domain_type_integration() {
         None,
         Some(agent_name),
         wasm_bytes,
-        testing_policy,
+        &testing_policy,
     )
     .unwrap();
 

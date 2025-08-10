@@ -114,6 +114,11 @@ impl Sandbox<Running> {
         self.state.memory_allocated
     }
 
+    /// Consume fuel from the sandbox's fuel tracker
+    ///
+    /// # Errors
+    ///
+    /// Returns `FuelError` if there is insufficient fuel.
     pub fn consume_fuel(&mut self, amount: u64) -> Result<(), super::fuel::FuelError> {
         self.state.fuel_tracker.consume(amount)?;
         Ok(())
@@ -145,9 +150,8 @@ impl Sandbox<Draining> {
     }
 
     pub fn process_message(&mut self) -> Option<MessageCount> {
-        self.state.messages_remaining.decrement().map(|count| {
+        self.state.messages_remaining.decrement().inspect(|&count| {
             self.state.messages_remaining = count;
-            count
         })
     }
 

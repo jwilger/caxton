@@ -32,6 +32,10 @@ pub struct ModuleHash(String);
 
 impl ModuleHash {
     /// Creates hash from hex string
+    ///
+    /// # Errors
+    ///
+    /// Returns `ModuleHashError` if the hex string is invalid or wrong length.
     pub fn from_hex(hex: &str) -> Result<Self, ModuleHashError> {
         if hex.len() != 64 && hex.len() != 128 {
             return Err(Self::try_new("invalid_length".to_string()).unwrap_err());
@@ -45,6 +49,10 @@ impl ModuleHash {
     }
 
     /// Creates SHA-256 hash from bytes
+    ///
+    /// # Panics
+    ///
+    /// Panics if the generated hash string is invalid (should never happen).
     pub fn sha256(data: &[u8]) -> Self {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -54,11 +62,7 @@ impl ModuleHash {
         let hash = hasher.finish();
 
         // Convert to 64-character hex string (simulated SHA-256)
-        Self::try_new(format!(
-            "{:016x}{:016x}{:016x}{:016x}",
-            hash, hash, hash, hash
-        ))
-        .unwrap()
+        Self::try_new(format!("{hash:016x}{hash:016x}{hash:016x}{hash:016x}")).unwrap()
     }
 
     /// Get hash algorithm type based on length
@@ -101,11 +105,21 @@ pub struct ModuleSize(usize);
 
 impl ModuleSize {
     /// Creates module size from megabytes
+    /// Create module size from megabytes
+    ///
+    /// # Errors
+    ///
+    /// Returns `ModuleSizeError` if the size is outside valid limits.
     pub fn from_mb(mb: usize) -> Result<Self, ModuleSizeError> {
         Self::try_new(mb * 1024 * 1024)
     }
 
     /// Creates module size from kilobytes
+    /// Create module size from kilobytes
+    ///
+    /// # Errors
+    ///
+    /// Returns `ModuleSizeError` if the size is outside valid limits.
     pub fn from_kb(kb: usize) -> Result<Self, ModuleSizeError> {
         Self::try_new(kb * 1024)
     }
@@ -117,12 +131,12 @@ impl ModuleSize {
 
     /// Gets size in kilobytes (rounded up)
     pub fn as_kb(&self) -> usize {
-        (self.into_inner() + 1023) / 1024
+        self.into_inner().div_ceil(1024)
     }
 
     /// Gets size in megabytes (rounded up)
     pub fn as_mb(&self) -> usize {
-        (self.into_inner() + 1_048_575) / 1_048_576
+        self.into_inner().div_ceil(1_048_576)
     }
 }
 
@@ -277,9 +291,9 @@ impl WasmValueType {
     pub fn size_bytes(&self) -> usize {
         match self {
             Self::I32 | Self::F32 => 4,
-            Self::I64 | Self::F64 => 8,
+            Self::I64 | Self::F64 | Self::FuncRef | Self::ExternRef => 8,
             Self::V128 => 16,
-            Self::FuncRef | Self::ExternRef => 8, // Pointer size
+            // Pointer size
         }
     }
 }
@@ -306,7 +320,10 @@ impl ValidationResult {
     /// Get all error messages
     pub fn error_messages(&self) -> Vec<String> {
         match self {
-            Self::Invalid { reasons } => reasons.iter().map(|r| r.to_string()).collect(),
+            Self::Invalid { reasons } => reasons
+                .iter()
+                .map(std::string::ToString::to_string)
+                .collect(),
             _ => vec![],
         }
     }
@@ -314,7 +331,10 @@ impl ValidationResult {
     /// Get all warning messages
     pub fn warning_messages(&self) -> Vec<String> {
         match self {
-            Self::Warning { warnings } => warnings.iter().map(|w| w.to_string()).collect(),
+            Self::Warning { warnings } => warnings
+                .iter()
+                .map(std::string::ToString::to_string)
+                .collect(),
             _ => vec![],
         }
     }
@@ -463,6 +483,10 @@ pub struct WasmSecurityPolicy {
 
 impl WasmSecurityPolicy {
     /// Creates a strict security policy
+    ///
+    /// # Panics
+    ///
+    /// Panics if hardcoded export names are invalid (should never happen).
     pub fn strict() -> Self {
         Self {
             name: "strict".to_string(),
@@ -643,13 +667,18 @@ pub struct WasmModule {
 
 impl WasmModule {
     /// Creates a new WASM module from bytes
+    /// Create WASM module from bytes with validation
+    ///
+    /// # Errors
+    ///
+    /// Returns `WasmValidationError` if the WASM bytes are invalid or fail validation.
     pub fn from_bytes(
         version: AgentVersion,
         version_number: VersionNumber,
         name: Option<WasmModuleName>,
         agent_name: Option<AgentName>,
         wasm_bytes: &[u8],
-        security_policy: WasmSecurityPolicy,
+        security_policy: &WasmSecurityPolicy,
     ) -> Result<Self, WasmValidationError> {
         if wasm_bytes.is_empty() {
             return Err(WasmValidationError::EmptyModule);
@@ -664,10 +693,10 @@ impl WasmModule {
         })?;
 
         // Simulate parsing (in real implementation, would use wasmparser)
-        let functions = Self::extract_functions(wasm_bytes)?;
-        let imports = Self::extract_imports(wasm_bytes)?;
-        let exports = Self::extract_exports(wasm_bytes)?;
-        let features_used = Self::extract_features(wasm_bytes)?;
+        let functions = Self::extract_functions(wasm_bytes);
+        let imports = Self::extract_imports(wasm_bytes);
+        let exports = Self::extract_exports(wasm_bytes);
+        let features_used = Self::extract_features(wasm_bytes);
 
         let mut module = Self {
             version,
@@ -690,6 +719,9 @@ impl WasmModule {
 
         // Validate against security policy
         module.validation_result = security_policy.validate_module(&module);
+
+        // Update security policy (clone for ownership)
+        module.security_policy = security_policy.clone();
 
         Ok(module)
     }
@@ -725,27 +757,21 @@ impl WasmModule {
     }
 
     // Helper methods for parsing (simulated)
-    fn extract_functions(
-        _wasm_bytes: &[u8],
-    ) -> Result<Vec<WasmFunctionSignature>, WasmValidationError> {
+    fn extract_functions(_wasm_bytes: &[u8]) -> Vec<WasmFunctionSignature> {
         // In real implementation, would use wasmparser to extract function signatures
-        Ok(vec![])
+        vec![]
     }
 
-    fn extract_imports(
-        _wasm_bytes: &[u8],
-    ) -> Result<Vec<WasmFunctionSignature>, WasmValidationError> {
-        Ok(vec![])
+    fn extract_imports(_wasm_bytes: &[u8]) -> Vec<WasmFunctionSignature> {
+        vec![]
     }
 
-    fn extract_exports(
-        _wasm_bytes: &[u8],
-    ) -> Result<Vec<WasmFunctionSignature>, WasmValidationError> {
-        Ok(vec![])
+    fn extract_exports(_wasm_bytes: &[u8]) -> Vec<WasmFunctionSignature> {
+        vec![]
     }
 
-    fn extract_features(_wasm_bytes: &[u8]) -> Result<HashSet<WasmFeature>, WasmValidationError> {
-        Ok(HashSet::new())
+    fn extract_features(_wasm_bytes: &[u8]) -> HashSet<WasmFeature> {
+        HashSet::new()
     }
 }
 
@@ -926,7 +952,7 @@ mod tests {
         let wasm_bytes = b"fake wasm module content";
 
         let module =
-            WasmModule::from_bytes(version, version_number, None, None, wasm_bytes, policy)
+            WasmModule::from_bytes(version, version_number, None, None, wasm_bytes, &policy)
                 .unwrap();
 
         assert!(module.is_valid());

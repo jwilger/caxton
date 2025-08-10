@@ -250,7 +250,20 @@ impl AgentLifecycleManager {
     }
 
     /// Deploy a new agent with comprehensive validation and state management
+    ///
+    /// # Errors
+    ///
+    /// Returns `DeploymentError` if:
+    /// - Agent validation fails
+    /// - Resource allocation fails
+    /// - WASM module is invalid
+    /// - Agent instance creation fails
+    ///
+    /// # Panics
+    ///
+    /// May panic if internal failure reason creation fails (should not happen in normal operation).
     #[tracing::instrument(skip(self, wasm_module_bytes))]
+    #[allow(clippy::too_many_lines)]
     pub async fn deploy_agent(
         &self,
         agent_id: AgentId,
@@ -271,6 +284,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
+            #[allow(clippy::cast_possible_truncation)]
             timeout_ms: self.default_timeout.as_millis() as u64,
         })?
         .map_err(|e| LifecycleError::ValidationFailed {
@@ -312,7 +326,7 @@ impl AgentLifecycleManager {
         // Validate deployment request
         deployment_request
             .validate()
-            .map_err(|e| DeploymentError::ValidationFailed(e))?;
+            .map_err(DeploymentError::ValidationFailed)?;
 
         let deployment_id = deployment_request.deployment_id;
 
@@ -329,6 +343,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
+            #[allow(clippy::cast_possible_truncation)]
             timeout_ms: self.default_timeout.as_millis() as u64,
         })?;
 
@@ -403,7 +418,20 @@ impl AgentLifecycleManager {
     }
 
     /// Perform hot reload of an existing agent
+    ///
+    /// # Errors
+    ///
+    /// Returns `HotReloadError` if:
+    /// - Agent validation fails
+    /// - Resource allocation fails
+    /// - WASM module is invalid
+    /// - Hot reload strategy fails
+    ///
+    /// # Panics
+    ///
+    /// May panic if internal failure reason creation fails (should not happen in normal operation).
     #[tracing::instrument(skip(self, wasm_module_bytes))]
+    #[allow(clippy::too_many_lines)]
     pub async fn hot_reload_agent(
         &self,
         agent_id: AgentId,
@@ -448,6 +476,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
+            #[allow(clippy::cast_possible_truncation)]
             timeout_ms: self.default_timeout.as_millis() as u64,
         })?
         .map_err(|e| LifecycleError::ValidationFailed {
@@ -476,7 +505,7 @@ impl AgentLifecycleManager {
         // Validate hot reload request
         hot_reload_request
             .validate()
-            .map_err(|e| HotReloadError::ValidationFailed(e))?;
+            .map_err(HotReloadError::ValidationFailed)?;
 
         let reload_id = hot_reload_request.reload_id;
 
@@ -493,6 +522,7 @@ impl AgentLifecycleManager {
         )
         .await
         .map_err(|_| LifecycleError::OperationTimeout {
+            #[allow(clippy::cast_possible_truncation)]
             timeout_ms: self.default_timeout.as_millis() as u64,
         })?;
 
@@ -576,6 +606,10 @@ impl AgentLifecycleManager {
     }
 
     /// Start an agent (transition from Ready to Running)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the agent is not found or not in the Ready state.
     pub async fn start_agent(&self, agent_id: AgentId) -> Result<OperationResult> {
         let start_time = SystemTime::now();
         debug!("Starting agent: {}", agent_id);
@@ -596,6 +630,10 @@ impl AgentLifecycleManager {
     }
 
     /// Stop an agent gracefully
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the agent is not found or cannot be stopped.
     pub async fn stop_agent(
         &self,
         agent_id: AgentId,
@@ -657,6 +695,11 @@ impl AgentLifecycleManager {
     }
 
     /// Get agent status
+    /// Get the current status of an agent
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the agent is not found.
     pub async fn get_agent_status(&self, agent_id: AgentId) -> Result<AgentStatus> {
         let status_map = self.agent_status.read().await;
         status_map
@@ -671,6 +714,11 @@ impl AgentLifecycleManager {
     }
 
     /// Get agent lifecycle state
+    /// Get the lifecycle information for an agent
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the agent is not found.
     pub async fn get_agent_lifecycle(&self, agent_id: AgentId) -> Result<AgentLifecycle> {
         let agents = self.agents.read().await;
         agents
@@ -680,6 +728,11 @@ impl AgentLifecycleManager {
     }
 
     /// Remove agent from lifecycle management
+    /// Remove an agent from the lifecycle manager
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the agent is not found or cannot be removed.
     pub async fn remove_agent(&self, agent_id: AgentId) -> Result<OperationResult> {
         let start_time = SystemTime::now();
         info!("Removing agent: {}", agent_id);
@@ -738,8 +791,7 @@ impl AgentLifecycleManager {
                     reason: lifecycle
                         .failure_reason
                         .as_ref()
-                        .map(|r| r.clone().into_inner())
-                        .unwrap_or_else(|| "Unknown failure".to_string()),
+                        .map_or_else(|| "Unknown failure".to_string(), |r| r.clone().into_inner()),
                 },
                 _ => HealthStatus::Unknown,
             };
@@ -751,8 +803,7 @@ impl AgentLifecycleManager {
                 hot_reload_id: hot_reload_id
                     .or_else(|| existing_status.and_then(|s| s.hot_reload_id)),
                 memory_allocated: existing_status
-                    .map(|s| s.memory_allocated)
-                    .unwrap_or_else(MemoryBytes::zero),
+                    .map_or_else(MemoryBytes::zero, |s| s.memory_allocated),
                 uptime,
                 last_activity: SystemTime::now(),
                 health_status,
@@ -901,7 +952,7 @@ mod tests {
                 None,
                 None,
                 wasm_bytes,
-                crate::domain::WasmSecurityPolicy::testing(),
+                &crate::domain::WasmSecurityPolicy::testing(),
             )
         }
 

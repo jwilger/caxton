@@ -1,6 +1,12 @@
-//! Comprehensive tests for WasmModuleValidator
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::unused_self)]
+#![allow(clippy::float_cmp)]
+#![allow(clippy::match_same_arms)]
+
+//! Comprehensive tests for `WasmModuleValidator`
 //!
-//! This test suite covers all aspects of the WasmModuleValidator including:
+//! This test suite covers all aspects of the `WasmModuleValidator` including:
 //! - WASM format validation and security policy enforcement
 //! - Structural, security, and performance analysis
 //! - Custom validation rules and metadata extraction
