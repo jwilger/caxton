@@ -2,7 +2,7 @@ name: Code Quality Gate
 
 on:
   push:
-    branches: [ "main", "story-*" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
