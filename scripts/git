@@ -1,0 +1,20 @@
+#!/bin/bash
+# Git wrapper that prevents --no-verify usage
+# This provides an additional layer of protection beyond hooks
+
+# Check if attempting to use --no-verify with commit
+if [[ "$*" == *"commit"* ]] && [[ "$*" == *"--no-verify"* ]]; then
+    echo "❌ ERROR: --no-verify is forbidden by team policy"
+    echo ""
+    echo "All commits must pass pre-commit hooks for quality enforcement."
+    echo "If you have a genuine emergency that requires bypassing:"
+    echo "  1. Create a GitHub issue explaining the situation"
+    echo "  2. Get explicit team approval"
+    echo "  3. Use the system git directly: /usr/bin/git"
+    echo ""
+    echo "See CLAUDE.md section 'Code Quality Enforcement' for details."
+    exit 1
+fi
+
+# Pass through to real git
+exec /usr/bin/git "$@"

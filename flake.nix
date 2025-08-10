@@ -20,6 +20,7 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
           inherit system overlays;
+          config.allowUnfree = true;
         };
 
         rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
@@ -52,9 +53,10 @@
             echo "Available tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit"
             echo ""
 
-            # Set up git safety wrapper
+            # Set up git safety wrapper - rename git-safe to git
+            cp "$PWD/scripts/git-safe" "$PWD/scripts/git" 2>/dev/null || true
+            chmod +x "$PWD/scripts/git" 2>/dev/null || true
             export PATH="$PWD/scripts:$PATH"
-            alias git='git-safe'
 
             echo "🛡️  Git safety wrapper enabled"
             echo "   - git commands now go through quality enforcement"
