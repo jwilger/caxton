@@ -42,25 +42,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.toolchain }}-cargo-
 
-    - name: Install cargo tools
-      run: |
-        # Install cargo-nextest with faster method
-        if ! command -v cargo-nextest &> /dev/null; then
-          echo "Installing cargo-nextest..."
-          cargo install cargo-nextest --locked
-        else
-          echo "cargo-nextest already installed"
-        fi
+    - name: Install cargo-nextest
+      uses: taiki-e/install-action@v2
+      with:
+        tool: nextest
 
-        # Install cargo-audit for security scanning (stable toolchain only)
-        if [[ "${{ matrix.toolchain }}" == "stable" ]]; then
-          if ! command -v cargo-audit &> /dev/null; then
-            echo "Installing cargo-audit..."
-            cargo install cargo-audit --locked
-          else
-            echo "cargo-audit already installed"
-          fi
-        fi
+    - name: Install cargo-audit (stable toolchain only)
+      if: matrix.toolchain == 'stable'
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-audit
 
     - name: Check code formatting
       run: cargo fmt --all -- --check
