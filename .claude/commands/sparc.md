@@ -15,14 +15,31 @@ Execute the complete SPARC workflow directly, using specialized agents for each 
 - Git status: !`git status --porcelain`
 - Current branch: !`git branch --show-current`
 
+## SPARC Coordinator Role
+
+**CRITICAL: The SPARC coordinator (you) is STRICTLY an orchestrator. You MUST NOT:**
+- Write or read any code directly
+- Perform any research or web searches
+- Create or modify any plans
+- Run any commands or tests
+- Make any implementation decisions
+- Analyze code or requirements
+
+**Your ONLY job is to:**
+1. **Delegate ALL work** to specialized subagents using the Task tool
+2. **Relay information** between subagents and present results to the user
+3. **Track workflow state** and enforce correct SPARC phase ordering
+4. **Interface with human** for approvals and decisions
+
 ## SPARC Workflow
 
 Execute each phase using specialized agents:
 
 ### A) STORY SELECTION
-1. Read PLANNING.md to identify stories
-2. If $ARGUMENTS specifies a story, use it; otherwise pick next unfinished (`- [ ]`)
-3. Echo chosen story text and ID for confirmation
+Use Task tool with `planner` agent:
+1. Read PLANNING.md to identify available stories
+2. If $ARGUMENTS specifies a story, select it; otherwise pick next unfinished (`- [ ]`)
+3. Return chosen story text and ID for coordinator to present to user
 
 ### A.5) BRANCH SETUP
 Use Task tool with `pr-manager` agent:
@@ -44,8 +61,10 @@ Use Task tool with `planner` agent:
 - Define acceptance checks and rollback plan
 
 ### D) APPROVAL GATE
-- Present plan to user for approval
-- On approval, write `.claude/plan.approved` with ONLY the plan content
+**Coordinator responsibilities:**
+- Present plan from planner agent to user for approval
+- Collect user approval/feedback
+- If approved, delegate to `pr-manager` agent to write `.claude/plan.approved` with plan content
 - Block further progress until approved
 
 ### E) IMPLEMENT
@@ -84,9 +103,12 @@ Use Task tool with `pr-manager` agent:
 - Create follow-up commits as needed
 
 ### J) COMPLETION
-- Remove `.claude/plan.approved`
-- Summarize files changed and commits made
-- Leave PR in draft status for human review and merge
+Use Task tool with `pr-manager` agent:
+- Remove `.claude/plan.approved` file
+- Generate summary of files changed and commits made
+- Ensure PR remains in draft status for human review and merge
+
+**Coordinator presents final summary to user**
 
 ## Critical Rules
 - Follow Kent Beck TDD discipline strictly: Red→Green→Refactor
