@@ -122,6 +122,7 @@ Reference the ADR documentation in `docs/adr/` for detailed rationales:
 - **Resource Safety**: Always validate resource limits before allocation
 - **State Machines**: Use phantom types for compile-time state validation
 - **Testing**: Write property-based tests for validation logic
+- **Dependency Management**: Always use package manager CLI tools (`cargo add`, `cargo remove`) to install/update dependencies. Never manually edit Cargo.toml version numbers. This ensures we use the latest compatible versions and avoid version conflicts.
 
 ## External Dependencies
 
