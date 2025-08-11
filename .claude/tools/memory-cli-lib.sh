@@ -341,6 +341,74 @@ update_indices() {
     atomic_write "$index_file" "$updated_index"
 }
 
+# Rebuild index from existing memory files
+rebuild_index_for_scope() {
+    local scope="$1"
+    log_debug "Rebuilding index for scope: $scope"
+
+    local index_file="$MEMORY_BASE_PATH/$scope/index.json"
+    local scope_dir="$MEMORY_BASE_PATH/$scope"
+
+    # Remove existing index
+    if [[ -f "$index_file" ]]; then
+        rm -f "$index_file"
+        log_debug "Removed existing $scope index"
+    fi
+
+    # Create initial empty index
+    local initial_index
+    if [[ "$scope" == "shared" ]]; then
+        initial_index='{
+            "version": "1.0",
+            "last_updated": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+            "total_memories": 0,
+            "categories": {"decisions": [], "learnings": [], "context": [], "general": []},
+            "agents": {},
+            "tags": {},
+            "recent_memories": []
+        }'
+    else
+        initial_index='{
+            "version": "1.0",
+            "last_updated": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+            "agents": {}
+        }'
+    fi
+
+    if ! atomic_write "$index_file" "$initial_index"; then
+        log_error "Failed to create initial $scope index"
+        return 1
+    fi
+
+    # Find and process all memory files in scope
+    if [[ -d "$scope_dir" ]]; then
+        local memory_files=()
+        while IFS= read -r -d '' file; do
+            memory_files+=("$file")
+        done < <(find "$scope_dir" -name "*.json" ! -name "index.json" -type f -print0 2>/dev/null)
+
+        log_debug "Found ${#memory_files[@]} memory files in $scope"
+
+        # Process each memory file
+        for memory_file in "${memory_files[@]}"; do
+            if [[ -f "$memory_file" ]] && validate_memory_json "$(cat "$memory_file")"; then
+                log_debug "Processing memory file: $memory_file"
+                if ! update_indices "$memory_file" "add"; then
+                    log_error "Warning: Failed to process $memory_file"
+                fi
+            else
+                log_error "Warning: Invalid or missing memory file: $memory_file"
+            fi
+        done
+
+        log_info "Processed ${#memory_files[@]} memory files for $scope scope"
+    else
+        log_info "No $scope directory found, created empty index"
+    fi
+
+    return 0
+}
+
 # Get memory file path
 get_memory_path() {
     local scope="$1"

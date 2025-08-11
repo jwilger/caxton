@@ -24,6 +24,7 @@ COMMANDS:
     list        List memories by criteria
     update      Update existing memory
     delete      Delete a memory
+    rebuild-index Rebuild index files from existing memories
     help        Show this help
 
 SAVE COMMAND:
@@ -45,6 +46,9 @@ UPDATE COMMAND:
 
 DELETE COMMAND:
     memory-cli delete --id <memory-id> --agent <name>
+
+REBUILD-INDEX COMMAND:
+    memory-cli rebuild-index [--scope <private|shared|all>]
 
 OPTIONS:
     --agent         Agent name (required for save/update/delete)
@@ -82,6 +86,12 @@ EXAMPLES:
     # Delete a memory
     memory-cli delete --id 1723402500-type-architect-decisions-a7b2c9 --agent type-architect
 
+    # Rebuild index files from existing memories
+    memory-cli rebuild-index --scope shared
+
+    # Rebuild all index files
+    memory-cli rebuild-index --scope all
+
 ENVIRONMENT:
     DEBUG=1         Enable debug output
     MEMORY_CLI_CONFIG Override config file path
@@ -105,7 +115,7 @@ parse_args() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
-            save|search|list|update|delete|help)
+            save|search|list|update|delete|rebuild-index|help)
                 COMMAND="$1"
                 shift
                 ;;
@@ -276,6 +286,14 @@ validate_args() {
             if ! is_valid_agent "$AGENT"; then
                 log_error "Invalid agent: $AGENT. Valid agents: ${VALID_AGENTS[*]}"
                 exit 1
+            fi
+            ;;
+        rebuild-index)
+            if [[ -n "$SCOPE" ]]; then
+                if [[ "$SCOPE" != "all" && "$SCOPE" != "private" && "$SCOPE" != "shared" ]]; then
+                    log_error "Invalid scope for rebuild-index: $SCOPE. Valid: all, private, shared"
+                    exit 1
+                fi
             fi
             ;;
     esac
@@ -529,6 +547,32 @@ cmd_delete() {
     fi
 }
 
+# Rebuild index command implementation
+cmd_rebuild_index() {
+    local rebuild_scope="${SCOPE:-all}"
+    log_debug "Rebuilding index: scope=$rebuild_scope"
+
+    local scopes_to_rebuild=()
+    if [[ "$rebuild_scope" == "all" ]]; then
+        scopes_to_rebuild=("shared" "private")
+    else
+        scopes_to_rebuild=("$rebuild_scope")
+    fi
+
+    for scope in "${scopes_to_rebuild[@]}"; do
+        log_info "Rebuilding $scope index..."
+
+        if ! rebuild_index_for_scope "$scope"; then
+            log_error "Failed to rebuild $scope index"
+            exit 1
+        fi
+
+        log_info "Successfully rebuilt $scope index"
+    done
+
+    log_info "Index rebuild complete"
+}
+
 # Main execution
 main() {
     # Check required tools
@@ -558,6 +602,9 @@ main() {
             ;;
         delete)
             cmd_delete
+            ;;
+        rebuild-index)
+            cmd_rebuild_index
             ;;
         help)
             show_usage
