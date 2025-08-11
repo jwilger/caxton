@@ -162,21 +162,22 @@ fn find_clippy_allows(dir_path: &str) -> Vec<String> {
 fn test_ci_workflow_configuration() {
     use std::path::Path;
 
-    // Test CI workflow exists and contains required matrix configuration
-    const CI_WORKFLOW_PATH: &str = ".github/workflows/ci.yml";
-    let ci_path = Path::new(CI_WORKFLOW_PATH);
+    // Test that quality-gate workflow contains required matrix configuration
+    // We enhanced the existing quality-gate.yml instead of creating a redundant ci.yml
+    const QUALITY_GATE_PATH: &str = ".github/workflows/quality-gate.yml";
+    let quality_gate_path = Path::new(QUALITY_GATE_PATH);
     assert!(
-        ci_path.exists(),
-        "CI workflow file must exist at {CI_WORKFLOW_PATH}"
+        quality_gate_path.exists(),
+        "Quality gate workflow file must exist at {QUALITY_GATE_PATH}"
     );
 
-    let ci_content = std::fs::read_to_string(ci_path)
-        .unwrap_or_else(|e| panic!("Should be able to read CI workflow file: {e}"));
+    let workflow_content = std::fs::read_to_string(quality_gate_path)
+        .unwrap_or_else(|e| panic!("Should be able to read quality gate workflow file: {e}"));
 
     // Verify matrix testing across platforms
-    verify_ci_contains_required_platforms(&ci_content);
-    verify_ci_contains_required_rust_versions(&ci_content);
-    verify_ci_contains_required_tools(&ci_content);
+    verify_ci_contains_required_platforms(&workflow_content);
+    verify_ci_contains_required_rust_versions(&workflow_content);
+    verify_ci_contains_required_tools(&workflow_content);
 }
 
 fn verify_ci_contains_required_platforms(ci_content: &str) {
