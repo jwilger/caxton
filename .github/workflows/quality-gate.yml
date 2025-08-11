@@ -17,13 +17,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        toolchain: [stable]
-        include:
-          # Test beta and nightly on Linux only to reduce CI load
-          - os: ubuntu-latest
-            toolchain: beta
-          - os: ubuntu-latest
-            toolchain: nightly
 
     steps:
     - name: Checkout code
@@ -32,7 +25,6 @@ jobs:
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@v1
       with:
-        toolchain: ${{ matrix.toolchain }}
         components: clippy, rustfmt
 
     - name: Cache Cargo dependencies
@@ -44,17 +36,16 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-stable-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.toolchain }}-cargo-
+          ${{ runner.os }}-stable-cargo-
 
     - name: Install cargo-nextest
       uses: taiki-e/install-action@v2
       with:
         tool: nextest
 
-    - name: Install cargo-audit (stable toolchain only)
-      if: matrix.toolchain == 'stable'
+    - name: Install cargo-audit
       uses: taiki-e/install-action@v2
       with:
         tool: cargo-audit
@@ -74,10 +65,8 @@ jobs:
     - name: Run all tests
       run: cargo nextest run --nocapture
 
-    - name: Security audit (stable toolchain only)
-      if: matrix.toolchain == 'stable'
+    - name: Security audit
       run: cargo audit
 
-    - name: Validate documentation (stable toolchain only)
-      if: matrix.toolchain == 'stable'
+    - name: Validate documentation
       run: cargo doc --no-deps --document-private-items

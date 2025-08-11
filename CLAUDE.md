@@ -128,7 +128,7 @@ Reference the ADR documentation in `docs/adr/` for detailed rationales:
 
 The project uses Nix for development environment management:
 
-- Rust toolchain: 1.88.0 with clippy, rustfmt, rust-analyzer
+- Rust toolchain: stable with clippy, rustfmt, rust-analyzer
 - Development tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit
 - Optional: just for task automation
 - Ad-hoc: use `nix shell` to use a tool that is not currently installed.
