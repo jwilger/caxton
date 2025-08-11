@@ -12,11 +12,14 @@ env:
 
 jobs:
   quality-gate:
-    name: Code Quality Enforcement
+    name: Code Quality Enforcement (${{ matrix.toolchain }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, beta, nightly]
+    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
 
     steps:
     - name: Checkout code
@@ -25,6 +28,7 @@ jobs:
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
+        toolchain: ${{ matrix.toolchain }}
         components: clippy, rustfmt
 
     - name: Cache Cargo dependencies
@@ -36,9 +40,9 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-stable-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-stable-cargo-
+          ${{ runner.os }}-${{ matrix.toolchain }}-cargo-
 
     - name: Install cargo-nextest
       uses: taiki-e/install-action@v2
