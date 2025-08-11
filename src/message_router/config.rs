@@ -398,7 +398,8 @@ impl RouterConfig {
             outbound_queue_size: ChannelCapacity::try_new(50_000).unwrap(),
             message_timeout_ms: MessageTimeoutMs::try_new(30_000).unwrap(), // 30 seconds
             message_batch_size: MessageBatchSize::try_new(1000).unwrap(),
-            worker_thread_count: WorkerThreadCount::try_new(8).unwrap(),
+            worker_thread_count: WorkerThreadCount::try_new((num_cpus::get() * 2).clamp(2, 8))
+                .unwrap(),
 
             // Retry settings - balanced for reliability
             max_retries: MaxRetries::try_new(3).unwrap(),
