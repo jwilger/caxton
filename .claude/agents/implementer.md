@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Implement the approved plan in Rust with strict TDD and type safety. Small diffs. Use repo’s Rust tools (nextest, clippy, fmt).
-tools: Read, Edit, MultiEdit, Write, Bash, Grep, Glob, WebSearch, WebFetch
+tools: Read, Edit, MultiEdit, Write, Bash, Grep, Glob
 ---
 
 # Implementer Agent

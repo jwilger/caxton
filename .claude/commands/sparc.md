@@ -2,7 +2,7 @@
 description: Orchestrate SPARC for the next unfinished story in @PLANNING.md (or the specified one) using strict Rust TDD + type-driven design.
 argument-hint: [optional-instructions or explicit story]
 model: claude-opus-4-1-20250805
-allowed-tools: Read, Write, Edit, MultiEdit, Grep, Glob, WebSearch, WebFetch, Bash, Task
+allowed-tools: Task
 ---
 
 # SPARC Orchestration (Rust)

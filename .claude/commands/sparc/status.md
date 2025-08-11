@@ -1,11 +1,11 @@
 ---
 description: Check current branch, PR status, and story progress using pr-manager agent
-allowed-tools: Bash(gh:*), Bash(git:*), Read
+allowed-tools: Task
 ---
 
 # Check SPARC Status
 
-Use the pr-manager subagent to check the current status of branch, PR, and story progress.
+Delegate to the pr-manager subagent to check the current status of branch, PR, and story progress.
 
 ## Information Displayed
 

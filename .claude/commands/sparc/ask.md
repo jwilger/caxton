@@ -1,5 +1,6 @@
 ---
 description: Ask the expert subagent for a deep read-only analysis
+allowed-tools: Task
 ---
 
 # Ask the Expert
