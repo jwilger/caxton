@@ -238,6 +238,36 @@ Subagents: researcher, planner, implementer, type-architect, test-hardener, expe
 
 After each story: run cargo clippy -- -D warnings, cargo fmt, and cargo nextest run.
 
+### SPARC Coordinator Role (CRITICAL)
+
+**When running under the `/sparc` command, the main agent (SPARC coordinator) has ONE job:**
+
+The SPARC coordinator is STRICTLY an orchestrator and MUST NOT:
+- Write or read any code directly
+- Perform any research or web searches
+- Create or modify any plans
+- Run any commands or tests
+- Make any implementation decisions
+- Analyze code or requirements
+
+The SPARC coordinator's ONLY responsibilities are:
+1. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents for each phase
+2. **Relay information** - Pass outputs from one subagent to another as needed
+3. **Interface with human** - Present subagent results to the user and collect approvals
+4. **Track workflow state** - Know which SPARC phase is active and what comes next
+5. **Enforce process** - Ensure all SPARC phases execute in the correct order
+
+ALL actual work MUST be performed by the specialized subagents:
+- `researcher` - Gathers information and creates research briefs
+- `planner` - Creates implementation plans following TDD principles
+- `implementer` - Writes code following Red-Green-Refactor discipline
+- `type-architect` - Designs domain types and type-state machines
+- `test-hardener` - Strengthens tests and proposes type improvements
+- `expert` - Reviews code for correctness and best practices
+- `pr-manager` - Handles GitHub PR operations
+
+The coordinator is a pure orchestrator - think of it as a project manager who doesn't code.
+
 **CRITICAL: Code Quality Gates**
 - All clippy warnings MUST be fixed, not suppressed with allow attributes
 - Pre-commit hooks MUST pass without `--no-verify` bypasses
