@@ -54,7 +54,7 @@ pub use crate::domain_types::CpuFuelConsumed;
 
 /// Error types for fuel operations
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum FuelError {
     #[error("Insufficient fuel: requested {requested}, available {available}")]
     InsufficientFuel { requested: u64, available: u64 },
@@ -89,12 +89,11 @@ impl Default for ResourceLimits {
 
 /// Bounded memory request with compile-time limits using domain types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(missing_docs)]
 pub struct AgentMemoryRequest {
+    /// Memory size in bytes with compile-time bounds checking
     bytes: MaxAgentMemory,
 }
 
-#[allow(missing_docs)]
 impl AgentMemoryRequest {
     /// # Errors
     /// Returns an error if bytes is 0 or exceeds the maximum limit
@@ -107,6 +106,7 @@ impl AgentMemoryRequest {
         Ok(Self { bytes: max_memory })
     }
 
+    /// Consumes the request and returns the raw byte count
     pub fn into_inner(self) -> usize {
         self.bytes.into_inner()
     }
@@ -119,7 +119,7 @@ impl AgentMemoryRequest {
 
 /// Memory allocation errors with strong typing
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum MemoryError {
     #[error("Agent memory limit exceeded: requested {requested}, limit {limit}")]
     AgentLimitExceeded {
@@ -143,12 +143,11 @@ pub enum MemoryError {
 
 /// Total memory allocated with bounds checking using domain types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(missing_docs)]
 pub struct TotalMemoryAllocated {
+    /// Total bytes allocated across all agents
     bytes: MaxTotalMemory,
 }
 
-#[allow(missing_docs)]
 impl TotalMemoryAllocated {
     /// Creates a zero memory allocation
     ///
@@ -169,6 +168,7 @@ impl TotalMemoryAllocated {
         Ok(Self { bytes: max_total })
     }
 
+    /// Consumes the allocation tracker and returns the raw byte count
     pub fn into_inner(self) -> usize {
         self.bytes.into_inner()
     }
@@ -208,13 +208,13 @@ impl TotalMemoryAllocated {
 }
 
 /// Bounded memory pool for agent allocations
-#[allow(missing_docs)]
 pub struct BoundedMemoryPool {
+    /// Map of agent ID to memory allocation
     allocations: HashMap<AgentId, AgentMemoryRequest>,
+    /// Total memory allocated across all agents
     total_allocated: TotalMemoryAllocated,
 }
 
-#[allow(missing_docs)]
 impl Default for BoundedMemoryPool {
     fn default() -> Self {
         Self {
@@ -275,14 +275,15 @@ impl BoundedMemoryPool {
 
 /// Simple fuel tracker with domain types
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
 pub struct SimpleFuelTracker {
+    /// Total fuel budget available
     budget: CpuFuelBudget,
+    /// Fuel consumed so far
     consumed: CpuFuelConsumed,
 }
 
-#[allow(missing_docs)]
 impl SimpleFuelTracker {
+    /// Creates a new fuel tracker with the given budget
     pub fn new(budget: CpuFuelBudget) -> Self {
         Self {
             budget,
@@ -308,10 +309,12 @@ impl SimpleFuelTracker {
         Ok(())
     }
 
+    /// Returns the amount of fuel consumed so far
     pub fn consumed(&self) -> CpuFuelConsumed {
         self.consumed
     }
 
+    /// Returns the remaining fuel budget
     pub fn remaining(&self) -> CpuFuelBudget {
         let budget = self.budget.into_inner();
         let consumed = self.consumed.into_inner();

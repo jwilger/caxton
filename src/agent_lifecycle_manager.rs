@@ -21,7 +21,7 @@ use crate::domain_types::{AgentId, AgentName, MemoryBytes};
 
 /// Errors that can occur during agent lifecycle management
 #[derive(Debug, thiserror::Error)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum LifecycleError {
     #[error("Agent not found: {agent_id}")]
     AgentNotFound { agent_id: AgentId },
@@ -53,35 +53,49 @@ pub type Result<T> = std::result::Result<T, LifecycleError>;
 
 /// Agent lifecycle status with comprehensive metadata
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
 pub struct AgentStatus {
+    /// Current lifecycle state of the agent
     pub lifecycle: AgentLifecycle,
+    /// Current deployment ID if deployed
     pub deployment_id: Option<DeploymentId>,
+    /// Current hot reload operation ID if active
     pub hot_reload_id: Option<HotReloadId>,
+    /// Memory currently allocated to the agent
     pub memory_allocated: MemoryBytes,
+    /// Total uptime since agent started
     pub uptime: Duration,
+    /// Timestamp of last agent activity
     pub last_activity: SystemTime,
+    /// Current health status of the agent
     pub health_status: HealthStatus,
 }
 
 /// Health status tracking for agents
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Enum variant fields are self-documenting
 pub enum HealthStatus {
+    /// Agent is operating normally
     Healthy,
+    /// Agent is functioning but with reduced performance
     Degraded { reason: String },
+    /// Agent is not functioning properly
     Unhealthy { reason: String },
+    /// Agent health status cannot be determined
     Unknown,
 }
 
 /// Lifecycle operation result with timing information
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
 pub struct OperationResult {
+    /// Whether the operation completed successfully
     pub success: bool,
+    /// Total duration of the operation
     pub operation_duration: Duration,
+    /// Error message if the operation failed
     pub error_message: Option<String>,
+    /// Timestamp when the operation started
     pub started_at: SystemTime,
+    /// Timestamp when the operation completed
     pub completed_at: SystemTime,
 }
 

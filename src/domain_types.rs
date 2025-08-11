@@ -897,28 +897,34 @@ impl TestSequence {
 
 /// Domain-level validation errors
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum ValidationError {
+    /// Invalid field value with descriptive reason
     #[error("Invalid field '{field}': {reason}")]
     InvalidField { field: String, reason: String },
 
+    /// Value is outside allowed range
     #[error("Value out of range: {value}, expected {min}-{max}")]
     ValueOutOfRange { value: i64, min: i64, max: i64 },
 
+    /// Field has invalid format
     #[error("Invalid format for '{field}': {reason}")]
     InvalidFormat { field: String, reason: String },
 
+    /// Required field is missing
     #[error("Missing required field: {field}")]
     MissingField { field: String },
 
+    /// Domain constraint violation
     #[error("Constraint violation: {constraint}")]
     ConstraintViolation { constraint: String },
 }
 
 /// Resource creation and management errors
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)]
+#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum ResourceCreationError {
+    /// Resource limit has been exceeded
     #[error("Resource limit exceeded: {resource_type} requested {requested}, limit {limit}")]
     LimitExceeded {
         resource_type: String,
@@ -926,18 +932,23 @@ pub enum ResourceCreationError {
         limit: u64,
     },
 
+    /// Resource is currently unavailable
     #[error("Resource unavailable: {resource_type}")]
     Unavailable { resource_type: String },
 
+    /// Resource already exists with the given ID
     #[error("Resource already exists: {resource_id}")]
     AlreadyExists { resource_id: String },
 
+    /// Resource with the given ID was not found
     #[error("Resource not found: {resource_id}")]
     NotFound { resource_id: String },
 
+    /// Resource configuration is invalid
     #[error("Invalid resource configuration: {reason}")]
     InvalidConfiguration { reason: String },
 
+    /// Resource dependency could not be satisfied
     #[error("Resource dependency error: {dependency} required for {resource}")]
     DependencyError {
         resource: String,

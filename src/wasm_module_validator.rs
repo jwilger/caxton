@@ -129,12 +129,16 @@ struct PerformanceAnalysis {
 
 /// Validation statistics
 #[derive(Debug, Clone)]
-#[allow(missing_docs)]
 pub struct ValidationStatistics {
+    /// Total number of modules validated
     pub modules_validated: u64,
+    /// Number of modules that passed validation
     pub modules_passed: u64,
+    /// Number of modules that failed validation
     pub modules_failed: u64,
+    /// Average validation time in milliseconds
     pub average_validation_time_ms: f64,
+    /// Map of common failure types to their occurrence count
     pub common_failures: HashMap<String, u32>,
 }
 
