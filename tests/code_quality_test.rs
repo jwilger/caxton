@@ -2,7 +2,7 @@
 //!
 //! This module contains tests that enforce code quality standards across the codebase.
 
-use std::process::Command;
+use std::fs;
 
 #[test]
 fn test_no_clippy_allow_attributes() {
@@ -115,40 +115,42 @@ fn test_no_clippy_allow_attributes() {
 fn find_clippy_allows(dir_path: &str) -> Vec<String> {
     let mut allows = Vec::new();
 
-    // Search for function/item-level allow attributes: #[allow(clippy::...)]
-    if let Ok(output) = Command::new("grep")
-        .args([
-            "-rn",
-            "--include=*.rs",
-            "^[[:space:]]*#\\[allow(clippy::",
-            dir_path,
-        ])
-        .output()
-        && output.status.success()
-    {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
-            if !line.trim().is_empty() {
-                allows.push(format!("  ITEM-LEVEL: {}", line.trim()));
-            }
-        }
-    }
+    // Use native Rust file parsing for cross-platform compatibility
+    if let Ok(entries) = fs::read_dir(dir_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    let file_path = path.display().to_string();
 
-    // Search for crate-level allow attributes: #![allow(clippy::...)]
-    if let Ok(output) = Command::new("grep")
-        .args([
-            "-rn",
-            "--include=*.rs",
-            "^[[:space:]]*#!\\[allow(clippy::",
-            dir_path,
-        ])
-        .output()
-        && output.status.success()
-    {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
-            if !line.trim().is_empty() {
-                allows.push(format!("  CRATE-LEVEL: {}", line.trim()));
+                    for (line_num, line) in content.lines().enumerate() {
+                        let trimmed = line.trim();
+
+                        // Check for item-level allows: #[allow(clippy::...)]
+                        if trimmed.starts_with("#[allow(clippy::") {
+                            allows.push(format!(
+                                "  ITEM-LEVEL: {}:{}: {}",
+                                file_path,
+                                line_num + 1,
+                                trimmed
+                            ));
+                        }
+
+                        // Check for crate-level allows: #![allow(clippy::...)]
+                        if trimmed.starts_with("#![allow(clippy::") {
+                            allows.push(format!(
+                                "  CRATE-LEVEL: {}:{}: {}",
+                                file_path,
+                                line_num + 1,
+                                trimmed
+                            ));
+                        }
+                    }
+                }
+            } else if path.is_dir() {
+                // Recursively search subdirectories
+                let subdir_path = path.to_string_lossy();
+                allows.extend(find_clippy_allows(&subdir_path));
             }
         }
     }

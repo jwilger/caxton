@@ -1,0 +1,45 @@
+{
+  "agents": {
+    "implementer": 1,
+    "researcher": 1,
+    "type-architect": 1
+  },
+  "categories": {
+    "context": [
+      "1723402700-researcher-context-b3a9f1"
+    ],
+    "decisions": [
+      "1723402500-type-architect-decisions-a7b2c9"
+    ],
+    "general": [],
+    "learnings": [
+      "1723402600-implementer-learnings-f5d8e3"
+    ]
+  },
+  "last_updated": "2025-08-11T17:20:00Z",
+  "recent_memories": [
+    "1723402700-researcher-context-b3a9f1",
+    "1723402600-implementer-learnings-f5d8e3",
+    "1723402500-type-architect-decisions-a7b2c9"
+  ],
+  "tags": {
+    "agents": 1,
+    "architecture": 1,
+    "domain-modeling": 1,
+    "isolation": 1,
+    "nextest": 1,
+    "nutype": 2,
+    "phantom-types": 1,
+    "primitive-obsession": 1,
+    "red-green-refactor": 1,
+    "resource-limits": 1,
+    "security": 1,
+    "tdd": 1,
+    "testing": 1,
+    "types": 2,
+    "wasm": 1,
+    "workflow": 1
+  },
+  "total_memories": 3,
+  "version": "1.0"
+}

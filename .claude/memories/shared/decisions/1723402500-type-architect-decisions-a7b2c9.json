@@ -1,0 +1,33 @@
+{
+  "agent": "type-architect",
+  "category": "decisions",
+  "content": "Decided to use nutype crate for eliminating primitive obsession throughout the Caxton codebase. Provides validation, sanitization, and type safety with minimal boilerplate. All new domain types should use nutype with appropriate sanitize() and validate() functions. This prevents bugs like passing agent IDs where resource limits were expected.",
+  "id": "1723402500-type-architect-decisions-a7b2c9",
+  "metadata": {
+    "created_at": "2025-08-11T17:15:00Z",
+    "expires_after": null,
+    "priority": "high",
+    "related_memories": [],
+    "story_context": "story-051-ci-cd-pipeline-setup",
+    "updated_at": "2025-08-11T17:15:00Z",
+    "version": "1.0"
+  },
+  "scope": "shared",
+  "search_keywords": [
+    "nutype",
+    "domain",
+    "types",
+    "validation",
+    "sanitization",
+    "primitive",
+    "obsession"
+  ],
+  "tags": [
+    "architecture",
+    "types",
+    "nutype",
+    "domain-modeling",
+    "primitive-obsession"
+  ],
+  "title": "Using nutype for domain types to eliminate primitive obsession"
+}

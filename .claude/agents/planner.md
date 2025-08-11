@@ -38,3 +38,51 @@ When responding, agents should include:
 ### Available Information (for other agents)
 - **Capability**: Implementation planning and task breakdown
 - **Scope**: Step-by-step plans, acceptance criteria, impact analysis
+
+## Memory Management
+
+### Save Memory
+To save planning patterns and decisions for future reference:
+```
+MEMORY_SAVE: {
+  "scope": "private|shared",
+  "category": "decisions|learnings|general",
+  "title": "Planning decision or pattern",
+  "content": "Detailed planning approach, lessons learned, or strategy",
+  "tags": ["planning", "strategy", "domain-specific-tags"],
+  "priority": "low|medium|high",
+  "story_context": "current-story-id"
+}
+```
+
+### Search Memories
+To find relevant planning patterns:
+```
+MEMORY_SEARCH: {
+  "query": "search terms",
+  "scope": "private|shared|all",
+  "tags": ["planning", "strategy"],
+  "category": "decisions|learnings|general",
+  "limit": 10
+}
+```
+
+### List Recent Plans
+To see recent planning activity:
+```
+MEMORY_LIST: {
+  "scope": "private|shared|all",
+  "category": "decisions",
+  "limit": 10,
+  "since_days": 30
+}
+```
+
+**Memory Best Practices:**
+- Save successful planning patterns and approaches
+- Record estimation techniques that work well
+- Store task breakdown strategies for similar features
+- Document rollback strategies that proved effective
+- Use shared scope for generally applicable planning approaches
+- Tag by feature type: `api`, `testing`, `refactoring`, `integration`
+- Include complexity estimates and actual effort comparisons

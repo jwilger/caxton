@@ -46,3 +46,50 @@ When responding, agents should include:
 
 - **Capability**: Research findings and external documentation
 - **Scope**: Limited to publicly available information and documentation
+
+## Memory Management
+
+### Save Memory
+To save important research findings for future reference:
+```
+MEMORY_SAVE: {
+  "scope": "private|shared",
+  "category": "context|learnings|general",
+  "title": "Brief description of the finding",
+  "content": "Detailed research information with quotes and sources",
+  "tags": ["research", "external-docs", "domain-specific-tags"],
+  "priority": "low|medium|high",
+  "story_context": "current-story-id"
+}
+```
+
+### Search Memories
+To find relevant past research:
+```
+MEMORY_SEARCH: {
+  "query": "search terms",
+  "scope": "private|shared|all",
+  "tags": ["research", "external-docs"],
+  "category": "context|learnings|general",
+  "limit": 10
+}
+```
+
+### List Recent Research
+To see recent research activity:
+```
+MEMORY_LIST: {
+  "scope": "private|shared|all",
+  "category": "context",
+  "limit": 10,
+  "since_days": 30
+}
+```
+
+**Memory Best Practices:**
+- Save external documentation references with URLs and quotes
+- Store API examples and usage patterns for reuse
+- Record tool-specific findings (cargo, nextest, clippy patterns)
+- Use shared scope for broadly applicable research findings
+- Tag with specific domains: `rust`, `wasm`, `messaging`, `security`
+- Include version information for libraries and tools researched

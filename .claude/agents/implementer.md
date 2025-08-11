@@ -45,3 +45,52 @@ When responding, agents should include:
 ### Available Information (for other agents)
 - **Capability**: Implementation context and failure analysis
 - **Scope**: Current implementation state, test results, performance insights
+
+## Memory Management
+
+### Save Memory
+To save implementation patterns and learnings for future reference:
+```
+MEMORY_SAVE: {
+  "scope": "private|shared",
+  "category": "learnings|decisions|general",
+  "title": "Implementation pattern or issue",
+  "content": "Detailed implementation approach, gotchas, or solutions",
+  "tags": ["implementation", "patterns", "domain-specific-tags"],
+  "priority": "low|medium|high",
+  "story_context": "current-story-id"
+}
+```
+
+### Search Memories
+To find relevant implementation patterns:
+```
+MEMORY_SEARCH: {
+  "query": "search terms",
+  "scope": "private|shared|all",
+  "tags": ["implementation", "patterns"],
+  "category": "learnings|decisions|general",
+  "limit": 10
+}
+```
+
+### List Recent Implementation Work
+To see recent implementation activity:
+```
+MEMORY_LIST: {
+  "scope": "private|shared|all",
+  "category": "learnings",
+  "limit": 10,
+  "since_days": 30
+}
+```
+
+**Memory Best Practices:**
+- Save TDD patterns that work well in this codebase
+- Record common implementation gotchas and solutions
+- Store performance optimization techniques and results
+- Document error handling patterns and best practices
+- Use shared scope for patterns applicable to all agents
+- Tag by technology: `rust`, `wasm`, `async`, `testing`
+- Include code snippets for reusable patterns
+- Record build/tooling issues and their solutions

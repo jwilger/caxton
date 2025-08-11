@@ -166,3 +166,52 @@ When responding, agents should include:
 
 - **Capability**: Repository state and GitHub operations
 - **Scope**: Branch status, PR state, repository metadata, commit history
+
+## Memory Management
+
+### Save Memory
+To save PR management patterns and GitHub workflow insights:
+```
+MEMORY_SAVE: {
+  "scope": "private|shared",
+  "category": "learnings|decisions|general",
+  "title": "PR management pattern or GitHub insight",
+  "content": "Workflow approach, PR patterns, or GitHub operation insights",
+  "tags": ["pr-management", "github", "workflow", "domain-specific-tags"],
+  "priority": "low|medium|high",
+  "story_context": "current-story-id"
+}
+```
+
+### Search Memories
+To find relevant PR management patterns:
+```
+MEMORY_SEARCH: {
+  "query": "search terms",
+  "scope": "private|shared|all",
+  "tags": ["pr-management", "github"],
+  "category": "learnings|decisions|general",
+  "limit": 10
+}
+```
+
+### List Recent PR Activity
+To see recent PR management activity:
+```
+MEMORY_LIST: {
+  "scope": "private|shared|all",
+  "category": "learnings",
+  "limit": 10,
+  "since_days": 30
+}
+```
+
+**Memory Best Practices:**
+- Save successful PR creation and management patterns
+- Record GitHub CLI command patterns and their use cases
+- Store branch naming conventions and their effectiveness
+- Document PR description templates that work well
+- Use shared scope for generally applicable GitHub workflows
+- Tag by operation type: `pr-creation`, `branch-management`, `comments`
+- Include troubleshooting solutions for common GitHub issues
+- Record attribution patterns and safety check procedures

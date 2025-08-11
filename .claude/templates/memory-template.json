@@ -1,0 +1,19 @@
+{
+  "agent": "",
+  "category": "decisions|learnings|context|general",
+  "content": "",
+  "id": "",
+  "metadata": {
+    "created_at": "",
+    "expires_after": null,
+    "priority": "low|medium|high",
+    "related_memories": [],
+    "story_context": "",
+    "updated_at": "",
+    "version": "1.0"
+  },
+  "scope": "private|shared",
+  "search_keywords": [],
+  "tags": [],
+  "title": ""
+}
