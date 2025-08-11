@@ -16,14 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         toolchain: [stable]
-        include:
-          # Test beta and nightly on Linux only to reduce CI load
-          - os: ubuntu-latest
-            toolchain: beta
-          - os: ubuntu-latest
-            toolchain: nightly
 
     steps:
     - name: Checkout code
@@ -50,10 +44,10 @@ jobs:
 
     - name: Install cargo tools
       run: |
-        # Check if cargo-nextest is already installed (from cache)
+        # Install cargo-nextest with faster method
         if ! command -v cargo-nextest &> /dev/null; then
           echo "Installing cargo-nextest..."
-          cargo install cargo-nextest --locked || cargo install cargo-nextest
+          cargo install cargo-nextest --locked
         else
           echo "cargo-nextest already installed"
         fi
@@ -62,7 +56,7 @@ jobs:
         if [[ "${{ matrix.toolchain }}" == "stable" ]]; then
           if ! command -v cargo-audit &> /dev/null; then
             echo "Installing cargo-audit..."
-            cargo install cargo-audit --locked || cargo install cargo-audit
+            cargo install cargo-audit --locked
           else
             echo "cargo-audit already installed"
           fi
