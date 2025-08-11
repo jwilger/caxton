@@ -1,0 +1,63 @@
+name: Code Quality Gate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  quality-gate:
+    name: Code Quality Enforcement
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install cargo-nextest
+      run: |
+        # Check if cargo-nextest is already installed (from cache)
+        if ! command -v cargo-nextest &> /dev/null; then
+          echo "Installing cargo-nextest..."
+          cargo install cargo-nextest --locked || cargo install cargo-nextest
+        else
+          echo "cargo-nextest already installed"
+        fi
+
+    - name: Check code formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy (treat warnings as errors)
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+    - name: Build project
+      run: cargo build --verbose
+
+    - name: Run code quality audit tests
+      run: cargo nextest run test_no_clippy_allow_attributes --nocapture
+
+    - name: Run all tests
+      run: cargo nextest run --nocapture

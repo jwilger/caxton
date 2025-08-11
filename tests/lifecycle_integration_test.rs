@@ -1,7 +1,5 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::cloned_instead_of_copied)]
 #![allow(clippy::redundant_closure)]
 
@@ -24,17 +22,12 @@ use test_log::test;
 use tokio::sync::Mutex;
 
 use caxton::deployment_manager::{HealthCheckResult, InstanceDeploymentResult};
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentLifecycle, AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError,
-    DeploymentId, DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy,
-    HotReloadConfig, HotReloadError, HotReloadId, HotReloadRequest, HotReloadResult,
-    HotReloadStatus, HotReloadStrategy, ReloadMetrics, ResourceRequirements,
-    TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy,
-    WasmValidationError,
+    AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError, HotReloadConfig,
+    HotReloadError, HotReloadStrategy, ResourceRequirements, TrafficSplitPercentage,
+    ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy, WasmValidationError,
 };
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
+use caxton::domain_types::{AgentId, AgentName};
 use caxton::{
     AgentLifecycleManager, CaxtonDeploymentManager, CaxtonHotReloadManager, HealthStatus,
     InstanceManager, LifecycleError, ResourceAllocator, RuntimeManager, TrafficRouter,
@@ -65,14 +58,17 @@ struct IntegratedMockSystem {
     validation_count: Arc<AtomicU64>,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct DeployedAgentState {
+    // Fields for comprehensive agent state tracking - some not currently used
+    #[allow(dead_code)]
     agent_id: AgentId,
+    #[allow(dead_code)]
     agent_name: Option<AgentName>,
     current_version: AgentVersion,
     wasm_module: Vec<u8>,
     resources: ResourceRequirements,
+    #[allow(dead_code)]
     deployed_at: SystemTime,
     is_healthy: bool,
 }
@@ -141,6 +137,8 @@ impl IntegratedMockSystem {
         self.deployed_agents.lock().await.contains_key(&agent_id)
     }
 
+    // Helper method for retrieving agent version - not currently used
+    // Kept for potential version tracking tests
     #[allow(dead_code)]
     async fn get_agent_version(&self, agent_id: AgentId) -> Option<AgentVersion> {
         self.active_versions.lock().await.get(&agent_id).cloned()
@@ -209,7 +207,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
         if wasm_bytes.is_empty() || !self.system.deployment_should_succeed.load(Ordering::SeqCst) {
             return Ok(InstanceDeploymentResult {
                 success: false,
-                instance_id: format!("failed-instance-{}", agent_id),
+                instance_id: format!("failed-instance-{agent_id}"),
                 duration: delay,
                 error: Some("Mock deployment failure".to_string()),
                 memory_used: 0,
@@ -235,7 +233,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
 
         Ok(InstanceDeploymentResult {
             success: true,
-            instance_id: format!("instance-{}", agent_id),
+            instance_id: format!("instance-{agent_id}"),
             duration: delay,
             error: None,
             memory_used: resources.memory_limit.into_inner(),
@@ -281,7 +279,7 @@ impl InstanceManager for IntegratedMockInstanceManager {
             ))
         } else {
             Err(DeploymentError::InsufficientResources {
-                resource: format!("Instance not found: instance-{}", agent_id),
+                resource: format!("Instance not found: instance-{agent_id}"),
             })
         }
     }
@@ -376,7 +374,7 @@ impl RuntimeManager for IntegratedMockRuntimeManager {
         let deployed = self.system.deployed_agents.lock().await;
 
         if deployed.contains_key(&agent_id) {
-            Ok(format!("state-{}-{}", agent_id, version).into_bytes())
+            Ok(format!("state-{agent_id}-{version}").into_bytes())
         } else {
             Err(HotReloadError::StatePreservationFailed {
                 reason: "Agent not found for state preservation".to_string(),
@@ -1273,7 +1271,7 @@ async fn test_multi_agent_isolation_and_independence() {
     for i in 0..3 {
         let (agent_id, _, version, version_number, config, wasm_bytes) =
             fixture.create_test_agent_data();
-        let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+        let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
 
         fixture
             .lifecycle_manager

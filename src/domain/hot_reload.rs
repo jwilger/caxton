@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use super::agent_lifecycle::{AgentVersion, VersionNumber};
 use super::deployment::{DeploymentId, DeploymentTimeout, ResourceRequirements};
+use super::statistics::{calculate_percentage_f32, u64_to_f64_for_stats};
 use crate::domain_types::{AgentId, AgentName};
 
 /// Unique identifier for a hot reload operation
@@ -505,10 +506,7 @@ impl ReloadMetrics {
             return 100.0;
         }
         let success = self.requests_processed - self.requests_failed;
-        #[allow(clippy::cast_precision_loss)]
-        {
-            (success as f32 / self.requests_processed as f32) * 100.0
-        }
+        calculate_percentage_f32(success, self.requests_processed)
     }
 
     /// Check if metrics indicate healthy operation
@@ -525,32 +523,25 @@ impl ReloadMetrics {
             self.requests_failed += 1;
         }
 
-        self.error_rate_percentage = {
-            #[allow(clippy::cast_precision_loss)]
-            let result = (self.requests_failed as f32 / self.requests_processed as f32) * 100.0;
-            result
-        };
+        self.error_rate_percentage =
+            calculate_percentage_f32(self.requests_failed, self.requests_processed);
 
         // Update average response time (simple moving average approximation)
-        #[allow(clippy::cast_precision_loss)]
-        let total_requests = self.requests_processed as f64;
+        let total_requests = u64_to_f64_for_stats(self.requests_processed);
         self.average_response_time_ms = ((self.average_response_time_ms * (total_requests - 1.0))
             + response_time_ms)
             / total_requests;
 
         self.memory_usage_peak = self.memory_usage_peak.max(memory_usage);
-        {
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let total_as_u64 = total_requests as u64;
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            let total_as_usize = total_requests as usize;
-            #[allow(clippy::cast_possible_truncation)]
-            {
-                self.memory_usage_average = ((self.memory_usage_average as u64
-                    * (total_as_u64 - 1))
-                    + memory_usage as u64) as usize
-                    / total_as_usize;
-            }
+
+        // Simple average calculation using integer arithmetic
+        let total_u64 = self.requests_processed;
+        if total_u64 > 0 {
+            let current_avg = self.memory_usage_average as u64;
+            let new_memory = memory_usage as u64;
+            self.memory_usage_average =
+                usize::try_from((current_avg * (total_u64 - 1) + new_memory) / total_u64)
+                    .unwrap_or(usize::MAX);
         }
 
         self.collected_at = SystemTime::now();

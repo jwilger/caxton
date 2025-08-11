@@ -2,32 +2,27 @@
 //!
 //! This test suite covers all aspects of the `DeploymentManager` including:
 
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 //! - Resource allocation and instance deployment
 //! - Deployment strategies (immediate, rolling, blue-green, canary)
 //! - Health checks and deployment validation
 //! - Performance requirements and error handling
 //! - Resource cleanup and failure isolation
 
+use approx::assert_relative_eq;
 use proptest::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-#[allow(unused_imports)]
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use test_log::test;
 use tokio::sync::Mutex;
 
-#[allow(unused_imports)]
 use caxton::deployment_manager::{HealthCheckResult, InstanceDeploymentResult};
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentVersion, DeploymentConfig, DeploymentError, DeploymentId, DeploymentMetrics,
-    DeploymentProgress, DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy,
-    DeploymentValidationError, ResourceRequirements, VersionNumber,
+    AgentVersion, DeploymentConfig, DeploymentError, DeploymentRequest, DeploymentStatus,
+    DeploymentStrategy, ResourceRequirements, VersionNumber,
 };
 use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
 use caxton::{CaxtonDeploymentManager, DeploymentManagerTrait, InstanceManager, ResourceAllocator};
@@ -71,6 +66,8 @@ impl MockResourceAllocator {
             .cloned()
     }
 
+    // Helper method for verifying resource allocation count - not currently used
+    // Kept for potential resource management tests
     #[allow(dead_code)]
     async fn get_allocated_count(&self) -> usize {
         self.allocated_resources.lock().await.len()
@@ -147,6 +144,8 @@ impl MockInstanceManager {
         self.call_count.load(Ordering::SeqCst)
     }
 
+    // Helper method for verifying health check invocations - not currently used
+    // Kept for potential health monitoring tests
     #[allow(dead_code)]
     fn get_health_check_count(&self) -> u64 {
         self.health_check_count.load(Ordering::SeqCst)
@@ -174,7 +173,7 @@ impl InstanceManager for MockInstanceManager {
 
         let result = InstanceDeploymentResult {
             success,
-            instance_id: format!("instance-{}", agent_id),
+            instance_id: format!("instance-{agent_id}"),
             duration: delay,
             error: if success {
                 None
@@ -227,7 +226,7 @@ impl InstanceManager for MockInstanceManager {
             Ok((instance.memory_used, instance.fuel_consumed))
         } else {
             Err(DeploymentError::InsufficientResources {
-                resource: format!("Instance not found: instance-{}", agent_id),
+                resource: format!("Instance not found: instance-{agent_id}"),
             })
         }
     }
@@ -366,7 +365,7 @@ async fn test_deployment_with_metrics() {
     assert!(metrics.total_duration <= elapsed + Duration::from_millis(10)); // Allow small variance
     assert!(metrics.memory_usage_peak > 0);
     assert!(metrics.fuel_consumed > 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 }
 
 #[test(tokio::test)]
@@ -844,7 +843,7 @@ async fn test_full_deployment_lifecycle() {
     let metrics = deployment_result.metrics.unwrap();
     assert_eq!(metrics.instances_deployed, 1);
     assert_eq!(metrics.instances_failed, 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 
     // 9. Perform health check
     let health = fixture
@@ -928,7 +927,7 @@ async fn test_deployment_metrics_accuracy() {
     // Verify instance metrics
     assert_eq!(metrics.instances_deployed, 1);
     assert_eq!(metrics.instances_failed, 0);
-    assert_eq!(metrics.health_check_success_rate, 100.0);
+    assert_relative_eq!(metrics.health_check_success_rate, 100.0, epsilon = 0.0001);
 }
 
 #[test(tokio::test)]
@@ -952,13 +951,13 @@ async fn test_deployment_error_scenarios() {
         let request = fixture.create_test_deployment_request();
         let result = fixture.deployment_manager.deploy_agent(request).await;
 
-        assert!(result.is_err(), "Expected failure for: {}", description);
+        assert!(result.is_err(), "Expected failure for: {description}");
 
         match result.unwrap_err() {
             DeploymentError::InsufficientResources { .. } if allocator_fails => {}
             DeploymentError::WasmValidationFailed { .. } if instance_fails && !allocator_fails => {}
             DeploymentError::InsufficientResources { .. } if allocator_fails && instance_fails => {}
-            other => panic!("Unexpected error for {}: {:?}", description, other),
+            other => panic!("Unexpected error for {description}: {other:?}"),
         }
     }
 }

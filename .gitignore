@@ -87,3 +87,9 @@ claude-flow
 claude-flow.bat
 claude-flow.ps1
 hive-mind-prompt-*.txt
+
+# SPARC workflow files (Claude Code automation artifacts)
+.claude/*.red
+.claude/*.green
+.claude/branch.info
+.claude/plan.approved

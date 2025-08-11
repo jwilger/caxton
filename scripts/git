@@ -1,0 +1,29 @@
+#!/bin/bash
+# Git wrapper that prevents --no-verify usage
+# This provides an additional layer of protection beyond hooks
+
+# Check if attempting to use --no-verify with commit
+if [[ "$*" == *"commit"* ]] && [[ "$*" == *"--no-verify"* ]]; then
+    echo "❌ ERROR: --no-verify is forbidden by team policy"
+    echo ""
+    echo "All commits must pass pre-commit hooks for quality enforcement."
+    echo "If you have a genuine emergency that requires bypassing:"
+    echo "  1. Create a GitHub issue explaining the situation"
+    echo "  2. Get explicit team approval"
+    echo "  3. Use the system git directly: /usr/bin/git"
+    echo ""
+    echo "See CLAUDE.md section 'Code Quality Enforcement' for details."
+    exit 1
+fi
+
+# If we're already in a Nix shell, use the Nix-provided git directly
+if [ -n "$IN_NIX_SHELL" ]; then
+    # Find the nix store git (avoiding our wrapper)
+    NIX_GIT=$(which -a git 2>/dev/null | grep -E '^/nix/store' | head -n1)
+    if [ -n "$NIX_GIT" ]; then
+        exec "$NIX_GIT" "$@"
+    fi
+fi
+
+# Fall back to system git
+exec /usr/bin/git "$@"

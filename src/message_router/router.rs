@@ -184,7 +184,7 @@ impl MessageRouterImpl {
             })?);
 
         // Create metrics collector if enabled
-        let metrics_collector = if config.enable_metrics {
+        let metrics_collector = if config.enable_metrics() {
             Some(Arc::new(MetricsCollectorImpl::new()) as Arc<dyn MetricsCollector>)
         } else {
             None
@@ -259,7 +259,7 @@ impl MessageRouterImpl {
         }
 
         // Spawn metrics collection task
-        if self.config.enable_metrics {
+        if self.config.enable_metrics() {
             self.spawn_metrics_task().await;
         }
 
@@ -601,12 +601,12 @@ impl MessageRouter for MessageRouterImpl {
         }
 
         // Validate message size if validation is enabled
-        if self.config.enable_message_validation
-            && message.content.len() > self.config.max_message_size_bytes
+        if self.config.enable_message_validation()
+            && message.content.len() > self.config.max_message_size_bytes()
         {
             return Err(RouterError::MessageTooLarge {
                 size: message.content.len(),
-                max_size: self.config.max_message_size_bytes,
+                max_size: self.config.max_message_size_bytes(),
             });
         }
 

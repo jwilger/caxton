@@ -29,7 +29,7 @@
 				"mkhl.direnv"
 			]
 		}
-	}
+	},
 	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
 	// "mounts": [
 	// 	{

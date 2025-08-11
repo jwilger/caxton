@@ -1,7 +1,5 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::match_same_arms)]
 
 //! Comprehensive tests for `WasmModuleValidator`
@@ -13,16 +11,17 @@
 //! - Validation statistics and configuration management
 //! - Property-based testing for domain types
 
+use approx::assert_relative_eq;
 use proptest::prelude::*;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 use test_log::test;
 
-#[allow(unused_imports)]
 use caxton::domain::{
     CustomValidationRule, ModuleSize, ValidationResult, ValidationRuleType, WasmValidationError,
 };
 use caxton::domain_types::AgentName;
+use caxton::wasm_module_validator::{StrictnessLevel, ValidationMode};
 use caxton::{
     CaxtonWasmModuleValidator, ValidationConfig, ValidationStatistics, WasmModuleValidatorTrait,
 };
@@ -100,7 +99,7 @@ impl TestFixture {
     ) -> CustomValidationRule {
         CustomValidationRule {
             name: name.to_string(),
-            description: format!("Test rule: {}", name),
+            description: format!("Test rule: {name}"),
             rule_type,
             parameters: HashMap::new(),
         }
@@ -401,8 +400,8 @@ async fn test_validation_statistics_tracking() {
     assert!(stats.modules_validated >= 5);
     assert!(stats.modules_passed >= 4); // At least 4 should pass
     assert!(stats.modules_failed >= 1); // At least 1 should fail
-    assert!(stats.success_rate() > 0.0);
-    assert!(stats.success_rate() <= 100.0);
+    assert!(stats.success_rate() > -0.0001); // Use small epsilon for > comparison
+    assert!(stats.success_rate() <= 100.0001); // Use small epsilon for <= comparison
 }
 
 #[test]
@@ -418,8 +417,8 @@ fn test_validation_statistics_calculations() {
     assert_eq!(stats.modules_validated, 4);
     assert_eq!(stats.modules_passed, 2);
     assert_eq!(stats.modules_failed, 2);
-    assert_eq!(stats.success_rate(), 50.0);
-    assert_eq!(stats.average_validation_time_ms, 142.5); // (100+150+120+200)/4
+    assert_relative_eq!(stats.success_rate(), 50.0, epsilon = 0.0001);
+    assert_relative_eq!(stats.average_validation_time_ms, 142.5, epsilon = 0.0001); // (100+150+120+200)/4
 
     // Check common failures
     assert_eq!(stats.common_failures.get("test_error"), Some(&1));
@@ -578,7 +577,7 @@ async fn test_permissive_security_policy() {
 #[test(tokio::test)]
 async fn test_security_validation_disabled() {
     let mut config = ValidationConfig::permissive();
-    config.enable_security_validation = false;
+    config.security_validation = ValidationMode::Disabled;
 
     let fixture = TestFixture::with_config(config);
     let wasm_bytes = TestFixture::create_valid_wasm_bytes();
@@ -598,24 +597,36 @@ async fn test_security_validation_disabled() {
 #[test]
 fn test_validation_config_creation() {
     let strict_config = ValidationConfig::strict();
-    assert!(strict_config.strict_mode);
-    assert!(strict_config.enable_security_validation);
-    assert!(strict_config.enable_structural_validation);
-    assert!(strict_config.enable_performance_analysis);
+    assert_eq!(strict_config.strictness, StrictnessLevel::Strict);
+    assert_eq!(strict_config.security_validation, ValidationMode::Enabled);
+    assert_eq!(strict_config.structural_validation, ValidationMode::Enabled);
+    assert_eq!(strict_config.performance_analysis, ValidationMode::Enabled);
     assert_eq!(strict_config.max_validation_time_ms, 30_000);
 
     let permissive_config = ValidationConfig::permissive();
-    assert!(!permissive_config.strict_mode);
-    assert!(!permissive_config.enable_security_validation);
-    assert!(permissive_config.enable_structural_validation);
-    assert!(!permissive_config.enable_performance_analysis);
+    assert_eq!(permissive_config.strictness, StrictnessLevel::Relaxed);
+    assert_eq!(
+        permissive_config.security_validation,
+        ValidationMode::Disabled
+    );
+    assert_eq!(
+        permissive_config.structural_validation,
+        ValidationMode::Enabled
+    );
+    assert_eq!(
+        permissive_config.performance_analysis,
+        ValidationMode::Disabled
+    );
     assert_eq!(permissive_config.max_validation_time_ms, 10_000);
 
     let testing_config = ValidationConfig::testing();
-    assert!(!testing_config.strict_mode);
-    assert!(testing_config.enable_security_validation);
-    assert!(testing_config.enable_structural_validation);
-    assert!(testing_config.enable_performance_analysis); // Changed to true for comprehensive testing
+    assert_eq!(testing_config.strictness, StrictnessLevel::Relaxed);
+    assert_eq!(testing_config.security_validation, ValidationMode::Enabled);
+    assert_eq!(
+        testing_config.structural_validation,
+        ValidationMode::Enabled
+    );
+    assert_eq!(testing_config.performance_analysis, ValidationMode::Enabled); // Changed to true for comprehensive testing
     assert_eq!(testing_config.max_validation_time_ms, 5_000);
 }
 
@@ -624,10 +635,10 @@ fn test_validation_config_default() {
     let default_config = ValidationConfig::default();
     let strict_config = ValidationConfig::strict();
 
-    assert_eq!(default_config.strict_mode, strict_config.strict_mode);
+    assert_eq!(default_config.strictness, strict_config.strictness);
     assert_eq!(
-        default_config.enable_security_validation,
-        strict_config.enable_security_validation
+        default_config.security_validation,
+        strict_config.security_validation
     );
 }
 
@@ -758,7 +769,7 @@ async fn test_complete_validation_workflow() {
     // 6. Statistics check
     let stats = fixture.validator.get_statistics().await;
     assert!(stats.modules_validated > 0);
-    assert!(stats.success_rate() > 0.0);
+    assert!(stats.success_rate() > -0.0001); // Use small epsilon for > comparison
 }
 
 #[test(tokio::test)]
@@ -786,7 +797,7 @@ async fn test_validation_error_scenarios() {
     for (description, wasm_bytes, expected_error_type) in test_cases {
         let result = fixture.validator.validate_module(&wasm_bytes, None).await;
 
-        assert!(result.is_err(), "Expected error for: {}", description);
+        assert!(result.is_err(), "Expected error for: {description}");
 
         let error = result.unwrap_err();
         match (&error, &expected_error_type) {
@@ -795,7 +806,7 @@ async fn test_validation_error_scenarios() {
                 WasmValidationError::InvalidFormat { .. },
                 WasmValidationError::InvalidFormat { .. },
             ) => {}
-            _ => panic!("Unexpected error type for {}: {:?}", description, error),
+            _ => panic!("Unexpected error type for {description}: {error:?}"),
         }
     }
 }
@@ -816,15 +827,13 @@ async fn test_validator_with_all_configurations() {
         let result = validator.validate_module(&wasm_bytes, None).await;
         assert!(
             result.is_ok(),
-            "Validation failed for {} configuration",
-            config_name
+            "Validation failed for {config_name} configuration"
         );
 
         let module = result.unwrap();
         assert!(
             module.is_valid() || module.validation_result.has_warnings(),
-            "Module should be valid or have warnings for {} configuration",
-            config_name
+            "Module should be valid or have warnings for {config_name} configuration"
         );
     }
 }
@@ -851,8 +860,8 @@ async fn test_validation_statistics_across_multiple_validations() {
     assert_eq!(stats.modules_validated, 5);
     assert_eq!(stats.modules_passed, 3); // 3 valid modules
     assert_eq!(stats.modules_failed, 2); // 2 invalid modules
-    assert_eq!(stats.success_rate(), 60.0); // 3/5 = 60%
-    assert!(stats.average_validation_time_ms > 0.0);
+    assert_relative_eq!(stats.success_rate(), 60.0, epsilon = 0.0001); // 3/5 = 60%
+    assert!(stats.average_validation_time_ms > -0.0001); // Use small epsilon for > comparison
 
     // Check that failures are categorized
     assert!(!stats.common_failures.is_empty());
@@ -890,8 +899,7 @@ async fn test_comprehensive_metadata_extraction() {
     for field in expected_fields {
         assert!(
             metadata.contains_key(field),
-            "Missing metadata field: {}",
-            field
+            "Missing metadata field: {field}"
         );
     }
 

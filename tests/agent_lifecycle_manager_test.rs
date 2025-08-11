@@ -1,7 +1,5 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 
 //! Comprehensive tests for `AgentLifecycleManager`
 //!
@@ -20,17 +18,13 @@ use std::time::{Duration, SystemTime};
 use test_log::test;
 use tokio::sync::{Mutex, RwLock};
 
-#[allow(unused_imports)]
 use caxton::domain::{
-    AgentFailureReason, AgentLifecycle, AgentLifecycleState, AgentVersion, DeploymentConfig,
-    DeploymentError, DeploymentId, DeploymentRequest, DeploymentResult, DeploymentStatus,
-    DeploymentStrategy, HotReloadConfig, HotReloadError, HotReloadId, HotReloadRequest,
-    HotReloadResult, HotReloadStatus, HotReloadStrategy, ResourceRequirements,
-    StateTransitionError, TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule,
-    WasmSecurityPolicy,
+    AgentLifecycleState, AgentVersion, DeploymentConfig, DeploymentError, DeploymentId,
+    DeploymentRequest, DeploymentResult, DeploymentStatus, DeploymentStrategy, HotReloadConfig,
+    HotReloadError, HotReloadId, HotReloadRequest, HotReloadResult, HotReloadStatus,
+    HotReloadStrategy, ValidationResult, VersionNumber, WasmModule, WasmSecurityPolicy,
 };
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
+use caxton::domain_types::{AgentId, AgentName, MemoryBytes};
 use caxton::{
     AgentLifecycleManager, DeploymentManagerTrait, HealthStatus, HotReloadManagerTrait,
     LifecycleError, WasmModuleValidatorTrait,
@@ -67,6 +61,8 @@ impl MockDeploymentManager {
         self.call_count.load(Ordering::SeqCst)
     }
 
+    // Helper method for accessing deployment results - not currently used in tests
+    // Kept for potential future test expansion
     #[allow(dead_code)]
     async fn get_deployment_result(&self, deployment_id: DeploymentId) -> Option<DeploymentResult> {
         self.deployment_results
@@ -140,7 +136,7 @@ impl DeploymentManagerTrait for MockDeploymentManager {
             deployment_id,
             AgentId::generate(),
             Some(SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             Some(target_version),
         ))
     }
@@ -249,7 +245,7 @@ impl HotReloadManagerTrait for MockHotReloadManager {
             AgentVersion::generate(),
             AgentVersion::generate(),
             Some(SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             None,
         ))
     }
@@ -275,6 +271,8 @@ impl MockWasmModuleValidator {
         self.should_succeed.store(succeed, Ordering::SeqCst);
     }
 
+    // Helper method for controlling validation timing in tests - not currently used
+    // Kept for potential performance testing scenarios
     #[allow(dead_code)]
     async fn set_validation_delay(&self, delay: Duration) {
         *self.validation_delay.lock().await = delay;
@@ -786,7 +784,7 @@ async fn test_deployment_timeout() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LifecycleError::OperationTimeout { .. }
+        LifecycleError::DeploymentError(DeploymentError::TimeoutExceeded { .. })
     ));
 }
 
@@ -863,7 +861,7 @@ async fn test_hot_reload_timeout() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LifecycleError::OperationTimeout { .. }
+        LifecycleError::HotReloadError(HotReloadError::TimeoutExceeded { .. })
     ));
 }
 
@@ -875,7 +873,7 @@ async fn test_concurrent_deployments() {
         .map(|i| {
             let (agent_id, _, version, version_number, config, wasm_bytes) =
                 fixture.create_test_agent_data();
-            let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+            let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
             (
                 agent_id,
                 agent_name,
@@ -1143,7 +1141,7 @@ async fn test_multiple_agents_independence() {
     for i in 0..3 {
         let (agent_id, _, version, version_number, config, wasm_bytes) =
             fixture.create_test_agent_data();
-        let agent_name = AgentName::try_new(format!("test-agent-{}", i)).unwrap();
+        let agent_name = AgentName::try_new(format!("test-agent-{i}")).unwrap();
 
         fixture
             .manager

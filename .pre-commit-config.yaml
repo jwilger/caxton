@@ -20,14 +20,22 @@ repos:
 
       - id: cargo-test
         name: cargo test
-        entry: cargo nextest run --workspace
+        entry: cargo nextest run --workspace --fail-fast
         language: system
         types: [rust]
         pass_filenames: false
+        fail_fast: true
 
       - id: cargo-check
         name: cargo check
         entry: cargo check --all-targets
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: check-no-allows
+        name: check no clippy allows
+        entry: ./scripts/check-no-allows.sh
         language: system
         types: [rust]
         pass_filenames: false

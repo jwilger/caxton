@@ -117,8 +117,8 @@ mod tests {
         for i in 0..NUM_CONCURRENT_OPS {
             let router_clone = std::sync::Arc::clone(&router);
             let handle = tokio::spawn(async move {
-                #[allow(clippy::cast_possible_truncation)]
-                let (agent, capabilities) = create_test_agent(i as u32, vec!["concurrent-test"]);
+                let agent_id = u32::try_from(i).unwrap_or(u32::MAX);
+                let (agent, capabilities) = create_test_agent(agent_id, vec!["concurrent-test"]);
                 let agent_id = agent.id;
 
                 // Register agent
@@ -157,8 +157,8 @@ mod tests {
 
         // Registration phase
         for i in 0..NUM_AGENTS {
-            #[allow(clippy::cast_possible_truncation)]
-            let (agent, capabilities) = create_test_agent(i as u32, vec!["perf-test"]);
+            let agent_id = u32::try_from(i).unwrap_or(u32::MAX);
+            let (agent, capabilities) = create_test_agent(agent_id, vec!["perf-test"]);
             agent_ids.push(agent.id);
             router.register_agent(agent, capabilities).await.unwrap();
         }
@@ -172,8 +172,8 @@ mod tests {
         }
 
         let elapsed = start_time.elapsed();
-        #[allow(clippy::cast_possible_truncation)]
-        let avg_time = elapsed / (STATS_CALLS as u32);
+        let stats_calls_u32 = u32::try_from(STATS_CALLS).unwrap_or(u32::MAX);
+        let avg_time = elapsed / stats_calls_u32;
 
         println!(
             "Average stats retrieval time: {}μs for {} agents",

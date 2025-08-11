@@ -77,9 +77,11 @@ pub struct ElapsedTime(u64);
 
 impl ElapsedTime {
     pub fn from_duration(duration: Duration) -> Self {
-        #[allow(clippy::cast_possible_truncation)]
-        let millis = duration.as_millis() as u64;
-        Self::try_new(millis).unwrap_or_default()
+        let millis = duration.as_millis();
+        // Safe conversion: as_millis() returns u128, we need u64
+        // If millis exceeds u64::MAX, we use the maximum representable value
+        let millis_u64 = u64::try_from(millis).unwrap_or(u64::MAX);
+        Self::try_new(millis_u64).unwrap_or_default()
     }
 
     pub fn meets_minimum(&self, minimum_ms: u64) -> bool {

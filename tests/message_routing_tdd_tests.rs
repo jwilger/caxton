@@ -4,6 +4,7 @@
 //! These tests are written FIRST, before implementation, to drive the design
 
 #![allow(unused_variables, unused_mut, dead_code)]
+#![allow(clippy::cast_precision_loss)] // For performance measurement calculations
 
 use caxton::message_router::{
     AgentId, AgentName, AgentQueueSize, AgentState, ConversationId, DeliveryOptions, FipaMessage,
@@ -318,8 +319,8 @@ async fn test_performance_100k_messages_per_second() {
     let duration = start.elapsed();
 
     // Then: Should achieve 100K msgs/sec
-    #[allow(clippy::cast_precision_loss)]
-    let msgs_per_sec = message_count as f64 / duration.as_secs_f64();
+    // Safe conversion: precision loss is acceptable for performance display
+    let msgs_per_sec = (message_count as f64) / duration.as_secs_f64();
     println!("Performance: {msgs_per_sec:.0} messages/second");
 
     assert!(
