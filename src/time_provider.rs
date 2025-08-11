@@ -134,8 +134,7 @@ mod tests {
         let elapsed = start.elapsed();
         assert!(
             elapsed < Duration::from_millis(100),
-            "Mock sleep took too long: {:?}",
-            elapsed
+            "Mock sleep took too long: {elapsed:?}"
         );
     }
 
@@ -150,8 +149,7 @@ mod tests {
         let elapsed = start.elapsed();
         assert!(
             elapsed >= Duration::from_millis(50),
-            "Real sleep was too short: {:?}",
-            elapsed
+            "Real sleep was too short: {elapsed:?}"
         );
     }
 }

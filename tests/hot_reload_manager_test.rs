@@ -1,7 +1,5 @@
-#![allow(clippy::uninlined_format_args)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::unused_self)]
-#![allow(clippy::float_cmp)]
 #![allow(clippy::no_effect_underscore_binding)]
 #![allow(clippy::absurd_extreme_comparisons)]
 #![allow(clippy::useless_vec)]
@@ -28,7 +26,6 @@ use std::time::{Duration, SystemTime};
 use test_log::test;
 use tokio::sync::Mutex;
 
-#[allow(unused_imports)]
 use caxton::domain::{
     AgentVersion, HotReloadConfig, HotReloadError, HotReloadRequest, HotReloadStatus,
     HotReloadStrategy, TrafficSplitPercentage, VersionNumber,
@@ -51,9 +48,10 @@ struct MockRuntimeManager {
     call_count: Arc<AtomicU64>,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct InstanceData {
+    // Timestamp field for potential future tests - currently unused
+    #[allow(dead_code)]
     created_at: SystemTime,
     memory_usage: usize,
     fuel_consumed: u64,
@@ -95,6 +93,8 @@ impl MockRuntimeManager {
             .contains_key(&(agent_id, version))
     }
 
+    // Helper method for verifying instance count - not currently used
+    // Kept for potential concurrency tests
     #[allow(dead_code)]
     async fn get_instance_count(&self) -> usize {
         self.instances.lock().await.len()
@@ -174,7 +174,7 @@ impl RuntimeManager for MockRuntimeManager {
     ) -> Result<Vec<u8>, HotReloadError> {
         let instances = self.instances.lock().await;
         if instances.contains_key(&(agent_id, version)) {
-            let state_data = format!("state-{}-{}", agent_id, version).into_bytes();
+            let state_data = format!("state-{agent_id}-{version}").into_bytes();
             drop(instances);
 
             let mut preserved = self.preserved_states.lock().await;
@@ -758,7 +758,7 @@ async fn test_hot_reload_empty_wasm_module() {
     match result.unwrap_err() {
         HotReloadError::StatePreservationFailed { .. } => {}
         HotReloadError::ValidationFailed { .. } => {}
-        other => panic!("Unexpected error: {:?}", other),
+        other => panic!("Unexpected error: {other:?}"),
     }
 }
 
@@ -851,7 +851,7 @@ async fn test_hot_reload_performance_metrics() {
     {
         assert!(metrics.requests_processed >= 0);
     }
-    assert!(metrics.health_check_success_rate >= 0.0);
+    assert!(metrics.health_check_success_rate >= -0.0001); // Use small epsilon for >= comparison
     assert!(metrics.collected_at <= SystemTime::now());
 }
 
@@ -1143,8 +1143,7 @@ async fn test_all_hot_reload_strategies() {
 
         assert!(
             result.is_ok(),
-            "Hot reload failed for strategy: {:?}",
-            strategy
+            "Hot reload failed for strategy: {strategy:?}"
         );
         let reload_result = result.unwrap();
         assert!(reload_result.status.is_success());

@@ -205,8 +205,7 @@ impl CpuFuel {
 
         if sum > 1_000_000_000 {
             return Err(ValidationError::ValueOutOfRange {
-                #[allow(clippy::cast_possible_wrap)]
-                value: sum as i64,
+                value: i64::try_from(sum).unwrap_or(i64::MAX),
                 min: 0,
                 max: 1_000_000_000,
             });
@@ -849,9 +848,10 @@ impl TestAgentId {
 
     /// Creates `TestAgentId` from a usize, clamping to `u32::MAX`
     pub fn from_usize(value: usize) -> Self {
-        #[allow(clippy::cast_possible_truncation)]
-        let clamped = value.min(u32::MAX as usize) as u32;
-        Self::try_new(clamped).unwrap_or_default()
+        let max_as_usize = usize::try_from(u32::MAX).unwrap_or(usize::MAX);
+        let clamped = value.min(max_as_usize);
+        let clamped_u32 = u32::try_from(clamped).unwrap_or(u32::MAX);
+        Self::try_new(clamped_u32).unwrap_or_default()
     }
 }
 

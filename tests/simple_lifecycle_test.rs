@@ -2,22 +2,17 @@
 //!
 //! A minimal test to validate the basic integration works
 
-#![allow(clippy::uninlined_format_args)]
-
 use std::sync::Arc;
 use std::time::Duration;
 use test_log::test;
 
-#[allow(unused_imports)]
-use caxton::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
-#[allow(unused_imports)]
+use caxton::domain_types::{AgentId, AgentName};
 use caxton::{
     AgentLifecycleManager, AgentVersion, DeploymentConfig, DeploymentError, DeploymentId,
     DeploymentManagerTrait, DeploymentRequest, DeploymentResult, DeploymentStatus,
     DeploymentStrategy, HotReloadConfig, HotReloadError, HotReloadId, HotReloadManagerTrait,
-    HotReloadRequest, HotReloadResult, HotReloadStatus, HotReloadStrategy, ResourceRequirements,
-    TrafficSplitPercentage, ValidationResult, VersionNumber, WasmModule, WasmModuleValidatorTrait,
-    WasmSecurityPolicy, WasmValidationError,
+    HotReloadRequest, HotReloadResult, HotReloadStatus, HotReloadStrategy, ValidationResult,
+    VersionNumber, WasmModule, WasmModuleValidatorTrait, WasmSecurityPolicy, WasmValidationError,
 };
 
 // Simple mock implementations
@@ -61,7 +56,7 @@ impl DeploymentManagerTrait for SimpleMockDeploymentManager {
             deployment_id,
             AgentId::generate(),
             Some(std::time::SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             Some(target_version),
         ))
     }
@@ -116,7 +111,7 @@ impl HotReloadManagerTrait for SimpleMockHotReloadManager {
             AgentVersion::generate(),
             AgentVersion::generate(),
             Some(std::time::SystemTime::now()),
-            format!("Rolled back to version {}", target_version),
+            format!("Rolled back to version {target_version}"),
             None,
         ))
     }

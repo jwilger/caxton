@@ -10,6 +10,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use super::agent_lifecycle::{AgentVersion, VersionNumber};
+use super::statistics::calculate_percentage_f32;
 use crate::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
 
 /// Unique identifier for a deployment operation
@@ -98,11 +99,9 @@ impl BatchSize {
             return Err(Self::try_new(101).unwrap_err()); // This will trigger the validation error
         }
 
-        #[allow(clippy::cast_precision_loss)]
-        let total_as_f32 = total_instances as f32;
-        let calculated = (total_as_f32 * f32::from(percentage) / 100.0).ceil();
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let batch_size = (calculated as u8).max(1);
+        // Use integer arithmetic to avoid precision loss entirely
+        let calculated_size = (total_instances * usize::from(percentage)).div_ceil(100);
+        let batch_size = u8::try_from(calculated_size).unwrap_or(u8::MAX).max(1);
         Self::try_new(batch_size)
     }
 }
@@ -612,10 +611,7 @@ impl DeploymentMetrics {
         if total == 0 {
             return 0.0;
         }
-        #[allow(clippy::cast_precision_loss)]
-        {
-            (self.instances_deployed as f32 / total as f32) * 100.0
-        }
+        calculate_percentage_f32(u64::from(self.instances_deployed), u64::from(total))
     }
 
     /// Check if deployment meets success threshold

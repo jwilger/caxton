@@ -8,6 +8,7 @@ pub mod hot_reload;
 pub mod resource_limits;
 pub mod sandbox_state;
 pub mod security;
+pub mod statistics;
 pub mod wasm_module;
 
 pub use agent_lifecycle::{
@@ -46,6 +47,7 @@ pub use security::{
     FunctionName, RelaxedSecurityPolicy, SafeFunctionName, SecurityLevel, StrictSecurityPolicy,
     UnsafeFunctionName, ValidatedSecurityPolicy,
 };
+pub use statistics::{calculate_percentage_f32, millis_to_f64_for_stats, u64_to_f64_for_stats};
 pub use wasm_module::{
     CustomValidationRule, HashAlgorithm, MaxWasmFunctions, ModuleHash, ModuleSize,
     ValidationFailure, ValidationResult, ValidationRuleType, ValidationWarning, WasmExportName,

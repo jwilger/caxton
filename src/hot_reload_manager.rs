@@ -323,7 +323,9 @@ impl CaxtonHotReloadManager {
         // Step 7: Drain old version
         context.status = HotReloadStatus::InProgress;
 
-        if !self.time_provider.should_skip_delays() {
+        if self.time_provider.should_skip_delays() {
+            debug!("Skipping drain wait in test mode");
+        } else {
             info!(
                 "Draining old version for {:?}",
                 context.request.config.drain_timeout.as_duration()
@@ -340,8 +342,6 @@ impl CaxtonHotReloadManager {
                 // Check if drain is complete (placeholder for real implementation)
                 // if self.is_drain_complete(agent_id, old_version).await { break; }
             }
-        } else {
-            debug!("Skipping drain wait in test mode");
         }
 
         // Step 8: Switch traffic to new version
@@ -546,6 +546,16 @@ impl CaxtonHotReloadManager {
         &self,
         context: &mut HotReloadContext,
     ) -> Result<HotReloadResult, HotReloadError> {
+        self.prepare_traffic_splitting_reload(context).await?;
+        self.execute_gradual_traffic_split(context).await?;
+        self.finalize_traffic_splitting_reload(context).await
+    }
+
+    /// Prepare new version for traffic splitting
+    async fn prepare_traffic_splitting_reload(
+        &self,
+        context: &mut HotReloadContext,
+    ) -> Result<(), HotReloadError> {
         info!(
             "Executing traffic splitting hot reload for agent {}",
             context.request.agent_id
@@ -589,8 +599,14 @@ impl CaxtonHotReloadManager {
         }
 
         context.status = HotReloadStatus::InProgress;
+        Ok(())
+    }
 
-        // Step 5: Gradual traffic splitting
+    /// Execute gradual traffic split with monitoring
+    async fn execute_gradual_traffic_split(
+        &self,
+        context: &mut HotReloadContext,
+    ) -> Result<(), HotReloadError> {
         let traffic_steps = if context.request.config.progressive_rollout {
             vec![5, 10, 25, 50, 75, 100]
         } else {
@@ -598,75 +614,120 @@ impl CaxtonHotReloadManager {
         };
 
         for (i, percentage) in traffic_steps.iter().enumerate() {
-            let split_percentage = TrafficSplitPercentage::try_new(*percentage).map_err(|_| {
-                HotReloadError::TrafficSplittingFailed {
-                    reason: "Invalid traffic percentage".to_string(),
-                }
-            })?;
-
-            info!("Setting traffic split to {}% for new version", percentage);
-
-            // Set traffic split
-            self.traffic_router
-                .set_traffic_split(agent_id, old_version, new_version, split_percentage)
+            self.execute_traffic_split_step(context, *percentage, i, traffic_steps.len())
                 .await?;
-
-            context.current_traffic_split = split_percentage;
-
-            // Monitor at this traffic level
-            let monitor_duration = if self.time_provider.should_skip_delays() {
-                Duration::from_millis(1) // Skip monitoring in tests
-            } else {
-                Duration::from_secs(30) // 30 seconds per step in production
-            };
-            let step_start = SystemTime::now();
-
-            while step_start.elapsed().unwrap_or_default() < monitor_duration {
-                self.update_metrics(context).await?;
-
-                // Check rollback conditions
-                if context
-                    .request
-                    .config
-                    .rollback_capability
-                    .should_trigger_rollback(&context.metrics)
-                {
-                    warn!("Automatic rollback triggered at {}% traffic", percentage);
-
-                    // Rollback to 0% traffic to new version
-                    let zero_split = TrafficSplitPercentage::try_new(0).unwrap();
-                    self.traffic_router
-                        .set_traffic_split(agent_id, old_version, new_version, zero_split)
-                        .await?;
-
-                    // Stop new version
-                    self.runtime_manager
-                        .stop_instance(agent_id, new_version)
-                        .await?;
-
-                    return Err(HotReloadError::AutomaticRollback {
-                        reason: format!("Rollback triggered at {}% traffic", percentage),
-                    });
-                }
-
-                let check_interval = if self.time_provider.should_skip_delays() {
-                    Duration::from_millis(1)
-                } else {
-                    Duration::from_secs(5)
-                };
-                self.time_provider.sleep(check_interval).await;
-            }
-
-            // If not the last step, continue to next traffic percentage
-            if i < traffic_steps.len() - 1 {
-                info!(
-                    "Traffic split at {}% successful, proceeding to next step",
-                    percentage
-                );
-            }
         }
+        Ok(())
+    }
 
-        // Step 6: Complete rollout - switch traffic and stop old version
+    /// Execute a single traffic split step
+    async fn execute_traffic_split_step(
+        &self,
+        context: &mut HotReloadContext,
+        percentage: u8,
+        step_index: usize,
+        total_steps: usize,
+    ) -> Result<(), HotReloadError> {
+        let agent_id = context.request.agent_id;
+        let old_version = context.request.from_version;
+        let new_version = context.request.to_version;
+
+        let split_percentage = TrafficSplitPercentage::try_new(percentage).map_err(|_| {
+            HotReloadError::TrafficSplittingFailed {
+                reason: "Invalid traffic percentage".to_string(),
+            }
+        })?;
+
+        info!("Setting traffic split to {}% for new version", percentage);
+
+        self.traffic_router
+            .set_traffic_split(agent_id, old_version, new_version, split_percentage)
+            .await?;
+
+        context.current_traffic_split = split_percentage;
+
+        self.monitor_traffic_split_step(context, percentage).await?;
+
+        if step_index < total_steps - 1 {
+            info!(
+                "Traffic split at {}% successful, proceeding to next step",
+                percentage
+            );
+        }
+        Ok(())
+    }
+
+    /// Monitor a traffic split step for rollback conditions
+    async fn monitor_traffic_split_step(
+        &self,
+        context: &mut HotReloadContext,
+        percentage: u8,
+    ) -> Result<(), HotReloadError> {
+        let monitor_duration = if self.time_provider.should_skip_delays() {
+            Duration::from_millis(1)
+        } else {
+            Duration::from_secs(30)
+        };
+        let step_start = SystemTime::now();
+
+        while step_start.elapsed().unwrap_or_default() < monitor_duration {
+            self.update_metrics(context).await?;
+
+            if context
+                .request
+                .config
+                .rollback_capability
+                .should_trigger_rollback(&context.metrics)
+            {
+                self.handle_automatic_rollback(context, percentage).await?;
+            }
+
+            let check_interval = if self.time_provider.should_skip_delays() {
+                Duration::from_millis(1)
+            } else {
+                Duration::from_secs(5)
+            };
+            self.time_provider.sleep(check_interval).await;
+        }
+        Ok(())
+    }
+
+    /// Handle automatic rollback during traffic splitting
+    async fn handle_automatic_rollback(
+        &self,
+        context: &mut HotReloadContext,
+        percentage: u8,
+    ) -> Result<(), HotReloadError> {
+        let agent_id = context.request.agent_id;
+        let old_version = context.request.from_version;
+        let new_version = context.request.to_version;
+
+        warn!("Automatic rollback triggered at {}% traffic", percentage);
+
+        let zero_split = TrafficSplitPercentage::try_new(0).unwrap();
+        self.traffic_router
+            .set_traffic_split(agent_id, old_version, new_version, zero_split)
+            .await?;
+
+        self.runtime_manager
+            .stop_instance(agent_id, new_version)
+            .await?;
+
+        Err(HotReloadError::AutomaticRollback {
+            reason: format!("Rollback triggered at {percentage}% traffic"),
+        })
+    }
+
+    /// Finalize traffic splitting reload by switching remaining traffic and cleanup
+    async fn finalize_traffic_splitting_reload(
+        &self,
+        context: &mut HotReloadContext,
+    ) -> Result<HotReloadResult, HotReloadError> {
+        let agent_id = context.request.agent_id;
+        let old_version = context.request.from_version;
+        let new_version = context.request.to_version;
+
+        // Complete rollout - switch traffic and stop old version
         self.traffic_router
             .switch_traffic(agent_id, new_version)
             .await?;
@@ -812,7 +873,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
         )
         .await
         .map_err(|_| HotReloadError::TimeoutExceeded {
-            timeout: self.default_timeout.as_millis() as u64,
+            timeout: u64::try_from(self.default_timeout.as_millis()).unwrap_or(u64::MAX),
         })?;
 
         // Remove from active reloads
@@ -922,7 +983,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
                 .stop_instance(agent_id, context.request.to_version)
                 .await
                 .map_err(|e| HotReloadError::RollbackFailed {
-                    reason: format!("Failed to stop current version: {}", e),
+                    reason: format!("Failed to stop current version: {e}"),
                 })?;
 
             // Deploy target version
@@ -930,7 +991,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
                 .create_instance(agent_id, target_version, &target_snapshot.wasm_module)
                 .await
                 .map_err(|e| HotReloadError::RollbackFailed {
-                    reason: format!("Failed to create target version instance: {}", e),
+                    reason: format!("Failed to create target version instance: {e}"),
                 })?;
 
             // Switch traffic
@@ -938,7 +999,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
                 .switch_traffic(agent_id, target_version)
                 .await
                 .map_err(|e| HotReloadError::RollbackFailed {
-                    reason: format!("Failed to switch traffic: {}", e),
+                    reason: format!("Failed to switch traffic: {e}"),
                 })?;
 
             Ok(HotReloadResult::rollback(
@@ -947,7 +1008,7 @@ impl HotReloadManager for CaxtonHotReloadManager {
                 context.request.from_version,
                 context.request.to_version,
                 Some(context.started_at),
-                format!("Rolled back to version {}", target_version),
+                format!("Rolled back to version {target_version}"),
                 Some(context.metrics.clone()),
             ))
         } else {

@@ -45,8 +45,10 @@ wat = "1.223"
 nutype = { version = "0.6.2", features = ["serde"] }
 num_cpus = "1.16"
 futures = "0.3"
+rust_decimal = "1.33"
 
 [dev-dependencies]
+approx = "0.5"
 criterion = "0.5"
 tempfile = "3.14"
 test-log = "0.2"

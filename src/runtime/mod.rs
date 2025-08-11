@@ -155,7 +155,7 @@ impl WasmRuntime {
 
         // Note: Some WASM features have dependencies, so we need to be careful
         // For now, we'll use the defaults for most features to avoid conflicts
-        if config.security_policy.disable_threads {
+        if config.security_policy.disable_threads() {
             wasm_config.wasm_threads(false);
         }
 

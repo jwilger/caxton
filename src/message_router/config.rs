@@ -34,9 +34,202 @@ pub enum ConfigError {
     },
 }
 
+/// Observability configuration settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ObservabilityConfig {
+    /// Trace sampling ratio (0.0 to 1.0)
+    pub trace_sampling_ratio: TraceSamplingRatio,
+    /// Enable Prometheus metrics collection
+    pub enable_metrics: bool,
+    /// Enable detailed structured logging
+    pub enable_detailed_logs: bool,
+}
+
+impl ObservabilityConfig {
+    /// High observability for development and debugging
+    pub fn development() -> Self {
+        Self {
+            trace_sampling_ratio: TraceSamplingRatio::try_new(1.0).unwrap(),
+            enable_metrics: true,
+            enable_detailed_logs: true,
+        }
+    }
+
+    /// Production observability with sampling
+    pub fn production() -> Self {
+        Self {
+            trace_sampling_ratio: TraceSamplingRatio::try_new(0.01).unwrap(),
+            enable_metrics: true,
+            enable_detailed_logs: false,
+        }
+    }
+
+    /// Minimal observability for testing
+    pub fn testing() -> Self {
+        Self {
+            trace_sampling_ratio: TraceSamplingRatio::try_new(0.0).unwrap(),
+            enable_metrics: false,
+            enable_detailed_logs: false,
+        }
+    }
+}
+
+impl Default for ObservabilityConfig {
+    fn default() -> Self {
+        Self::development()
+    }
+}
+
+/// Performance optimization settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerformanceConfig {
+    /// Enable message batching for throughput
+    pub enable_batching: bool,
+    /// Enable connection pooling for efficiency
+    pub enable_connection_pooling: bool,
+    /// Number of connections to pool
+    pub connection_pool_size: usize,
+    /// Enable message compression
+    pub enable_compression: bool,
+}
+
+impl PerformanceConfig {
+    /// Development performance settings
+    pub fn development() -> Self {
+        Self {
+            enable_batching: true,
+            enable_connection_pooling: false,
+            connection_pool_size: 5,
+            enable_compression: false,
+        }
+    }
+
+    /// Production performance settings
+    pub fn production() -> Self {
+        Self {
+            enable_batching: true,
+            enable_connection_pooling: true,
+            connection_pool_size: 50,
+            enable_compression: true,
+        }
+    }
+
+    /// Testing performance settings
+    pub fn testing() -> Self {
+        Self {
+            enable_batching: false,
+            enable_connection_pooling: false,
+            connection_pool_size: 1,
+            enable_compression: false,
+        }
+    }
+}
+
+impl Default for PerformanceConfig {
+    fn default() -> Self {
+        Self::development()
+    }
+}
+
+/// Security and validation settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityConfig {
+    /// Enable message validation
+    pub enable_message_validation: bool,
+    /// Maximum message size in bytes
+    pub max_message_size_bytes: usize,
+    /// Enable rate limiting
+    pub enable_rate_limiting: bool,
+    /// Rate limit messages per second
+    pub rate_limit_messages_per_second: usize,
+}
+
+impl SecurityConfig {
+    /// Development security settings (relaxed)
+    pub fn development() -> Self {
+        Self {
+            enable_message_validation: true,
+            max_message_size_bytes: 1_048_576, // 1MB
+            enable_rate_limiting: false,
+            rate_limit_messages_per_second: 1000,
+        }
+    }
+
+    /// Production security settings (strict)
+    pub fn production() -> Self {
+        Self {
+            enable_message_validation: true,
+            max_message_size_bytes: 10_485_760, // 10MB
+            enable_rate_limiting: true,
+            rate_limit_messages_per_second: 10_000,
+        }
+    }
+
+    /// Testing security settings
+    pub fn testing() -> Self {
+        Self {
+            enable_message_validation: true,
+            max_message_size_bytes: 1024,
+            enable_rate_limiting: false,
+            rate_limit_messages_per_second: 100,
+        }
+    }
+}
+
+impl Default for SecurityConfig {
+    fn default() -> Self {
+        Self::development()
+    }
+}
+
+/// Storage and persistence settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageConfig {
+    /// Path for persistent storage
+    pub storage_path: Option<PathBuf>,
+    /// Enable message persistence
+    pub enable_persistence: bool,
+    /// Storage cleanup interval in milliseconds
+    pub storage_cleanup_interval_ms: u64,
+}
+
+impl StorageConfig {
+    /// Development storage settings (in-memory)
+    pub fn development() -> Self {
+        Self {
+            storage_path: None,
+            enable_persistence: false,
+            storage_cleanup_interval_ms: 60_000,
+        }
+    }
+
+    /// Production storage settings (persistent)
+    pub fn production() -> Self {
+        Self {
+            storage_path: Some(PathBuf::from("./data/message_router")),
+            enable_persistence: true,
+            storage_cleanup_interval_ms: 3_600_000, // 1 hour
+        }
+    }
+
+    /// Testing storage settings
+    pub fn testing() -> Self {
+        Self {
+            storage_path: None,
+            enable_persistence: false,
+            storage_cleanup_interval_ms: 30_000,
+        }
+    }
+}
+
+impl Default for StorageConfig {
+    fn default() -> Self {
+        Self::development()
+    }
+}
+
 /// Complete router configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::struct_excessive_bools)]
 pub struct RouterConfig {
     // Core routing settings
     pub inbound_queue_size: ChannelCapacity,
@@ -62,27 +255,85 @@ pub struct RouterConfig {
     // Health monitoring
     pub health_check_interval_ms: HealthCheckIntervalMs,
 
-    // Observability
-    pub trace_sampling_ratio: TraceSamplingRatio,
-    pub enable_metrics: bool,
-    pub enable_detailed_logs: bool,
+    // Grouped configuration settings
+    pub observability: ObservabilityConfig,
+    pub storage: StorageConfig,
+    pub performance: PerformanceConfig,
+    pub security: SecurityConfig,
+}
 
-    // Storage settings
-    pub storage_path: Option<PathBuf>,
-    pub enable_persistence: bool,
-    pub storage_cleanup_interval_ms: u64,
+impl RouterConfig {
+    // Backward compatibility methods for deprecated fields
 
-    // Performance tuning
-    pub enable_batching: bool,
-    pub enable_connection_pooling: bool,
-    pub connection_pool_size: usize,
-    pub enable_compression: bool,
+    /// Backward compatibility: get trace sampling ratio
+    pub fn trace_sampling_ratio(&self) -> TraceSamplingRatio {
+        self.observability.trace_sampling_ratio
+    }
 
-    // Security
-    pub enable_message_validation: bool,
-    pub max_message_size_bytes: usize,
-    pub enable_rate_limiting: bool,
-    pub rate_limit_messages_per_second: usize,
+    /// Backward compatibility: check if metrics are enabled
+    pub fn enable_metrics(&self) -> bool {
+        self.observability.enable_metrics
+    }
+
+    /// Backward compatibility: check if detailed logs are enabled
+    pub fn enable_detailed_logs(&self) -> bool {
+        self.observability.enable_detailed_logs
+    }
+
+    /// Backward compatibility: get storage path
+    pub fn storage_path(&self) -> Option<&PathBuf> {
+        self.storage.storage_path.as_ref()
+    }
+
+    /// Backward compatibility: check if persistence is enabled
+    pub fn enable_persistence(&self) -> bool {
+        self.storage.enable_persistence
+    }
+
+    /// Backward compatibility: get storage cleanup interval
+    pub fn storage_cleanup_interval_ms(&self) -> u64 {
+        self.storage.storage_cleanup_interval_ms
+    }
+
+    /// Backward compatibility: check if batching is enabled
+    pub fn enable_batching(&self) -> bool {
+        self.performance.enable_batching
+    }
+
+    /// Backward compatibility: check if connection pooling is enabled
+    pub fn enable_connection_pooling(&self) -> bool {
+        self.performance.enable_connection_pooling
+    }
+
+    /// Backward compatibility: get connection pool size
+    pub fn connection_pool_size(&self) -> usize {
+        self.performance.connection_pool_size
+    }
+
+    /// Backward compatibility: check if compression is enabled
+    pub fn enable_compression(&self) -> bool {
+        self.performance.enable_compression
+    }
+
+    /// Backward compatibility: check if message validation is enabled
+    pub fn enable_message_validation(&self) -> bool {
+        self.security.enable_message_validation
+    }
+
+    /// Backward compatibility: get max message size
+    pub fn max_message_size_bytes(&self) -> usize {
+        self.security.max_message_size_bytes
+    }
+
+    /// Backward compatibility: check if rate limiting is enabled
+    pub fn enable_rate_limiting(&self) -> bool {
+        self.security.enable_rate_limiting
+    }
+
+    /// Backward compatibility: get rate limit
+    pub fn rate_limit_messages_per_second(&self) -> usize {
+        self.security.rate_limit_messages_per_second
+    }
 }
 
 impl RouterConfig {
@@ -122,27 +373,11 @@ impl RouterConfig {
             // Health monitoring - frequent checks
             health_check_interval_ms: HealthCheckIntervalMs::try_new(10_000).unwrap(),
 
-            // Observability - high for debugging
-            trace_sampling_ratio: TraceSamplingRatio::try_new(1.0).unwrap(), // 100% sampling
-            enable_metrics: true,
-            enable_detailed_logs: true,
-
-            // Storage - in-memory for development
-            storage_path: None,
-            enable_persistence: false,
-            storage_cleanup_interval_ms: 60_000,
-
-            // Performance - focus on observability over performance
-            enable_batching: true,
-            enable_connection_pooling: false,
-            connection_pool_size: 5,
-            enable_compression: false,
-
-            // Security - relaxed for development
-            enable_message_validation: true,
-            max_message_size_bytes: 1_048_576, // 1MB
-            enable_rate_limiting: false,
-            rate_limit_messages_per_second: 1000,
+            // Grouped configurations
+            observability: ObservabilityConfig::development(),
+            storage: StorageConfig::development(),
+            performance: PerformanceConfig::development(),
+            security: SecurityConfig::development(),
         }
     }
 
@@ -182,27 +417,11 @@ impl RouterConfig {
             // Health monitoring - less frequent to reduce overhead
             health_check_interval_ms: HealthCheckIntervalMs::try_new(60_000).unwrap(),
 
-            // Observability - sampled for performance
-            trace_sampling_ratio: TraceSamplingRatio::try_new(0.01).unwrap(), // 1% sampling
-            enable_metrics: true,
-            enable_detailed_logs: false,
-
-            // Storage - persistent for production
-            storage_path: Some(PathBuf::from("./data/message_router")),
-            enable_persistence: true,
-            storage_cleanup_interval_ms: 3_600_000, // 1 hour
-
-            // Performance - all optimizations enabled
-            enable_batching: true,
-            enable_connection_pooling: true,
-            connection_pool_size: 50,
-            enable_compression: true,
-
-            // Security - strict validation and limits
-            enable_message_validation: true,
-            max_message_size_bytes: 10_485_760, // 10MB
-            enable_rate_limiting: true,
-            rate_limit_messages_per_second: 10_000,
+            // Grouped configurations
+            observability: ObservabilityConfig::production(),
+            storage: StorageConfig::production(),
+            performance: PerformanceConfig::production(),
+            security: SecurityConfig::production(),
         }
     }
 
@@ -281,7 +500,7 @@ impl RouterConfig {
         }
 
         // Validate storage path if persistence enabled
-        if self.enable_persistence && self.storage_path.is_none() {
+        if self.storage.enable_persistence && self.storage.storage_path.is_none() {
             return Err(ConfigError::ValidationError {
                 field: "storage_path".to_string(),
                 reason: "Must specify storage path when persistence is enabled".to_string(),
@@ -289,7 +508,7 @@ impl RouterConfig {
         }
 
         // Validate rate limiting settings
-        if self.enable_rate_limiting && self.rate_limit_messages_per_second == 0 {
+        if self.security.enable_rate_limiting && self.security.rate_limit_messages_per_second == 0 {
             return Err(ConfigError::ValidationError {
                 field: "rate_limit_messages_per_second".to_string(),
                 reason: "Must be greater than 0 when rate limiting is enabled".to_string(),
@@ -336,23 +555,11 @@ impl RouterConfig {
 
             health_check_interval_ms: HealthCheckIntervalMs::try_new(5_000).unwrap(),
 
-            trace_sampling_ratio: TraceSamplingRatio::try_new(0.0).unwrap(), // No tracing in tests
-            enable_metrics: false,
-            enable_detailed_logs: false,
-
-            storage_path: None,
-            enable_persistence: false,
-            storage_cleanup_interval_ms: 30_000,
-
-            enable_batching: false,
-            enable_connection_pooling: false,
-            connection_pool_size: 1,
-            enable_compression: false,
-
-            enable_message_validation: true,
-            max_message_size_bytes: 1024,
-            enable_rate_limiting: false,
-            rate_limit_messages_per_second: 100,
+            // Grouped configurations
+            observability: ObservabilityConfig::testing(),
+            storage: StorageConfig::testing(),
+            performance: PerformanceConfig::testing(),
+            security: SecurityConfig::testing(),
         }
     }
 }
@@ -426,61 +633,85 @@ impl RouterConfigBuilder {
 
     /// Sets the trace sampling ratio
     pub fn trace_sampling_ratio(mut self, ratio: TraceSamplingRatio) -> Self {
-        self.config.trace_sampling_ratio = ratio;
+        self.config.observability.trace_sampling_ratio = ratio;
         self
     }
 
     /// Enables or disables persistence
     pub fn enable_persistence(mut self, enable: bool) -> Self {
-        self.config.enable_persistence = enable;
+        self.config.storage.enable_persistence = enable;
         self
     }
 
     /// Sets the storage path
     pub fn storage_path<P: Into<PathBuf>>(mut self, path: P) -> Self {
-        self.config.storage_path = Some(path.into());
+        self.config.storage.storage_path = Some(path.into());
         self
     }
 
     /// Enables or disables batching
     pub fn enable_batching(mut self, enable: bool) -> Self {
-        self.config.enable_batching = enable;
+        self.config.performance.enable_batching = enable;
         self
     }
 
     /// Enables or disables connection pooling
     pub fn enable_connection_pooling(mut self, enable: bool) -> Self {
-        self.config.enable_connection_pooling = enable;
+        self.config.performance.enable_connection_pooling = enable;
         self
     }
 
     /// Sets the connection pool size
     pub fn connection_pool_size(mut self, size: usize) -> Self {
-        self.config.connection_pool_size = size;
+        self.config.performance.connection_pool_size = size;
         self
     }
 
     /// Enables or disables metrics
     pub fn enable_metrics(mut self, enable: bool) -> Self {
-        self.config.enable_metrics = enable;
+        self.config.observability.enable_metrics = enable;
         self
     }
 
     /// Enables or disables detailed logging
     pub fn enable_detailed_logs(mut self, enable: bool) -> Self {
-        self.config.enable_detailed_logs = enable;
+        self.config.observability.enable_detailed_logs = enable;
         self
     }
 
     /// Enables or disables rate limiting
     pub fn enable_rate_limiting(mut self, enable: bool) -> Self {
-        self.config.enable_rate_limiting = enable;
+        self.config.security.enable_rate_limiting = enable;
         self
     }
 
     /// Sets the rate limit
     pub fn rate_limit_messages_per_second(mut self, rate: usize) -> Self {
-        self.config.rate_limit_messages_per_second = rate;
+        self.config.security.rate_limit_messages_per_second = rate;
+        self
+    }
+
+    /// Sets the entire observability configuration
+    pub fn observability(mut self, observability: ObservabilityConfig) -> Self {
+        self.config.observability = observability;
+        self
+    }
+
+    /// Sets the entire storage configuration
+    pub fn storage(mut self, storage: StorageConfig) -> Self {
+        self.config.storage = storage;
+        self
+    }
+
+    /// Sets the entire performance configuration
+    pub fn performance(mut self, performance: PerformanceConfig) -> Self {
+        self.config.performance = performance;
+        self
+    }
+
+    /// Sets the entire security configuration
+    pub fn security(mut self, security: SecurityConfig) -> Self {
+        self.config.security = security;
         self
     }
 
@@ -531,7 +762,7 @@ mod tests {
 
         assert_eq!(config.inbound_queue_size.as_usize(), 5000);
         assert_eq!(config.message_timeout_ms.as_u64(), 15000);
-        assert!(!config.enable_persistence);
+        assert!(!config.enable_persistence());
     }
 
     #[test]
@@ -560,7 +791,10 @@ mod tests {
 
         assert_eq!(config.inbound_queue_size, deserialized.inbound_queue_size);
         assert_eq!(config.message_timeout_ms, deserialized.message_timeout_ms);
-        assert_eq!(config.enable_persistence, deserialized.enable_persistence);
+        assert_eq!(
+            config.enable_persistence(),
+            deserialized.enable_persistence()
+        );
     }
 
     #[test]
