@@ -1,0 +1,166 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, beta, nightly]
+        # Allow beta and nightly failures
+        include:
+          - os: ubuntu-latest
+            toolchain: stable
+            deny-warnings: true
+          - os: macos-latest
+            toolchain: stable
+            deny-warnings: true
+          - os: windows-latest
+            toolchain: stable
+            deny-warnings: true
+        exclude:
+          # Reduce CI load by testing beta/nightly only on Linux
+          - os: macos-latest
+            toolchain: beta
+          - os: windows-latest
+            toolchain: beta
+          - os: macos-latest
+            toolchain: nightly
+          - os: windows-latest
+            toolchain: nightly
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.toolchain }}
+        components: clippy, rustfmt
+
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.toolchain }}-cargo-
+          ${{ runner.os }}-cargo-
+
+    - name: Install cargo-nextest
+      run: |
+        # Check if cargo-nextest is already installed (from cache)
+        if ! command -v cargo-nextest &> /dev/null; then
+          echo "Installing cargo-nextest..."
+          cargo install cargo-nextest --locked || cargo install cargo-nextest
+        else
+          echo "cargo-nextest already installed"
+        fi
+      shell: bash
+
+    - name: Install cargo-audit
+      run: |
+        # Check if cargo-audit is already installed (from cache)
+        if ! command -v cargo-audit &> /dev/null; then
+          echo "Installing cargo-audit..."
+          cargo install cargo-audit --locked || cargo install cargo-audit
+        else
+          echo "cargo-audit already installed"
+        fi
+      shell: bash
+
+    - name: Check code formatting
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy (treat warnings as errors on stable)
+      run: |
+        if [ "${{ matrix.toolchain }}" = "stable" ] && [ "${{ matrix.deny-warnings }}" = "true" ]; then
+          cargo clippy --all-targets --all-features -- -D warnings
+        else
+          cargo clippy --all-targets --all-features
+        fi
+      shell: bash
+
+    - name: Build project
+      run: cargo build --verbose
+
+    - name: Build documentation
+      run: cargo doc --no-deps --all-features
+
+    - name: Run security audit
+      run: cargo audit
+
+    - name: Run tests
+      run: cargo nextest run --nocapture
+
+  # Ensure we can still build without nextest
+  test-fallback:
+    name: Test with standard cargo test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Run tests with cargo test
+      run: cargo test
+
+  # Performance regression testing
+  benchmark:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: benchmark-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Run existing benchmarks
+      run: |
+        # Check if benches directory exists and run benchmarks
+        if [ -d "benches" ] && [ "$(ls -A benches/)" ]; then
+          echo "Running existing benchmarks..."
+          cargo bench --no-run
+          cargo bench 2>&1 | tee benchmark-results.txt
+        else
+          echo "No benchmarks found. Benchmark implementation should be done in a separate story."
+          echo "This job serves as a placeholder for future benchmark integration."
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: success() && hashFiles('benchmark-results.txt') != ''
+      with:
+        name: benchmark-results
+        path: benchmark-results.txt

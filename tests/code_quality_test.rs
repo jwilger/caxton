@@ -158,6 +158,75 @@ fn find_clippy_allows(dir_path: &str) -> Vec<String> {
     allows
 }
 
+#[test]
+fn test_ci_workflow_configuration() {
+    use std::path::Path;
+
+    // Test CI workflow exists and contains required matrix configuration
+    const CI_WORKFLOW_PATH: &str = ".github/workflows/ci.yml";
+    let ci_path = Path::new(CI_WORKFLOW_PATH);
+    assert!(
+        ci_path.exists(),
+        "CI workflow file must exist at {CI_WORKFLOW_PATH}"
+    );
+
+    let ci_content = std::fs::read_to_string(ci_path)
+        .unwrap_or_else(|e| panic!("Should be able to read CI workflow file: {e}"));
+
+    // Verify matrix testing across platforms
+    verify_ci_contains_required_platforms(&ci_content);
+    verify_ci_contains_required_rust_versions(&ci_content);
+    verify_ci_contains_required_tools(&ci_content);
+}
+
+fn verify_ci_contains_required_platforms(ci_content: &str) {
+    const REQUIRED_PLATFORMS: &[(&str, &str)] = &[
+        ("ubuntu-latest", "Linux"),
+        ("macos-latest", "macOS"),
+        ("windows-latest", "Windows"),
+    ];
+
+    assert!(
+        ci_content.contains("matrix:"),
+        "CI workflow must use matrix strategy for cross-platform testing"
+    );
+
+    for &(platform, display_name) in REQUIRED_PLATFORMS {
+        assert!(
+            ci_content.contains(platform),
+            "CI must test on {display_name} using {platform}"
+        );
+    }
+}
+
+fn verify_ci_contains_required_rust_versions(ci_content: &str) {
+    const REQUIRED_RUST_VERSIONS: &[&str] = &["stable", "beta", "nightly"];
+
+    for &version in REQUIRED_RUST_VERSIONS {
+        assert!(
+            ci_content.contains(version),
+            "CI must test {version} Rust version for compatibility"
+        );
+    }
+}
+
+fn verify_ci_contains_required_tools(ci_content: &str) {
+    const REQUIRED_TOOLS: &[(&str, &str)] = &[
+        ("cargo-nextest", "fast test execution"),
+        ("clippy", "linting"),
+        ("cargo fmt", "code formatting"),
+        ("cargo doc", "documentation building"),
+        ("cargo-audit", "security vulnerability scanning"),
+    ];
+
+    for &(tool, purpose) in REQUIRED_TOOLS {
+        assert!(
+            ci_content.contains(tool),
+            "CI must use {tool} for {purpose}"
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
