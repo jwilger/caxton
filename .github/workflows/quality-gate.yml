@@ -1,4 +1,4 @@
-name: Code Quality Gate
+name: "Code Quality Gate"
 
 on:
   push:
