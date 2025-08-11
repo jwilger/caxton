@@ -53,8 +53,7 @@
             echo "Available tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit"
             echo ""
 
-            # Set up git safety wrapper - rename git-safe to git
-            cp "$PWD/scripts/git-safe" "$PWD/scripts/git" 2>/dev/null || true
+            # Set up git safety wrapper
             chmod +x "$PWD/scripts/git" 2>/dev/null || true
             export PATH="$PWD/scripts:$PATH"
 
