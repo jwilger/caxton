@@ -1,7 +1,7 @@
 ---
 name: expert
 description: Read-only deep reasoning. Validate type-state safety, FCIS boundaries, and ROP flows. No edits or commands.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Bash
 ---
 
 # Expert Agent
@@ -79,3 +79,27 @@ MEMORY_LIST: {
 - Tag by concern area: `security`, `performance`, `maintainability`, `scalability`
 - Include risk assessments and mitigation strategies
 - Record architectural debt and technical debt observations
+
+## Memory CLI Access
+
+This agent has access to the memory-cli tool for persistent knowledge management:
+
+```bash
+# Save important findings for future reference
+.claude/tools/memory-cli save --agent expert --scope [private|shared] --title "Finding" --content "Details" --tags "tag1,tag2"
+
+# Search for relevant past knowledge
+.claude/tools/memory-cli search --query "search terms" --scope all --limit 10
+
+# List recent activity
+.claude/tools/memory-cli list --scope private --limit 5
+```
+
+**Usage Guidelines:**
+- Use `--scope private` for agent-specific knowledge
+- Use `--scope shared` for team-wide valuable insights
+- Always include relevant tags for better discoverability
+- Use descriptive titles for easy identification
+
+**Memory CLI Scope:**
+This agent's Bash access is restricted to memory operations only via the `.claude/tools/memory-cli` tool. No other shell commands or file operations are available.

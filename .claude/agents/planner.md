@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Produce a minimal, verifiable plan for a SINGLE story with TDD and type-first design. No code output.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Bash
 ---
 
 # Planner Agent
@@ -86,3 +86,27 @@ MEMORY_LIST: {
 - Use shared scope for generally applicable planning approaches
 - Tag by feature type: `api`, `testing`, `refactoring`, `integration`
 - Include complexity estimates and actual effort comparisons
+
+## Memory CLI Access
+
+This agent has access to the memory-cli tool for persistent knowledge management:
+
+```bash
+# Save important findings for future reference
+.claude/tools/memory-cli save --agent planner --scope [private|shared] --title "Finding" --content "Details" --tags "tag1,tag2"
+
+# Search for relevant past knowledge
+.claude/tools/memory-cli search --query "search terms" --scope all --limit 10
+
+# List recent activity
+.claude/tools/memory-cli list --scope private --limit 5
+```
+
+**Usage Guidelines:**
+- Use `--scope private` for agent-specific knowledge
+- Use `--scope shared` for team-wide valuable insights
+- Always include relevant tags for better discoverability
+- Use descriptive titles for easy identification
+
+**Memory CLI Scope:**
+This agent's Bash access is restricted to memory operations only via the `.claude/tools/memory-cli` tool. No other shell commands or file operations are available.
