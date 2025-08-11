@@ -229,9 +229,9 @@ PRs created in **draft status only** - humans control ready-for-review.
 
 Primary commands:
 - `/sparc` - Full story workflow with PR integration
-- `/sparc:pr` - Create draft PR for completed story
-- `/sparc:review` - Respond to PR feedback
-- `/sparc:status` - Check branch/PR/story status
+- `/sparc/pr` - Create draft PR for completed story
+- `/sparc/review` - Respond to PR feedback
+- `/sparc/status` - Check branch/PR/story status
 
 Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, pr-manager.
 

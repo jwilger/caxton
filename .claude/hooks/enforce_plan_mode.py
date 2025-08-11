@@ -27,7 +27,7 @@ def main():
     if not plan_ok:
         print(json.dumps({
             "block": True,
-            "message": "No approved plan found. Run /sparc:plan, review, then create .claude/plan.approved"
+            "message": "No approved plan found. Run /sparc/plan, review, then create .claude/plan.approved"
         }))
     else:
         print(json.dumps({"block": False}))
