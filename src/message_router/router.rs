@@ -429,14 +429,13 @@ impl MessageRouterImpl {
         );
 
         // Update conversation if this is part of one
-        if let Some(conversation_id) = task.message.conversation_id {
-            if let Err(e) = conversation_manager
+        if let Some(conversation_id) = task.message.conversation_id
+            && let Err(e) = conversation_manager
                 .update_conversation(conversation_id, &task.message)
                 .await
-            {
-                warn!("Failed to update conversation {}: {:?}", conversation_id, e);
-                // Don't fail the routing for conversation update failures
-            }
+        {
+            warn!("Failed to update conversation {}: {:?}", conversation_id, e);
+            // Don't fail the routing for conversation update failures
         }
 
         // Look up the destination agent
@@ -1198,10 +1197,10 @@ impl ConversationManager for ConversationManagerImpl {
 
         for entry in &self.conversations {
             let conversation = entry.value();
-            if let Ok(elapsed) = conversation.last_activity.as_system_time().elapsed() {
-                if elapsed > timeout {
-                    expired_ids.push(*entry.key());
-                }
+            if let Ok(elapsed) = conversation.last_activity.as_system_time().elapsed()
+                && elapsed > timeout
+            {
+                expired_ids.push(*entry.key());
             }
         }
 

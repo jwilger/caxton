@@ -124,13 +124,12 @@ fn find_clippy_allows(dir_path: &str) -> Vec<String> {
             dir_path,
         ])
         .output()
+        && output.status.success()
     {
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
-                if !line.trim().is_empty() {
-                    allows.push(format!("  ITEM-LEVEL: {}", line.trim()));
-                }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if !line.trim().is_empty() {
+                allows.push(format!("  ITEM-LEVEL: {}", line.trim()));
             }
         }
     }
@@ -144,13 +143,12 @@ fn find_clippy_allows(dir_path: &str) -> Vec<String> {
             dir_path,
         ])
         .output()
+        && output.status.success()
     {
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
-                if !line.trim().is_empty() {
-                    allows.push(format!("  CRATE-LEVEL: {}", line.trim()));
-                }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if !line.trim().is_empty() {
+                allows.push(format!("  CRATE-LEVEL: {}", line.trim()));
             }
         }
     }

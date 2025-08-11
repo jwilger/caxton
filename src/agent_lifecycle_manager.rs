@@ -615,10 +615,10 @@ impl AgentLifecycleManager {
                 agent_lifecycle.version_number = to_version_number;
 
                 // Ensure agent is in running state after successful hot reload
-                if agent_lifecycle.current_state != AgentLifecycleState::Running {
-                    if let Err(e) = agent_lifecycle.start() {
-                        warn!("Failed to start agent after hot reload: {}", e);
-                    }
+                if agent_lifecycle.current_state != AgentLifecycleState::Running
+                    && let Err(e) = agent_lifecycle.start()
+                {
+                    warn!("Failed to start agent after hot reload: {}", e);
                 }
             } else {
                 let failure_reason = AgentFailureReason::try_new(
@@ -860,11 +860,11 @@ impl AgentLifecycleManager {
         info!("Removing agent: {}", agent_id);
 
         // First stop the agent if it's running
-        if let Ok(lifecycle) = self.get_agent_lifecycle(agent_id).await {
-            if lifecycle.current_state.is_active() {
-                self.stop_agent(agent_id, Some(Duration::from_secs(30)))
-                    .await?;
-            }
+        if let Ok(lifecycle) = self.get_agent_lifecycle(agent_id).await
+            && lifecycle.current_state.is_active()
+        {
+            self.stop_agent(agent_id, Some(Duration::from_secs(30)))
+                .await?;
         }
 
         // Clean up deployed resources through deployment manager

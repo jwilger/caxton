@@ -23,7 +23,7 @@ pub use crate::domain_types::{AgentId, AgentName, MessageCount, MessageSize};
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct MessageId(Uuid);
@@ -46,7 +46,7 @@ impl MessageId {
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct ConversationId(Uuid);
@@ -69,7 +69,7 @@ impl ConversationId {
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct NodeId(Uuid);

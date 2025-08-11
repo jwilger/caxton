@@ -20,7 +20,7 @@ use uuid::Uuid;
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct AgentId(Uuid);
@@ -335,7 +335,7 @@ impl MaxExports {
         Deserialize,
         Display,
         Default,
-        TryFrom,
+        From,
         Into
     ),
     default = 0
