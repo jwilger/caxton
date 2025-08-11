@@ -160,9 +160,7 @@ impl WasmRuntime {
         }
 
         wasm_config.parallel_compilation(true);
-        wasm_config
-            .cache_config_load_default()
-            .context("Failed to load cache config")?;
+        // Cache configuration is now handled automatically in wasmtime 35.0+
 
         let engine = Arc::new(Engine::new(&wasm_config).context("Failed to create WASM engine")?);
 
