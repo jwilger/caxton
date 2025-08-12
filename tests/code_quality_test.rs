@@ -5,6 +5,23 @@
 use std::{collections::HashSet, fs};
 
 #[test]
+fn test_ci_workflows_use_rust_toolchain_toml() {
+    // CI workflows should use actions-rust-lang/setup-rust-toolchain@v1
+    // and let it read rust-toolchain.toml instead of hardcoding toolchain versions
+    let workflow_violations = find_ci_workflow_violations();
+
+    assert!(
+        workflow_violations.is_empty(),
+        "Found {} CI workflow violations:\n{}\n\
+        \n\
+        CI workflows should use actions-rust-lang/setup-rust-toolchain@v1 \
+        without explicit toolchain parameters to respect rust-toolchain.toml",
+        workflow_violations.len(),
+        workflow_violations.join("\n")
+    );
+}
+
+#[test]
 fn test_no_clippy_allow_attributes() {
     // Search for clippy allow attributes in src/ and tests/
     let src_allows = find_clippy_allows("src/");
@@ -199,6 +216,45 @@ fn extract_clippy_allows_from_content(content: &str, file_path: &str) -> Vec<Str
     }
 
     allows
+}
+
+/// Find CI workflow violations where toolchain is hardcoded instead of using rust-toolchain.toml
+fn find_ci_workflow_violations() -> Vec<String> {
+    let mut violations = Vec::new();
+
+    // Check all workflow files in .github/workflows/
+    let workflow_files = [
+        ".github/workflows/quality-gate.yml",
+        ".github/workflows/build-artifacts.yml",
+        ".github/workflows/security-monitoring.yml",
+    ];
+
+    for workflow_path in &workflow_files {
+        if let Ok(content) = fs::read_to_string(workflow_path) {
+            // Check for dtolnay/rust-toolchain usage (should be replaced)
+            if content.contains("dtolnay/rust-toolchain") {
+                violations.push(format!(
+                    "{workflow_path}: Uses dtolnay/rust-toolchain instead of actions-rust-lang/setup-rust-toolchain@v1"
+                ));
+            }
+
+            // Check for explicit toolchain specifications
+            if content.contains("toolchain:") && content.contains("stable") {
+                violations.push(format!(
+                    "{workflow_path}: Has explicit toolchain specification instead of using rust-toolchain.toml"
+                ));
+            }
+
+            // Check for manual caching (should be removed since new action has built-in caching)
+            if content.contains("actions/cache@v4") && content.contains("cargo") {
+                violations.push(format!(
+                    "{workflow_path}: Uses manual cargo caching instead of built-in caching from setup-rust-toolchain"
+                ));
+            }
+        }
+    }
+
+    violations
 }
 
 #[cfg(test)]
