@@ -166,14 +166,14 @@ fn find_clippy_allows_recursive(dir_path: &str, visited_dirs: &mut HashSet<Strin
 
         if path.is_file() {
             // Only process Rust files
-            if let Some(ext) = path.extension() {
-                if ext == "rs" {
-                    if let Ok(content) = fs::read_to_string(&path) {
-                        let file_path = path.display().to_string();
-                        allows.extend(extract_clippy_allows_from_content(&content, &file_path));
-                    }
-                    // If file can't be read, skip it gracefully (no explicit continue needed)
+            if let Some(ext) = path.extension()
+                && ext == "rs"
+            {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    let file_path = path.display().to_string();
+                    allows.extend(extract_clippy_allows_from_content(&content, &file_path));
                 }
+                // If file can't be read, skip it gracefully (no explicit continue needed)
             }
         } else if path.is_dir() {
             // Recursively search subdirectories with cycle detection
