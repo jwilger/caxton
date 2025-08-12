@@ -272,12 +272,12 @@ pub struct RouterConfig {
 /// maintaining sensible defaults for most environments.
 fn get_worker_thread_count_with_env_fallback() -> WorkerThreadCount {
     // Try to read from environment variable first
-    if let Ok(env_value) = std::env::var("CAXTON_WORKER_THREADS")
-        && let Ok(thread_count) = env_value.parse::<usize>()
-    {
-        // Validate the parsed value is within acceptable range (1-32)
-        if let Ok(validated_count) = WorkerThreadCount::try_new(thread_count) {
-            return validated_count;
+    if let Ok(env_value) = std::env::var("CAXTON_WORKER_THREADS") {
+        if let Ok(thread_count) = env_value.parse::<usize>() {
+            // Validate the parsed value is within acceptable range (1-32)
+            if let Ok(validated_count) = WorkerThreadCount::try_new(thread_count) {
+                return validated_count;
+            }
         }
     }
 
