@@ -68,6 +68,12 @@
               npx @anthropic-ai/claude-code install --force latest
             fi
 
+            # MCP Memory Server configured via 'claude mcp' command
+            echo "🧠 MCP Memory Server configured via Claude Code"
+            echo "   - Check status: claude mcp list"
+            echo "   - Memory file: .claude/sparc-memory.jsonl"
+            echo ""
+
             echo "📋 Common commands:"
             echo "  cargo nextest run    # Run tests with nextest"
             echo "  cargo watch -x test  # Auto-run tests on changes"
