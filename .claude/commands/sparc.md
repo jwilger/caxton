@@ -35,6 +35,7 @@ Execute the complete SPARC workflow directly, using specialized agents for each 
 3. **Route information requests** between agents as needed
 4. **Track workflow state** and enforce correct SPARC phase ordering
 5. **Interface with human** for approvals and decisions
+6. **ENFORCE MEMORY STORAGE** - Verify each agent stored knowledge before proceeding
 
 ## SPARC Workflow
 
@@ -60,7 +61,7 @@ Use Task tool with `pr-manager` agent:
 
 Use Task tool with `researcher` agent:
 
-- Research external dependencies (Rust tools: cargo-nextest, clippy, proptest, nutype)
+- Research external dependencies (Rust tools: cargo MCP server, clippy, proptest, nutype)
 - Gather authoritative sources and documentation
 - Return "Research Brief" with assumptions, key facts, and open questions
 
@@ -82,17 +83,31 @@ Use Task tool with `planner` agent:
 - If approved, delegate to `pr-manager` agent to write `.claude/plan.approved` with plan content
 - Block further progress until approved
 
-### E) IMPLEMENT
+### E) IMPLEMENT (TDD Cycle)
 
-Use Task tool with `implementer` agent:
+**RED Phase** - Use Task tool with `red-implementer` agent:
+- Write exactly ONE failing test that captures the next behavior
+- Use `unimplemented!()` to force clear failure
+- Verify test fails for the right reason
+- Create `.claude/tdd.red` state file
+- Store test patterns in MCP memory
 
-- **RED**: Add one failing test (`#[test]` that fails with `unimplemented!()`)
-- **GREEN**: Minimal change to pass the test
-- **REFACTOR**: Remove duplication; keep core pure, shell minimal
-- **TYPE PASS**: Use Task tool with `type-architect` to replace primitives with nutype domain types
-- **LINT/FORMAT**: Run `cargo clippy -- -D warnings` and `cargo fmt`
-- **TEST**: Run `cargo nextest run --nocapture`
+**GREEN Phase** - Use Task tool with `green-implementer` agent:
+- Implement minimal code to make the failing test pass
+- Use simplest possible solution (fake it 'til you make it)
+- Verify test passes and no existing tests break
+- Create `.claude/tdd.green` state file
+- Store minimal implementation patterns in MCP memory
+
+**REFACTOR Phase** - Use Task tool with `refactor-implementer` agent:
+- Remove duplication and improve code structure
+- Extract pure functions (functional core / imperative shell)
+- Keep all tests green throughout refactoring
+- Use cargo MCP server for `cargo_clippy` and `cargo_fmt_check`
+- Store refactoring patterns in MCP memory
 - **COMMIT**: Create descriptive commit with Claude Code attribution
+
+**TYPE PASS**: Use Task tool with `type-architect` to replace primitives with nutype domain types
 
 ### F) TEST-HARDENING
 
@@ -100,7 +115,7 @@ Use Task tool with `test-hardener` agent:
 
 - For each test added/changed, propose type/API changes that make failures impossible at compile time
 - If safe, implement type changes with small diffs
-- Update call sites and re-run clippy + nextest
+- Update call sites and re-run cargo MCP server `cargo_clippy` and `cargo_test`
 
 ### G) EXPERT CHECK (Optional)
 
@@ -122,7 +137,7 @@ Use Task tool with `pr-manager` agent:
 
 Use Task tool with `pr-manager` agent:
 
-- Monitor for PR comments via `gh pr view`
+- Monitor for PR comments via GitHub MCP server tools
 - Respond with Claude Code attribution
 - Address requested changes using TDD discipline
 - Create follow-up commits as needed
@@ -138,6 +153,19 @@ Use Task tool with `pr-manager` agent:
 ## Completion Summary
 
 **Coordinator presents final summary to user**
+
+### Memory Storage Verification
+
+**MANDATORY FINAL STEP**: Verify all agents stored their knowledge:
+1. Check that research findings were stored
+2. Confirm planning decisions were captured
+3. Verify RED, GREEN, and REFACTOR implementation patterns were saved
+4. Ensure type improvements were documented
+5. Confirm test hardening insights were stored
+6. Verify expert analysis was preserved
+7. Ensure PR workflow patterns were captured
+
+**If any agent failed to store knowledge, request immediate remediation before marking story complete.**
 
 ## Information Request Routing Protocol
 
@@ -174,7 +202,9 @@ Agents will format information requests as:
 
 - `researcher` → External docs, APIs, dependencies, best practices
 - `planner` → Architecture decisions, implementation strategies, TDD plans
-- `implementer` → Code structure, existing implementations, test patterns
+- `red-implementer` → Test writing, behavior capture, failure specification
+- `green-implementer` → Minimal implementations, test satisfaction, simple solutions
+- `refactor-implementer` → Code improvement, FCIS architecture, duplication removal
 - `type-architect` → Domain types, type safety, API design
 - `test-hardener` → Test coverage, invariants, property-based tests
 - `expert` → Code review, soundness validation, optimization
@@ -237,12 +267,12 @@ type-architect proposes complex type design
 → type-architect refines design
 ```
 
-### Pattern 3: Test-Hardener → Implementer
+### Pattern 3: Test-Hardener → Refactor-Implementer
 
 ```text
 test-hardener needs existing code patterns
-→ coordinator routes to implementer for code analysis
-→ implementer provides pattern analysis
+→ coordinator routes to refactor-implementer for code analysis
+→ refactor-implementer provides pattern analysis and structure insights
 → coordinator relays to test-hardener
 → test-hardener proposes type improvements
 ```
@@ -356,10 +386,27 @@ Coordinator action:
 ## Critical Rules
 
 - Follow Kent Beck TDD discipline strictly: Red→Green→Refactor
-- Use `cargo nextest run` for all testing
+- Use cargo MCP server `cargo_test` for all testing
 - Treat clippy warnings as errors (`-- -D warnings`)
 - **NEVER** add clippy allow attributes without explicit team approval
 - All new domain types must use nutype with sanitize/validate
 - Maintain functional core / imperative shell boundaries
 - Use Result/thiserror for error handling railway
 - All commits include Claude Code attribution
+- **MANDATORY MEMORY STORAGE**: Every agent MUST store knowledge after significant actions
+
+## Memory Storage Enforcement
+
+**CRITICAL**: After each agent completes a phase, you MUST verify they stored knowledge:
+
+- **Researcher**: Must store research findings, sources, and patterns
+- **Planner**: Must store planning decisions, strategies, and rationale
+- **Red-Implementer**: Must store test patterns, behavior capture techniques, and failure strategies
+- **Green-Implementer**: Must store minimal implementation patterns, solution strategies, and test satisfaction approaches
+- **Refactor-Implementer**: Must store refactoring patterns, FCIS improvements, and code quality enhancements
+- **Type-Architect**: Must store domain type designs, validation patterns, and decisions
+- **Test-Hardener**: Must store test improvements and type strengthening patterns
+- **Expert**: Must store architectural insights, quality patterns, and reviews
+- **PR-Manager**: Must store workflow patterns, PR strategies, and outcomes
+
+If an agent fails to store knowledge, **immediately request they do so before continuing**.

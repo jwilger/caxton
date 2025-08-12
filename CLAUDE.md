@@ -188,7 +188,7 @@ pub struct AgentName(String);
 Testing Discipline (Kent Beck)
 Work in strict Red → Green → Refactor loops with one failing test at a time.
 
-Use cargo nextest run for all tests; treat clippy warnings as errors.
+Use `mcp__cargo__cargo_test` for all tests; treat clippy warnings as errors.
 
 Functional Core / Imperative Shell
 Put pure logic in the core (no I/O, no mutation beyond local scope).
@@ -205,10 +205,22 @@ The SPARC workflow integrates with GitHub pull requests to ensure professional d
 
 1. **Story Selection**: Choose from PLANNING.md
 2. **Branch Creation**: `story-{id}-{slug}` feature branches
-3. **Standard SPARC**: Research → Plan → Implement → Expert
+3. **Standard SPARC**: Research → Plan → Implement → Expert (with mandatory memory storage)
 4. **PR Creation**: Draft PRs with comprehensive descriptions
 5. **Review Loop**: Address feedback with Claude Code attribution
 6. **Human Merge**: Only humans mark PRs ready-for-review
+
+### MANDATORY Memory Storage (CRITICAL)
+
+**Every SPARC phase MUST store knowledge in MCP memory for systematic improvement:**
+
+- **Research Phase**: MUST store findings, sources, patterns, and API documentation
+- **Planning Phase**: MUST store strategies, decisions, task breakdowns, and rationale
+- **Implementation Phase**: MUST store TDD cycles, type improvements, patterns, and solutions
+- **Expert Review Phase**: MUST store insights, quality patterns, and architectural analysis
+- **PR Management**: MUST store workflow patterns, strategies, and outcomes
+
+**Knowledge not stored is knowledge lost. This is not optional and will be enforced by the SPARC orchestrator.**
 
 ### Branch Management
 
@@ -241,7 +253,7 @@ Primary commands:
 
 Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, pr-manager.
 
-After each story: run cargo clippy -- -D warnings, cargo fmt, and cargo nextest run.
+After each story: run `mcp__cargo__cargo_clippy`, `mcp__cargo__cargo_fmt_check`, and `mcp__cargo__cargo_test`.
 
 ### SPARC Coordinator Role (CRITICAL)
 
@@ -268,7 +280,9 @@ ALL actual work MUST be performed by the specialized subagents:
 
 - `researcher` - Gathers information and creates research briefs
 - `planner` - Creates implementation plans following TDD principles
-- `implementer` - Writes code following Red-Green-Refactor discipline
+- `red-implementer` - Writes failing tests that capture behavioral intent
+- `green-implementer` - Implements minimal code to make tests pass
+- `refactor-implementer` - Improves code structure while preserving behavior
 - `type-architect` - Designs domain types and type-state machines
 - `test-hardener` - Strengthens tests and proposes type improvements
 - `expert` - Reviews code for correctness and best practices
@@ -301,3 +315,9 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 - NEVER bypass pre-commit hooks with `--no-verify` unless it's a genuine emergency with team notification
 - ALWAYS fix clippy warnings instead of suppressing them
 - If facing many warnings, create a systematic cleanup story and plan - don't suppress them
+
+**CRITICAL MEMORY STORAGE RULES:**
+- EVERY agent MUST store knowledge after significant actions
+- Research findings, planning decisions, implementation patterns, and insights MUST be preserved
+- The SPARC orchestrator will enforce memory storage compliance
+- Knowledge not stored represents wasted learning opportunities and repeated mistakes

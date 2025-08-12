@@ -48,6 +48,8 @@
 
           # Configure development environment
           shellHook = ''
+            cargo install --locked cargo-mcp
+
             echo "🦀 Caxton Development Environment"
             echo "Rust version: $(rustc --version)"
             echo "Available tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit"

@@ -241,6 +241,71 @@ We're intentionally NOT building:
 
 These can all be built as libraries on top of Caxton's simple primitives.
 
+## Development
+
+### Claude Code Development Environment
+
+Caxton is developed using [Claude Code](https://claude.ai/code), Anthropic's official CLI for Claude. This provides:
+
+- **AI-Assisted Development**: Most code is written with Claude Code's assistance using the SPARC workflow
+- **Type-Driven Design**: Emphasis on making illegal states unrepresentable through Rust's type system
+- **Test-Driven Development**: Strict Red-Green-Refactor discipline following Kent Beck's practices
+- **Systematic Knowledge Building**: AI agents accumulate knowledge across development sessions
+
+### MCP Server Integration
+
+The development environment uses Model Context Protocol (MCP) servers for tool access:
+
+**Cargo MCP Server** (`cargo` namespace):
+- `cargo_test` - Run tests (replaces `cargo nextest run`)
+- `cargo_check`, `cargo_clippy`, `cargo_build` - Code quality and compilation
+- `cargo_add`, `cargo_remove`, `cargo_update` - Dependency management
+- `cargo_run` - Execute project binaries
+
+**Git MCP Server** (`git` namespace):
+- `git_status`, `git_diff`, `git_log` - Repository state
+- `git_add`, `git_commit`, `git_push` - Version control operations
+- `git_branch`, `git_checkout`, `git_merge` - Branch management
+
+**GitHub MCP Server** (`github` namespace):
+- `create_pull_request`, `update_pull_request` - PR management
+- `get_pull_request_status`, `list_pull_requests` - PR queries
+- `add_issue_comment`, `create_and_submit_pull_request_review` - Code reviews
+
+**SPARC Memory MCP Server** (`sparc-memory` namespace):
+- `create_entities`, `search_nodes`, `add_observations` - Knowledge storage
+- Accumulates development patterns, architectural insights, and lessons learned
+- Enables systematic improvement across development sessions
+
+### Development Workflow (SPARC)
+
+1. **Story Selection**: Pick from PLANNING.md backlog
+2. **Research**: AI agent researches unknowns and documents findings
+3. **Planning**: AI agent creates TDD implementation plan
+4. **Implementation**: Three specialized AI agents handle TDD phases:
+   - `red-implementer`: Writes failing tests
+   - `green-implementer`: Implements minimal passing code
+   - `refactor-implementer`: Improves code structure
+5. **Expert Review**: AI agent validates architecture and type safety
+6. **PR Creation**: AI agent creates draft PRs for human review
+
+### Setting Up Development Environment
+
+```bash
+# Install Claude Code
+curl -sSL https://claude.ai/install | sh
+
+# Clone the repository
+git clone https://github.com/caxton-ai/caxton.git
+cd caxton
+
+# The MCP servers are already configured in .claude/
+# Start development with SPARC workflow
+claude /sparc
+```
+
+All AI agents store knowledge in MCP memory, building institutional knowledge that improves development quality over time.
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
