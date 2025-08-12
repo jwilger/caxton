@@ -19,11 +19,11 @@
 //!
 //! ### Core Components
 //!
-//! - [`MessageRouter`](crate::message_router::MessageRouter): Central coordination hub for message routing
-//! - [`DeliveryEngine`](crate::message_router::DeliveryEngine): Handles actual message delivery (local/remote)
-//! - [`ConversationManager`](crate::message_router::ConversationManager): Manages multi-turn conversation state
-//! - [`AgentRegistry`](crate::message_router::AgentRegistry): O(1) agent lookup with capability indexing
-//! - [`FailureHandler`](crate::message_router::FailureHandler): Comprehensive error handling with retries and dead letter queue
+//! - [`MessageRouter`]: Central coordination hub for message routing
+//! - [`DeliveryEngine`]: Handles actual message delivery (local/remote)
+//! - [`ConversationManager`]: Manages multi-turn conversation state
+//! - [`AgentRegistry`]: O(1) agent lookup with capability indexing
+//! - [`FailureHandler`]: Comprehensive error handling with retries and dead letter queue
 //!
 //! ### Message Flow
 //!
