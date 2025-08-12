@@ -10,7 +10,7 @@ use tokio::time::{Duration, timeout};
 /// Test helper to create a complete router system
 async fn create_test_router_system() -> Box<dyn MessageRouter> {
     let config = RouterConfig::development();
-    MessageRouterImpl::new(config).await.unwrap()
+    MessageRouterImpl::new(config).unwrap()
 }
 
 /// Test helper to create test agents with specific capabilities
@@ -439,7 +439,7 @@ mod tests {
         let mut config = RouterConfig::development();
         config.message_timeout_ms = MessageTimeoutMs::try_new(100).unwrap(); // Very short timeout
 
-        let router = MessageRouterImpl::new(config).await.unwrap();
+        let router = MessageRouterImpl::new(config).unwrap();
         router.start().await.unwrap();
 
         let (compute_agent, storage_agent, _coordinator_agent) = setup_test_agents(&*router).await;

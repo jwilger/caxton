@@ -11,7 +11,7 @@ async fn test_router_creation_and_basic_operations() {
     let config = RouterConfig::development();
     assert!(config.validate().is_ok());
 
-    let router = MessageRouterImpl::new(config).await;
+    let router = MessageRouterImpl::new(config);
     assert!(router.is_ok());
 
     let router = router.unwrap();
