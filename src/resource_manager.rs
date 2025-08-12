@@ -54,11 +54,17 @@ pub use crate::domain_types::CpuFuelConsumed;
 
 /// Error types for fuel operations
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum FuelError {
+    /// Occurs when there is insufficient fuel available for the requested operation
     #[error("Insufficient fuel: requested {requested}, available {available}")]
-    InsufficientFuel { requested: u64, available: u64 },
+    InsufficientFuel {
+        /// The amount of fuel requested for the operation
+        requested: u64,
+        /// The amount of fuel currently available
+        available: u64,
+    },
 
+    /// Occurs when the fuel budget has been completely exhausted
     #[error("Fuel already exhausted")]
     FuelExhausted,
 }
@@ -119,26 +125,40 @@ impl AgentMemoryRequest {
 
 /// Memory allocation errors with strong typing
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
-#[allow(missing_docs)] // Error variant fields are self-documenting through error messages
 pub enum MemoryError {
+    /// Occurs when an agent requests more memory than its individual limit allows
     #[error("Agent memory limit exceeded: requested {requested}, limit {limit}")]
     AgentLimitExceeded {
+        /// The amount of memory requested by the agent
         requested: MaxAgentMemory,
+        /// The maximum memory limit for a single agent
         limit: MaxAgentMemory,
     },
 
+    /// Occurs when allocating memory would exceed the total system memory limit
     #[error("Total memory limit exceeded: requested {requested}, current {current}, limit {limit}")]
     TotalLimitExceeded {
+        /// The amount of memory requested for allocation
         requested: MaxAgentMemory,
+        /// The current total memory already allocated
         current: MaxTotalMemory,
+        /// The maximum total memory limit for the system
         limit: MaxTotalMemory,
     },
 
+    /// Occurs when attempting to operate on an agent that doesn't exist or has no allocation
     #[error("Agent {agent:?} not found")]
-    AgentNotFound { agent: AgentId },
+    AgentNotFound {
+        /// The agent ID that was not found
+        agent: AgentId,
+    },
 
+    /// Occurs when attempting to allocate memory for an agent that already has an allocation
     #[error("Agent {agent:?} already has allocation")]
-    AgentAlreadyAllocated { agent: AgentId },
+    AgentAlreadyAllocated {
+        /// The agent ID that already has memory allocated
+        agent: AgentId,
+    },
 }
 
 /// Total memory allocated with bounds checking using domain types
