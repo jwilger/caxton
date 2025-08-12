@@ -262,6 +262,30 @@ pub struct RouterConfig {
     pub security: SecurityConfig,
 }
 
+/// Helper function to get worker thread count from environment or compute default
+///
+/// Reads `CAXTON_WORKER_THREADS` environment variable and validates it against
+/// `WorkerThreadCount` constraints (1-32). If the environment variable is missing,
+/// invalid, or out of range, falls back to computed default: `(num_cpus::get() * 2).clamp(2, 8)`.
+///
+/// This provides configurable thread counts for different deployment scenarios while
+/// maintaining sensible defaults for most environments.
+fn get_worker_thread_count_with_env_fallback() -> WorkerThreadCount {
+    // Try to read from environment variable first
+    if let Ok(env_value) = std::env::var("CAXTON_WORKER_THREADS") {
+        if let Ok(thread_count) = env_value.parse::<usize>() {
+            // Validate the parsed value is within acceptable range (1-32)
+            if let Ok(validated_count) = WorkerThreadCount::try_new(thread_count) {
+                return validated_count;
+            }
+        }
+    }
+
+    // Fall back to computed default if env var is missing, invalid, or out of range
+    let computed_default = (num_cpus::get() * 2).clamp(2, 8);
+    WorkerThreadCount::try_new(computed_default).unwrap()
+}
+
 impl RouterConfig {
     // Backward compatibility methods for deprecated fields
 
@@ -389,6 +413,10 @@ impl RouterConfig {
     /// - Efficient resource usage (connection pooling, compression)
     /// - Appropriate observability (sampled tracing)
     ///
+    /// # Environment Variables
+    /// - `CAXTON_WORKER_THREADS`: Override worker thread count (1-32). Falls back to
+    ///   `(num_cpus::get() * 2).clamp(2, 8)` if unset, invalid, or out of range.
+    ///
     /// # Panics
     /// Panics if any of the hardcoded values are out of range for their domain types
     pub fn production() -> Self {
@@ -398,8 +426,7 @@ impl RouterConfig {
             outbound_queue_size: ChannelCapacity::try_new(50_000).unwrap(),
             message_timeout_ms: MessageTimeoutMs::try_new(30_000).unwrap(), // 30 seconds
             message_batch_size: MessageBatchSize::try_new(1000).unwrap(),
-            worker_thread_count: WorkerThreadCount::try_new((num_cpus::get() * 2).clamp(2, 8))
-                .unwrap(),
+            worker_thread_count: get_worker_thread_count_with_env_fallback(),
 
             // Retry settings - balanced for reliability
             max_retries: MaxRetries::try_new(3).unwrap(),
@@ -811,5 +838,62 @@ mod tests {
 
         assert_eq!(config.inbound_queue_size, loaded_config.inbound_queue_size);
         assert_eq!(config.message_timeout_ms, loaded_config.message_timeout_ms);
+    }
+
+    #[test]
+    fn test_configurable_worker_thread_count_from_env() {
+        // Test that CAXTON_WORKER_THREADS environment variable overrides default calculation
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "16");
+        }
+
+        // This should use the environment variable value instead of the computed default
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), 16);
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
+    }
+
+    #[test]
+    fn test_worker_thread_count_falls_back_to_computed_default() {
+        // Ensure environment variable is not set
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
+
+        let config = RouterConfig::production();
+        let expected = (num_cpus::get() * 2).clamp(2, 8);
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+    }
+
+    #[test]
+    fn test_invalid_worker_thread_count_env_falls_back_to_default() {
+        // Test invalid values fall back to computed default
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "0"); // Invalid: too low
+        }
+        let config = RouterConfig::production();
+        let expected = (num_cpus::get() * 2).clamp(2, 8);
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "256"); // Invalid: too high
+        }
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "invalid"); // Invalid: not a number
+        }
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
     }
 }
