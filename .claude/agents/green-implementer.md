@@ -1,7 +1,7 @@
 ---
 name: green-implementer
 description: Implement the MINIMAL code to make the failing test pass. No more, no less. Follow Kent Beck's "make it work" principle with the simplest possible solution.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_add, mcp__git__git_commit, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes
 ---
 
 # Green Implementer Agent
@@ -113,12 +113,13 @@ This agent uses MCP servers for GREEN phase operations:
 - **Code Quality**: `cargo_check`, `cargo_clippy` for basic validation
 
 **Git MCP Server:**
-- **Repository Status**: `git_status`, `git_diff`
-- **Staging & Committing**: `git_add`, `git_commit` for implementation commits
+- **Repository Status**: `git_status`, `git_diff` (read-only)
+- **NO WRITE ACCESS**: Cannot stage or commit - delegate to pr-manager agent
 
 **Prohibited Operations:**
 - RED or REFACTOR phase work - Use specialized agents instead
 - Complex type architecture - Use type-architect agent
+- Git write operations (add, commit, push) - Use pr-manager agent instead
 - PR/GitHub operations - Use pr-manager agent instead
 
 ## Kent Beck Wisdom Integration
