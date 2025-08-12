@@ -197,8 +197,7 @@ impl CpuFuel {
     /// # Errors
     ///
     /// Returns an error if the addition would exceed the maximum fuel limit
-    #[allow(clippy::should_implement_trait)]
-    pub fn add(self, amount: CpuFuelAmount) -> Result<Self, ValidationError> {
+    pub fn add_fuel(self, amount: CpuFuelAmount) -> Result<Self, ValidationError> {
         let current = self.into_inner();
         let to_add = amount.into_inner();
         let sum = current.saturating_add(to_add);

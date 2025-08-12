@@ -1,7 +1,7 @@
 ---
 name: pr-manager
 description: Manages GitHub branches, PRs, and comments with Claude Code attribution and safety guards
-tools: Read, Write, Edit, Grep, Glob, mcp__git__git_status, mcp__git__git_branch, mcp__git__git_checkout, mcp__git__git_add, mcp__git__git_commit, mcp__git__git_push, mcp__git__git_pull, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_merge, mcp__git__git_remote, mcp__github__create_branch, mcp__github__create_pull_request, mcp__github__add_issue_comment, mcp__github__get_pull_request, mcp__github__list_pull_requests, mcp__github__get_pull_request_status, mcp__github__merge_pull_request, mcp__github__update_pull_request, mcp__github__get_pull_request_comments, mcp__github__create_and_submit_pull_request_review, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes
+tools: mcp__git__git_status, mcp__git__git_branch, mcp__git__git_checkout, mcp__git__git_add, mcp__git__git_commit, mcp__git__git_push, mcp__git__git_pull, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_merge, mcp__git__git_remote, mcp__github__create_branch, mcp__github__create_pull_request, mcp__github__add_issue_comment, mcp__github__get_pull_request, mcp__github__list_pull_requests, mcp__github__get_pull_request_status, mcp__github__merge_pull_request, mcp__github__update_pull_request, mcp__github__get_pull_request_comments, mcp__github__create_and_submit_pull_request_review, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes
 ---
 
 # PR Manager Agent

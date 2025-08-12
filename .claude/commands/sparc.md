@@ -17,6 +17,15 @@ Execute the complete SPARC workflow directly, using specialized agents for each 
 - Git status: !`git status --porcelain`
 - Current branch: !`git branch --show-current`
 
+## Pre-Workflow Setup
+
+**CRITICAL FIRST STEP**: Before delegating to any agents, the SPARC coordinator MUST:
+
+1. **Set Cargo Working Directory**: Call `mcp__cargo__set_working_directory` with the absolute path to the project root (where Cargo.toml exists)
+2. **Verify Setup**: Ensure the working directory is set correctly for all subsequent cargo operations
+
+This ensures all agents have proper access to cargo commands (test, clippy, build, etc.) without MCP working directory errors.
+
 ## SPARC Coordinator Role
 
 **CRITICAL: The SPARC coordinator (you) is STRICTLY an orchestrator. You MUST NOT:**
