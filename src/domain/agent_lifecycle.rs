@@ -22,7 +22,7 @@ use crate::domain_types::{AgentId, AgentName};
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct AgentVersion(Uuid);

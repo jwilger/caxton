@@ -1,5 +1,6 @@
 ---
 description: Run the planner subagent and output ONLY a plan
+allowed-tools: Task
 ---
 
 # Perform Planning

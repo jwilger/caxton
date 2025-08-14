@@ -3,14 +3,12 @@
 //! Provides pre-configured settings optimized for different deployment scenarios
 //! with validation and builder pattern support.
 
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::return_self_not_must_use
-)]
-
-#[allow(clippy::wildcard_imports)]
-use crate::message_router::domain_types::*;
+use crate::message_router::domain_types::{
+    ChannelCapacity, CircuitBreakerThreshold, CircuitBreakerTimeoutMs, ConversationTimeoutMs,
+    DeadLetterQueueSize, HealthCheckIntervalMs, MaxConversationParticipants, MaxRetries,
+    MessageBatchSize, MessageTimeoutMs, RetryBackoffFactor, RetryDelayMs, TraceSamplingRatio,
+    WorkerThreadCount,
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -47,6 +45,10 @@ pub struct ObservabilityConfig {
 
 impl ObservabilityConfig {
     /// High observability for development and debugging
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
     pub fn development() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(1.0).unwrap(),
@@ -56,6 +58,10 @@ impl ObservabilityConfig {
     }
 
     /// Production observability with sampling
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
     pub fn production() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(0.01).unwrap(),
@@ -65,6 +71,10 @@ impl ObservabilityConfig {
     }
 
     /// Minimal observability for testing
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
     pub fn testing() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(0.0).unwrap(),
@@ -262,6 +272,30 @@ pub struct RouterConfig {
     pub security: SecurityConfig,
 }
 
+/// Helper function to get worker thread count from environment or compute default
+///
+/// Reads `CAXTON_WORKER_THREADS` environment variable and validates it against
+/// `WorkerThreadCount` constraints (1-32). If the environment variable is missing,
+/// invalid, or out of range, falls back to computed default: `(num_cpus::get() * 2).clamp(2, 8)`.
+///
+/// This provides configurable thread counts for different deployment scenarios while
+/// maintaining sensible defaults for most environments.
+fn get_worker_thread_count_with_env_fallback() -> WorkerThreadCount {
+    // Try to read from environment variable first
+    if let Ok(env_value) = std::env::var("CAXTON_WORKER_THREADS")
+        && let Ok(thread_count) = env_value.parse::<usize>()
+    {
+        // Validate the parsed value is within acceptable range (1-32)
+        if let Ok(validated_count) = WorkerThreadCount::try_new(thread_count) {
+            return validated_count;
+        }
+    }
+
+    // Fall back to computed default if env var is missing, invalid, or out of range
+    let computed_default = (num_cpus::get() * 2).clamp(2, 8);
+    WorkerThreadCount::try_new(computed_default).unwrap()
+}
+
 impl RouterConfig {
     // Backward compatibility methods for deprecated fields
 
@@ -389,6 +423,10 @@ impl RouterConfig {
     /// - Efficient resource usage (connection pooling, compression)
     /// - Appropriate observability (sampled tracing)
     ///
+    /// # Environment Variables
+    /// - `CAXTON_WORKER_THREADS`: Override worker thread count (1-32). Falls back to
+    ///   `(num_cpus::get() * 2).clamp(2, 8)` if unset, invalid, or out of range.
+    ///
     /// # Panics
     /// Panics if any of the hardcoded values are out of range for their domain types
     pub fn production() -> Self {
@@ -398,7 +436,7 @@ impl RouterConfig {
             outbound_queue_size: ChannelCapacity::try_new(50_000).unwrap(),
             message_timeout_ms: MessageTimeoutMs::try_new(30_000).unwrap(), // 30 seconds
             message_batch_size: MessageBatchSize::try_new(1000).unwrap(),
-            worker_thread_count: WorkerThreadCount::try_new(8).unwrap(),
+            worker_thread_count: get_worker_thread_count_with_env_fallback(),
 
             // Retry settings - balanced for reliability
             max_retries: MaxRetries::try_new(3).unwrap(),
@@ -519,6 +557,10 @@ impl RouterConfig {
     }
 
     /// Saves configuration to JSON file
+    ///
+    /// # Errors
+    ///
+    /// Returns `ConfigError` if JSON serialization fails or file write fails
     pub fn save_to_file<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), ConfigError> {
         let json = serde_json::to_string_pretty(self)?;
         std::fs::write(path, json)?;
@@ -526,6 +568,10 @@ impl RouterConfig {
     }
 
     /// Loads configuration from JSON file
+    ///
+    /// # Errors
+    ///
+    /// Returns `ConfigError` if file read fails or JSON deserialization fails
     pub fn load_from_file<P: AsRef<std::path::Path>>(path: P) -> Result<Self, ConfigError> {
         let json = std::fs::read_to_string(path)?;
         let config: Self = serde_json::from_str(&json)?;
@@ -534,6 +580,10 @@ impl RouterConfig {
     }
 
     /// Creates a configuration suitable for testing with minimal resources
+    ///
+    /// # Panics
+    ///
+    /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
     pub fn testing() -> Self {
         Self {
             inbound_queue_size: ChannelCapacity::try_new(10000).unwrap(),
@@ -584,138 +634,164 @@ impl RouterConfigBuilder {
     }
 
     /// Sets the inbound queue size
+    #[must_use]
     pub fn inbound_queue_size(mut self, size: ChannelCapacity) -> Self {
         self.config.inbound_queue_size = size;
         self
     }
 
     /// Sets the outbound queue size
+    #[must_use]
     pub fn outbound_queue_size(mut self, size: ChannelCapacity) -> Self {
         self.config.outbound_queue_size = size;
         self
     }
 
     /// Sets the message timeout
+    #[must_use]
     pub fn message_timeout_ms(mut self, timeout: MessageTimeoutMs) -> Self {
         self.config.message_timeout_ms = timeout;
         self
     }
 
     /// Sets the message batch size
+    #[must_use]
     pub fn message_batch_size(mut self, size: MessageBatchSize) -> Self {
         self.config.message_batch_size = size;
         self
     }
 
     /// Sets the worker thread count
+    #[must_use]
     pub fn worker_thread_count(mut self, count: WorkerThreadCount) -> Self {
         self.config.worker_thread_count = count;
         self
     }
 
     /// Sets the maximum retry attempts
+    #[must_use]
     pub fn max_retries(mut self, retries: MaxRetries) -> Self {
         self.config.max_retries = retries;
         self
     }
 
     /// Sets the retry delay
+    #[must_use]
     pub fn retry_delay_ms(mut self, delay: RetryDelayMs) -> Self {
         self.config.retry_delay_ms = delay;
         self
     }
 
     /// Sets the conversation timeout
+    #[must_use]
     pub fn conversation_timeout_ms(mut self, timeout: ConversationTimeoutMs) -> Self {
         self.config.conversation_timeout_ms = timeout;
         self
     }
 
     /// Sets the trace sampling ratio
+    #[must_use]
     pub fn trace_sampling_ratio(mut self, ratio: TraceSamplingRatio) -> Self {
         self.config.observability.trace_sampling_ratio = ratio;
         self
     }
 
     /// Enables or disables persistence
+    #[must_use]
     pub fn enable_persistence(mut self, enable: bool) -> Self {
         self.config.storage.enable_persistence = enable;
         self
     }
 
     /// Sets the storage path
+    #[must_use]
     pub fn storage_path<P: Into<PathBuf>>(mut self, path: P) -> Self {
         self.config.storage.storage_path = Some(path.into());
         self
     }
 
     /// Enables or disables batching
+    #[must_use]
     pub fn enable_batching(mut self, enable: bool) -> Self {
         self.config.performance.enable_batching = enable;
         self
     }
 
     /// Enables or disables connection pooling
+    #[must_use]
     pub fn enable_connection_pooling(mut self, enable: bool) -> Self {
         self.config.performance.enable_connection_pooling = enable;
         self
     }
 
     /// Sets the connection pool size
+    #[must_use]
     pub fn connection_pool_size(mut self, size: usize) -> Self {
         self.config.performance.connection_pool_size = size;
         self
     }
 
     /// Enables or disables metrics
+    #[must_use]
     pub fn enable_metrics(mut self, enable: bool) -> Self {
         self.config.observability.enable_metrics = enable;
         self
     }
 
     /// Enables or disables detailed logging
+    #[must_use]
     pub fn enable_detailed_logs(mut self, enable: bool) -> Self {
         self.config.observability.enable_detailed_logs = enable;
         self
     }
 
     /// Enables or disables rate limiting
+    #[must_use]
     pub fn enable_rate_limiting(mut self, enable: bool) -> Self {
         self.config.security.enable_rate_limiting = enable;
         self
     }
 
     /// Sets the rate limit
+    #[must_use]
     pub fn rate_limit_messages_per_second(mut self, rate: usize) -> Self {
         self.config.security.rate_limit_messages_per_second = rate;
         self
     }
 
     /// Sets the entire observability configuration
+    #[must_use]
     pub fn observability(mut self, observability: ObservabilityConfig) -> Self {
         self.config.observability = observability;
         self
     }
 
     /// Sets the entire storage configuration
+    #[must_use]
     pub fn storage(mut self, storage: StorageConfig) -> Self {
         self.config.storage = storage;
         self
     }
 
     /// Sets the entire performance configuration
+    #[must_use]
     pub fn performance(mut self, performance: PerformanceConfig) -> Self {
         self.config.performance = performance;
         self
     }
 
     /// Sets the entire security configuration
+    #[must_use]
     pub fn security(mut self, security: SecurityConfig) -> Self {
         self.config.security = security;
         self
     }
 
     /// Builds and validates the configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns `ConfigError` if the configuration validation fails
     pub fn build(self) -> Result<RouterConfig, ConfigError> {
         self.config.validate()?;
         Ok(self.config)
@@ -810,5 +886,62 @@ mod tests {
 
         assert_eq!(config.inbound_queue_size, loaded_config.inbound_queue_size);
         assert_eq!(config.message_timeout_ms, loaded_config.message_timeout_ms);
+    }
+
+    #[test]
+    fn test_configurable_worker_thread_count_from_env() {
+        // Test that CAXTON_WORKER_THREADS environment variable overrides default calculation
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "16");
+        }
+
+        // This should use the environment variable value instead of the computed default
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), 16);
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
+    }
+
+    #[test]
+    fn test_worker_thread_count_falls_back_to_computed_default() {
+        // Ensure environment variable is not set
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
+
+        let config = RouterConfig::production();
+        let expected = (num_cpus::get() * 2).clamp(2, 8);
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+    }
+
+    #[test]
+    fn test_invalid_worker_thread_count_env_falls_back_to_default() {
+        // Test invalid values fall back to computed default
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "0"); // Invalid: too low
+        }
+        let config = RouterConfig::production();
+        let expected = (num_cpus::get() * 2).clamp(2, 8);
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "256"); // Invalid: too high
+        }
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        unsafe {
+            std::env::set_var("CAXTON_WORKER_THREADS", "invalid"); // Invalid: not a number
+        }
+        let config = RouterConfig::production();
+        assert_eq!(config.worker_thread_count.as_usize(), expected);
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("CAXTON_WORKER_THREADS");
+        }
     }
 }

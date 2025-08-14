@@ -1,5 +1,6 @@
 ---
 description: Run the researcher subagent to produce a brief with sources
+allowed-tools: Task
 ---
 
 # Perform Research

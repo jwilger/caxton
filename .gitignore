@@ -56,6 +56,11 @@ perf.data.old
 
 .claude/memory/
 
+# Agent Memory System - Prevent Merge Conflicts
+.claude/memories/private/
+.claude/memories/shared/index.json
+.claude/memories/private/index.json
+
 
 
 # Added by cargo

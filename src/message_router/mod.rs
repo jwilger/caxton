@@ -19,11 +19,11 @@
 //!
 //! ### Core Components
 //!
-//! - [`MessageRouter`]: Central coordination hub for message routing
-//! - [`DeliveryEngine`]: Handles actual message delivery (local/remote)
-//! - [`ConversationManager`]: Manages multi-turn conversation state
-//! - [`AgentRegistry`]: O(1) agent lookup with capability indexing
-//! - [`FailureHandler`]: Comprehensive error handling with retries and dead letter queue
+//! - [`crate::message_router::MessageRouter`]: Central coordination hub for message routing
+//! - `DeliveryEngine`: Handles actual message delivery (local/remote)
+//! - `ConversationManager`: Manages multi-turn conversation state
+//! - `AgentRegistry`: O(1) agent lookup with capability indexing
+//! - `FailureHandler`: Comprehensive error handling with retries and dead letter queue
 //!
 //! ### Message Flow
 //!
@@ -57,7 +57,7 @@
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create router with production configuration
 //! let config = RouterConfig::production();
-//! let router = MessageRouterImpl::new(config).await?;
+//! let router = MessageRouterImpl::new(config)?;
 //!
 //! // Start background processing
 //! router.start().await?;

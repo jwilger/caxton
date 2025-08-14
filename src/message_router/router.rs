@@ -3,13 +3,6 @@
 //! Coordinates message routing between agents using a coordination-first architecture
 //! with high-performance async processing and comprehensive error handling.
 
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::cast_precision_loss,
-    clippy::cast_possible_truncation,
-    clippy::unused_async
-)]
-
 use crate::message_router::{
     config::RouterConfig,
     domain_types::{
@@ -87,6 +80,150 @@ struct ThroughputTracker {
     samples: DashMap<u64, u64>, // timestamp_second -> message_count
 }
 
+// Pure functions for time operations (functional core)
+fn get_current_unix_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+// Pure functions for error handling (functional core)
+fn map_registry_error_to_router_error(error: &RegistryError) -> RouterError {
+    match error {
+        RegistryError::AgentNotFound { agent_id } => RouterError::AgentNotFound {
+            agent_id: *agent_id,
+        },
+        _ => RouterError::ConfigurationError {
+            message: format!("Registry error: {error:?}"),
+        },
+    }
+}
+
+fn map_delivery_error_to_router_error(error: DeliveryError) -> RouterError {
+    match error {
+        DeliveryError::LocalDeliveryFailed { source }
+        | DeliveryError::RemoteDeliveryFailed { source, .. } => {
+            RouterError::NetworkError { source }
+        }
+        DeliveryError::CircuitBreakerOpen { node_id } => {
+            RouterError::CircuitBreakerOpen { node_id }
+        }
+        _ => RouterError::ConfigurationError {
+            message: format!("Delivery error: {error:?}"),
+        },
+    }
+}
+
+fn map_registry_error_for_agent_ops(error: &RegistryError, operation: &str) -> RouterError {
+    match error {
+        RegistryError::AgentAlreadyRegistered { agent_id } => RouterError::ConfigurationError {
+            message: format!("Agent already registered: {agent_id}"),
+        },
+        RegistryError::AgentNotFound { agent_id } => RouterError::AgentNotFound {
+            agent_id: *agent_id,
+        },
+        _ => RouterError::ConfigurationError {
+            message: format!("{operation} failed: {error:?}"),
+        },
+    }
+}
+
+fn calculate_cutoff_timestamp(current_time: u64, window_seconds: u64) -> u64 {
+    current_time.saturating_sub(window_seconds)
+}
+
+fn calculate_throughput_rate(total_messages: u64, window_seconds: f64) -> f64 {
+    if total_messages == 0 {
+        0.0
+    } else {
+        f64::from(u32::try_from(total_messages.min(u64::from(u32::MAX))).unwrap_or(0))
+            / window_seconds
+    }
+}
+
+// Pure functions for statistics calculations (functional core)
+fn safe_u64_to_u32(value: u64) -> u32 {
+    u32::try_from(value.min(u64::from(u32::MAX))).unwrap_or(0)
+}
+
+fn calculate_error_rate(total_errors: u64, total_messages: u64) -> f64 {
+    if total_messages > 0 {
+        let safe_errors = safe_u64_to_u32(total_errors);
+        let safe_messages = safe_u64_to_u32(total_messages).max(1); // Avoid division by zero
+        f64::from(safe_errors) / f64::from(safe_messages)
+    } else {
+        0.0
+    }
+}
+
+fn calculate_uptime(start_time: Option<Instant>) -> Duration {
+    if let Some(start_time) = start_time {
+        start_time.elapsed()
+    } else {
+        Duration::ZERO
+    }
+}
+
+fn create_agent_queue_depths(local_agents: Vec<LocalAgent>) -> HashMap<AgentId, usize> {
+    local_agents
+        .into_iter()
+        .map(|agent| (agent.id, agent.queue_size.as_usize()))
+        .collect()
+}
+
+fn safe_message_count_from_u64(value: u64) -> MessageCount {
+    MessageCount::new(value.min(1_000_000) as usize)
+}
+
+// Pure functions for conversation management (functional core)
+fn calculate_conversation_duration_ms(
+    created_at: std::time::SystemTime,
+    last_activity: std::time::SystemTime,
+) -> u64 {
+    if let Ok(duration) = last_activity.duration_since(created_at) {
+        u64::try_from(duration.as_millis().min(u128::from(u64::MAX))).unwrap_or(0)
+    } else {
+        0
+    }
+}
+
+fn calculate_average_duration(total_duration_ms: u64, conversation_count: usize) -> u64 {
+    if conversation_count > 0 {
+        total_duration_ms / conversation_count as u64
+    } else {
+        0
+    }
+}
+
+fn calculate_average_message_count(total_message_count: u64, conversation_count: usize) -> f64 {
+    if conversation_count > 0 {
+        let safe_msg_count = safe_u64_to_u32(total_message_count);
+        let safe_active = u32::try_from(conversation_count.min(u32::MAX as usize)).unwrap_or(1);
+        f64::from(safe_msg_count) / f64::from(safe_active)
+    } else {
+        0.0
+    }
+}
+
+fn is_conversation_expired(last_activity: MessageTimestamp, timeout: Duration) -> bool {
+    if let Ok(elapsed) = last_activity.as_system_time().elapsed() {
+        elapsed > timeout
+    } else {
+        false
+    }
+}
+
+fn sum_messages_in_window<I>(entries: I, cutoff: u64) -> u64
+where
+    I: Iterator<Item = (u64, u64)>,
+{
+    entries
+        .filter(|(timestamp, _)| *timestamp >= cutoff)
+        .map(|(_, count)| count)
+        .sum()
+}
+
 impl ThroughputTracker {
     fn new(window_size: Duration) -> Self {
         Self {
@@ -97,10 +234,7 @@ impl ThroughputTracker {
 
     #[allow(dead_code)]
     fn record_message(&self) {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = get_current_unix_timestamp();
 
         self.samples
             .entry(now)
@@ -108,27 +242,22 @@ impl ThroughputTracker {
             .or_insert(1);
 
         // Clean old samples
-        let cutoff = now.saturating_sub(self.window_size.as_secs());
+        let cutoff = calculate_cutoff_timestamp(now, self.window_size.as_secs());
         self.samples.retain(|&timestamp, _| timestamp >= cutoff);
     }
 
     fn get_current_rate(&self) -> f64 {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = get_current_unix_timestamp();
+        let cutoff = calculate_cutoff_timestamp(now, self.window_size.as_secs());
 
-        let cutoff = now.saturating_sub(self.window_size.as_secs());
+        let total_messages = sum_messages_in_window(
+            self.samples
+                .iter()
+                .map(|entry| (*entry.key(), *entry.value())),
+            cutoff,
+        );
 
-        let total_messages: u64 = self
-            .samples
-            .iter()
-            .filter(|entry| *entry.key() >= cutoff)
-            .map(|entry| *entry.value())
-            .sum();
-
-        let window_seconds = self.window_size.as_secs_f64();
-        (total_messages as f64) / window_seconds
+        calculate_throughput_rate(total_messages, self.window_size.as_secs_f64())
     }
 }
 
@@ -136,7 +265,11 @@ impl MessageRouterImpl {
     /// Creates a new message router with the given configuration
     ///
     /// This will create and wire up all necessary components based on the config.
-    pub async fn new(config: RouterConfig) -> Result<Self, RouterError> {
+    ///
+    /// # Errors
+    ///
+    /// Returns a `RouterError` if configuration validation fails or component creation fails.
+    pub fn new(config: RouterConfig) -> Result<Self, RouterError> {
         let span = span!(Level::INFO, "router_creation");
         let _enter = span.enter();
 
@@ -154,34 +287,13 @@ impl MessageRouterImpl {
             mpsc::channel(config.inbound_queue_size.as_usize());
 
         // Create components based on configuration
-        let delivery_engine =
-            Arc::new(DeliveryEngineImpl::new(config.clone()).await.map_err(|e| {
-                RouterError::ConfigurationError {
-                    message: format!("Failed to create delivery engine: {e:?}"),
-                }
-            })?);
+        let delivery_engine = Arc::new(DeliveryEngineImpl::new(config.clone()));
 
-        let conversation_manager = Arc::new(
-            ConversationManagerImpl::new(config.clone())
-                .await
-                .map_err(|e| RouterError::ConfigurationError {
-                    message: format!("Failed to create conversation manager: {e:?}"),
-                })?,
-        );
+        let conversation_manager = Arc::new(ConversationManagerImpl::new(config.clone()));
 
-        let agent_registry =
-            Arc::new(AgentRegistryImpl::new(config.clone()).await.map_err(|e| {
-                RouterError::ConfigurationError {
-                    message: format!("Failed to create agent registry: {e:?}"),
-                }
-            })?);
+        let agent_registry = Arc::new(AgentRegistryImpl::new(config.clone()));
 
-        let failure_handler =
-            Arc::new(FailureHandlerImpl::new(config.clone()).await.map_err(|e| {
-                RouterError::ConfigurationError {
-                    message: format!("Failed to create failure handler: {e:?}"),
-                }
-            })?);
+        let failure_handler = Arc::new(FailureHandlerImpl::new(config.clone()));
 
         // Create metrics collector if enabled
         let metrics_collector = if config.enable_metrics() {
@@ -221,6 +333,10 @@ impl MessageRouterImpl {
     /// Starts the message router background processing
     ///
     /// Spawns worker tasks for processing messages concurrently based on configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `RouterError` if the router is already running or configuration is invalid.
     pub async fn start(&self) -> Result<(), RouterError> {
         let span = span!(Level::INFO, "router_start");
         let _enter = span.enter();
@@ -246,21 +362,21 @@ impl MessageRouterImpl {
         drop(receiver_guard);
 
         // Start the main message processing loop
-        self.spawn_message_processor(receiver).await;
+        self.spawn_message_processor(receiver);
 
         // Spawn worker tasks
         for worker_id in 0..self.config.worker_thread_count.as_usize() {
-            self.spawn_worker_task(worker_id).await;
+            self.spawn_worker_task(worker_id);
         }
 
         // Spawn health monitoring task
         if self.config.health_check_interval_ms.as_duration() > Duration::ZERO {
-            self.spawn_health_monitoring_task().await;
+            self.spawn_health_monitoring_task();
         }
 
         // Spawn metrics collection task
         if self.config.enable_metrics() {
-            self.spawn_metrics_task().await;
+            self.spawn_metrics_task();
         }
 
         info!(
@@ -272,7 +388,7 @@ impl MessageRouterImpl {
 
     /// Spawns a worker task for processing routing messages
     #[allow(unused_variables)]
-    async fn spawn_worker_task(&self, worker_id: usize) {
+    fn spawn_worker_task(&self, worker_id: usize) {
         let _delivery_engine = Arc::clone(&self.delivery_engine);
         let _conversation_manager = Arc::clone(&self.conversation_manager);
         let _agent_registry = Arc::clone(&self.agent_registry);
@@ -323,7 +439,7 @@ impl MessageRouterImpl {
     }
 
     /// Spawns the main message processor that handles the inbound queue
-    async fn spawn_message_processor(&self, mut receiver: mpsc::Receiver<RoutingTask>) {
+    fn spawn_message_processor(&self, mut receiver: mpsc::Receiver<RoutingTask>) {
         let delivery_engine = Arc::clone(&self.delivery_engine);
         let conversation_manager = Arc::clone(&self.conversation_manager);
         let agent_registry = Arc::clone(&self.agent_registry);
@@ -429,28 +545,20 @@ impl MessageRouterImpl {
         );
 
         // Update conversation if this is part of one
-        if let Some(conversation_id) = task.message.conversation_id {
-            if let Err(e) = conversation_manager
+        if let Some(conversation_id) = task.message.conversation_id
+            && let Err(e) = conversation_manager
                 .update_conversation(conversation_id, &task.message)
                 .await
-            {
-                warn!("Failed to update conversation {}: {:?}", conversation_id, e);
-                // Don't fail the routing for conversation update failures
-            }
+        {
+            warn!("Failed to update conversation {}: {:?}", conversation_id, e);
+            // Don't fail the routing for conversation update failures
         }
 
         // Look up the destination agent
         let agent_location = agent_registry
             .lookup(&task.message.receiver)
             .await
-            .map_err(|e| match e {
-                RegistryError::AgentNotFound { agent_id } => {
-                    RouterError::AgentNotFound { agent_id }
-                }
-                _ => RouterError::ConfigurationError {
-                    message: format!("Agent registry error: {e:?}"),
-                },
-            })?;
+            .map_err(|e| map_registry_error_to_router_error(&e))?;
 
         // Route based on agent location
         match agent_location {
@@ -459,31 +567,14 @@ impl MessageRouterImpl {
                 delivery_engine
                     .deliver_local(task.message, local_agent)
                     .await
-                    .map_err(|e| match e {
-                        DeliveryError::LocalDeliveryFailed { source } => {
-                            RouterError::NetworkError { source }
-                        }
-                        _ => RouterError::ConfigurationError {
-                            message: format!("Delivery error: {e:?}"),
-                        },
-                    })
+                    .map_err(map_delivery_error_to_router_error)
             }
             AgentLocation::Remote(node_id) => {
                 trace!("Routing to remote node: {}", node_id);
                 delivery_engine
                     .deliver_remote(task.message, node_id)
                     .await
-                    .map_err(|e| match e {
-                        DeliveryError::RemoteDeliveryFailed { source, .. } => {
-                            RouterError::NetworkError { source }
-                        }
-                        DeliveryError::CircuitBreakerOpen { node_id } => {
-                            RouterError::CircuitBreakerOpen { node_id }
-                        }
-                        _ => RouterError::ConfigurationError {
-                            message: format!("Remote delivery error: {e:?}"),
-                        },
-                    })
+                    .map_err(map_delivery_error_to_router_error)
             }
             AgentLocation::Unknown => {
                 warn!("Agent location unknown for: {}", task.message.receiver);
@@ -495,7 +586,7 @@ impl MessageRouterImpl {
     }
 
     /// Spawns health monitoring background task
-    async fn spawn_health_monitoring_task(&self) {
+    fn spawn_health_monitoring_task(&self) {
         let health_interval = self.config.health_check_interval_ms.as_duration();
         let delivery_engine = Arc::clone(&self.delivery_engine);
         let _conversation_manager = Arc::clone(&self.conversation_manager);
@@ -529,7 +620,7 @@ impl MessageRouterImpl {
     }
 
     /// Spawns metrics collection background task
-    async fn spawn_metrics_task(&self) {
+    fn spawn_metrics_task(&self) {
         let throughput_tracker = Arc::clone(&self.throughput_tracker);
         let is_running = AtomicBool::new(self.is_running.load(Ordering::SeqCst));
 
@@ -651,16 +742,7 @@ impl MessageRouter for MessageRouterImpl {
         self.agent_registry
             .register_local_agent(agent.clone(), capabilities)
             .await
-            .map_err(|e| match e {
-                RegistryError::AgentAlreadyRegistered { agent_id } => {
-                    RouterError::ConfigurationError {
-                        message: format!("Agent already registered: {agent_id}"),
-                    }
-                }
-                _ => RouterError::ConfigurationError {
-                    message: format!("Agent registration failed: {e:?}"),
-                },
-            })?;
+            .map_err(|e| map_registry_error_for_agent_ops(&e, "Agent registration"))?;
 
         // Record metrics if enabled
         if let Some(collector) = &self.metrics_collector {
@@ -681,14 +763,7 @@ impl MessageRouter for MessageRouterImpl {
         self.agent_registry
             .deregister_local_agent(agent_id)
             .await
-            .map_err(|e| match e {
-                RegistryError::AgentNotFound { agent_id } => {
-                    RouterError::AgentNotFound { agent_id }
-                }
-                _ => RouterError::ConfigurationError {
-                    message: format!("Agent deregistration failed: {e:?}"),
-                },
-            })?;
+            .map_err(|e| map_registry_error_for_agent_ops(&e, "Agent deregistration"))?;
 
         // Record metrics if enabled
         if let Some(collector) = &self.metrics_collector {
@@ -717,14 +792,7 @@ impl MessageRouter for MessageRouterImpl {
             .agent_registry
             .lookup(&agent_id)
             .await
-            .map_err(|e| match e {
-                RegistryError::AgentNotFound { agent_id } => {
-                    RouterError::AgentNotFound { agent_id }
-                }
-                _ => RouterError::ConfigurationError {
-                    message: format!("Failed to lookup agent: {e:?}"),
-                },
-            })?;
+            .map_err(|e| map_registry_error_for_agent_ops(&e, "Agent lookup"))?;
 
         // Only local agents can have their state updated
         if !matches!(agent_location, AgentLocation::Local(_)) {
@@ -753,17 +821,9 @@ impl MessageRouter for MessageRouterImpl {
         let current_rate = self.throughput_tracker.get_current_rate();
 
         // Calculate uptime
-        let _uptime = if let Some(start_time) = *self.start_time.read().await {
-            start_time.elapsed()
-        } else {
-            Duration::ZERO
-        };
+        let _uptime = calculate_uptime(*self.start_time.read().await);
 
-        let error_rate = if total_messages > 0 {
-            (total_errors as f64) / (total_messages as f64)
-        } else {
-            0.0
-        };
+        let error_rate = calculate_error_rate(total_errors, total_messages);
 
         // Get local agents for queue depth calculation
         let local_agents = self.agent_registry.list_local_agents().await.map_err(|e| {
@@ -772,10 +832,7 @@ impl MessageRouter for MessageRouterImpl {
             }
         })?;
 
-        let agent_queue_depths = local_agents
-            .into_iter()
-            .map(|agent| (agent.id, agent.queue_size.as_usize()))
-            .collect();
+        let agent_queue_depths = create_agent_queue_depths(local_agents);
 
         // Get conversation stats from conversation manager
         let conversation_stats = self
@@ -793,7 +850,7 @@ impl MessageRouter for MessageRouterImpl {
         let stats = RouterStats {
             messages_per_second: current_rate,
             peak_messages_per_second: current_rate, // TODO: Track peak
-            total_messages_processed: MessageCount::new(total_messages as usize),
+            total_messages_processed: safe_message_count_from_u64(total_messages),
 
             // TODO: Collect real latency metrics
             routing_latency_p50: 500, // microseconds
@@ -801,7 +858,7 @@ impl MessageRouter for MessageRouterImpl {
             routing_latency_p99: 2_000,
             routing_latency_p999: 5_000,
 
-            total_errors: MessageCount::new(total_errors as usize),
+            total_errors: safe_message_count_from_u64(total_errors),
             error_rate,
             errors_by_type: HashMap::new(), // TODO: Collect by error type
 
@@ -923,12 +980,12 @@ struct DeliveryEngineImpl {
 }
 
 impl DeliveryEngineImpl {
-    async fn new(config: RouterConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(Self {
+    fn new(config: RouterConfig) -> Self {
+        Self {
             agent_queues: DashMap::new(),
             remote_connections: DashMap::new(),
             config,
-        })
+        }
     }
 
     /// Registers a message queue for a local agent
@@ -1102,12 +1159,12 @@ struct ConversationManagerImpl {
 }
 
 impl ConversationManagerImpl {
-    async fn new(config: RouterConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(Self {
+    fn new(config: RouterConfig) -> Self {
+        Self {
             conversations: DashMap::new(),
             total_created: AtomicU64::new(0),
             config,
-        })
+        }
     }
 }
 
@@ -1198,10 +1255,8 @@ impl ConversationManager for ConversationManagerImpl {
 
         for entry in &self.conversations {
             let conversation = entry.value();
-            if let Ok(elapsed) = conversation.last_activity.as_system_time().elapsed() {
-                if elapsed > timeout {
-                    expired_ids.push(*entry.key());
-                }
+            if is_conversation_expired(conversation.last_activity, timeout) {
+                expired_ids.push(*entry.key());
             }
         }
 
@@ -1217,7 +1272,8 @@ impl ConversationManager for ConversationManagerImpl {
 
     async fn get_conversation_stats(&self) -> Result<ConversationStats, ConversationError> {
         let total_active = self.conversations.len();
-        let total_created = MessageCount::new(self.total_created.load(Ordering::Relaxed) as usize);
+        let total_created =
+            MessageCount::new(self.total_created.load(Ordering::Relaxed).min(1_000_000) as usize);
 
         // Calculate average duration and message count
         let mut total_duration_ms = 0u64;
@@ -1228,13 +1284,11 @@ impl ConversationManager for ConversationManagerImpl {
             let conversation = entry.value();
 
             // Calculate duration
-            if let Ok(duration) = conversation
-                .last_activity
-                .as_system_time()
-                .duration_since(conversation.created_at.as_system_time())
-            {
-                total_duration_ms += duration.as_millis() as u64;
-            }
+            let duration_ms = calculate_conversation_duration_ms(
+                conversation.created_at.as_system_time(),
+                conversation.last_activity.as_system_time(),
+            );
+            total_duration_ms = total_duration_ms.saturating_add(duration_ms);
 
             // Add message count
             total_message_count += conversation.message_count.into_inner() as u64;
@@ -1246,17 +1300,10 @@ impl ConversationManager for ConversationManagerImpl {
                 .or_insert(0) += 1;
         }
 
-        let average_duration_ms = if total_active > 0 {
-            total_duration_ms / total_active as u64
-        } else {
-            0
-        };
+        let average_duration_ms = calculate_average_duration(total_duration_ms, total_active);
 
-        let average_message_count = if total_active > 0 {
-            total_message_count as f64 / total_active as f64
-        } else {
-            0.0
-        };
+        let average_message_count =
+            calculate_average_message_count(total_message_count, total_active);
 
         Ok(ConversationStats {
             total_active,
@@ -1308,13 +1355,13 @@ pub struct AgentRegistryImpl {
 }
 
 impl AgentRegistryImpl {
-    async fn new(_config: RouterConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(Self {
+    fn new(_config: RouterConfig) -> Self {
+        Self {
             agents: DashMap::new(),
             routes: DashMap::new(),
             capabilities: DashMap::new(),
             node_registry: DashMap::new(),
-        })
+        }
     }
 }
 
@@ -1469,8 +1516,8 @@ impl AgentRegistry for AgentRegistryImpl {
 struct FailureHandlerImpl;
 
 impl FailureHandlerImpl {
-    async fn new(_config: RouterConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(Self)
+    fn new(_config: RouterConfig) -> Self {
+        Self
     }
 }
 

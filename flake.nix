@@ -48,6 +48,8 @@
 
           # Configure development environment
           shellHook = ''
+            cargo install --locked cargo-mcp
+
             echo "🦀 Caxton Development Environment"
             echo "Rust version: $(rustc --version)"
             echo "Available tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit"
@@ -67,6 +69,12 @@
             if ! command -v claude &> /dev/null; then
               npx @anthropic-ai/claude-code install --force latest
             fi
+
+            # MCP Memory Server configured via 'claude mcp' command
+            echo "🧠 MCP Memory Server configured via Claude Code"
+            echo "   - Check status: claude mcp list"
+            echo "   - Memory file: .claude/sparc-memory.jsonl"
+            echo ""
 
             echo "📋 Common commands:"
             echo "  cargo nextest run    # Run tests with nextest"

@@ -24,7 +24,7 @@ use crate::domain_types::{AgentId, AgentName, CpuFuel, MemoryBytes};
     Serialize,
     Deserialize,
     Display,
-    TryFrom,
+    From,
     Into
 ))]
 pub struct DeploymentId(Uuid);

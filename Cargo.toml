@@ -27,26 +27,6 @@ must_use_candidate = "allow"
 missing_const_for_fn = "allow"
 module_name_repetitions = "allow"
 
-[dependencies]
-wasmtime = "27.0"
-wasmtime-wasi = "27.0"
-tokio = { version = "1.42", features = ["full"] }
-anyhow = "1.0"
-thiserror = "2.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-async-trait = "0.1"
-uuid = { version = "1.11", features = ["v4", "serde"] }
-dashmap = "6.1"
-bytes = "1.9"
-wat = "1.223"
-nutype = { version = "0.6.2", features = ["serde"] }
-num_cpus = "1.16"
-futures = "0.3"
-rust_decimal = "1.33"
-
 [dev-dependencies]
 approx = "0.5"
 criterion = "0.5"
@@ -71,3 +51,23 @@ codegen-units = 1
 
 [profile.bench]
 inherits = "release"
+
+[dependencies]
+anyhow = "1.0.98"
+async-trait = "0.1.88"
+bytes = "1.10.1"
+dashmap = "6.1.0"
+futures = "0.3.31"
+num_cpus = "1.17.0"
+nutype = { version = "0.6.2", features = ["serde"] }
+rust_decimal = "1.37.2"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.142"
+thiserror = "2.0.12"
+tokio = { version = "1.47.1", features = ["full"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
+uuid = { version = "1.17.0", features = ["v4", "serde"] }
+wasmtime = "35.0.0"
+wasmtime-wasi = "35.0.0"
+wat = "1.223"

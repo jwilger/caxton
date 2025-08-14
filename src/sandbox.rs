@@ -258,10 +258,10 @@ impl Sandbox {
             .map_err(|_| anyhow::anyhow!("Execution timeout after {:?}", timeout))??;
 
         // Check for fuel exhaustion
-        if let Ok(remaining_fuel) = store.get_fuel() {
-            if remaining_fuel == 0 {
-                anyhow::bail!("fuel exhausted (CPU limit reached)");
-            }
+        if let Ok(remaining_fuel) = store.get_fuel()
+            && remaining_fuel == 0
+        {
+            anyhow::bail!("fuel exhausted (CPU limit reached)");
         }
 
         // Use the simulated fuel consumption from the execution result
