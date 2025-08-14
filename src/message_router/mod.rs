@@ -20,10 +20,10 @@
 //! ### Core Components
 //!
 //! - [`MessageRouter`]: Central coordination hub for message routing
-//! - [`DeliveryEngine`]: Handles actual message delivery (local/remote)
-//! - [`ConversationManager`]: Manages multi-turn conversation state
-//! - [`AgentRegistry`]: O(1) agent lookup with capability indexing
-//! - [`FailureHandler`]: Comprehensive error handling with retries and dead letter queue
+//! - `DeliveryEngine`: Handles actual message delivery (local/remote)
+//! - `ConversationManager`: Manages multi-turn conversation state
+//! - `AgentRegistry`: O(1) agent lookup with capability indexing
+//! - `FailureHandler`: Comprehensive error handling with retries and dead letter queue
 //!
 //! ### Message Flow
 //!
