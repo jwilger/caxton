@@ -6,7 +6,13 @@ tools: Read, Edit, Write, Grep, Glob, mcp__cargo__cargo_test, mcp__cargo__cargo_
 
 # Test Hardener Agent
 
-Process:
+## PHASE AUTHORITY AND HANDOFF PROTOCOLS (CRITICAL)
+
+**MANDATORY STARTUP**: MUST search MCP memory for relevant knowledge when receiving control from coordinator.
+
+**HANDOFF PROTOCOL**: Upon completion, MUST store test hardening patterns and type improvement insights in MCP memory before returning control to coordinator.
+
+## Process
 
 - Review new tests created in this story.
 - For each, propose a tighter type or API to eliminate the failure mode.

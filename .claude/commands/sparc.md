@@ -8,6 +8,8 @@ allowed-tools: Task
 
 # SPARC Orchestration (Rust)
 
+ULTRATHINK
+
 Execute the complete SPARC workflow directly, using specialized agents for each phase.
 
 ## Context
@@ -95,6 +97,7 @@ Use Task tool with `planner` agent:
 ### E) IMPLEMENT (TDD Cycle)
 
 **RED Phase** - Use Task tool with `red-implementer` agent:
+
 - Write exactly ONE failing test that captures the next behavior
 - Use `unimplemented!()` to force clear failure
 - Verify test fails for the right reason
@@ -102,6 +105,7 @@ Use Task tool with `planner` agent:
 - Store test patterns in MCP memory
 
 **GREEN Phase** - Use Task tool with `green-implementer` agent:
+
 - Implement minimal code to make the failing test pass
 - Use simplest possible solution (fake it 'til you make it)
 - Verify test passes and no existing tests break
@@ -109,6 +113,7 @@ Use Task tool with `planner` agent:
 - Store minimal implementation patterns in MCP memory
 
 **REFACTOR Phase** - Use Task tool with `refactor-implementer` agent:
+
 - Remove duplication and improve code structure
 - Extract pure functions (functional core / imperative shell)
 - Keep all tests green throughout refactoring
@@ -166,6 +171,7 @@ Use Task tool with `pr-manager` agent:
 ### Memory Storage Verification
 
 **MANDATORY FINAL STEP**: Verify all agents stored their knowledge:
+
 1. Check that research findings were stored
 2. Confirm planning decisions were captured
 3. Verify RED, GREEN, and REFACTOR implementation patterns were saved

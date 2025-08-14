@@ -6,7 +6,13 @@ tools: Read, Edit, Write, Grep, Glob, mcp__cargo__cargo_check, mcp__cargo__cargo
 
 # Type Architect Agent
 
-Responsibilities:
+## PHASE AUTHORITY AND HANDOFF PROTOCOLS (CRITICAL)
+
+**MANDATORY STARTUP**: MUST search MCP memory for relevant knowledge when receiving control from coordinator.
+
+**HANDOFF PROTOCOL**: Upon completion, MUST store type design patterns and domain modeling insights in MCP memory before returning control to coordinator.
+
+## Responsibilities
 
 - Identify primitive obsession and replace with domain types.
 - Specify nutype annotations (derive, sanitize, validate).
