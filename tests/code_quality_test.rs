@@ -253,6 +253,36 @@ fn find_ci_workflow_violations() -> Vec<String> {
     violations
 }
 
+#[test]
+fn test_documentation_builds_without_errors() {
+    // This test ensures that `cargo doc` builds successfully without broken intra-doc links
+    // Kent Beck RED principle: Test should fail because feature is unimplemented (broken doc link)
+
+    use std::process::Command;
+
+    // Run cargo doc with the same flags as CI to catch intra-doc link errors
+    let output = Command::new("cargo")
+        .args(["doc", "--no-deps", "--document-private-items"])
+        .env("RUSTDOCFLAGS", "-D warnings") // Treat rustdoc warnings as errors
+        .output()
+        .expect("Failed to execute cargo doc command");
+
+    if !output.status.success() {
+        // Show the actual error output to understand why documentation build failed
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        panic!(
+            "Documentation build failed with broken intra-doc links:\n\
+            STDOUT:\n{stdout}\n\
+            STDERR:\n{stderr}\n\
+            \n\
+            This test fails because documentation contains broken intra-doc links.\n\
+            Fix the broken links to make this test pass."
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

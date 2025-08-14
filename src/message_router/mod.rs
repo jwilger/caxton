@@ -19,7 +19,7 @@
 //!
 //! ### Core Components
 //!
-//! - [`MessageRouter`]: Central coordination hub for message routing
+//! - [`crate::message_router::MessageRouter`]: Central coordination hub for message routing
 //! - `DeliveryEngine`: Handles actual message delivery (local/remote)
 //! - `ConversationManager`: Manages multi-turn conversation state
 //! - `AgentRegistry`: O(1) agent lookup with capability indexing
