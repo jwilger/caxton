@@ -1,0 +1,33 @@
+# Caxton Security Contact Information
+# This file conforms to RFC 9116 security.txt standard
+# https://tools.ietf.org/rfc/rfc9116.txt
+
+# Required Fields (RFC 9116 Section 2.5)
+
+# Contact: Primary security contact for vulnerability reports
+# Format: email address as specified in RFC 9116 Section 2.5.3
+Contact: security@caxton.dev
+
+# Expires: Expiration date for this security policy
+# Format: ISO 8601 timestamp as specified in RFC 9116 Section 2.5.5
+# This policy expires one year from last update and must be renewed
+Expires: 2025-12-31T23:59:59.000Z
+
+# Optional Fields (RFC 9116 Section 2.5)
+
+# Acknowledgments: Recognition page for security researchers
+# This page acknowledges responsible disclosure contributors
+Acknowledgments: https://caxton.dev/security/acknowledgments
+
+# Policy: Detailed vulnerability disclosure policy
+# Provides comprehensive guidelines for security researchers
+# Covers scope, safe harbor, response timelines, and reward structure
+Policy: https://caxton.dev/security/policy
+
+# Preferred-Languages: Communication languages for security reports
+# Prioritizes English for faster response times
+Preferred-Languages: en
+
+# Canonical: Authoritative location for this security.txt file
+# Ensures researchers access the most current security contact information
+Canonical: https://caxton.dev/.well-known/security.txt
