@@ -186,7 +186,7 @@ pub struct AgentName(String);
 - Allow attribute detection prevents commits with new suppressions
 
 Testing Discipline (Kent Beck)
-Work in strict Red → Green → Refactor loops with one failing test at a time.
+Work in strict Red → Green → Refactor -> Red -> Green -> Refactor -> ... loops with one failing test at a time.
 
 Use `mcp__cargo__cargo_test` for all tests; treat clippy warnings as errors.
 
@@ -284,6 +284,7 @@ The SPARC coordinator's ONLY responsibilities are:
 - **Minimum one complete cycle** required per story (Red→Green→Refactor)
 - **Strict ping-pong enforcement** - Red and Green agents alternate with smallest possible changes
 - **Planner verification gate** - Planner MUST approve before refactor-implementer can proceed
+- **No test modification in green** - Green-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
 - **No test modification in refactor** - Refactor-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
 
 **Memory Usage Enforcement (MANDATORY):**
@@ -296,13 +297,13 @@ ALL actual work MUST be performed by the specialized subagents:
 
 - `researcher` - Gathers information and creates research briefs
 - `planner` - Creates implementation plans following TDD principles
-- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL AUTHORITY on cycle completion)
-- `green-implementer` - Implements minimal code to make tests pass
+- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL AUTHORITY on cycle completion) (CAN ONLY modify test code)
+- `green-implementer` - Implements minimal code to make tests pass (CANNOT modify tests)
 - `refactor-implementer` - Improves code structure while preserving behavior (CANNOT modify tests)
-- `type-architect` - Designs domain types and type-state machines
+- `type-architect` - Designs domain types and type-state machines (CANNOT modify tests)
 - `test-hardener` - Strengthens tests and proposes type improvements
-- `expert` - Reviews code for correctness and best practices
-- `pr-manager` - Handles GitHub PR operations
+- `expert` - Reviews code for correctness and best practices (CANNOT modify code)
+- `pr-manager` - Handles GitHub PR operations and local git operations
 
 The coordinator is a pure orchestrator - think of it as a project manager who doesn't code but enforces strict TDD discipline.
 
@@ -327,12 +328,14 @@ ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 
 **CRITICAL CODE QUALITY RULES:**
+
 - NEVER add clippy allow attributes (`#[allow(clippy::...)]` or `#![allow(clippy::...)]`) without explicit team approval
 - NEVER bypass pre-commit hooks with `--no-verify` unless it's a genuine emergency with team notification
 - ALWAYS fix clippy warnings instead of suppressing them
 - If facing many warnings, create a systematic cleanup story and plan - don't suppress them
 
 **CRITICAL MEMORY STORAGE RULES:**
+
 - EVERY agent MUST store knowledge after significant actions
 - Research findings, planning decisions, implementation patterns, and insights MUST be preserved
 - The SPARC orchestrator will enforce memory storage compliance
