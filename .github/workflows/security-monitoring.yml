@@ -102,8 +102,19 @@ jobs:
       - name: Run cargo-deny check
         run: |
           echo "::group::Cargo Deny Check"
-          # Run cargo deny check with JSON output for artifact reporting
-          cargo deny check --format json > deny-results.json || true
+          # Run cargo deny check with proper exit code handling
+          set +e  # Don't exit on error immediately
+          cargo deny check --format json > deny-results.json
+          DENY_EXIT_CODE=$?
+          set -e  # Re-enable exit on error
+
+          # Only suppress policy violation errors (exit code 1)
+          # Fail on tool/configuration errors (other exit codes)
+          if [ $DENY_EXIT_CODE -ne 0 ] && [ $DENY_EXIT_CODE -ne 1 ]; then
+            echo "::error::cargo deny tool failed with exit code $DENY_EXIT_CODE"
+            echo "::error::This indicates a configuration or tool error, not policy violations"
+            exit $DENY_EXIT_CODE
+          fi
 
           # Enhanced error reporting while maintaining test compatibility
           if [ -s deny-results.json ]; then

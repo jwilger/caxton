@@ -25,6 +25,43 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # Security policy: Deny ALL vulnerabilities in runtime dependencies
 # Rationale: Any vulnerability in our runtime could be exploited by
 # malicious WASM agents to escape sandboxing or access unauthorized resources
+#
+# EXCEPTION HANDLING PROCESS:
+# While we maintain a zero-tolerance policy for vulnerabilities, we recognize
+# that false positives and unavoidable dependencies may require exceptions.
+#
+# Process for handling vulnerability exceptions:
+# 1. IMMEDIATE ACTION: If a vulnerability blocks development/deployment:
+#    - Create GitHub issue with title: "Security Exception: [RUSTSEC-YYYY-NNNN] Brief Description"
+#    - Label with: "security-exception", "urgent"
+#    - Document: vulnerability details, impact assessment, mitigation strategies
+#
+# 2. FALSE POSITIVE PROCESS:
+#    - Verify the vulnerability doesn't apply to our usage pattern
+#    - Document why it's a false positive (version mismatch, unused code path, etc.)
+#    - Add to ignore list below with issue reference and expiration date
+#    - Example: "RUSTSEC-2023-0001", # False positive: only affects unused feature X, expires 2024-06-01, see issue #123
+#
+# 3. UNAVOIDABLE VULNERABILITY PROCESS:
+#    - Assess if vulnerability affects Caxton's security model
+#    - Document compensating controls (sandboxing, input validation, etc.)
+#    - Create remediation plan with timeline
+#    - Add temporary exception with mandatory expiration date
+#    - Schedule regular review (monthly for high severity, quarterly for medium/low)
+#
+# 4. GITHUB ISSUE TRACKING:
+#    - All exceptions MUST have corresponding GitHub issues
+#    - Use template: .github/ISSUE_TEMPLATE/security-exception.md
+#    - Issues must include: CVSS score, exploitability assessment, Caxton-specific impact
+#    - Tag security team for review (@security-team)
+#    - Link to any vendor advisories or upstream fixes
+#
+# 5. REVIEW AND EXPIRATION:
+#    - All exceptions have mandatory expiration dates (max 6 months)
+#    - Monthly security review of all active exceptions
+#    - Automatic CI warnings 30 days before expiration
+#    - No exceptions without explicit re-approval after expiration
+#
 vulnerability = "deny"
 
 # Warn about unmaintained dependencies but don't fail builds
@@ -44,6 +81,27 @@ notice = "warn"
 # Currently no ignored advisories
 # Any ignored vulnerabilities must be documented with business justification
 # and linked to tracking issues for remediation
+#
+# IGNORE LIST DOCUMENTATION REQUIREMENTS:
+# When adding exceptions to this list, each entry MUST include:
+# - RUSTSEC ID and brief description
+# - GitHub issue reference
+# - Expiration date (mandatory, max 6 months from addition)
+# - Reason for exception (false positive, unavoidable, compensating controls)
+# - Security team approval reference
+#
+# Format examples:
+# ignore = [
+#     "RUSTSEC-2023-0001", # False positive: affects unused tokio feature, expires 2024-06-01, see issue #123
+#     "RUSTSEC-2023-0002", # Unavoidable: wasmtime dependency, sandboxing mitigates risk, expires 2024-08-01, see issue #124
+#     "RUSTSEC-2023-0003", # Low severity: dev dependency only, no runtime impact, expires 2024-07-01, see issue #125
+# ]
+#
+# AUTOMATIC EXPIRATION ENFORCEMENT:
+# CI will automatically fail if:
+# - Any ignored advisory lacks required documentation
+# - Any advisory exceeds its expiration date
+# - Any advisory is added without corresponding GitHub issue
 ignore = []
 
 # =============================================================================
