@@ -22,6 +22,8 @@ pub mod security;
 
 /// Core agent lifecycle management orchestration
 pub mod agent_lifecycle_manager;
+/// CI pipeline configuration validation
+pub mod ci_pipeline;
 /// Agent deployment operations and strategies
 pub mod deployment_manager;
 /// Hot reload operations with zero downtime
