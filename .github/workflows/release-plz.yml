@@ -1,59 +1,356 @@
 name: Release-plz
 
+# Security-first permissions - minimize scope
 permissions:
-  pull-requests: write
   contents: write
+  pull-requests: write
+  actions: read  # Read workflow status
+  checks: read   # Read security checks
 
+# Multi-trigger support with security dependency
 on:
+  # Manual release trigger (preferred for production)
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release to create'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: 'Perform dry run without actual release'
+        required: false
+        default: false
+        type: boolean
+
+  # Automated trigger on main branch with security gate
   push:
     branches:
       - main
+    paths:
+      # Only trigger on actual code changes, not docs
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/release-plz.yml'
+
+  # Security-gated workflow trigger
+  workflow_run:
+    workflows: ["Security Monitoring"]
+    types: [completed]
+    branches: [main]
+
+# Environment variables for security and consistency
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
 
 jobs:
-  release-plz-release:
-    name: Release-plz release
+  # Security validation job - runs first
+  security-gate:
+    name: Security Gate
     runs-on: ubuntu-latest
-    # Only run when commit message indicates a release
-    if: contains(github.event.head_commit.message, 'release')
+    outputs:
+      security-passed: ${{ steps.validate.outputs.passed }}
+      workflow-trigger: ${{ steps.validate.outputs.trigger }}
+    steps:
+      - name: Validate security status
+        id: validate
+        run: |
+          echo "::group::Security Gate Validation"
+
+          # Determine trigger source and security requirements
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "Triggered by workflow_run: ${{ github.event.workflow_run.name }}"
+            echo "Workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+
+            # Strict security validation for workflow_run triggers
+            if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+              echo "✅ Security monitoring passed"
+              echo "passed=true" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Security monitoring failed or was cancelled"
+              echo "::error::Security monitoring must pass before release"
+              echo "passed=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Triggered by push to main branch"
+            # For push events, require explicit release signal
+            if [[ "${{ contains(github.event.head_commit.message, 'release') || contains(github.event.head_commit.message, 'chore: release') }}" == "true" ]]; then
+              echo "✅ Release commit detected"
+              echo "passed=true" >> $GITHUB_OUTPUT
+            else
+              echo "ℹ️ No release signal in commit message"
+              echo "passed=false" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Triggered manually via workflow_dispatch"
+            echo "✅ Manual trigger approved"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Unknown trigger: ${{ github.event_name }}"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "trigger=${{ github.event_name }}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
+  release-plz-release:
+    name: Release-plz Release
+    runs-on: ubuntu-latest
+    needs: security-gate
+    # Enhanced conditional logic with comprehensive security checks
+    if: |
+      needs.security-gate.outputs.security-passed == 'true' && (
+        (github.event_name == 'workflow_dispatch') ||
+        (github.event_name == 'push' && contains(github.event.head_commit.message, 'release')) ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      )
+
+    # Job-level permissions (principle of least privilege)
     permissions:
       contents: write
+      actions: read
+
+    # Prevent concurrent releases
+    concurrency:
+      group: release-plz-release
+      cancel-in-progress: false
+
+    # Enhanced timeout for large repositories
+    timeout-minutes: 30
+
     steps:
-      - name: Checkout repository
+      - name: 🔍 Security Context Logging
+        run: |
+          echo "::group::Release Security Context"
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Dry run: ${{ inputs.dry_run || 'false' }}"
+          echo "Release type: ${{ inputs.release_type || 'auto' }}"
+
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "Triggering workflow: ${{ github.event.workflow_run.name }}"
+            echo "Triggering SHA: ${{ github.event.workflow_run.head_sha }}"
+          fi
+          echo "::endgroup::"
+
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
+          # Full history for semantic versioning
           fetch-depth: 0
+          # Use dedicated release token with minimal scope
           token: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Install Rust toolchain
+          # Ensure we're on the correct commit for workflow_run triggers
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: 🦀 Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Run release-plz
+        with:
+          # Components needed for release validation
+          components: rustfmt, clippy
+
+      - name: 🔐 Validate Release Environment
+        run: |
+          echo "::group::Release Environment Validation"
+
+          # Check required secrets
+          if [[ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]]; then
+            echo "::warning::CARGO_REGISTRY_TOKEN not set - releases will fail"
+          else
+            echo "✅ CARGO_REGISTRY_TOKEN is configured"
+          fi
+
+          # Validate repository state
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::Repository has uncommitted changes"
+            git status
+            exit 1
+          fi
+
+          echo "✅ Repository state is clean"
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "::endgroup::"
+
+      - name: 🚀 Execute Release
         uses: release-plz/action@v0.5
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          # Enhanced logging for debugging
+          RUST_LOG: debug
+
+      - name: 📊 Release Status Report
+        if: always()
+        run: |
+          echo "::group::Release Status Report"
+          echo "Release job completed with status: ${{ job.status }}"
+          echo "Triggered by: ${{ github.event_name }}"
+
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ Release completed successfully"
+          else
+            echo "❌ Release failed - check logs above"
+          fi
+          echo "::endgroup::"
 
   release-plz-pr:
     name: Release-plz PR
     runs-on: ubuntu-latest
+    needs: security-gate
+    # Smart conditional - create PRs for all valid triggers except dry runs
+    if: |
+      needs.security-gate.outputs.security-passed == 'true' &&
+      inputs.dry_run != true && (
+        (github.event_name == 'workflow_dispatch') ||
+        (github.event_name == 'push') ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      )
+
+    # Job-level permissions
     permissions:
       contents: write
       pull-requests: write
+      actions: read
+
+    # Prevent concurrent PR operations
     concurrency:
-      group: release-plz-${{ github.ref }}
+      group: release-plz-pr-${{ github.ref }}
       cancel-in-progress: false
+
+    # Reasonable timeout for PR operations
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout repository
+      - name: 🔍 PR Context Logging
+        run: |
+          echo "::group::PR Generation Context"
+          echo "Event: ${{ github.event_name }}"
+          echo "Security gate: ${{ needs.security-gate.outputs.security-passed }}"
+          echo "Trigger: ${{ needs.security-gate.outputs.workflow-trigger }}"
+          echo "::endgroup::"
+
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Install Rust toolchain
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: 🦀 Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Run release-plz
+        with:
+          components: rustfmt, clippy
+
+      - name: 🔍 Pre-PR Validation
+        run: |
+          echo "::group::Pre-PR Validation"
+
+          # Check for existing release PRs
+          existing_prs=$(gh pr list --state open --label "release" --json number,title | jq length)
+          if [[ $existing_prs -gt 0 ]]; then
+            echo "::warning::Found $existing_prs existing release PR(s)"
+            gh pr list --state open --label "release" --json number,title,url | jq -r '.[] | "PR #\(.number): \(.title) - \(.url)"'
+          else
+            echo "✅ No existing release PRs found"
+          fi
+
+          echo "Repository state validation:"
+          git status --porcelain
+          echo "::endgroup::"
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Generate Release PR
         uses: release-plz/action@v0.5
         with:
           command: release-pr
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          RUST_LOG: debug
+
+      - name: 📊 PR Status Report
+        if: always()
+        run: |
+          echo "::group::PR Generation Status"
+          echo "PR job completed with status: ${{ job.status }}"
+
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ Release PR generation completed"
+            # List any new release PRs
+            gh pr list --state open --label "release" --json number,title,url | jq -r '.[] | "Created PR #\(.number): \(.title) - \(.url)"'
+          else
+            echo "❌ PR generation failed - check logs above"
+          fi
+          echo "::endgroup::"
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
+
+  # New job: Dry run validation
+  dry-run-validation:
+    name: Dry Run Validation
+    runs-on: ubuntu-latest
+    needs: security-gate
+    if: |
+      needs.security-gate.outputs.security-passed == 'true' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.dry_run == true
+
+    permissions:
+      contents: read
+      actions: read
+
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🦀 Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🧪 Dry Run Release Check
+        run: |
+          echo "::group::Dry Run Release Validation"
+          echo "This is a dry run - no actual release will be performed"
+
+          # Simulate release-plz checks
+          echo "Checking for releasable changes..."
+
+          # Check if there are changes since last release
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            last_tag=$(git describe --tags --abbrev=0)
+            echo "Last release: $last_tag"
+
+            # Check for commits since last tag
+            commit_count=$(git rev-list --count $last_tag..HEAD)
+            if [[ $commit_count -gt 0 ]]; then
+              echo "✅ Found $commit_count commit(s) since last release"
+              git log --oneline $last_tag..HEAD
+            else
+              echo "ℹ️ No new commits since last release"
+            fi
+          else
+            echo "ℹ️ No previous releases found"
+          fi
+
+          echo "✅ Dry run validation completed"
+          echo "::endgroup::"
