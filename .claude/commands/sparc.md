@@ -103,6 +103,7 @@ Use Task tool with `planner` agent:
 - Verify test fails for the right reason
 - Create `.claude/tdd.red` state file
 - Store test patterns in MCP memory
+- **COORDINATOR VALIDATION**: Verify response contains ONLY test code, no implementation
 
 **GREEN Phase** - Use Task tool with `green-implementer` agent:
 
@@ -111,6 +112,7 @@ Use Task tool with `planner` agent:
 - Verify test passes and no existing tests break
 - Create `.claude/tdd.green` state file
 - Store minimal implementation patterns in MCP memory
+- **COORDINATOR VALIDATION**: Verify response contains ONLY implementation code, no tests
 
 **REFACTOR Phase** - Use Task tool with `refactor-implementer` agent:
 
@@ -119,6 +121,7 @@ Use Task tool with `planner` agent:
 - Keep all tests green throughout refactoring
 - Use cargo MCP server for `cargo_clippy` and `cargo_fmt_check`
 - Store refactoring patterns in MCP memory
+- **COORDINATOR VALIDATION**: Verify response contains ONLY implementation improvements, no test changes
 - **COMMIT**: Create descriptive commit with Claude Code attribution
 
 **TYPE PASS**: Use Task tool with `type-architect` to replace primitives with nutype domain types
@@ -181,6 +184,41 @@ Use Task tool with `pr-manager` agent:
 7. Ensure PR workflow patterns were captured
 
 **If any agent failed to store knowledge, request immediate remediation before marking story complete.**
+
+## TDD Role Validation Protocol (CRITICAL)
+
+**COORDINATOR MUST VALIDATE** every TDD agent response before acceptance:
+
+### Red-Implementer Validation
+- ✅ **Required**: Response begins with "I am red-implementer. I write ONLY tests. I do NOT write implementation code."
+- ✅ **Required**: Contains test code blocks with `// Test that verifies [specific behavior]`
+- ✅ **Required**: Ends with "Test written and failing. Ready for green-implementer."
+- ✅ **Required**: Includes "**ROLE COMPLIANCE**: I have verified this response contains only test code and no implementation code."
+- ❌ **Forbidden**: ANY implementation code blocks
+- ❌ **Forbidden**: Modifications to existing implementation code
+
+### Green-Implementer Validation
+- ✅ **Required**: Response begins with "I am green-implementer. I write ONLY implementation code. I do NOT write tests."
+- ✅ **Required**: Contains implementation code blocks with `// Minimal implementation to pass test`
+- ✅ **Required**: Ends with "Test now passes. Ready for refactor-implementer or next red cycle."
+- ✅ **Required**: Includes "**ROLE COMPLIANCE**: I have verified this response contains only implementation code and no test code."
+- ❌ **Forbidden**: ANY test code blocks
+- ❌ **Forbidden**: Modifications to existing test code
+
+### Refactor-Implementer Validation
+- ✅ **Required**: Response begins with "I am refactor-implementer. I improve ONLY implementation code. I do NOT modify tests."
+- ✅ **Required**: Contains implementation improvements only
+- ✅ **Required**: Ends with "Code improved. All tests still green. Ready for next red cycle."
+- ✅ **Required**: Includes "**ROLE COMPLIANCE**: I have verified this response contains only implementation improvements and no test modifications."
+- ❌ **Forbidden**: ANY test modifications
+- ❌ **Forbidden**: Changes to test behavior or expectations
+
+### Violation Response Protocol
+**If validation fails:**
+1. **Immediately re-delegate** to the same agent with role reminder
+2. **Include validation error** in the re-delegation prompt
+3. **Do NOT proceed** with workflow until validation passes
+4. **Escalate to human** if violations persist after 2 attempts
 
 ## Information Request Routing Protocol
 
