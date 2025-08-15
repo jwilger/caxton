@@ -33,6 +33,7 @@ criterion = "0.5"
 tempfile = "3.14"
 test-log = "0.2"
 proptest = "1.6"
+toml = "0.8"
 wat = "1.223"
 
 [[bin]]

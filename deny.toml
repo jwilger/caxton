@@ -1,0 +1,171 @@
+# Caxton Multi-Agent Orchestration Server - Cargo Deny Configuration
+#
+# This configuration enforces security, licensing, and dependency policies
+# for Caxton's WebAssembly-based multi-agent runtime environment.
+#
+# Caxton Architecture Context:
+# - WebAssembly agent sandboxing with wasmtime runtime
+# - FIPA-compliant async messaging between agents
+# - Resource management (CPU fuel, memory limits)
+# - Observability layer (tracing, metrics, distributed tracing)
+# - Agent lifecycle management with deployment strategies
+#
+# Security Philosophy: "Secure by default, fail fast on policy violations"
+
+# =============================================================================
+# SECURITY ADVISORIES CONFIGURATION
+# =============================================================================
+[advisories]
+# Advisory database configuration for vulnerability detection
+# Caxton runs untrusted WebAssembly code, so we take a zero-tolerance
+# approach to known vulnerabilities in our runtime dependencies
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+
+# Security policy: Deny ALL vulnerabilities in runtime dependencies
+# Rationale: Any vulnerability in our runtime could be exploited by
+# malicious WASM agents to escape sandboxing or access unauthorized resources
+vulnerability = "deny"
+
+# Warn about unmaintained dependencies but don't fail builds
+# Rationale: Some low-level WASM/crypto dependencies may appear unmaintained
+# but are stable and security-audited. Manual review required.
+unmaintained = "warn"
+
+# Warn about yanked crates but don't fail builds
+# Rationale: Yanked crates may still be safe to use temporarily while
+# we evaluate alternatives, especially for development dependencies
+yanked = "warn"
+
+# Notice-level advisories (informational security notices)
+# These provide early warning about potential future issues
+notice = "warn"
+
+# Currently no ignored advisories
+# Any ignored vulnerabilities must be documented with business justification
+# and linked to tracking issues for remediation
+ignore = []
+
+# =============================================================================
+# LICENSE COMPLIANCE CONFIGURATION
+# =============================================================================
+[licenses]
+# License policy for multi-agent orchestration server
+# Must be compatible with MIT OR Apache-2.0 dual licensing
+
+# Deny crates without license information
+# Rationale: License compliance is critical for enterprise deployments
+# of multi-agent systems
+unlicensed = "deny"
+
+# Approved licenses for Caxton dependencies
+# Selected for compatibility with MIT/Apache-2.0 and enterprise use
+allow = [
+    # Primary permissive licenses
+    "MIT",                           # MIT License - most common, fully compatible
+    "Apache-2.0",                    # Apache 2.0 - our primary license
+    "Apache-2.0 WITH LLVM-exception", # LLVM exception for WASM toolchain
+
+    # BSD family - permissive and compatible
+    "BSD-2-Clause",                  # Simplified BSD License
+    "BSD-3-Clause",                  # New BSD License
+
+    # Other permissive licenses
+    "ISC",                           # Internet Systems Consortium License
+    "Unicode-DFS-2016",              # Unicode Data Files and Software License
+
+    # Note: Additional licenses may be needed for:
+    # - WebAssembly runtime dependencies (wasmtime ecosystem)
+    # - Cryptographic libraries (if we add TLS/crypto features)
+    # - Observability stack (OpenTelemetry, Prometheus)
+]
+
+# No explicitly denied licenses currently
+# Future consideration: May need to deny GPL family for enterprise deployments
+deny = []
+
+# Warn about copyleft licenses requiring careful review
+# Rationale: Copyleft licenses may impose additional obligations
+# for derivative works of the multi-agent server
+copyleft = "warn"
+
+# Don't automatically allow OSI/FSF licenses without explicit approval
+# Rationale: Some OSI/FSF licenses may have enterprise compatibility issues
+allow-osi-fsf-free = "neither"
+
+# Default policy: deny unknown licenses
+# All licenses must be explicitly approved for Caxton use
+default = "deny"
+
+# License detection confidence threshold
+# Higher values reduce false positives in license detection
+confidence-threshold = 0.8
+
+# =============================================================================
+# DEPENDENCY BANS CONFIGURATION
+# =============================================================================
+[bans]
+# Multiple versions policy for multi-agent runtime
+# Rationale: Multiple versions can cause issues with:
+# - Shared state between WASM modules
+# - Type compatibility in message passing
+# - Memory usage in resource-constrained environments
+multiple-versions = "warn"
+
+# Allow wildcard dependencies in development
+# Rationale: Development tools may use wildcards, but production
+# dependencies should have explicit version constraints
+wildcards = "allow"
+
+# Highlight all duplicate dependencies for review
+# Helps identify optimization opportunities in the dependency graph
+highlight = "all"
+
+# Workspace default features policy
+# Allow workspace members to use default features for development
+workspace-default-features = "allow"
+
+# External default features policy
+# Allow external crates to use default features
+# Note: May be restricted in future for minimal WASM runtime
+external-default-features = "allow"
+
+# No banned crates currently
+# Future considerations for banning:
+# - Crates with known security issues in WASM contexts
+# - Crates that conflict with sandboxing requirements
+# - Crates that add unnecessary bloat to agent runtime
+skip = []
+
+# No banned dependency trees currently
+# May be used to exclude entire ecosystems that conflict with
+# WebAssembly sandboxing or multi-agent messaging requirements
+skip-tree = []
+
+# =============================================================================
+# SOURCE REGISTRY CONFIGURATION
+# =============================================================================
+[sources]
+# Package source validation for supply chain security
+# Critical for multi-agent systems handling untrusted code
+
+# Warn about packages from unknown registries
+# Rationale: Unknown registries may not have the same security
+# review processes as crates.io
+unknown-registry = "warn"
+
+# Warn about packages from unknown git sources
+# Rationale: Git dependencies bypass crates.io security review
+# and may introduce supply chain vulnerabilities
+unknown-git = "warn"
+
+# Approved registries for Caxton dependencies
+# Currently limited to the official Rust package registry
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# No approved git sources currently
+# Future consideration: May need to allow specific git sources for:
+# - WebAssembly toolchain components
+# - Experimental FIPA protocol implementations
+# - Research-stage multi-agent system libraries
+allow-git = []
