@@ -173,7 +173,7 @@ We provide security updates for the following versions:
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them by emailing security@caxton.dev or through GitHub's private vulnerability reporting feature.
+Instead, please report them by emailing john+caxton-security-report@johnwilger.com or through GitHub's private vulnerability reporting feature (preferred).
 
 For automated vulnerability reporting, see our [security.txt file](.well-known/security.txt) which follows [RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards.
 
@@ -181,9 +181,9 @@ For automated vulnerability reporting, see our [security.txt file](.well-known/s
 
 Our security.txt provides machine-readable security contact information:
 
-- **Primary Contact**: `security@caxton.dev` for vulnerability reports
-- **Policy Location**: Comprehensive disclosure guidelines at `https://caxton.dev/security/policy`
-- **Acknowledgments**: Public recognition for responsible disclosure at `https://caxton.dev/security/acknowledgments`
+- **Primary Contact**: `john+caxton-security-report@johnwilger.com` for vulnerability reports
+- **Policy Location**: Comprehensive disclosure guidelines at `https://jwilger.github.io/caxton/security/policy`
+- **Acknowledgments**: Public recognition for responsible disclosure at `https://jwilger.github.io/caxton/security/acknowledgments`
 - **Expiration**: Annual renewal required (expires 2025-12-31)
 - **Language**: English for fastest response times
 
@@ -270,7 +270,7 @@ Every pull request triggers security validation:
   run: cargo deny check licenses
 ```
 
-See [.github/workflows/](https://github.com/caxton-ai/caxton/tree/main/.github/workflows) for complete CI configuration.
+See [.github/workflows/](https://github.com/jwilger/caxton/tree/main/.github/workflows) for complete CI configuration.
 
 ### Manual Testing
 
@@ -292,7 +292,7 @@ We are planning to launch a bug bounty program. Details will be announced on our
 Our security.txt implementation follows RFC 9116 specifications for machine-readable security policies:
 
 #### Required Fields
-- **Contact**: Primary security email (`security@caxton.dev`) with 24-hour response commitment
+- **Contact**: Primary security email (`john+caxton-security-report@johnwilger.com`) with 24-hour response commitment
 - **Expires**: Annual renewal with clear expiration date to ensure current information
 
 #### Optional Fields (Enhanced Disclosure)
@@ -307,7 +307,7 @@ Validate our security.txt implementation:
 
 ```bash
 # Check RFC 9116 compliance
-curl -s https://caxton.dev/.well-known/security.txt | \
+curl -s https://jwilger.github.io/caxton/.well-known/security.txt | \
   security-txt-validator
 
 # Verify expiration date
@@ -315,7 +315,7 @@ grep "Expires:" .well-known/security.txt
 
 # Test contact accessibility
 echo "security-test@example.com" | \
-  mail -s "Security Test" security@caxton.dev
+  mail -s "Security Test" john+caxton-security-report@johnwilger.com
 ```
 
 #### Deployment Considerations
@@ -480,9 +480,9 @@ Before merging security-sensitive changes:
 
 ### Security Contacts
 
-- **Security Team**: security@caxton.dev
-- **Incident Response**: incident@caxton.dev
-- **General Inquiries**: info@caxton.dev
+- **Security Team**: john+caxton-security-report@johnwilger.com
+- **Incident Response**: john+caxton-security-report@johnwilger.com
+- **General Inquiries**: john+caxton-security-report@johnwilger.com
 
 ## Changelog
 
@@ -499,4 +499,4 @@ Recent security improvements:
 
 ---
 
-For the latest security information, please visit our [security page](https://caxton.dev/security) or subscribe to our security announcements.
+For the latest security information, please visit our [security page](https://jwilger.github.io/caxton/security) or subscribe to our security announcements.

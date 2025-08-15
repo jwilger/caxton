@@ -57,7 +57,7 @@ fn test_security_documentation_includes_new_tools() {
 
     // Verify RFC 9116 compliance
     assert!(
-        security_txt_content.contains("Contact: security@caxton.dev"),
+        security_txt_content.contains("Contact: john+caxton-security-report@johnwilger.com"),
         "security.txt should contain proper contact information"
     );
 

@@ -6,7 +6,7 @@
 
 # Contact: Primary security contact for vulnerability reports
 # Format: email address as specified in RFC 9116 Section 2.5.3
-Contact: security@caxton.dev
+Contact: john+caxton-security-report@johnwilger.com
 
 # Expires: Expiration date for this security policy
 # Format: ISO 8601 timestamp as specified in RFC 9116 Section 2.5.5
@@ -21,13 +21,13 @@ Expires: 2025-12-31T23:59:59.000Z
 # Optional Fields (RFC 9116 Section 2.5)
 
 # Acknowledgments: Recognition page for security researchers
-# This page acknowledges responsible disclosure contributors
-Acknowledgments: https://caxton.dev/security/acknowledgments
+# GitHub Security Advisories provide acknowledgment for responsible disclosure
+Acknowledgments: https://github.com/jwilger/caxton/security/advisories
 
 # Policy: Detailed vulnerability disclosure policy
-# Provides comprehensive guidelines for security researchers
-# Covers scope, safe harbor, response timelines, and reward structure
-Policy: https://caxton.dev/security/policy
+# GitHub's built-in vulnerability reporting provides policy framework
+# Use "Report a vulnerability" button on the GitHub repository
+Policy: https://github.com/jwilger/caxton/security
 
 # Preferred-Languages: Communication languages for security reports
 # Prioritizes English for faster response times
@@ -35,4 +35,4 @@ Preferred-Languages: en
 
 # Canonical: Authoritative location for this security.txt file
 # Ensures researchers access the most current security contact information
-Canonical: https://caxton.dev/.well-known/security.txt
+Canonical: https://jwilger.github.io/caxton/.well-known/security.txt
