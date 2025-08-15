@@ -1,0 +1,38 @@
+# Caxton Security Contact Information
+# This file conforms to RFC 9116 security.txt standard
+# https://tools.ietf.org/rfc/rfc9116.txt
+
+# Required Fields (RFC 9116 Section 2.5)
+
+# Contact: Primary security contact for vulnerability reports
+# Format: email address as specified in RFC 9116 Section 2.5.3
+Contact: john+caxton-security-report@johnwilger.com
+
+# Expires: Expiration date for this security policy
+# Format: ISO 8601 timestamp as specified in RFC 9116 Section 2.5.5
+# This policy expires one year from last update and must be renewed
+Expires: 2025-12-31T23:59:59.000Z
+#
+# MAINTENANCE REMINDER: To prevent manual maintenance burden:
+# 1. Set calendar events for annual renewal (suggest 30 days before expiration)
+# 2. Update the expiration date above before it expires
+# 3. Review and update contact information annually during renewal
+
+# Optional Fields (RFC 9116 Section 2.5)
+
+# Acknowledgments: Recognition page for security researchers
+# GitHub Security Advisories provide acknowledgment for responsible disclosure
+Acknowledgments: https://github.com/jwilger/caxton/security/advisories
+
+# Policy: Detailed vulnerability disclosure policy
+# GitHub's built-in vulnerability reporting provides policy framework
+# Use "Report a vulnerability" button on the GitHub repository
+Policy: https://github.com/jwilger/caxton/security
+
+# Preferred-Languages: Communication languages for security reports
+# Prioritizes English for faster response times
+Preferred-Languages: en
+
+# Canonical: Authoritative location for this security.txt file
+# Ensures researchers access the most current security contact information
+Canonical: https://jwilger.github.io/caxton/.well-known/security.txt

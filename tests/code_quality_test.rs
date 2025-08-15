@@ -253,6 +253,42 @@ fn find_ci_workflow_violations() -> Vec<String> {
     violations
 }
 
+/// Check if cargo-deny execution is properly configured in the workflow
+fn check_cargo_deny_execution_in_workflow(workflow_content: &str) -> bool {
+    // This function should validate that cargo-deny check is executed with:
+    // 1. Proper error handling and JSON output generation
+    // 2. Artifact reporting for deny-results.json
+    // 3. Integration with the security monitoring workflow
+    workflow_content.contains("cargo deny check --format json")
+        && workflow_content.contains("deny-results.json")
+        && workflow_content.contains("|| true")
+}
+
+#[test]
+fn test_cargo_deny_integration_in_ci() {
+    // Test that verifies cargo-deny is properly integrated into CI security monitoring
+    // Kent Beck RED principle: Test should fail because behavior is unimplemented
+
+    let security_workflow_path = ".github/workflows/security-monitoring.yml";
+    let workflow_content = fs::read_to_string(security_workflow_path)
+        .expect("Security monitoring workflow should exist");
+
+    // Verify cargo-deny is installed in CI environment
+    assert!(
+        workflow_content.contains("cargo install --locked cargo-audit cargo-deny"),
+        "cargo-deny should be installed alongside cargo-audit in security-monitoring.yml"
+    );
+
+    // Verify cargo-deny check command is executed with proper error handling
+    // This should check for the actual cargo-deny execution step in the workflow
+    let has_cargo_deny_execution = check_cargo_deny_execution_in_workflow(&workflow_content);
+
+    assert!(
+        has_cargo_deny_execution,
+        "CI should execute 'cargo deny check' with proper error handling and JSON output for artifact reporting"
+    );
+}
+
 #[test]
 fn test_documentation_builds_without_errors() {
     // This test ensures that `cargo doc` builds successfully without broken intra-doc links
