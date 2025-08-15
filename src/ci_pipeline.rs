@@ -58,6 +58,13 @@ pub struct MatrixConfiguration {
 }
 
 impl MatrixConfiguration {
+    /// Helper function to add validation error if condition is met
+    fn push_validation_error_if(errors: &mut Vec<ValidationError>, condition: bool, message: &str) {
+        if condition && let Ok(error) = ValidationError::try_new(message.to_string()) {
+            errors.push(error);
+        }
+    }
+
     /// Convert this configuration to validated domain types
     ///
     /// This method performs the conversion from string-based configuration
@@ -69,7 +76,7 @@ impl MatrixConfiguration {
         let os_results: Vec<_> = self
             .operating_systems
             .iter()
-            .map(|s| OperatingSystemName::try_new(s.clone()))
+            .map(OperatingSystemName::try_new)
             .collect();
 
         let (valid_os, os_errors): (Vec<_>, Vec<_>) =
@@ -77,18 +84,17 @@ impl MatrixConfiguration {
 
         let validated_os: Vec<_> = valid_os.into_iter().map(Result::unwrap).collect();
 
-        if !os_errors.is_empty()
-            && let Ok(error) =
-                ValidationError::try_new("Invalid operating system names".to_string())
-        {
-            errors.push(error);
-        }
+        Self::push_validation_error_if(
+            &mut errors,
+            !os_errors.is_empty(),
+            "Invalid operating system names",
+        );
 
         // Convert and validate toolchains
         let toolchain_results: Vec<_> = self
             .rust_toolchains
             .iter()
-            .map(|s| RustToolchainName::try_new(s.clone()))
+            .map(RustToolchainName::try_new)
             .collect();
 
         let (valid_toolchains, toolchain_errors): (Vec<_>, Vec<_>) =
@@ -97,29 +103,25 @@ impl MatrixConfiguration {
         let validated_toolchains: Vec<_> =
             valid_toolchains.into_iter().map(Result::unwrap).collect();
 
-        if !toolchain_errors.is_empty()
-            && let Ok(error) = ValidationError::try_new("Invalid Rust toolchain names".to_string())
-        {
-            errors.push(error);
-        }
+        Self::push_validation_error_if(
+            &mut errors,
+            !toolchain_errors.is_empty(),
+            "Invalid Rust toolchain names",
+        );
 
         // Convert and validate features
-        let feature_results: Vec<_> = self
-            .features
-            .iter()
-            .map(|s| FeatureName::try_new(s.clone()))
-            .collect();
+        let feature_results: Vec<_> = self.features.iter().map(FeatureName::try_new).collect();
 
         let (valid_features, feature_errors): (Vec<_>, Vec<_>) =
             feature_results.into_iter().partition(Result::is_ok);
 
         let validated_features: Vec<_> = valid_features.into_iter().map(Result::unwrap).collect();
 
-        if !feature_errors.is_empty()
-            && let Ok(error) = ValidationError::try_new("Invalid feature names".to_string())
-        {
-            errors.push(error);
-        }
+        Self::push_validation_error_if(
+            &mut errors,
+            !feature_errors.is_empty(),
+            "Invalid feature names",
+        );
 
         if errors.is_empty() {
             Ok(ValidatedMatrixConfiguration {
@@ -161,7 +163,7 @@ pub enum PipelineValidationResult {
     /// Configuration is valid
     Valid,
     /// Configuration is invalid with validation errors
-    Invalid(Vec<String>),
+    Invalid(Vec<ValidationError>),
 }
 
 /// Validator for CI pipeline configuration (Imperative Shell)
@@ -199,48 +201,54 @@ fn validate_matrix_configuration_pure(config: &MatrixConfiguration) -> PipelineV
     match config.to_validated() {
         Ok(validated_config) => {
             // Run business logic validation on the validated configuration
-            let mut error_messages = Vec::new();
-
-            // Validate operating systems business rules
+            let mut validation_errors: Vec<ValidationError> = Vec::new();
             if let Err(os_errors) =
                 validate_operating_systems_business_rules(&validated_config.operating_systems)
             {
-                for error in os_errors {
-                    error_messages.push(error.into_inner());
-                }
+                validation_errors.extend(os_errors);
             }
 
             // Validate toolchains business rules
             if let Err(toolchain_errors) =
                 validate_rust_toolchains_business_rules(&validated_config.rust_toolchains)
             {
-                for error in toolchain_errors {
-                    error_messages.push(error.into_inner());
-                }
+                validation_errors.extend(toolchain_errors);
             }
 
             // Validate features business rules
             if let Err(feature_errors) =
                 validate_features_business_rules(&validated_config.features)
             {
-                for error in feature_errors {
-                    error_messages.push(error.into_inner());
-                }
+                validation_errors.extend(feature_errors);
             }
 
-            if error_messages.is_empty() {
+            if validation_errors.is_empty() {
                 PipelineValidationResult::Valid
             } else {
-                PipelineValidationResult::Invalid(error_messages)
+                PipelineValidationResult::Invalid(validation_errors)
             }
         }
-        Err(validation_errors) => {
-            let error_messages: Vec<String> = validation_errors
-                .into_iter()
-                .map(ValidationError::into_inner)
-                .collect();
-            PipelineValidationResult::Invalid(error_messages)
-        }
+        Err(validation_errors) => PipelineValidationResult::Invalid(validation_errors),
+    }
+}
+
+/// Generic helper function to validate non-empty slices
+fn validate_non_empty_slice<T>(
+    slice: &[T],
+    error_message: &str,
+) -> Result<(), Vec<ValidationError>> {
+    let mut errors = Vec::new();
+
+    if slice.is_empty()
+        && let Ok(error) = ValidationError::try_new(error_message.to_string())
+    {
+        errors.push(error);
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
     }
 }
 
@@ -248,56 +256,20 @@ fn validate_matrix_configuration_pure(config: &MatrixConfiguration) -> PipelineV
 fn validate_operating_systems_business_rules(
     operating_systems: &[OperatingSystemName],
 ) -> Result<(), Vec<ValidationError>> {
-    let mut errors = Vec::new();
-
-    if operating_systems.is_empty()
-        && let Ok(error) =
-            ValidationError::try_new("At least one operating system must be specified".to_string())
-    {
-        errors.push(error);
-    }
-
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors)
-    }
+    validate_non_empty_slice(
+        operating_systems,
+        "At least one operating system must be specified",
+    )
 }
 
 /// Validate Rust toolchain configuration business rules (Pure Function)
 fn validate_rust_toolchains_business_rules(
     toolchains: &[RustToolchainName],
 ) -> Result<(), Vec<ValidationError>> {
-    let mut errors = Vec::new();
-
-    if toolchains.is_empty()
-        && let Ok(error) =
-            ValidationError::try_new("At least one Rust toolchain must be specified".to_string())
-    {
-        errors.push(error);
-    }
-
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors)
-    }
+    validate_non_empty_slice(toolchains, "At least one Rust toolchain must be specified")
 }
 
 /// Validate feature configuration business rules (Pure Function)
 fn validate_features_business_rules(features: &[FeatureName]) -> Result<(), Vec<ValidationError>> {
-    let mut errors = Vec::new();
-
-    if features.is_empty()
-        && let Ok(error) =
-            ValidationError::try_new("At least one feature must be specified".to_string())
-    {
-        errors.push(error);
-    }
-
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors)
-    }
+    validate_non_empty_slice(features, "At least one feature must be specified")
 }
