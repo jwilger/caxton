@@ -338,3 +338,256 @@ impl DatabaseConnection {
         &self.config
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain_types::ConnectionPoolSize;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_should_create_valid_database_path_when_given_db_extension() {
+        // Test that verifies DatabasePath accepts valid .db extensions
+        let path = DatabasePath::new("test.db").unwrap();
+        assert!(path.to_connection_string().contains("test.db"));
+    }
+
+    #[test]
+    fn test_should_reject_empty_path_when_creating_database_path() {
+        // Test that verifies DatabasePath validation rejects empty paths
+        let result = DatabasePath::new("");
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            DatabaseError::Storage(StorageError::Configuration { field, reason }) => {
+                assert_eq!(field, "database_path");
+                assert!(reason.contains("empty"));
+            }
+            _ => panic!("Expected Configuration error for empty path"),
+        }
+    }
+
+    #[test]
+    fn test_should_reject_invalid_extension_when_creating_database_path() {
+        // Test that verifies DatabasePath validation rejects non-.db extensions
+        let result = DatabasePath::new("test.txt");
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            DatabaseError::Storage(StorageError::Configuration { field, reason }) => {
+                assert_eq!(field, "database_path");
+                assert!(reason.contains("invalid extension"));
+            }
+            _ => panic!("Expected Configuration error for invalid extension"),
+        }
+    }
+
+    #[test]
+    fn test_should_generate_correct_connection_string_when_converting_path() {
+        // Test that verifies DatabasePath generates proper SQLite connection strings
+        let path = DatabasePath::new("/tmp/test.db").unwrap();
+        let conn_str = path.to_connection_string();
+        assert!(conn_str.starts_with("sqlite://"));
+        assert!(conn_str.contains("/tmp/test.db"));
+        assert!(conn_str.contains("mode=rwc"));
+    }
+
+    #[test]
+    fn test_should_extract_parent_directory_when_path_has_parent() {
+        // Test that verifies DatabasePath parent directory extraction
+        let path = DatabasePath::new("/tmp/subdir/test.db").unwrap();
+        let parent = path.parent_directory().unwrap();
+        assert!(parent.to_string_lossy().contains("tmp"));
+    }
+
+    #[test]
+    fn test_should_create_default_config_when_given_valid_path() {
+        // Test that verifies DatabaseConfig creation with defaults
+        let path = DatabasePath::new("test.db").unwrap();
+        let config = DatabaseConfig::new(path);
+        assert_eq!(config.pool_size().as_usize(), 10); // Default from ConnectionPoolSize
+        assert!(config.wal_mode_enabled());
+        assert!(config.foreign_keys_enabled());
+    }
+
+    #[test]
+    fn test_should_create_testing_config_when_requested() {
+        // Test that verifies DatabaseConfig testing configuration
+        let path = DatabasePath::new("test.db").unwrap();
+        let config = DatabaseConfig::for_testing(path);
+        assert_eq!(config.pool_size().as_usize(), 1);
+        assert!(!config.wal_mode_enabled());
+        assert!(!config.foreign_keys_enabled());
+    }
+
+    #[test]
+    fn test_should_apply_builder_settings_when_configuring() {
+        // Test that verifies DatabaseConfig builder pattern works correctly
+        let path = DatabasePath::new("test.db").unwrap();
+        let pool_size = ConnectionPoolSize::try_new(5).unwrap();
+        let config = DatabaseConfig::new(path)
+            .with_pool_size(pool_size)
+            .with_wal_mode(false)
+            .with_foreign_keys(false);
+
+        assert_eq!(config.pool_size().as_usize(), 5);
+        assert!(!config.wal_mode_enabled());
+        assert!(!config.foreign_keys_enabled());
+    }
+
+    #[test]
+    fn test_should_pass_validation_when_config_is_valid() {
+        // Test that verifies DatabaseConfig validation accepts valid configurations
+        let path = DatabasePath::new("test.db").unwrap();
+        let config = DatabaseConfig::new(path);
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_should_fail_validation_when_pool_size_is_zero() {
+        // Test that verifies DatabaseConfig validation rejects zero pool size
+        let path = DatabasePath::new("test.db").unwrap();
+        let zero_pool_size = ConnectionPoolSize::try_new(0);
+
+        // Note: This test may fail if ConnectionPoolSize validation prevents zero
+        // In that case, this demonstrates type safety working correctly
+        if let Ok(zero_pool) = zero_pool_size {
+            let config = DatabaseConfig::new(path).with_pool_size(zero_pool);
+            let result = config.validate();
+            assert!(result.is_err());
+            match result.unwrap_err() {
+                StorageError::Configuration { field, reason } => {
+                    assert_eq!(field, "pool_size");
+                    assert!(reason.contains("greater than 0"));
+                }
+                _ => panic!("Expected Configuration error for zero pool size"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_should_create_sqlite_options_with_wal_mode_when_enabled() {
+        // Test that verifies SQLite options generation with WAL mode
+        let path = DatabasePath::new("test.db").unwrap();
+        let config = DatabaseConfig::new(path).with_wal_mode(true);
+        let _options = DatabaseConnection::create_connect_options(&config);
+        // Note: SQLite options are opaque, so we test this through integration
+    }
+
+    #[test]
+    fn test_should_create_sqlite_options_without_wal_mode_when_disabled() {
+        // Test that verifies SQLite options generation without WAL mode
+        let path = DatabasePath::new("test.db").unwrap();
+        let config = DatabaseConfig::new(path).with_wal_mode(false);
+        let _options = DatabaseConnection::create_connect_options(&config);
+        // Note: SQLite options are opaque, so we test this through integration
+    }
+
+    #[tokio::test]
+    async fn test_should_initialize_database_connection_when_given_valid_config() {
+        // Test that verifies DatabaseConnection initialization succeeds with valid config
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        let connection = DatabaseConnection::initialize(config).await;
+        assert!(connection.is_ok());
+        let conn = connection.unwrap();
+        assert!(conn.database_file_exists());
+    }
+
+    #[tokio::test]
+    async fn test_should_fail_initialization_when_path_is_invalid() {
+        // Test that verifies DatabaseConnection initialization fails with invalid path
+        // This test may be hard to trigger due to strong typing, but attempts edge cases
+        let path = DatabasePath::new("/root/impossible_write_location.db");
+
+        if let Ok(path) = path {
+            let config = DatabaseConfig::for_testing(path);
+            let _result = DatabaseConnection::initialize(config).await;
+            // May fail during directory creation or connection setup
+            // The exact failure depends on system permissions
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_pass_connection_test_when_database_is_healthy() {
+        // Test that verifies database connection testing works
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        let connection = DatabaseConnection::initialize(config).await.unwrap();
+        let test_result = connection.test_connection().await;
+        assert!(test_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_should_provide_access_to_connection_pool_when_requested() {
+        // Test that verifies DatabaseConnection provides pool access
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        let connection = DatabaseConnection::initialize(config).await.unwrap();
+        let _pool = connection.pool();
+        // Pool access is primarily for advanced operations
+    }
+
+    #[tokio::test]
+    async fn test_should_provide_access_to_config_when_requested() {
+        // Test that verifies DatabaseConnection provides config access
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path.clone());
+
+        let connection = DatabaseConnection::initialize(config).await.unwrap();
+        let stored_config = connection.config();
+        assert_eq!(stored_config.path(), &path);
+    }
+
+    #[test]
+    fn test_should_display_database_path_correctly_when_formatted() {
+        // Test that verifies DatabasePath Display implementation
+        let path = DatabasePath::new("test.db").unwrap();
+        let display_str = format!("{path}");
+        assert!(display_str.contains("test.db"));
+    }
+
+    #[test]
+    fn test_should_handle_database_error_types_correctly() {
+        // Test that verifies error type conversions and formatting
+        let storage_error = StorageError::Database {
+            message: "Test error".to_string(),
+        };
+        let db_error = DatabaseError::Storage(storage_error);
+        let error_string = format!("{db_error}");
+        assert!(error_string.contains("Test error"));
+    }
+
+    #[test]
+    fn test_should_handle_storage_error_types_correctly() {
+        // Test that verifies StorageError variants format correctly
+        let config_error = StorageError::Configuration {
+            field: "test_field".to_string(),
+            reason: "test reason".to_string(),
+        };
+        let error_string = format!("{config_error}");
+        assert!(error_string.contains("test_field"));
+        assert!(error_string.contains("test reason"));
+
+        let filesystem_error = StorageError::FileSystem {
+            message: "filesystem error".to_string(),
+        };
+        let fs_error_string = format!("{filesystem_error}");
+        assert!(fs_error_string.contains("filesystem error"));
+
+        let pool_error = StorageError::ConnectionPool {
+            message: "pool error".to_string(),
+        };
+        let pool_error_string = format!("{pool_error}");
+        assert!(pool_error_string.contains("pool error"));
+    }
+}

@@ -1,3 +1,0 @@
-#!/usr/bin/env zsh
-
-exec ~/.local/bin/claude --dangerously-skip-permissions $@
