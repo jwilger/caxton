@@ -101,15 +101,54 @@ jobs:
           echo "::group::Security Gate Validation"
           echo "Event: ${{ github.event_name }}"
 
-          # SIMPLIFIED SECURITY LOGIC:
-          # After analysis of the complex dependency chains between security-monitoring
-          # and release-plz workflows, we've adopted a simplified approach that approves
-          # all configured triggers while maintaining comprehensive logging for audit trails.
-          # This prevents circular dependencies and workflow deadlocks while ensuring
-          # that all release operations are still subject to our standard security controls.
+          # SECURITY VALIDATION LOGIC:
+          # Validates security status based on trigger type while maintaining
+          # simplified dependency structure to prevent circular dependencies
 
-          echo "✅ Security gate passed for: ${{ github.event_name }}"
-          echo "passed=true" >> $GITHUB_OUTPUT
+          SECURITY_PASSED="false"
+
+          case "${{ github.event_name }}" in
+            "workflow_dispatch")
+              echo "Manual trigger - performing basic security validation"
+              # Manual triggers require manual approval, inherently more secure
+              SECURITY_PASSED="true"
+              ;;
+            "push")
+              echo "Push trigger - validating repository security state"
+              # For push triggers, validate that we're on main branch and repo is secure
+              if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+                echo "✅ Push to main branch confirmed"
+                SECURITY_PASSED="true"
+              else
+                echo "❌ Push trigger only allowed on main branch"
+                SECURITY_PASSED="false"
+              fi
+              ;;
+            "workflow_run")
+              echo "Security workflow completion trigger - validating workflow status"
+              # For workflow_run triggers, validate the security workflow actually succeeded
+              if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+                echo "✅ Security workflow completed successfully"
+                SECURITY_PASSED="true"
+              else
+                echo "❌ Security workflow failed: ${{ github.event.workflow_run.conclusion }}"
+                SECURITY_PASSED="false"
+              fi
+              ;;
+            *)
+              echo "❌ Unknown trigger type: ${{ github.event_name }}"
+              SECURITY_PASSED="false"
+              ;;
+          esac
+
+          if [[ "$SECURITY_PASSED" == "true" ]]; then
+            echo "✅ Security gate passed for: ${{ github.event_name }}"
+          else
+            echo "❌ Security gate failed for: ${{ github.event_name }}"
+            exit 1
+          fi
+
+          echo "passed=$SECURITY_PASSED" >> $GITHUB_OUTPUT
           echo "trigger=${{ github.event_name }}" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
