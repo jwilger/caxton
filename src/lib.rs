@@ -3,6 +3,8 @@
 //! This crate provides a secure, isolated execution environment for WebAssembly-based agents
 //! with comprehensive resource management, security policies, and sandboxing capabilities.
 
+/// Database module for embedded SQLite storage
+pub mod database;
 /// Advanced domain types for type-safe state management
 pub mod domain;
 /// Domain types for preventing primitive obsession
@@ -33,6 +35,9 @@ pub mod time_provider;
 /// WASM module validation and security analysis
 pub mod wasm_module_validator;
 
+pub use database::{
+    DatabaseConfig, DatabaseConnection, DatabaseError, DatabasePath, DatabaseResult,
+};
 pub use domain_types::{
     AgentId, AgentName, ConnectionPoolSize, CpuFuel, CpuFuelAmount, CpuFuelConsumed, ExecutionTime,
     FunctionDescription, FunctionModuleName, HostFunctionName, MaxAgentMemory, MaxAgents,
