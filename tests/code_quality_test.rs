@@ -290,6 +290,49 @@ fn test_cargo_deny_integration_in_ci() {
 }
 
 #[test]
+fn test_security_monitoring_workflow_has_no_container_scanning() {
+    // Test that verifies security-monitoring.yml workflow does NOT contain container scanning jobs
+    // Kent Beck RED principle: Test should fail because container scanning is currently present
+
+    let security_workflow_path = ".github/workflows/security-monitoring.yml";
+    let workflow_content = fs::read_to_string(security_workflow_path)
+        .expect("Security monitoring workflow should exist");
+
+    // Parse the workflow as YAML to check for container-related jobs
+    // For this test, we'll use a simple string-based approach to detect container scanning
+    let has_container_job = workflow_content.contains("container-security-scan:");
+    let has_trivy_scanner = workflow_content.contains("aquasecurity/trivy-action");
+    let has_grype_scanner = workflow_content.contains("anchore/grype");
+    let has_dockerfile_build = workflow_content.contains("docker build");
+
+    // The test should fail because container scanning is currently present
+    // This validates our GitHub Actions workflow security configuration
+    assert!(
+        !has_container_job,
+        "Security monitoring workflow should NOT contain container-security-scan job. \
+        Found container scanning job that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_trivy_scanner,
+        "Security monitoring workflow should NOT use Trivy container scanner. \
+        Found Trivy action that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_grype_scanner,
+        "Security monitoring workflow should NOT use Grype container scanner. \
+        Found Grype scanner installation that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_dockerfile_build,
+        "Security monitoring workflow should NOT build Docker containers. \
+        Found Docker build commands that should be removed for Rust-only project."
+    );
+}
+
+#[test]
 fn test_documentation_builds_without_errors() {
     // This test ensures that `cargo doc` builds successfully without broken intra-doc links
     // Kent Beck RED principle: Test should fail because feature is unimplemented (broken doc link)
