@@ -1,431 +1,531 @@
-# DevOps Security Guide for Caxton
+# Security Guide for Caxton Deployment and Operations
 
 ## Overview
 
-This guide outlines the comprehensive security and DevOps practices implemented for the Caxton multi-agent orchestration platform. It covers security patterns, CI/CD pipeline configuration, deployment practices, and monitoring strategies.
+This guide provides essential security information for users installing Caxton binaries and operators deploying Caxton in production environments. It covers vulnerability reporting, security updates, secure deployment practices, and operational security monitoring.
 
-## Security Architecture Review
+## Security Vulnerability Reporting
 
-> **Note**: This guide complements the comprehensive security architecture defined in [ADR-0016: Security Architecture](../adr/0016-security-architecture.md). Refer to the ADR for detailed architectural decisions and rationale.
+### How to Report Security Issues
 
-### WebAssembly Isolation Security
+**🚨 CRITICAL: Do not report security vulnerabilities through public GitHub issues.**
 
-**✅ Implementation Status: SECURE**
+For security vulnerabilities, use GitHub's secure reporting system:
 
-The Caxton platform implements robust WebAssembly isolation with multiple security layers:
+#### GitHub Security Advisory Reporting
 
-#### Memory Isolation
-```rust
-// Strict isolation configuration enforced
-IsolationConfig::strict() {
-    memory_limit_bytes: Some(16 * 1024 * 1024), // 16MB limit
-    cpu_time_limit_ms: Some(1000),              // 1 second CPU limit
-    network_access: false,                       // No network access
-    filesystem_access: false,                    // No filesystem access
-}
+- **Method**: Use GitHub's private vulnerability reporting feature in the Caxton repository
+- **Location**: Security tab → Report a vulnerability
+- **Response Time**: Within 24 hours
+- **Benefits**: Private, secure communication with maintainers
+
+#### Automated Reporting
+
+Our [security.txt file](/.well-known/security.txt) follows [RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards for automated security scanner integration.
+
+#### What to Include in Your Report
+
+When reporting a vulnerability, please provide:
+
+- Clear description of the security issue
+- Steps to reproduce (if applicable)
+- Potential impact assessment
+- Affected Caxton versions
+- Your contact information for follow-up
+
+### Response Timeline
+
+| Severity | Response Time | Fix Timeline |
+|----------|--------------|--------------|
+| **Critical** | 24 hours | 24-48 hours |
+| **High** | 72 hours | 1 week |
+| **Medium** | 1 week | 1 month |
+| **Low** | 1 week | Next release |
+
+## Security Updates and Notifications
+
+### Staying Informed About Security Issues
+
+#### Security Advisories
+
+- **Location**: GitHub Security Advisories for the Caxton repository
+- **Format**: CVE-based notifications with impact assessment
+- **Frequency**: As needed when vulnerabilities are discovered
+
+#### GitHub Repository Watching
+
+Configure GitHub notifications to stay informed about security updates:
+
+**Watch Repository for Security Updates:**
+
+- Go to the [Caxton GitHub repository](https://github.com/your-org/caxton)
+- Click "Watch" → "Custom" → Select:
+  - "Security advisories" (most important for security updates)
+  - "Releases" (for all new versions including security patches)
+  - "Issues" (optional, for security-related discussions)
+
+**GitHub Security Advisory Notifications:**
+
+- **Location**: GitHub Security tab in the Caxton repository
+- **Content**: CVE-based security advisories with impact assessment
+- **Format**: Email notifications if repository watching is enabled
+- **Frequency**: Immediate notification when security advisories are published
+
+#### Alternative Notification Methods
+
+**RSS Feed Monitoring:**
+
+```bash
+# GitHub releases RSS feed
+https://github.com/your-org/caxton/releases.atom
+
+# GitHub security advisories RSS feed
+https://github.com/your-org/caxton/security/advisories.atom
 ```
 
-**Security Guarantees:**
-- Each agent runs in separate WASM instance with isolated linear memory
-- Resource exhaustion attacks prevented by enforced limits
-- System call restrictions prevent privilege escalation
-- Memory boundaries prevent cross-agent data access
+**Manual Monitoring:**
 
-#### Validation Results
-- ✅ Memory isolation boundaries tested and verified
-- ✅ CPU time limits enforced with proper termination handling
-- ✅ Resource exhaustion protection active
-- ✅ System call restrictions properly implemented
+```bash
+# Check your current Caxton version
+caxton --version
 
-### FIPA Message Security
+# Check for latest releases
+curl -s https://api.github.com/repos/your-org/caxton/releases/latest | jq '.tag_name'
 
-**✅ Implementation Status: SECURE WITH RECOMMENDATIONS**
+# Visit GitHub directly for security advisories:
+# https://github.com/your-org/caxton/security/advisories
+```
 
-FIPA message handling includes comprehensive security measures:
+**Automated Monitoring Scripts:**
 
-#### Message Validation
-```rust
-// Message validation pipeline
-impl MessageRouter {
-    fn validate_message(&self, message: &FipaMessage) -> Result<(), ValidationError> {
-        // Content validation
-        self.validate_content(&message.content)?;
-        // Size limits enforcement
-        self.enforce_size_limits(message)?;
-        // Sender authentication
-        self.authenticate_sender(&message.envelope.sender)?;
-        // Conversation tracking security
-        self.validate_conversation_id(&message.envelope.conversation_id)?;
-        Ok(())
-    }
-}
+```bash
+#!/bin/bash
+# Example script to check for security advisories
+# Run this periodically via cron
+
+REPO="your-org/caxton"
+CURRENT_VERSION=$(caxton --version | cut -d' ' -f2)
+
+echo "Current Caxton version: $CURRENT_VERSION"
+echo "Checking for security advisories..."
+echo "Visit: https://github.com/$REPO/security/advisories"
+echo "Latest release: https://github.com/$REPO/releases/latest"
+```
+
+### Supported Versions for Security Updates
+
+| Version | Security Support | End of Support |
+|---------|------------------|----------------|
+| 0.1.x   | ✅ Full support | TBD |
+| < 0.1   | ❌ No support | Already ended |
+
+## Secure Deployment Configuration
+
+### Production Security Settings
+
+#### Essential Security Configuration
+
+```bash
+# Required environment variables for secure production deployment
+export CAXTON_WASM_ISOLATION=strict
+export CAXTON_FIPA_VALIDATION=enabled
+export CAXTON_SECURITY_AUDIT=enabled
+export CAXTON_LOG_LEVEL=info
+export CAXTON_RESOURCE_LIMITS=production
+```
+
+#### WebAssembly Security Configuration
+
+Caxton's security relies on WebAssembly isolation. Ensure strict isolation is enabled:
+
+```yaml
+# Example production configuration
+wasm_config:
+  isolation_mode: strict
+  memory_limit_mb: 16
+  cpu_time_limit_ms: 1000
+  network_access: false
+  filesystem_access: false
+```
+
+**Security Benefits:**
+
+- Each agent runs in isolated WebAssembly sandbox
+- Memory and CPU limits prevent resource exhaustion attacks
+- No direct system access prevents privilege escalation
+- Agent isolation prevents cross-contamination
+
+### Message Security Configuration
+
+Caxton uses FIPA-compliant messaging with built-in security validation:
+
+```yaml
+# Message security settings
+fipa_config:
+  message_validation: enabled
+  max_message_size_kb: 1024
+  conversation_timeout_minutes: 30
+  content_sanitization: enabled
 ```
 
 **Security Features:**
-- Message structure validation prevents malformed input
-- Content sanitization based on declared content type
-- Conversation ID validation prevents replay attacks
-- Size limits prevent DoS attacks through large messages
 
-#### Recommendations for Enhancement
-1. **Message Encryption**: Consider encrypting sensitive message content
-2. **Digital Signatures**: Add message signing for non-repudiation
-3. **Rate Limiting**: Implement per-agent message rate limiting
-4. **Content Filtering**: Add content-based filtering for sensitive data
+- All messages validated against FIPA protocol standards
+- Size limits prevent denial-of-service attacks
+- Conversation tracking prevents replay attacks
+- Content sanitization blocks malicious payloads
 
-### Authentication and Authorization
+## Container and Kubernetes Security
 
-**⚠️ Status: REQUIRES IMPLEMENTATION**
+### Container Security Configuration
 
-Current authentication patterns are basic. Recommendations:
+#### Secure Container Deployment
 
-#### Agent Authentication
-```rust
-// Recommended agent authentication pattern
-pub struct AgentCredentials {
-    pub agent_id: AgentId,
-    pub public_key: PublicKey,
-    pub certificate: Certificate,
-    pub capabilities: Vec<Capability>,
-}
+When deploying Caxton containers, ensure these security configurations:
 
-impl AgentLifecycleManager {
-    pub fn authenticate_agent(&self, credentials: &AgentCredentials) -> Result<AuthToken, AuthError> {
-        // Verify certificate chain
-        self.verify_certificate(&credentials.certificate)?;
-        // Validate capabilities
-        self.validate_capabilities(&credentials.capabilities)?;
-        // Generate time-limited token
-        Ok(AuthToken::new(credentials.agent_id, Duration::from_hours(1)))
-    }
-}
-```
-
-#### Authorization Framework
-```rust
-// Capability-based authorization
-#[derive(Debug, Clone, PartialEq)]
-pub enum Capability {
-    ReadMessages,
-    SendMessages,
-    SpawnAgents,
-    AccessResource(ResourceType),
-    NetworkAccess(NetworkPolicy),
-}
-
-pub struct AuthorizationContext {
-    pub agent_id: AgentId,
-    pub capabilities: HashSet<Capability>,
-    pub resource_limits: ResourceLimits,
-}
-```
-
-## CI/CD Security Pipeline
-
-### Multi-Stage Security Validation
-
-The CI/CD pipeline implements a comprehensive security validation process:
-
-#### Stage 1: Code Security
 ```yaml
-security-audit:
-  - cargo audit --deny warnings
-  - cargo deny check advisories
-  - cargo clippy with security lints
-  - Memory safety verification with Miri
-  - Unsafe code detection and review
+# Docker container security
+version: '3.8'
+services:
+  caxton:
+    image: caxton:latest
+    user: "65534:65534"  # Non-root user
+    read_only: true      # Read-only root filesystem
+    cap_drop:
+      - ALL              # Drop all capabilities
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
 ```
 
-#### Stage 2: WASM Security
-```yaml
-wasm-security:
-  - Isolation configuration validation
-  - Resource limit enforcement testing
-  - Sandbox boundary verification
-  - WASM module compilation testing
-```
+**Container Security Features:**
 
-#### Stage 3: FIPA Security
-```yaml
-fipa-security:
-  - Message validation testing
-  - Conversation tracking security
-  - Serialization security verification
-  - Protocol compliance testing
-```
-
-#### Stage 4: Container Security
-```yaml
-container-security:
-  - Multi-stage secure Dockerfile
-  - Trivy vulnerability scanning
-  - Grype security analysis
-  - SBOM generation and validation
-  - Container hardening verification
-```
-
-### Security Gates
-
-**Deployment Blocked If:**
-- Critical or high severity vulnerabilities found
-- Security tests fail
-- Unsafe code without proper justification
-- WASM isolation boundaries compromised
-- Container security scan failures
-
-## Deployment Security
-
-### Production Deployment Configuration
-
-#### Container Security
-```dockerfile
-# Multi-stage build with security hardening
-FROM rust:1.75-alpine3.18 as builder
-
-# Security updates and minimal dependencies
-RUN apk update && apk upgrade && \
-    apk add --no-cache musl-dev pkgconfig openssl-dev && \
-    rm -rf /var/cache/apk/*
-
-# Non-root build user
-RUN addgroup -g 1000 rust && \
-    adduser -D -s /bin/sh -u 1000 -G rust rust
-
-# Secure compilation
-USER rust
-RUN cargo build --release --target x86_64-unknown-linux-musl \
-    --config profile.release.panic="abort" \
-    --config profile.release.overflow-checks=true
-
-# Minimal runtime environment
-FROM scratch
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/caxton /caxton
-
-# Run as non-privileged user
-USER 65534:65534
-ENTRYPOINT ["/caxton"]
-```
+- Runs as non-privileged user (nobody)
+- Read-only root filesystem prevents tampering
+- No container capabilities granted
+- Temporary filesystem with security restrictions
 
 #### Kubernetes Security
+
 ```yaml
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 65534
-  runAsGroup: 65534
-  fsGroup: 65534
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
-  seccompProfile:
-    type: RuntimeDefault
-  capabilities:
-    drop: ["ALL"]
+# Kubernetes deployment security
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caxton
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+      - name: caxton
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
 ```
 
-### Environment Configuration
+## Network Security
 
-#### Production Security Settings
+### Network Policies
+
+Implement network segmentation using Kubernetes Network Policies:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: caxton-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: caxton
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: authorized-clients
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to: []  # Restrict egress as needed
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS only
+```
+
+### TLS Configuration
+
+Ensure all communications use TLS encryption:
+
 ```bash
-# Environment variables for production security
-CAXTON_WASM_ISOLATION=strict
-CAXTON_FIPA_VALIDATION=enabled
-CAXTON_SECURITY_AUDIT=enabled
-CAXTON_LOG_LEVEL=info
-CAXTON_RESOURCE_LIMITS=production
+# Generate TLS certificates for production
+openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+  -keyout caxton.key -out caxton.crt \
+  -subj "/CN=caxton.yourdomain.com"
+
+# Configure Caxton with TLS
+export CAXTON_TLS_CERT_PATH=/etc/ssl/certs/caxton.crt
+export CAXTON_TLS_KEY_PATH=/etc/ssl/private/caxton.key
+export CAXTON_TLS_ENABLED=true
 ```
 
-#### Resource Limits
-```yaml
-resources:
-  requests:
-    memory: "512Mi"
-    cpu: "200m"
-  limits:
-    memory: "2Gi"
-    cpu: "1000m"
+## Security Monitoring and Operations
+
+### Production Security Monitoring
+
+Set up monitoring for these critical security indicators:
+
+#### Essential Security Metrics
+
+Monitor these key security health indicators:
+
+- **Agent Isolation Status**: Verify WASM sandboxes are functioning
+- **Message Validation Rate**: Track FIPA message validation success
+- **Resource Usage**: Monitor CPU and memory consumption per agent
+- **Authentication Events**: Log successful and failed authentication attempts
+- **Network Activity**: Monitor inbound and outbound connections
+
+#### Log Analysis
+
+Configure log aggregation to detect security events:
+
+```bash
+# Example log queries for security monitoring
+# Failed authentication attempts
+grep "auth_failed" /var/log/caxton/security.log
+
+# Resource limit violations
+grep "resource_limit_exceeded" /var/log/caxton/security.log
+
+# WASM isolation violations (critical)
+grep "isolation_violation" /var/log/caxton/security.log
 ```
 
-## Security Monitoring
+#### Alerting Configuration
 
-### Daily Security Monitoring
-
-Automated daily security checks include:
-
-1. **Dependency Audit**: Daily vulnerability scanning of all dependencies
-2. **Code Security**: Regular CodeQL analysis for security issues
-3. **Container Security**: Daily container image vulnerability scanning
-4. **Configuration Audit**: Security configuration validation
-
-### Real-Time Monitoring
-
-Production monitoring includes:
-
-#### Security Metrics
-- WASM isolation boundary violations
-- Failed message validations
-- Authentication failures
-- Resource limit violations
-- Suspicious activity patterns
-
-#### Alerting
-- **Critical**: Immediate PagerDuty alert
-  - Security boundary violations
-  - Authentication bypass attempts
-  - Resource exhaustion attacks
-
-- **High**: Email + Slack notification
-  - High severity vulnerabilities
-  - Failed security validations
-  - Unusual activity patterns
-
-- **Medium**: Daily summary report
-  - Medium severity issues
-  - Security warnings
-  - Performance anomalies
-
-### Security Dashboard
-
-Key security indicators tracked:
+Set up alerts for security incidents:
 
 ```yaml
-Security Metrics:
-  - Vulnerability Count: 0 critical, 0 high
-  - WASM Isolation: 100% enforced
-  - Message Validation: 100% success rate
-  - Authentication: 99.9% success rate
-  - Resource Limits: 0 violations
-  - Security Tests: All passing
+# Example Prometheus alerting rules
+groups:
+- name: caxton_security
+  rules:
+  - alert: CaxtonIsolationViolation
+    expr: caxton_isolation_violations_total > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "WASM isolation violation detected"
+
+  - alert: CaxtonAuthFailures
+    expr: rate(caxton_auth_failures_total[5m]) > 10
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High rate of authentication failures"
 ```
 
-## Best Practices Implementation
+### Security Incident Response
 
-### Development Security
+#### Incident Classification
 
-#### Pre-commit Hooks
-```yaml
-pre-commit:
-  - cargo fmt --check
-  - cargo clippy -- -D warnings
-  - cargo test
-  - cargo audit
-  - Security pattern checks
-```
+When security incidents occur, classify them quickly:
 
-#### Code Review Checklist
-- [ ] No hardcoded secrets or credentials
-- [ ] Proper error handling without information leaks
-- [ ] Input validation on all external data
-- [ ] Resource limits properly enforced
-- [ ] Security boundaries maintained
-- [ ] Audit logging for security events
-
-### Supply Chain Security
-
-#### Dependency Management
-- All dependencies from trusted sources (crates.io)
-- Regular dependency updates via Dependabot
-- Vulnerability scanning with cargo-audit
-- License compliance verification
-- Supply chain integrity with SBOMs
-
-#### Build Security
-- Reproducible builds with locked dependencies
-- Multi-stage container builds
-- Minimal attack surface in runtime images
-- Signed artifacts and attestations
-- Provenance tracking
-
-### Incident Response
-
-#### Security Incident Classification
-1. **P0 - Critical**: Active exploitation, data breach, system compromise
-2. **P1 - High**: Vulnerability with high impact, privilege escalation
-3. **P2 - Medium**: Vulnerability with medium impact, DoS potential
-4. **P3 - Low**: Information disclosure, security hardening opportunity
+1. **P0 - Critical**: System compromise, data breach, isolation failure
+2. **P1 - High**: Authentication bypass, privilege escalation
+3. **P2 - Medium**: DoS attacks, information disclosure
+4. **P3 - Low**: Security policy violations, configuration issues
 
 #### Response Procedures
-1. **Detection**: Automated alerting and monitoring
-2. **Assessment**: Impact evaluation and classification
-3. **Containment**: Immediate threat mitigation
-4. **Eradication**: Root cause resolution
-5. **Recovery**: Service restoration and validation
-6. **Lessons Learned**: Post-incident review and improvements
 
-## Security Compliance
+1. **Immediate**: Isolate affected components
+2. **Assessment**: Determine scope and impact
+3. **Containment**: Prevent further damage
+4. **Recovery**: Restore secure operations
+5. **Analysis**: Document lessons learned
 
-### Standards Adherence
+## Operational Security Best Practices
 
-The Caxton platform follows these security standards:
+### Deployment Security Checklist
 
-- **NIST Cybersecurity Framework**: Risk-based security approach
-- **OWASP Top 10**: Protection against common vulnerabilities
-- **CWE/SANS Top 25**: Common weakness enumeration practices
-- **ISO 27001**: Information security management principles
+Before deploying Caxton to production, verify:
+
+- [ ] **Environment Variables**: All security-required environment variables set
+- [ ] **Container Security**: Non-root user, read-only filesystem, dropped capabilities
+- [ ] **Network Policies**: Proper network segmentation configured
+- [ ] **TLS Configuration**: Encrypted communications enabled
+- [ ] **Resource Limits**: Memory and CPU limits configured
+- [ ] **Logging**: Security event logging enabled and configured
+- [ ] **Monitoring**: Security metrics collection active
+- [ ] **Backup Strategy**: Secure backup and recovery procedures in place
+
+### Regular Security Maintenance
+
+#### Monthly Security Tasks
+
+1. **Update Check**: Review security advisories and updates
+2. **Configuration Review**: Validate security configurations
+3. **Log Analysis**: Review security logs for anomalies
+4. **Access Review**: Audit user access and permissions
+5. **Backup Testing**: Verify backup integrity and restoration procedures
+
+#### Quarterly Security Tasks
+
+1. **Security Assessment**: Conduct security posture review
+2. **Incident Response Testing**: Test incident response procedures
+3. **Documentation Review**: Update security documentation
+4. **Training Update**: Security training for operations team
+
+### Secure Configuration Management
+
+#### Configuration Validation
+
+Regularly validate your Caxton security configuration:
+
+```bash
+# Verify security settings
+caxton config validate --security-check
+
+# Check isolation configuration
+caxton wasm isolation-status
+
+# Validate message security
+caxton fipa validation-status
+
+# Review resource limits
+caxton resources status
+```
+
+#### Backup and Recovery
+
+Implement secure backup procedures:
+
+```bash
+# Backup Caxton configuration
+tar -czf caxton-config-backup-$(date +%Y%m%d).tar.gz \
+  /etc/caxton/ /var/lib/caxton/
+
+# Encrypt backups
+gpg --symmetric --cipher-algo AES256 \
+  caxton-config-backup-$(date +%Y%m%d).tar.gz
+
+# Store in secure location
+aws s3 cp caxton-config-backup-$(date +%Y%m%d).tar.gz.gpg \
+  s3://your-secure-backup-bucket/
+```
+
+## Security Compliance and Standards
+
+### Industry Standards Support
+
+Caxton deployments can help you achieve compliance with common security frameworks:
+
+- **NIST Cybersecurity Framework**: Risk-based security controls
+- **OWASP Top 10**: Protection against common application vulnerabilities
+- **ISO 27001**: Information security management practices
+- **SOC 2**: Security and availability controls
+
+### Compliance Documentation
+
+For compliance audits, document these Caxton security features:
+
+- [ ] **Data Isolation**: WebAssembly sandboxing prevents data leakage
+- [ ] **Access Controls**: Agent authentication and authorization
+- [ ] **Audit Logging**: Complete audit trail of all operations
+- [ ] **Encryption**: TLS encryption for all communications
+- [ ] **Monitoring**: Continuous security monitoring and alerting
+- [ ] **Incident Response**: Documented security incident procedures
 
 ### Audit Trail
 
-Complete audit trail maintained for:
-- All agent lifecycle events
+Caxton maintains comprehensive audit logs for:
+
+- Agent lifecycle events (start, stop, reload)
 - Message routing and delivery
 - Authentication and authorization events
 - Resource allocation and usage
 - Security boundary violations
 - Configuration changes
 
-## Performance Security
+## Security Resources
 
-### Security Performance Metrics
+### Essential Security Documentation
 
-Security measures impact on performance:
+#### For Operators and DevOps Teams
 
-- **WASM Isolation Overhead**: < 5% performance impact
-- **Message Validation Latency**: < 1ms per message
-- **Authentication Overhead**: < 10ms per agent spawn
-- **Logging Performance**: < 2% CPU overhead
-- **Monitoring Impact**: < 1% memory overhead
+- [Security Policy (SECURITY.md)](../../SECURITY.md): Complete security overview and vulnerability reporting
+- [Security.txt](../../.well-known/security.txt): Machine-readable security contact information
+- This deployment security guide: Production security configuration
 
-### Optimization Strategies
+#### Security Architecture References
 
-1. **Lazy Security Validation**: Validate only when necessary
-2. **Caching**: Cache validation results where appropriate
-3. **Asynchronous Processing**: Non-blocking security operations
-4. **Resource Pooling**: Reuse expensive security resources
-5. **Batch Operations**: Batch security validations where possible
+- [WebAssembly Isolation ADR](../adr/0002-webassembly-for-agent-isolation.md): Understanding agent isolation
+- [FIPA Messaging Security ADR](../adr/0003-fipa-messaging-protocol.md): Message security design
+- [Observability ADR](../adr/0001-observability-first-architecture.md): Security monitoring approach
 
-## Future Security Enhancements
+### External Security Resources
 
-### Planned Improvements
+- [RFC 9116 Security.txt Standard](https://tools.ietf.org/rfc/rfc9116.txt): Vulnerability disclosure standard
+- [OWASP Container Security](https://owasp.org/www-project-container-security/): Container security best practices
+- [Kubernetes Security Best Practices](https://kubernetes.io/docs/concepts/security/): Platform security guidance
 
-1. **Advanced Threat Detection**: ML-based anomaly detection
-2. **Zero-Trust Architecture**: Comprehensive zero-trust implementation
-3. **Homomorphic Encryption**: Computation on encrypted data
-4. **Formal Verification**: Mathematical proof of security properties
-5. **Hardware Security**: TPM/HSM integration for key management
+### Getting Security Help
 
-### Security Research Areas
+#### Security Questions and Support
 
-- Post-quantum cryptography preparation
-- Advanced WASM security features
-- Federated learning for threat detection
-- Blockchain-based audit trails
-- Advanced sandboxing techniques
+- **General Security Questions**: Create an issue in the GitHub repository (for non-sensitive questions)
+- **Security Vulnerabilities**: Use GitHub's security advisory reporting (see [vulnerability reporting](#security-vulnerability-reporting))
+- **Deployment Security**: Review this guide and the main [Security Policy](../../SECURITY.md)
+
+#### Security Community
+
+- **Security Updates**: Watch the GitHub repository for security advisories
+- **Best Practices**: Join community discussions about Caxton security
 
 ## Conclusion
 
-The Caxton platform implements a comprehensive security architecture with:
+This guide provides the essential security information for deploying and operating Caxton safely in production environments. The key security priorities for operators are:
 
-- **Defense in Depth**: Multiple security layers prevent single points of failure
-- **Secure by Default**: Secure configurations and fail-safe defaults
-- **Continuous Monitoring**: Real-time security monitoring and alerting
-- **Automated Security**: CI/CD pipeline with comprehensive security gates
-- **Incident Response**: Structured incident response procedures
-- **Compliance**: Adherence to industry security standards
+1. **Stay Informed**: Configure GitHub repository watching for security advisories and releases, or use RSS feeds for automated monitoring
+2. **Report Issues**: Use GitHub's security advisory reporting to report any security concerns
+3. **Secure Configuration**: Follow the deployment security guidelines in this document
+4. **Monitor Operations**: Implement security monitoring and incident response procedures
+5. **Regular Maintenance**: Perform regular security maintenance tasks and reviews
 
-The security implementation provides strong guarantees for multi-agent orchestration while maintaining high performance and usability. Regular security reviews and updates ensure the platform remains secure against evolving threats.
+Caxton's security architecture provides strong isolation and validation, but proper deployment and operational practices are essential for maintaining security in production environments.
+
+**To stay informed about security updates:**
+
+- Watch the GitHub repository for security advisories and releases
+- Subscribe to RSS feeds for automated monitoring
+- Check the security advisories page regularly: [GitHub Security Advisories](https://github.com/your-org/caxton/security/advisories)
+- Monitor the releases page for updates: [GitHub Releases](https://github.com/your-org/caxton/releases)
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-08-04
-**Next Review**: 2025-09-04
-**Owner**: DevOps Security Team
+**Document Version**: 2.0
+**Last Updated**: 2025-08-16
+**Target Audience**: End-users, Operators, DevOps Teams
+**Next Review**: 2025-09-16
