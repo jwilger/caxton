@@ -163,6 +163,8 @@ Use Task tool with `pr-manager` agent:
 
 Use Task tool with `pr-manager` agent:
 
+- **MANDATORY PLANNING.md UPDATE**: Update PLANNING.md to mark the story as completed with `[x]` checkbox and completion status
+- Commit the PLANNING.md update as part of the story completion (must be included in the same PR)
 - Remove `.claude/plan.approved` file
 - Generate summary of files changed and commits made
 - Ensure PR remains in draft status for human review and merge
