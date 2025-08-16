@@ -4,6 +4,105 @@
 
 use std::{collections::HashSet, fs};
 
+// Workflow validation constants
+/// Container security scanning job identifier
+const CONTAINER_SECURITY_SCAN_JOB: &str = "container-security-scan:";
+/// Trivy security scanner action
+const TRIVY_ACTION: &str = "aquasecurity/trivy-action";
+/// Grype security scanner
+const GRYPE_SCANNER: &str = "anchore/grype";
+/// Docker build command
+const DOCKER_BUILD: &str = "docker build";
+/// Cargo deny check command pattern
+const CARGO_DENY_CHECK: &str = "cargo deny check";
+/// Cargo deny JSON format command
+const CARGO_DENY_JSON: &str = "cargo deny check --format json";
+/// Deny results artifact file
+const DENY_RESULTS_FILE: &str = "deny-results.json";
+/// Error handling pattern for deny check
+const DENY_ERROR_HANDLING: &str = "|| true";
+/// Workflow conclusion pattern
+const WORKFLOW_CONCLUSION: &str = "github.event.workflow_run.conclusion";
+/// Security workflow success condition
+const SECURITY_SUCCESS: &str = "github.event.workflow_run.conclusion == 'success'";
+/// Push trigger condition
+const PUSH_TRIGGER_CONDITION: &str = "if [[ \"${{ github.event_name }}\" == \"workflow_run\" ]];";
+/// Push event condition
+const PUSH_EVENT_CONDITION: &str = "elif [[ \"${{ github.event_name }}\" == \"push\" ]];";
+/// Manual dispatch condition
+const MANUAL_DISPATCH_CONDITION: &str =
+    "elif [[ \"${{ github.event_name }}\" == \"workflow_dispatch\" ]];";
+/// Release commit message pattern
+const RELEASE_COMMIT_PATTERN: &str = "contains(github.event.head_commit.message, 'release')";
+/// Security gate needs condition
+const SECURITY_GATE_NEEDS: &str = "needs.security-gate.outputs.security-passed == 'true'";
+/// Combined workflow run condition
+const COMBINED_WORKFLOW_CONDITION: &str =
+    "github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'";
+
+// CI workflow constants
+/// Legacy rust toolchain action
+const DTOLNAY_TOOLCHAIN: &str = "dtolnay/rust-toolchain";
+/// Recommended rust toolchain action
+const ACTIONS_TOOLCHAIN: &str = "actions-rust-lang/setup-rust-toolchain@v1";
+/// Toolchain configuration key
+const TOOLCHAIN_KEY: &str = "toolchain:";
+/// Stable toolchain identifier
+const STABLE_TOOLCHAIN: &str = "stable";
+/// Actions cache identifier
+const ACTIONS_CACHE: &str = "actions/cache@v4";
+/// Cargo cache identifier
+const CARGO_CACHE: &str = "cargo";
+/// Cargo install command for security tools
+const CARGO_INSTALL_SECURITY: &str = "cargo install --locked cargo-audit cargo-deny";
+
+// Workflow file paths
+/// Quality gate workflow
+const QUALITY_GATE: &str = ".github/workflows/quality-gate.yml";
+/// Build artifacts workflow
+const BUILD_ARTIFACTS: &str = ".github/workflows/build-artifacts.yml";
+/// Security monitoring workflow
+const SECURITY_MONITORING: &str = ".github/workflows/security-monitoring.yml";
+/// Release-plz workflow
+const RELEASE_PLZ: &str = ".github/workflows/release-plz.yml";
+
+// Helper functions for workflow validation
+
+/// Read workflow content safely, returning empty string if file doesn't exist
+fn read_workflow_content(path: &str) -> String {
+    fs::read_to_string(path).unwrap_or_default()
+}
+
+/// Check if workflow content contains a specific pattern
+fn workflow_contains_pattern(content: &str, pattern: &str) -> bool {
+    content.contains(pattern)
+}
+
+/// Check if workflow contains multiple patterns (all must be present)
+fn workflow_contains_all_patterns(content: &str, patterns: &[&str]) -> bool {
+    patterns.iter().all(|pattern| content.contains(pattern))
+}
+
+/// Get all workflow file paths for CI validation
+fn get_ci_workflow_paths() -> &'static [&'static str] {
+    &[QUALITY_GATE, BUILD_ARTIFACTS, SECURITY_MONITORING]
+}
+
+/// Check for legacy toolchain usage in workflow content
+fn has_legacy_toolchain_usage(content: &str) -> bool {
+    workflow_contains_pattern(content, DTOLNAY_TOOLCHAIN)
+}
+
+/// Check for explicit toolchain specification
+fn has_explicit_toolchain_spec(content: &str) -> bool {
+    workflow_contains_all_patterns(content, &[TOOLCHAIN_KEY, STABLE_TOOLCHAIN])
+}
+
+/// Check for manual cargo caching
+fn has_manual_cargo_caching(content: &str) -> bool {
+    workflow_contains_all_patterns(content, &[ACTIONS_CACHE, CARGO_CACHE])
+}
+
 #[test]
 fn test_ci_workflows_use_rust_toolchain_toml() {
     // CI workflows should use actions-rust-lang/setup-rust-toolchain@v1
@@ -218,35 +317,31 @@ fn extract_clippy_allows_from_content(content: &str, file_path: &str) -> Vec<Str
 fn find_ci_workflow_violations() -> Vec<String> {
     let mut violations = Vec::new();
 
-    // Check all workflow files in .github/workflows/
-    let workflow_files = [
-        ".github/workflows/quality-gate.yml",
-        ".github/workflows/build-artifacts.yml",
-        ".github/workflows/security-monitoring.yml",
-    ];
+    for workflow_path in get_ci_workflow_paths() {
+        let content = read_workflow_content(workflow_path);
+        if content.is_empty() {
+            continue;
+        }
 
-    for workflow_path in &workflow_files {
-        if let Ok(content) = fs::read_to_string(workflow_path) {
-            // Check for dtolnay/rust-toolchain usage (should be replaced)
-            if content.contains("dtolnay/rust-toolchain") {
-                violations.push(format!(
-                    "{workflow_path}: Uses dtolnay/rust-toolchain instead of actions-rust-lang/setup-rust-toolchain@v1"
-                ));
-            }
+        // Check for dtolnay/rust-toolchain usage (should be replaced)
+        if has_legacy_toolchain_usage(&content) {
+            violations.push(format!(
+                "{workflow_path}: Uses {DTOLNAY_TOOLCHAIN} instead of {ACTIONS_TOOLCHAIN}"
+            ));
+        }
 
-            // Check for explicit toolchain specifications
-            if content.contains("toolchain:") && content.contains("stable") {
-                violations.push(format!(
-                    "{workflow_path}: Has explicit toolchain specification instead of using rust-toolchain.toml"
-                ));
-            }
+        // Check for explicit toolchain specifications
+        if has_explicit_toolchain_spec(&content) {
+            violations.push(format!(
+                "{workflow_path}: Has explicit toolchain specification instead of using rust-toolchain.toml"
+            ));
+        }
 
-            // Check for manual caching (should be removed since new action has built-in caching)
-            if content.contains("actions/cache@v4") && content.contains("cargo") {
-                violations.push(format!(
-                    "{workflow_path}: Uses manual cargo caching instead of built-in caching from setup-rust-toolchain"
-                ));
-            }
+        // Check for manual caching (should be removed since new action has built-in caching)
+        if has_manual_cargo_caching(&content) {
+            violations.push(format!(
+                "{workflow_path}: Uses manual cargo caching instead of built-in caching from setup-rust-toolchain"
+            ));
         }
     }
 
@@ -259,9 +354,55 @@ fn check_cargo_deny_execution_in_workflow(workflow_content: &str) -> bool {
     // 1. Proper error handling and JSON output generation
     // 2. Artifact reporting for deny-results.json
     // 3. Integration with the security monitoring workflow
-    workflow_content.contains("cargo deny check --format json")
-        && workflow_content.contains("deny-results.json")
-        && workflow_content.contains("|| true")
+    workflow_contains_all_patterns(
+        workflow_content,
+        &[CARGO_DENY_JSON, DENY_RESULTS_FILE, DENY_ERROR_HANDLING],
+    )
+}
+
+/// Validate that security gate logic is simplified and race-condition-free
+fn validate_simplified_security_gate_logic(workflow_content: &str) -> bool {
+    // Current implementation has complex conditional logic that should be simplified
+    // This function should return false initially because the current logic is complex
+
+    // Check for complex conditional branches that create race conditions
+    let has_complex_trigger_logic = workflow_contains_all_patterns(
+        workflow_content,
+        &[
+            PUSH_TRIGGER_CONDITION,
+            PUSH_EVENT_CONDITION,
+            MANUAL_DISPATCH_CONDITION,
+        ],
+    );
+
+    // Check for redundant security validation logic spread across multiple steps
+    let has_redundant_validation = workflow_contains_all_patterns(
+        workflow_content,
+        &[WORKFLOW_CONCLUSION, RELEASE_COMMIT_PATTERN],
+    );
+
+    // Simple logic would have a single, clear security validation approach
+    // Current implementation fails this test because it has complex, error-prone logic
+    !has_complex_trigger_logic && !has_redundant_validation
+}
+
+/// Validate that job dependencies are clean without redundant conditional checks
+fn validate_clean_job_dependencies(workflow_content: &str) -> bool {
+    // Current implementation duplicates security validation across multiple jobs
+    // This function should return false initially because of redundant conditionals
+
+    // Check for duplicated security validation in job conditionals
+    let release_job_conditional =
+        workflow_contains_all_patterns(workflow_content, &[SECURITY_GATE_NEEDS, SECURITY_SUCCESS]);
+
+    let pr_job_conditional = workflow_contains_all_patterns(
+        workflow_content,
+        &[SECURITY_GATE_NEEDS, COMBINED_WORKFLOW_CONDITION],
+    );
+
+    // Clean dependencies would rely solely on the security gate output, not duplicate checks
+    // Current implementation fails this test because it has redundant conditional logic
+    !(release_job_conditional && pr_job_conditional)
 }
 
 #[test]
@@ -269,13 +410,15 @@ fn test_cargo_deny_integration_in_ci() {
     // Test that verifies cargo-deny is properly integrated into CI security monitoring
     // Kent Beck RED principle: Test should fail because behavior is unimplemented
 
-    let security_workflow_path = ".github/workflows/security-monitoring.yml";
-    let workflow_content = fs::read_to_string(security_workflow_path)
-        .expect("Security monitoring workflow should exist");
+    let workflow_content = read_workflow_content(SECURITY_MONITORING);
+    assert!(
+        !workflow_content.is_empty(),
+        "Security monitoring workflow should exist"
+    );
 
     // Verify cargo-deny is installed in CI environment
     assert!(
-        workflow_content.contains("cargo install --locked cargo-audit cargo-deny"),
+        workflow_contains_pattern(&workflow_content, CARGO_INSTALL_SECURITY),
         "cargo-deny should be installed alongside cargo-audit in security-monitoring.yml"
     );
 
@@ -285,7 +428,102 @@ fn test_cargo_deny_integration_in_ci() {
 
     assert!(
         has_cargo_deny_execution,
-        "CI should execute 'cargo deny check' with proper error handling and JSON output for artifact reporting"
+        "CI should execute '{CARGO_DENY_CHECK}' with proper error handling and JSON output for artifact reporting"
+    );
+}
+
+#[test]
+fn test_security_monitoring_workflow_has_no_container_scanning() {
+    // Test that verifies security-monitoring.yml workflow does NOT contain container scanning jobs
+    // Kent Beck RED principle: Test should fail because container scanning is currently present
+
+    let workflow_content = read_workflow_content(SECURITY_MONITORING);
+    assert!(
+        !workflow_content.is_empty(),
+        "Security monitoring workflow should exist"
+    );
+
+    // Parse the workflow as YAML to check for container-related jobs
+    // For this test, we'll use a simple string-based approach to detect container scanning
+    let has_container_job =
+        workflow_contains_pattern(&workflow_content, CONTAINER_SECURITY_SCAN_JOB);
+    let has_trivy_scanner = workflow_contains_pattern(&workflow_content, TRIVY_ACTION);
+    let has_grype_scanner = workflow_contains_pattern(&workflow_content, GRYPE_SCANNER);
+    let has_dockerfile_build = workflow_contains_pattern(&workflow_content, DOCKER_BUILD);
+
+    // The test should fail because container scanning is currently present
+    // This validates our GitHub Actions workflow security configuration
+    assert!(
+        !has_container_job,
+        "Security monitoring workflow should NOT contain container-security-scan job. \
+        Found container scanning job that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_trivy_scanner,
+        "Security monitoring workflow should NOT use Trivy container scanner. \
+        Found Trivy action that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_grype_scanner,
+        "Security monitoring workflow should NOT use Grype container scanner. \
+        Found Grype scanner installation that should be removed for Rust-only project."
+    );
+
+    assert!(
+        !has_dockerfile_build,
+        "Security monitoring workflow should NOT build Docker containers. \
+        Found Docker build commands that should be removed for Rust-only project."
+    );
+}
+
+#[test]
+fn test_release_plz_workflow_dependency_validation() {
+    // Test that verifies release-plz.yml properly waits for security-monitoring.yml
+    // Kent Beck RED principle: Test should fail because current conditional logic is complex and error-prone
+
+    let release_workflow_content = read_workflow_content(RELEASE_PLZ);
+    assert!(
+        !release_workflow_content.is_empty(),
+        "Release-plz workflow should exist"
+    );
+
+    // Test that workflow_run trigger is correctly configured for security dependency
+    let has_workflow_run_trigger = workflow_contains_all_patterns(
+        &release_workflow_content,
+        &[
+            "workflow_run:",
+            "workflows: [\"Security Monitoring\"]",
+            "types: [completed]",
+            "branches: [main]",
+        ],
+    );
+
+    assert!(
+        has_workflow_run_trigger,
+        "Release-plz workflow should have proper workflow_run trigger configuration for Security Monitoring dependency"
+    );
+
+    // Test that security gate has simplified conditional logic (should fail initially)
+    // Current complex conditional logic creates race conditions and maintenance burden
+    let has_simplified_security_gate =
+        validate_simplified_security_gate_logic(&release_workflow_content);
+
+    assert!(
+        has_simplified_security_gate,
+        "Release-plz workflow security gate should have simplified conditional logic without race conditions. \
+        Current complex conditional logic in lines 69-101 should be simplified to reduce maintenance burden \
+        and eliminate race conditions when waiting for security workflow completion."
+    );
+
+    // Test that release jobs properly depend on security gate without redundant checks
+    let has_clean_job_dependencies = validate_clean_job_dependencies(&release_workflow_content);
+
+    assert!(
+        has_clean_job_dependencies,
+        "Release-plz workflow jobs should have clean dependencies on security gate without redundant conditional checks. \
+        Current conditional logic duplicates security validation across multiple jobs (lines 111-116 and 214-220)."
     );
 }
 

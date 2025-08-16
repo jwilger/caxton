@@ -1,51 +1,96 @@
+# ============================================================================
+# SECURITY MONITORING WORKFLOW
+# ============================================================================
+# Comprehensive security monitoring for dependency, code, and configuration scanning
+#
+# This workflow provides multi-layered security validation including:
+# - Daily automated dependency vulnerability scanning
+# - Code security analysis with CodeQL
+# - Security baseline verification
+# - Automated reporting and alerting
+#
+# Key Features:
+# - Scheduled daily security scans
+# - Manual scan triggers with configurable scope
+# - Comprehensive security reporting
+# - Automated issue creation for security failures
+# ============================================================================
+
 name: Security Monitoring
 
+# ============================================================================
+# TRIGGERS
+# ============================================================================
+# Multiple trigger types for comprehensive security coverage
 on:
+  # Daily automated security monitoring
   schedule:
-    # Run daily security checks at 2 AM UTC
+    # Run comprehensive security checks at 2 AM UTC daily
     - cron: '0 2 * * *'
+
+  # Manual security scan trigger with configurable scope
   workflow_dispatch:
     inputs:
       scan_type:
-        description: 'Type of security scan'
+        description: 'Type of security scan to run'
         required: true
         default: 'full'
         type: choice
         options:
-          - full
-          - dependencies
-          - code
-          - container
+          - full          # Complete security audit (dependencies + code + baseline)
+          - dependencies  # Dependency vulnerability scanning only
+          - code         # Code security analysis only
+
+  # Trigger on security-related file changes (main branch)
   push:
     branches: [ "main" ]
     paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'deny.toml'
-      - '.github/workflows/security-monitoring.yml'
+      - 'Cargo.toml'                                    # Dependency changes
+      - 'Cargo.lock'                                    # Lock file updates
+      - 'deny.toml'                                     # Security policy changes
+      - '.github/workflows/security-monitoring.yml'     # Workflow updates
+
+  # Trigger on security-related file changes (PRs)
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'deny.toml'
-      - '.github/workflows/security-monitoring.yml'
+      - 'Cargo.toml'                                    # Dependency changes
+      - 'Cargo.lock'                                    # Lock file updates
+      - 'deny.toml'                                     # Security policy changes
+      - '.github/workflows/security-monitoring.yml'     # Workflow updates
 
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+# Global environment configuration for consistent security scanning behavior
 env:
-  CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 0
-  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always    # Enable colored output for better readability
+  CARGO_INCREMENTAL: 0         # Disable incremental compilation for CI consistency
+  RUST_BACKTRACE: 1           # Enable backtraces for better debugging
 
+# ============================================================================
+# PERMISSIONS
+# ============================================================================
+# Required permissions for comprehensive security scanning and reporting
 permissions:
-  contents: read
-  security-events: write
-  actions: read
-  issues: write
+  contents: read           # Required for accessing repository content
+  security-events: write   # Required for uploading security analysis results
+  actions: read           # Required for reading workflow status
+  issues: write           # Required for creating security alert issues
+
+# ============================================================================
+# JOBS
+# ============================================================================
 
 jobs:
+  # ============================================================================
+  # DEPENDENCY SECURITY SCANNING
+  # ============================================================================
+  # Comprehensive dependency vulnerability and policy validation
   dependency-audit:
     name: Daily Dependency Audit
     runs-on: ubuntu-latest
+    # Execute for full scans, dependency-only scans, or scheduled runs
     if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
@@ -56,6 +101,7 @@ jobs:
 
       - name: Install security tools
         run: |
+          # Install security auditing tools with locked versions for reproducibility
           cargo install --locked cargo-audit cargo-deny
 
           echo "Tool versions:"
@@ -65,7 +111,7 @@ jobs:
       - name: Run comprehensive security audit
         run: |
           echo "::group::Vulnerability Audit"
-          set +e  # Don't exit on error immediately
+          set +e  # Don't exit on error immediately to allow proper error handling
 
           # Run audit and capture exit code
           cargo audit --json > audit-report.json
@@ -196,10 +242,7 @@ jobs:
             "vulnerabilities": $(jq '.vulnerabilities | length' audit-report.json 2>/dev/null || echo 0),
             "warnings": $(jq '.warnings | length' audit-report.json 2>/dev/null || echo 0),
             "deny_violations": {
-              "licenses": $(jq '.licenses.errors | length' deny-results.json 2>/dev/null || echo 0),
-              "advisories": $(jq '.advisories.errors | length' deny-results.json 2>/dev/null || echo 0),
-              "bans": $(jq '.bans.errors | length' deny-results.json 2>/dev/null || echo 0),
-              "sources": $(jq '.sources.errors | length' deny-results.json 2>/dev/null || echo 0)
+              "total": $(jq '.errors | length' deny-results.json 2>/dev/null || echo 0)
             },
             "unsafe_code_blocks": $(jq '.used.functions.unsafe + .used.expressions.unsafe + .used.impls.unsafe + .used.traits.unsafe + .used.methods.unsafe' geiger-report.json 2>/dev/null || echo 0)
           }
@@ -216,22 +259,31 @@ jobs:
           name: security-reports-${{ github.run_number }}
           path: |
             audit-report.json
-            deny-*.json
             deny-results.json
             dependency-tree.txt
             geiger-report.json
             security-summary.json
           retention-days: 30
 
+  # ============================================================================
+  # CODE SECURITY SCANNING
+  # ============================================================================
+  # Static code analysis with CodeQL for security vulnerability detection
   code-security-scan:
     name: Code Security Scan
     runs-on: ubuntu-latest
+    # Execute for full scans, code-only scans, or scheduled runs
     if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule'
+
+    # Specific permissions for code security analysis
     permissions:
-      contents: read
-      security-events: write
-      actions: read
+      contents: read           # Required for accessing source code
+      security-events: write   # Required for uploading CodeQL results
+      actions: read           # Required for reading workflow status
+
+    # Environment configuration for enhanced Rust analysis
     env:
+      # Enable experimental CodeQL features for better Rust support
       CODEQL_ENABLE_EXPERIMENTAL_FEATURES: true
     steps:
       - name: Checkout code
@@ -239,7 +291,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run CodeQL Analysis
+      - name: Initialize CodeQL Analysis
         uses: github/codeql-action/init@v3
         with:
           languages: rust
@@ -248,8 +300,10 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - name: Build for CodeQL
-        run: cargo build --workspace --all-targets
+      - name: Build for CodeQL Analysis
+        run: |
+          # Build all workspace targets to ensure comprehensive analysis coverage
+          cargo build --workspace --all-targets
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -275,118 +329,14 @@ jobs:
 
           echo "::endgroup::"
 
-  container-security-scan:
-    name: Container Security Scan
-    runs-on: ubuntu-latest
-    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'container' || github.event_name == 'schedule'
-    needs: [dependency-audit]  # Run after dependency audit to fail fast
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build security-focused container
-        run: |
-          cat > Dockerfile.security << 'EOF'
-          FROM rust:1.75-alpine3.18 as builder
-
-          # Security hardening
-          RUN apk update && apk upgrade && \
-              apk add --no-cache musl-dev pkgconfig openssl-dev && \
-              rm -rf /var/cache/apk/*
-
-          WORKDIR /app
-          COPY . .
-
-          # Build the binary (handle both single binary and workspace projects)
-          RUN rustup target add x86_64-unknown-linux-musl && \
-              (cargo build --release --target x86_64-unknown-linux-musl || \
-               cargo build --release || \
-               echo "Build failed, creating placeholder")
-
-          # Find the built binary or create a placeholder
-          RUN find target -name caxton -type f -executable | head -1 | xargs -I {} cp {} /caxton || \
-              (echo '#!/bin/sh' > /caxton && echo 'echo "Caxton placeholder"' >> /caxton && chmod +x /caxton)
-
-          # Create a minimal runtime image
-          FROM alpine:3.18
-          RUN apk add --no-cache ca-certificates && \
-              addgroup -g 65534 nonroot && \
-              adduser -D -u 65534 -G nonroot nonroot
-
-          # Copy the binary from builder
-          COPY --from=builder /caxton /caxton
-
-          USER nonroot:nonroot
-          ENTRYPOINT ["/caxton"]
-          EOF
-
-          # Build the container with better error handling
-          if ! docker build -f Dockerfile.security -t caxton:security-scan .; then
-            echo "::warning::Container build failed - creating minimal test image"
-            # Create a minimal test image for scanning
-            cat > Dockerfile.minimal << 'EOF'
-          FROM alpine:3.18
-          RUN apk add --no-cache ca-certificates
-          USER nobody:nobody
-          CMD ["/bin/sh"]
-          EOF
-            if ! docker build -f Dockerfile.minimal -t caxton:security-scan .; then
-              echo "::error::Failed to build even minimal container"
-              exit 1
-            fi
-          fi
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'caxton:security-scan'
-          format: 'json'
-          output: 'trivy-results.json'
-          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
-
-      - name: Run Grype vulnerability scanner
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-          grype caxton:security-scan --output json --file grype-results.json
-
-      - name: Analyze scan results
-        run: |
-          echo "::group::Trivy Results"
-          TRIVY_CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-results.json)
-          TRIVY_HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-results.json)
-
-          echo "Critical vulnerabilities: $TRIVY_CRITICAL"
-          echo "High vulnerabilities: $TRIVY_HIGH"
-
-          if [ "$TRIVY_CRITICAL" -gt 0 ]; then
-            echo "::error::Critical vulnerabilities found in container"
-            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")' trivy-results.json
-          fi
-          echo "::endgroup::"
-
-          echo "::group::Grype Results"
-          GRYPE_CRITICAL=$(jq '[.matches[]? | select(.vulnerability.severity == "Critical")] | length' grype-results.json)
-          GRYPE_HIGH=$(jq '[.matches[]? | select(.vulnerability.severity == "High")] | length' grype-results.json)
-
-          echo "Critical vulnerabilities (Grype): $GRYPE_CRITICAL"
-          echo "High vulnerabilities (Grype): $GRYPE_HIGH"
-          echo "::endgroup::"
-
-      - name: Upload scan results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: container-security-scans-${{ github.run_number }}
-          path: |
-            trivy-results.json
-            grype-results.json
-            Dockerfile.security
-            Dockerfile.minimal
-          retention-days: 30
-
+  # ============================================================================
+  # SECURITY BASELINE VERIFICATION
+  # ============================================================================
+  # Validates security configuration and policy compliance
   security-baseline:
     name: Security Baseline Check
     runs-on: ubuntu-latest
+    # Execute baseline checks only during scheduled daily runs
     if: github.event_name == 'schedule'
     steps:
       - name: Checkout code
@@ -396,7 +346,7 @@ jobs:
         run: |
           echo "::group::Security Configuration Audit"
 
-          # Check for security files
+          # Check for essential security configuration files
           SECURITY_FILES=(
             "SECURITY.md"
             ".github/workflows/ci.yml"
@@ -413,7 +363,8 @@ jobs:
             fi
           done
 
-          # Check security-related ADRs
+          # Check security-related Architecture Decision Records
+          echo "\nChecking security-related ADRs:"
           if [ -f "_adrs/0002-webassembly-for-agent-isolation.md" ]; then
             echo "✅ WebAssembly isolation ADR exists"
           else
@@ -455,14 +406,12 @@ jobs:
           - **Security Configuration Files**: $SECURITY_FILES_COUNT/5 present
           - **Dependency Vulnerabilities**: See detailed audit reports
           - **Code Security Issues**: See CodeQL analysis results
-          - **Container Vulnerabilities**: See Trivy/Grype scan results
 
           ### Security Controls Status
           - ✅ Pre-commit hooks configured
           - ✅ Dependabot enabled
           - ✅ Security policy documented
           - ✅ CI/CD security pipeline active
-          - ✅ Container security scanning enabled
           - ✅ Cargo deny policy enforced
           - ✅ Daily automated security monitoring
 
@@ -470,7 +419,6 @@ jobs:
           - ✅ Dependency vulnerability audit completed
           - ✅ License compliance check completed
           - ✅ Unsafe code analysis completed
-          - ✅ Container image security scan completed
           - ✅ Code security analysis completed
           - ✅ Security configuration baseline verified
 
@@ -498,14 +446,22 @@ jobs:
           path: security-dashboard.md
           retention-days: 90
 
+  # ============================================================================
+  # SECURITY TEAM NOTIFICATION
+  # ============================================================================
+  # Aggregates results and notifies security team of issues
   notify-security-team:
     name: Notify Security Team
     runs-on: ubuntu-latest
-    needs: [dependency-audit, code-security-scan, container-security-scan, security-baseline]
+    # Wait for all security scanning jobs to complete
+    needs: [dependency-audit, code-security-scan, security-baseline]
+    # Always execute notification for scheduled scans (regardless of job outcomes)
     if: always() && github.event_name == 'schedule'
+
+    # Permissions for security notifications and issue management
     permissions:
-      issues: write
-      contents: read
+      issues: write     # Required for creating GitHub security alert issues
+      contents: read    # Required for reading repository content
     steps:
       - name: Collect security status
         run: |
@@ -514,10 +470,9 @@ jobs:
           echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "Commit: ${{ github.sha }}"
           echo ""
-          echo "Job Results:"
+          echo "Job Results Summary:"
           echo "- Dependency audit: ${{ needs.dependency-audit.result }}"
           echo "- Code security scan: ${{ needs.code-security-scan.result }}"
-          echo "- Container security scan: ${{ needs.container-security-scan.result }}"
           echo "- Security baseline: ${{ needs.security-baseline.result }}"
           echo "::endgroup::"
 
@@ -535,10 +490,6 @@ jobs:
             FAILED_SERVICES="$FAILED_SERVICES code-security-scan"
           fi
 
-          if [ "${{ needs.container-security-scan.result }}" != "success" ]; then
-            FAILED_JOBS=$((FAILED_JOBS + 1))
-            FAILED_SERVICES="$FAILED_SERVICES container-security-scan"
-          fi
 
           if [ "${{ needs.security-baseline.result }}" != "success" ]; then
             FAILED_JOBS=$((FAILED_JOBS + 1))
@@ -564,7 +515,6 @@ jobs:
             const jobResults = {
               'dependency-audit': '${{ needs.dependency-audit.result }}',
               'code-security-scan': '${{ needs.code-security-scan.result }}',
-              'container-security-scan': '${{ needs.container-security-scan.result }}',
               'security-baseline': '${{ needs.security-baseline.result }}'
             };
 
@@ -599,7 +549,6 @@ jobs:
             ### Security Team Checklist
             - [ ] Reviewed dependency audit failures
             - [ ] Reviewed code security scan failures
-            - [ ] Reviewed container scan failures
             - [ ] Reviewed security baseline failures
             - [ ] Applied necessary fixes or exceptions
             - [ ] Verified fixes with manual testing
