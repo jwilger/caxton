@@ -153,8 +153,6 @@ jobs:
           fetch-depth: 0
           # Use dedicated release token with minimal scope
           token: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
-          # Ensure we're on the correct commit for workflow_run triggers
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: 🦀 Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -249,7 +247,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: 🦀 Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
