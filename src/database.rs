@@ -69,8 +69,8 @@ pub type DatabaseResult<T> = Result<T, DatabaseError>;
 pub type StorageResult<T> = Result<T, StorageError>;
 
 #[nutype(
-    sanitize(with = |path: PathBuf| path.canonicalize().unwrap_or(path)),
-    validate(predicate = |path| !path.as_os_str().is_empty() && path.extension().is_none_or(|ext| ext == "db")),
+    sanitize(with = |path: PathBuf| path),
+    validate(predicate = |path| !path.as_os_str().is_empty() && path.extension().is_some_and(|ext| ext == "db")),
     derive(Clone, Debug, Eq, PartialEq)
 )]
 pub struct DatabasePath(PathBuf);
@@ -146,7 +146,8 @@ impl DatabaseConfig {
     pub fn for_testing(path: DatabasePath) -> Self {
         Self {
             path,
-            pool_size: ConnectionPoolSize::try_new(1).expect("Pool size 1 should be valid"),
+            pool_size: ConnectionPoolSize::try_new(1)
+                .expect("Pool size 1 should be valid (range: 1-100)"),
             enable_wal_mode: false,
             enable_foreign_keys: false,
         }
