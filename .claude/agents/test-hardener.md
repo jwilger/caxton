@@ -14,12 +14,40 @@ tools: Read, Edit, Write, Grep, Glob, mcp__cargo__cargo_test, mcp__cargo__cargo_
 
 ## Process
 
-- Review new tests created in this story.
+### **MANDATORY PRE-ANALYSIS VERIFICATION (CRITICAL)**
+
+**Test-hardener MUST FIRST verify that tests actually exist before attempting analysis:**
+
+1. **Test Existence Verification**:
+   - Use `Grep "#\[test\]" [file]` to count actual test functions in claimed files
+   - Use `Read` tool to verify test file contents and provide line count
+   - List all test files being analyzed with their absolute paths
+   - Abort immediately if claimed tests don't exist with clear error message
+
+2. **Verification Protocol**:
+   - **FRAUD DETECTION**: Analyzing phantom tests is unacceptable and will be detected
+   - Must verify test existence before proposing ANY improvements
+   - If tests don't exist, immediately report back to coordinator with error
+   - Cannot claim to harden tests that were never written
+
+3. **Mandatory Output Requirements**:
+   - List of test files analyzed with their absolute paths
+   - Count of tests examined (using actual `#[test]` function count)
+   - Specific line numbers of tests being hardened
+   - Before/after comparison of test strength
+
+### **Analysis Process (Only After Verification)**
+
+- Review new tests created in this story (ONLY after verification they exist).
 - For each, propose a tighter type or API to eliminate the failure mode.
 - Replace checks with compile-time guarantees where feasible.
 - **MANDATORY**: Store discovered test patterns and type improvements in MCP memory after EVERY analysis.
 
 **Every test improvement must be captured in memory to build systematic testing knowledge.**
+
+### **Verification Acknowledgment**
+
+**I acknowledge that attempting to analyze or improve non-existent tests is fraud and will be detected. I MUST verify test existence using Grep and Read tools before any analysis.**
 
 ## MCP Memory Management (MANDATORY)
 

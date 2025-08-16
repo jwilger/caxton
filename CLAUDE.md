@@ -321,15 +321,164 @@ ALL actual work MUST be performed by the specialized subagents:
 - `refactor-implementer` - Improves code structure while preserving behavior (CANNOT modify tests)
 - `type-architect` - Designs domain types and type-state machines (CANNOT modify tests)
 - `test-hardener` - Strengthens tests and proposes type improvements
-<<<<<<< HEAD
 - `expert` - Reviews code for correctness and best practices (CANNOT modify code)
-=======
-- `expert` - Reviews code for correctness and best practices
 - `documentation-writer` - Creates user guides, API docs, and operational procedures (ONLY writes documentation)
->>>>>>> 5cc0295 (docs(agent): add documentation-writer agent and update security guide targeting)
 - `pr-manager` - Handles GitHub PR operations and local git operations
 
 The coordinator is a pure orchestrator - think of it as a project manager who doesn't code but enforces strict TDD discipline.
+
+## SPARC Coordinator Verification Protocols (CRITICAL)
+
+**MANDATORY VERIFICATION**: The SPARC coordinator MUST verify actual work completion at each TDD phase to prevent phantom claims.
+
+### Red Phase Verification (MANDATORY)
+
+**After red-implementer claims test creation, coordinator MUST verify:**
+
+1. **File Creation Verification**:
+   ```bash
+   # Verify test file was actually created/modified
+   Read tool: src/lib.rs, tests/*.rs, or relevant test file
+   ```
+
+2. **Test Content Verification**:
+   ```bash
+   # Search for actual test functions
+   Grep: pattern="#\[test\]" output_mode="content" -A 3 -B 1
+   ```
+
+3. **Test Execution Verification**:
+   ```bash
+   # Run tests to confirm they fail as expected
+   cargo nextest run --nocapture
+   ```
+
+4. **Line Count Requirements**:
+   - Minimum 3 lines of meaningful test code beyond `#[test]` attribute
+   - Must contain actual assertions or panic conditions
+   - No empty test bodies or placeholder comments
+
+**Red Phase Failure Protocol**:
+- If verification fails: "RED PHASE VERIFICATION FAILED - No actual tests detected"
+- Immediately return control to red-implementer with specific failure details
+- Do NOT proceed to Green phase until actual tests are verified
+
+### Green Phase Verification (MANDATORY)
+
+**After green-implementer claims implementation completion, coordinator MUST verify:**
+
+1. **Implementation File Verification**:
+   ```bash
+   # Verify implementation files were modified
+   Read tool: src/lib.rs, src/*.rs files claimed to be modified
+   ```
+
+2. **Test Passing Verification**:
+   ```bash
+   # Confirm tests now pass
+   cargo nextest run --nocapture
+   ```
+
+3. **Implementation Content Verification**:
+   ```bash
+   # Search for actual implementation code
+   Grep: pattern="fn|impl|struct|enum" output_mode="content" -A 5
+   ```
+
+4. **No Test Modification Verification**:
+   ```bash
+   # Verify green-implementer did not modify tests
+   Read tool: test files to confirm no unauthorized changes
+   ```
+
+**Green Phase Failure Protocol**:
+- If tests still fail: "GREEN PHASE VERIFICATION FAILED - Tests still failing"
+- If no implementation detected: "GREEN PHASE VERIFICATION FAILED - No implementation changes detected"
+- If test modifications detected: "GREEN PHASE VIOLATION - Unauthorized test modifications detected"
+- Return control to appropriate agent based on failure type
+
+### Refactor Phase Verification (MANDATORY)
+
+**After refactor-implementer claims refactoring completion, coordinator MUST verify:**
+
+1. **Code Structure Verification**:
+   ```bash
+   # Verify refactoring actually occurred
+   Read tool: files claimed to be refactored
+   ```
+
+2. **Test Preservation Verification**:
+   ```bash
+   # Confirm all tests still pass
+   cargo nextest run
+   ```
+
+3. **No Test Modification Verification**:
+   ```bash
+   # Verify refactor-implementer did not modify tests
+   Read tool: test files to confirm no unauthorized changes
+   ```
+
+4. **Quality Improvement Verification**:
+   ```bash
+   # Check for actual improvements (reduced complexity, better naming, etc.)
+   cargo clippy
+   ```
+
+**Refactor Phase Failure Protocol**:
+- If tests fail: "REFACTOR PHASE VERIFICATION FAILED - Tests broken by refactoring"
+- If no changes detected: "REFACTOR PHASE VERIFICATION FAILED - No refactoring changes detected"
+- If test modifications detected: "REFACTOR PHASE VIOLATION - Unauthorized test modifications detected"
+- Return control to appropriate agent based on failure type
+
+### Phantom Claim Detection (ZERO TOLERANCE)
+
+**The coordinator MUST detect and reject phantom claims:**
+
+1. **Empty Test Detection**:
+   - Tests with only `#[test]` and empty body
+   - Tests with only `todo!()` or `unimplemented!()`
+   - Tests with only comments and no executable code
+
+2. **Phantom Implementation Detection**:
+   - Claims of implementation without actual code changes
+   - Implementation that doesn't address the failing tests
+   - Copy-paste code without meaningful logic
+
+3. **False Refactoring Detection**:
+   - Claims of refactoring without structural improvements
+   - Cosmetic changes that don't improve code quality
+   - Whitespace-only modifications
+
+**Escalation Protocol for Phantom Claims**:
+1. **First Detection**: Warning with specific verification failure details
+2. **Second Detection**: Formal reprimand with requirement to demonstrate understanding
+3. **Third Detection**: Agent replacement with expert review of all previous work
+
+### Verification Command Reference
+
+**Mandatory verification commands the coordinator MUST use:**
+
+```bash
+# File existence and content verification
+Read /absolute/path/to/test/file.rs
+Read /absolute/path/to/implementation/file.rs
+
+# Test function detection
+Grep pattern="#\[test\]" output_mode="content" -A 10 -B 2
+
+# Implementation detection
+Grep pattern="fn|impl|struct|enum" output_mode="content" -A 5
+
+# Test execution verification
+cargo nextest run --nocapture
+
+# Build verification
+cargo check
+cargo clippy
+```
+
+**Verification is MANDATORY, not optional. Phantom claims are unacceptable and will result in immediate agent remediation.**
 
 ## Code Quality Gates (CRITICAL)
 
