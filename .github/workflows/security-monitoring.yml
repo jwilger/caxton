@@ -1,12 +1,34 @@
+# ============================================================================
+# SECURITY MONITORING WORKFLOW
+# ============================================================================
+# Comprehensive security monitoring for dependency, code, and configuration scanning
+#
+# This workflow provides multi-layered security validation including:
+# - Daily automated dependency vulnerability scanning
+# - Code security analysis with CodeQL
+# - Security baseline verification
+# - Automated reporting and alerting
+#
+# Key Features:
+# - Scheduled daily security scans
+# - Manual scan triggers with configurable scope
+# - Comprehensive security reporting
+# - Automated issue creation for security failures
+# ============================================================================
+
 name: Security Monitoring
 
-# Comprehensive security monitoring workflow for dependency, code, and configuration scanning
-# Runs daily automated scans and on changes to security-related files
-
+# ============================================================================
+# TRIGGERS
+# ============================================================================
+# Multiple trigger types for comprehensive security coverage
 on:
+  # Daily automated security monitoring
   schedule:
-    # Run daily security checks at 2 AM UTC
+    # Run comprehensive security checks at 2 AM UTC daily
     - cron: '0 2 * * *'
+
+  # Manual security scan trigger with configurable scope
   workflow_dispatch:
     inputs:
       scan_type:
@@ -15,47 +37,60 @@ on:
         default: 'full'
         type: choice
         options:
-          - full
-          - dependencies
-          - code
+          - full          # Complete security audit (dependencies + code + baseline)
+          - dependencies  # Dependency vulnerability scanning only
+          - code         # Code security analysis only
+
+  # Trigger on security-related file changes (main branch)
   push:
     branches: [ "main" ]
     paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'deny.toml'
-      - '.github/workflows/security-monitoring.yml'
+      - 'Cargo.toml'                                    # Dependency changes
+      - 'Cargo.lock'                                    # Lock file updates
+      - 'deny.toml'                                     # Security policy changes
+      - '.github/workflows/security-monitoring.yml'     # Workflow updates
+
+  # Trigger on security-related file changes (PRs)
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'deny.toml'
-      - '.github/workflows/security-monitoring.yml'
+      - 'Cargo.toml'                                    # Dependency changes
+      - 'Cargo.lock'                                    # Lock file updates
+      - 'deny.toml'                                     # Security policy changes
+      - '.github/workflows/security-monitoring.yml'     # Workflow updates
 
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+# Global environment configuration for consistent security scanning behavior
 env:
-  CARGO_TERM_COLOR: always
-  CARGO_INCREMENTAL: 0
-  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always    # Enable colored output for better readability
+  CARGO_INCREMENTAL: 0         # Disable incremental compilation for CI consistency
+  RUST_BACKTRACE: 1           # Enable backtraces for better debugging
 
-# Global environment variables for consistent security scanning behavior
-
+# ============================================================================
+# PERMISSIONS
+# ============================================================================
+# Required permissions for comprehensive security scanning and reporting
 permissions:
-  contents: read
-  security-events: write
-  actions: read
-  issues: write
+  contents: read           # Required for accessing repository content
+  security-events: write   # Required for uploading security analysis results
+  actions: read           # Required for reading workflow status
+  issues: write           # Required for creating security alert issues
 
-# Required permissions for security scanning and issue creation
+# ============================================================================
+# JOBS
+# ============================================================================
 
 jobs:
   # ============================================================================
   # DEPENDENCY SECURITY SCANNING
   # ============================================================================
+  # Comprehensive dependency vulnerability and policy validation
   dependency-audit:
     name: Daily Dependency Audit
     runs-on: ubuntu-latest
-    # Run for full scans, dependency-only scans, or scheduled daily runs
+    # Execute for full scans, dependency-only scans, or scheduled runs
     if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
@@ -233,18 +268,22 @@ jobs:
   # ============================================================================
   # CODE SECURITY SCANNING
   # ============================================================================
-
+  # Static code analysis with CodeQL for security vulnerability detection
   code-security-scan:
     name: Code Security Scan
     runs-on: ubuntu-latest
-    # Run for full scans, code-only scans, or scheduled daily runs
+    # Execute for full scans, code-only scans, or scheduled runs
     if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule'
+
+    # Specific permissions for code security analysis
     permissions:
-      contents: read
-      security-events: write
-      actions: read
+      contents: read           # Required for accessing source code
+      security-events: write   # Required for uploading CodeQL results
+      actions: read           # Required for reading workflow status
+
+    # Environment configuration for enhanced Rust analysis
     env:
-      # Enable experimental CodeQL features for enhanced Rust analysis
+      # Enable experimental CodeQL features for better Rust support
       CODEQL_ENABLE_EXPERIMENTAL_FEATURES: true
     steps:
       - name: Checkout code
@@ -293,11 +332,11 @@ jobs:
   # ============================================================================
   # SECURITY BASELINE VERIFICATION
   # ============================================================================
-
+  # Validates security configuration and policy compliance
   security-baseline:
     name: Security Baseline Check
     runs-on: ubuntu-latest
-    # Only run baseline checks during scheduled runs (daily)
+    # Execute baseline checks only during scheduled daily runs
     if: github.event_name == 'schedule'
     steps:
       - name: Checkout code
@@ -410,17 +449,19 @@ jobs:
   # ============================================================================
   # SECURITY TEAM NOTIFICATION
   # ============================================================================
-
+  # Aggregates results and notifies security team of issues
   notify-security-team:
     name: Notify Security Team
     runs-on: ubuntu-latest
-    # Wait for all security jobs to complete before notification
+    # Wait for all security scanning jobs to complete
     needs: [dependency-audit, code-security-scan, security-baseline]
-    # Always run notification for scheduled scans, regardless of job outcomes
+    # Always execute notification for scheduled scans (regardless of job outcomes)
     if: always() && github.event_name == 'schedule'
+
+    # Permissions for security notifications and issue management
     permissions:
-      issues: write  # Create GitHub issues for security alerts
-      contents: read # Read repository contents
+      issues: write     # Required for creating GitHub security alert issues
+      contents: read    # Required for reading repository content
     steps:
       - name: Collect security status
         run: |

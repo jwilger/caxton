@@ -264,6 +264,46 @@ fn check_cargo_deny_execution_in_workflow(workflow_content: &str) -> bool {
         && workflow_content.contains("|| true")
 }
 
+/// Validate that security gate logic is simplified and race-condition-free
+fn validate_simplified_security_gate_logic(workflow_content: &str) -> bool {
+    // Current implementation has complex conditional logic that should be simplified
+    // This function should return false initially because the current logic is complex
+
+    // Check for complex conditional branches that create race conditions
+    let has_complex_trigger_logic = workflow_content
+        .contains("if [[ \"${{ github.event_name }}\" == \"workflow_run\" ]];")
+        && workflow_content.contains("elif [[ \"${{ github.event_name }}\" == \"push\" ]];")
+        && workflow_content
+            .contains("elif [[ \"${{ github.event_name }}\" == \"workflow_dispatch\" ]];");
+
+    // Check for redundant security validation logic spread across multiple steps
+    let has_redundant_validation = workflow_content
+        .contains("github.event.workflow_run.conclusion")
+        && workflow_content.contains("contains(github.event.head_commit.message, 'release')");
+
+    // Simple logic would have a single, clear security validation approach
+    // Current implementation fails this test because it has complex, error-prone logic
+    !has_complex_trigger_logic && !has_redundant_validation
+}
+
+/// Validate that job dependencies are clean without redundant conditional checks
+fn validate_clean_job_dependencies(workflow_content: &str) -> bool {
+    // Current implementation duplicates security validation across multiple jobs
+    // This function should return false initially because of redundant conditionals
+
+    // Check for duplicated security validation in job conditionals
+    let release_job_conditional = workflow_content
+        .contains("needs.security-gate.outputs.security-passed == 'true' && (")
+        && workflow_content.contains("github.event.workflow_run.conclusion == 'success'");
+
+    let pr_job_conditional = workflow_content.contains("needs.security-gate.outputs.security-passed == 'true' &&")
+        && workflow_content.contains("github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'");
+
+    // Clean dependencies would rely solely on the security gate output, not duplicate checks
+    // Current implementation fails this test because it has redundant conditional logic
+    !(release_job_conditional && pr_job_conditional)
+}
+
 #[test]
 fn test_cargo_deny_integration_in_ci() {
     // Test that verifies cargo-deny is properly integrated into CI security monitoring
@@ -329,6 +369,48 @@ fn test_security_monitoring_workflow_has_no_container_scanning() {
         !has_dockerfile_build,
         "Security monitoring workflow should NOT build Docker containers. \
         Found Docker build commands that should be removed for Rust-only project."
+    );
+}
+
+#[test]
+fn test_release_plz_workflow_dependency_validation() {
+    // Test that verifies release-plz.yml properly waits for security-monitoring.yml
+    // Kent Beck RED principle: Test should fail because current conditional logic is complex and error-prone
+
+    let release_workflow_path = ".github/workflows/release-plz.yml";
+    let release_workflow_content =
+        fs::read_to_string(release_workflow_path).expect("Release-plz workflow should exist");
+
+    // Test that workflow_run trigger is correctly configured for security dependency
+    let has_workflow_run_trigger = release_workflow_content.contains("workflow_run:")
+        && release_workflow_content.contains("workflows: [\"Security Monitoring\"]")
+        && release_workflow_content.contains("types: [completed]")
+        && release_workflow_content.contains("branches: [main]");
+
+    assert!(
+        has_workflow_run_trigger,
+        "Release-plz workflow should have proper workflow_run trigger configuration for Security Monitoring dependency"
+    );
+
+    // Test that security gate has simplified conditional logic (should fail initially)
+    // Current complex conditional logic creates race conditions and maintenance burden
+    let has_simplified_security_gate =
+        validate_simplified_security_gate_logic(&release_workflow_content);
+
+    assert!(
+        has_simplified_security_gate,
+        "Release-plz workflow security gate should have simplified conditional logic without race conditions. \
+        Current complex conditional logic in lines 69-101 should be simplified to reduce maintenance burden \
+        and eliminate race conditions when waiting for security workflow completion."
+    );
+
+    // Test that release jobs properly depend on security gate without redundant checks
+    let has_clean_job_dependencies = validate_clean_job_dependencies(&release_workflow_content);
+
+    assert!(
+        has_clean_job_dependencies,
+        "Release-plz workflow jobs should have clean dependencies on security gate without redundant conditional checks. \
+        Current conditional logic duplicates security validation across multiple jobs (lines 111-116 and 214-220)."
     );
 }
 
