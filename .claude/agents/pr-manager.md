@@ -65,7 +65,23 @@ All GitHub comments MUST use this exact format:
 - Verify working on feature branch, not main
 - Check GitHub auth before operations
 
-### 5. Branch Cleanup (Post-Merge)
+### 5. Story Completion Management (CRITICAL)
+
+**MANDATORY PLANNING.md UPDATE REQUIREMENT**:
+
+- **Before final PR creation**: MUST update PLANNING.md to mark the completed story
+- **Story completion format**: Change `- [ ]` to `- [x]` and add completion status
+- **Commit requirement**: Include PLANNING.md update in the same PR as the story implementation
+- **Validation**: Verify story ID matches current branch and story context
+- **Error handling**: If story cannot be found in PLANNING.md, request clarification from coordinator
+
+**Example story completion update**:
+```diff
+- [ ] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected dependency vulnerability
++ [x] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected dependency vulnerability ✅ (COMPLETED - All acceptance criteria met)
+```
+
+### 6. Branch Cleanup (Post-Merge)
 
 - Monitor for merged PRs using `gh pr list --state merged`
 - Automatically clean up local branches after PR merge:

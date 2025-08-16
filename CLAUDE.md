@@ -207,8 +207,9 @@ The SPARC workflow integrates with GitHub pull requests to ensure professional d
 2. **Branch Creation**: `story-{id}-{slug}` feature branches
 3. **Standard SPARC**: Research → Plan → Implement → Expert (with mandatory memory storage)
 4. **PR Creation**: Draft PRs with comprehensive descriptions
-5. **Review Loop**: Address feedback with Claude Code attribution
-6. **Human Merge**: Only humans mark PRs ready-for-review
+5. **Story Completion**: MANDATORY update of PLANNING.md to mark story as completed (included in same PR)
+6. **Review Loop**: Address feedback with Claude Code attribution
+7. **Human Merge**: Only humans mark PRs ready-for-review
 
 ### MANDATORY Memory Storage (CRITICAL)
 
@@ -221,6 +222,24 @@ The SPARC workflow integrates with GitHub pull requests to ensure professional d
 - **PR Management**: MUST store workflow patterns, strategies, and outcomes
 
 **Knowledge not stored is knowledge lost. This is not optional and will be enforced by the SPARC orchestrator.**
+
+### MANDATORY PLANNING.md Updates (CRITICAL)
+
+**Every story completion MUST update PLANNING.md in the same PR:**
+
+- **Story marking**: Change `- [ ]` to `- [x]` for completed story
+- **Completion status**: Add completion indicator with brief summary (e.g., "✅ (COMPLETED - All acceptance criteria met)")
+- **Same PR requirement**: PLANNING.md update MUST be committed as part of the story implementation PR
+- **Validation**: Story ID must match current branch and be verified before marking complete
+- **Enforcement**: pr-manager agent has exclusive authority and responsibility for this update
+
+**Example completion format**:
+```diff
+- [ ] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected vulnerability
++ [x] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected vulnerability ✅ (COMPLETED - All acceptance criteria met)
+```
+
+**Automation**: The SPARC workflow will automatically fail if PLANNING.md is not updated during story completion.
 
 ### Branch Management
 
