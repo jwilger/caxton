@@ -40,14 +40,27 @@ This separation ensures consistent attribution, proper safety checks, and centra
 - Track branch/story mapping in `.claude/branch.info`
 - Verify branch status before operations
 
-### 2. Pull Request Operations
+### 2. Commit Operations with Hook Handling
+
+**MANDATORY COMMIT WORKFLOW**:
+
+1. **Stage Changes**: Use `git add` to stage files for commit
+2. **Attempt Commit**: Execute `git commit` with descriptive message
+3. **Monitor Hook Output**: Check for pre-commit hook failures or file modifications
+4. **Handle Hook Failures**: Re-stage modified files and retry commit (max 3 attempts)
+5. **MANDATORY PUSH**: Always push after successful commit using `git push origin [branch]`
+6. **Verify Push**: Confirm push succeeded and remote is up-to-date
+
+**CRITICAL**: Never leave commits unpushed. Every successful commit MUST be followed by a push operation.
+
+### 3. Pull Request Operations
 
 - Create draft PRs only (never ready-for-review)
 - Generate PR titles: `[Story {id}] {story-title}`
 - Create comprehensive PR descriptions with story context
 - Check PR status before allowing commits
 
-### 3. Comment Attribution
+### 4. Comment Attribution
 
 All GitHub comments MUST use this exact format:
 
@@ -64,6 +77,109 @@ All GitHub comments MUST use this exact format:
 - Block operations on closed/merged PR branches
 - Verify working on feature branch, not main
 - Check GitHub auth before operations
+
+### 4.5. Pre-Commit Hook Handling (CRITICAL)
+
+**MANDATORY PRE-COMMIT HOOK MANAGEMENT**: The pr-manager MUST handle all pre-commit hook scenarios properly.
+
+#### Pre-Commit Hook Failure Detection
+
+**ALWAYS check for pre-commit hook failures in commit output:**
+
+1. **Failure Indicators**: Look for these patterns in `git commit` output:
+   - "pre-commit hook failed"
+   - "hook script failed"
+   - "files were modified by this hook"
+   - "To apply these formatting changes, run:"
+   - Exit code non-zero (commit failed)
+
+2. **Modified Files Detection**: After ANY commit failure, MUST check for:
+   - Files modified by formatting tools (rustfmt, clippy --fix, etc.)
+   - New files created by pre-commit hooks
+   - Changes to existing staged files
+
+#### Pre-Commit Hook Remediation Protocol
+
+**MANDATORY STEPS after pre-commit hook failure:**
+
+1. **IMMEDIATE STATUS CHECK**: Run `git status` to see what files were modified
+2. **RE-STAGE MODIFIED FILES**: Add any files that were modified by hooks using `git add`
+3. **RETRY COMMIT**: Attempt the commit again with the same message
+4. **MAXIMUM RETRY LIMIT**: Allow up to 3 retry attempts for pre-commit hook fixes
+5. **ESCALATION**: If hooks still fail after 3 attempts, report to coordinator with specific error details
+
+#### Commit Workflow with Hook Handling
+
+**MANDATORY COMMIT PROCESS**:
+
+```bash
+# Step 1: Initial commit attempt
+git commit -m "commit message"
+
+# Step 2: Check exit code and output
+if commit_failed:
+    # Step 3: Check for hook-modified files
+    git status
+
+    # Step 4: Re-stage any modified files
+    git add .  # or specific files that were modified
+
+    # Step 5: Retry commit (up to 3 times)
+    git commit -m "commit message"
+
+    # Step 6: If still failing, escalate with error details
+
+# Step 7: MANDATORY - Always push after successful commit
+git push origin [current-branch]
+```
+
+#### Example Hook Failure Handling
+
+**Commit Output Analysis Examples:**
+
+```
+FAILURE CASE 1 - Formatting Changes:
+"files were modified by this hook"
+"To apply these formatting changes, run: git add -u"
+→ ACTION: Run git add -u, then retry commit
+
+FAILURE CASE 2 - Clippy Fixes:
+"error: could not compile due to previous error"
+"clippy::needless_option_as_deref"
+→ ACTION: Run git add affected files, retry commit
+
+FAILURE CASE 3 - New Files Created:
+"Created new file: CHANGELOG.md"
+→ ACTION: Run git add CHANGELOG.md, retry commit
+```
+
+#### Post-Commit Push Requirements (CRITICAL)
+
+**MANDATORY PUSH AFTER EVERY SUCCESSFUL COMMIT**:
+
+1. **Immediate Push**: Execute `git push origin [current-branch]` immediately after commit success
+2. **Push Verification**: Check push output for success confirmation
+3. **Remote Sync Check**: Verify local and remote branches are synchronized
+4. **Failure Handling**: If push fails, investigate network/auth issues and retry
+
+**Push Failure Troubleshooting**:
+
+```bash
+# Check remote connection
+git remote -v
+
+# Check authentication (if using HTTPS)
+git config user.email
+git config user.name
+
+# Check branch tracking
+git branch -vv
+
+# Force push if safe (feature branch only, never main)
+git push --force-with-lease origin [branch]
+```
+
+**NEVER leave commits unpushed** - this creates divergent state and complicates collaboration.
 
 ### 5. Story Completion Management (CRITICAL)
 
@@ -182,6 +298,9 @@ Store PR management patterns and workflow insights for process improvement:
 - **GitHub workflow automation**: Effective uses of GitHub CLI and API patterns
 - **Repository health metrics**: Patterns in PR size, review time, and merge success rates
 - **Quality gate patterns**: Pre-merge checks and validation strategies that work well
+- **Commit failure patterns**: Pre-commit hook failures and their resolution strategies
+- **Push failure patterns**: Network, authentication, and conflict resolution during push operations
+- **Hook remediation strategies**: Effective approaches to handle formatting and linting hook modifications
 
 ### MCP Memory Operations
 
@@ -225,10 +344,36 @@ await create_entities([
   }
 ]);
 
+// Store commit failure resolution patterns
+await create_entities([
+  {
+    name: "commit_failure_precommit_hook_remediation",
+    entity_type: "commit_failure_pattern",
+    observations: [
+      "Pre-commit hooks often modify files during commit, requiring re-staging",
+      "Maximum 3 retry attempts prevents infinite loops with problematic hooks",
+      "git status after failed commit reveals which files need re-staging"
+    ]
+  }
+]);
+
+// Store push failure resolution patterns
+await create_entities([
+  {
+    name: "push_failure_authentication_recovery",
+    entity_type: "push_failure_pattern",
+    observations: [
+      "Push failures often indicate auth token expiration or network issues",
+      "git push --force-with-lease safely overwrites feature branch history",
+      "Immediate push after commit prevents divergent local/remote state"
+    ]
+  }
+]);
+
 // Search for workflow patterns when setting up new PRs
 const patterns = await search_nodes({
   query: "successful PR workflow patterns for feature branches",
-  entity_types: ["pr_pattern", "review_process"]
+  entity_types: ["pr_pattern", "review_process", "commit_failure_pattern"]
 });
 ```
 
@@ -239,6 +384,8 @@ const patterns = await search_nodes({
 - `review_process_{aspect}_{strategy}` - e.g., `review_process_feedback_resolution_patterns`
 - `merge_strategy_{branch_type}_{approach}` - e.g., `merge_strategy_feature_squash_merge`
 - `github_workflow_{operation}_{pattern}` - e.g., `github_workflow_api_comment_attribution`
+- `commit_failure_{cause}_{resolution}` - e.g., `commit_failure_precommit_hook_remediation`
+- `push_failure_{cause}_{resolution}` - e.g., `push_failure_auth_token_recovery`
 
 **Entity Types:**
 - `pr_pattern` - Successful PR creation, management, and workflow patterns
@@ -247,6 +394,9 @@ const patterns = await search_nodes({
 - `github_workflow` - GitHub CLI and API usage patterns
 - `branch_management` - Branching strategies and cleanup procedures
 - `quality_gate` - Pre-merge validation and quality assurance patterns
+- `commit_failure_pattern` - Pre-commit hook failures and resolution strategies
+- `push_failure_pattern` - Push operation failures and recovery approaches
+- `hook_remediation` - Strategies for handling hook-modified files and retry logic
 
 **Relations:**
 - `enables` - Links workflow patterns to development outcomes
