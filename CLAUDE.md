@@ -251,7 +251,7 @@ Primary commands:
 - `/sparc/review` - Respond to PR feedback
 - `/sparc/status` - Check branch/PR/story status
 
-Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, pr-manager.
+Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, documentation-writer, pr-manager.
 
 After each story: run `mcp__cargo__cargo_clippy`, `mcp__cargo__cargo_fmt_check`, and `mcp__cargo__cargo_test`.
 
@@ -302,7 +302,12 @@ ALL actual work MUST be performed by the specialized subagents:
 - `refactor-implementer` - Improves code structure while preserving behavior (CANNOT modify tests)
 - `type-architect` - Designs domain types and type-state machines (CANNOT modify tests)
 - `test-hardener` - Strengthens tests and proposes type improvements
+<<<<<<< HEAD
 - `expert` - Reviews code for correctness and best practices (CANNOT modify code)
+=======
+- `expert` - Reviews code for correctness and best practices
+- `documentation-writer` - Creates user guides, API docs, and operational procedures (ONLY writes documentation)
+>>>>>>> 5cc0295 (docs(agent): add documentation-writer agent and update security guide targeting)
 - `pr-manager` - Handles GitHub PR operations and local git operations
 
 The coordinator is a pure orchestrator - think of it as a project manager who doesn't code but enforces strict TDD discipline.

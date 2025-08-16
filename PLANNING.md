@@ -34,6 +34,11 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Story 008: CLI Tool
 - [ ] Story 009: OpenTelemetry Integration
 - [ ] Story 010: Basic MCP Tool Integration
+- [ ] Story 016: Resource Management and Limits
+- [ ] Story 017: Health Checks and Readiness Probes
+- [ ] Story 055: TLS Security Infrastructure
+- [ ] Story 056: Security Audit and Logging
+- [ ] Story 057: Emergency Operations Framework
 
 ### P2 - Standard Features
 
@@ -42,8 +47,6 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Story 013: Blue-Green Deployment
 - [ ] Story 014: External Agent Router
 - [ ] Story 015: Capability-Based Agent Discovery
-- [ ] Story 016: Resource Management and Limits
-- [ ] Story 017: Health Checks and Readiness Probes
 - [ ] Story 041: Emergency Operations Procedures
 - [ ] Story 042: Multi-Language Agent SDK
 - [ ] Story 043: Agent Testing Framework
@@ -414,6 +417,132 @@ This document contains the complete, prioritized backlog of user stories for the
 - Example tools documented
 - Security audit passed
 
+### Story 016: Resource Management and Limits
+
+**As a** system operator
+**I want** fine-grained resource control
+**So that** agents can't consume excessive resources
+
+**Acceptance Criteria:**
+
+- [ ] CPU limits enforced via WASM fuel
+- [ ] Memory limits enforced per agent
+- [ ] Message size limits configurable
+- [ ] Execution time limits prevent hangs
+- [ ] Resource violations logged
+- [ ] Graceful degradation on limits
+- [ ] Per-agent and global limits supported
+
+**Definition of Done:**
+
+- Limits enforced within 5% accuracy
+- Resource bombs prevented
+- Performance overhead < 10%
+- Monitoring shows resource usage
+- Configuration documented
+- Tests verify all limits
+
+### Story 017: Health Checks and Readiness Probes
+
+**As a** container orchestrator
+**I want** health and readiness endpoints
+**So that** I can manage Caxton instances
+
+**Acceptance Criteria:**
+
+- [ ] /health endpoint indicates system health
+- [ ] /ready endpoint indicates readiness for traffic
+- [ ] Health checks verify critical components
+- [ ] Readiness considers agent loading
+- [ ] Checks complete in < 1 second
+- [ ] Failed checks provide diagnostic info
+- [ ] Kubernetes-compatible responses
+
+**Definition of Done:**
+
+- Endpoints follow Kubernetes standards
+- All components checked
+- Performance impact negligible
+- Documentation covers probe configuration
+- Integration with k8s verified
+- Alerts configured for failures
+
+### Story 055: TLS Security Infrastructure
+
+**As a** system operator
+**I want** comprehensive TLS encryption support
+**So that** all communications are secure in production
+
+**Acceptance Criteria:**
+
+- [ ] TLS encryption for all API endpoints (gRPC, REST, WebSocket)
+- [ ] Environment variable configuration (CAXTON_TLS_ENABLED, CAXTON_TLS_CERT_PATH, CAXTON_TLS_KEY_PATH)
+- [ ] Certificate loading and validation at startup
+- [ ] TLS 1.3 minimum version enforced
+- [ ] Certificate rotation without service restart
+- [ ] Client certificate authentication support
+- [ ] Security headers configured properly
+
+**Definition of Done:**
+
+- All communications encrypted in production mode
+- Certificate management documented
+- Performance overhead < 10ms per connection
+- Integration tests verify TLS functionality
+- Security scan confirms TLS configuration
+- Certificate expiry monitoring implemented
+
+### Story 056: Security Audit and Logging
+
+**As a** security engineer
+**I want** comprehensive security audit logging
+**So that** I can track security events and maintain compliance
+
+**Acceptance Criteria:**
+
+- [ ] Security audit logging enabled via CAXTON_SECURITY_AUDIT=enabled
+- [ ] All authentication and authorization events logged
+- [ ] Resource limit violations tracked and logged
+- [ ] WASM isolation violations detected and logged
+- [ ] Structured logging with security event classification
+- [ ] Audit log integrity verification
+- [ ] Configurable log retention and rotation
+- [ ] Security metrics exported to monitoring systems
+
+**Definition of Done:**
+
+- All security events captured in audit logs
+- Audit logs tamper-evident and immutable
+- Security dashboard shows real-time events
+- Compliance reporting automated
+- Performance overhead < 5%
+- Documentation covers security monitoring
+
+### Story 057: Emergency Operations Framework
+
+**As a** system operator
+**I want** emergency operation capabilities
+**So that** I can handle critical failures and maintain system stability
+
+**Acceptance Criteria:**
+
+- [ ] Emergency stop command with graceful shutdown
+- [ ] Memory garbage collection command (caxton memory gc)
+- [ ] Load shedding capabilities during overload
+- [ ] Configuration validation commands (caxton config validate --security-check)
+- [ ] Component status commands (caxton wasm isolation-status, caxton fipa validation-status)
+- [ ] Resource monitoring commands (caxton resources status)
+- [ ] Emergency diagnostic data collection
+
+**Definition of Done:**
+
+- Emergency procedures complete in < 30 seconds
+- No data loss during emergency shutdown
+- Load shedding prevents system overload
+- Diagnostic commands provide actionable information
+- Documentation includes emergency runbooks
+- Regular emergency drills procedures defined
+
 ---
 
 ## P2 - Standard Features Stories
@@ -542,56 +671,6 @@ This document contains the complete, prioritized backlog of user stories for the
 - Integration tests verify discovery
 - Examples show capability patterns
 - Documentation explains model
-
-### Story 016: Resource Management and Limits
-
-**As a** system operator
-**I want** fine-grained resource control
-**So that** agents can't consume excessive resources
-
-**Acceptance Criteria:**
-
-- [ ] CPU limits enforced via WASM fuel
-- [ ] Memory limits enforced per agent
-- [ ] Message size limits configurable
-- [ ] Execution time limits prevent hangs
-- [ ] Resource violations logged
-- [ ] Graceful degradation on limits
-- [ ] Per-agent and global limits supported
-
-**Definition of Done:**
-
-- Limits enforced within 5% accuracy
-- Resource bombs prevented
-- Performance overhead < 10%
-- Monitoring shows resource usage
-- Configuration documented
-- Tests verify all limits
-
-### Story 017: Health Checks and Readiness Probes
-
-**As a** container orchestrator
-**I want** health and readiness endpoints
-**So that** I can manage Caxton instances
-
-**Acceptance Criteria:**
-
-- [ ] /health endpoint indicates system health
-- [ ] /ready endpoint indicates readiness for traffic
-- [ ] Health checks verify critical components
-- [ ] Readiness considers agent loading
-- [ ] Checks complete in < 1 second
-- [ ] Failed checks provide diagnostic info
-- [ ] Kubernetes-compatible responses
-
-**Definition of Done:**
-
-- Endpoints follow Kubernetes standards
-- All components checked
-- Performance impact negligible
-- Documentation covers probe configuration
-- Integration with k8s verified
-- Alerts configured for failures
 
 ---
 
@@ -1526,6 +1605,8 @@ This section maps ADR requirements and documentation features to user stories to
 - Story 022: mTLS Inter-Node Security ✓
 - Story 023: API Authentication Framework ✓
 - Story 024: Role-Based Access Control ✓
+- Story 055: TLS Security Infrastructure ✓
+- Story 056: Security Audit and Logging ✓
 
 ### ADR-0018: Operational Procedures
 
@@ -1534,6 +1615,7 @@ This section maps ADR requirements and documentation features to user stories to
 - Story 033: Cluster Auto-Scaling ✓
 - Story 041: Emergency Operations Procedures ✓
 - Story 047: Advanced Recovery Patterns ✓
+- Story 057: Emergency Operations Framework ✓
 
 ### Documentation Coverage
 
@@ -1550,11 +1632,11 @@ This section maps ADR requirements and documentation features to user stories to
 
 ### Phase 1: Minimal Core (V1.0)
 
-P0 Stories (001-004) + P1 Stories (005-010)
+P0 Stories (001-004) + P1 Stories (005-010, 016-017, 055-057)
 
 ### Phase 2: Patterns & Performance (V2.0)
 
-P2 Stories (011-017, 041-045) + Selected P3 Stories (018-025)
+P2 Stories (011-015, 041-045) + Selected P3 Stories (018-025)
 
 ### Phase 3: Scale & Ecosystem (V3.0)
 
