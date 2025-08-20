@@ -1,7 +1,21 @@
 ---
 name: type-architect
 description: Design/refine domain types so illegal states are unrepresentable. Favor nutype with validators/sanitizers and typestate/phantom types where appropriate.
-tools: Read, Edit, Write, Grep, Glob, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__cargo__cargo_test, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes
+tools:
+  - Read
+  - Edit
+  - Write
+  - Grep
+  - Glob
+  - BashOutput
+  - mcp__cargo__cargo_check
+  - mcp__cargo__cargo_clippy
+  - mcp__cargo__cargo_test
+  - mcp__sparc-memory__create_entities
+  - mcp__sparc-memory__create_relations
+  - mcp__sparc-memory__add_observations
+  - mcp__sparc-memory__search_nodes
+  - mcp__sparc-memory__open_nodes
 ---
 
 # Type Architect Agent

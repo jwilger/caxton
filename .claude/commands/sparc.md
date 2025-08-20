@@ -2,8 +2,9 @@
 description: Orchestrate SPARC for the next unfinished story in @PLANNING.md (or the specified one) using strict Rust TDD + type-driven design.
 argument-hint: [optional-instructions or explicit story]
 model: claude-opus-4-1-20250805
-allowed-tools: Task
+allowed-tools: Task, Bash, BashOutput
 ---
+
 <!-- cSpell:ignore nextest clippy proptest nutype thiserror wasmtime newtypes nocapture -->
 
 # SPARC Orchestration (Rust)
@@ -24,9 +25,20 @@ Execute the complete SPARC workflow directly, using specialized agents for each 
 **CRITICAL FIRST STEP**: Before delegating to any agents, the SPARC coordinator MUST:
 
 1. **Set Cargo Working Directory**: Call `mcp__cargo__set_working_directory` with the absolute path to the project root (where Cargo.toml exists)
-2. **Verify Setup**: Ensure the working directory is set correctly for all subsequent cargo operations
+2. **Start Bacon Continuous Testing**: Launch `bacon --headless` in background for real-time test monitoring
+3. **Verify Setup**: Ensure the working directory is set correctly and bacon is running for all subsequent operations
 
-This ensures all agents have proper access to cargo commands (test, clippy, build, etc.) without MCP working directory errors.
+This ensures all agents have proper access to cargo commands and continuous test feedback without manual test execution.
+
+### Bacon Integration Throughout Workflow
+
+**MANDATORY**: All agents must monitor bacon output instead of running manual test commands:
+
+- **Use BashOutput tool** to check bacon status when tests are expected to change
+- **Look for expected failures** during RED phase - bacon should show the failing test
+- **Confirm test passes** during GREEN phase - bacon should show all tests passing
+- **Verify no regressions** during REFACTOR phase - bacon should maintain green status
+- **React immediately** to any unexpected compilation errors or test failures in bacon output
 
 ## SPARC Coordinator Role
 
@@ -100,28 +112,31 @@ Use Task tool with `planner` agent:
 
 - Write exactly ONE failing test that captures the next behavior
 - Use `unimplemented!()` to force clear failure
-- Verify test fails for the right reason
+- **Monitor bacon output** to verify test fails for the right reason (use BashOutput tool)
 - Create `.claude/tdd.red` state file
 - Store test patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY test code, no implementation
+- **BACON VERIFICATION**: Confirm bacon shows the expected test failure
 
 **GREEN Phase** - Use Task tool with `green-implementer` agent:
 
 - Implement minimal code to make the failing test pass
 - Use simplest possible solution (fake it 'til you make it)
-- Verify test passes and no existing tests break
+- **Monitor bacon output** to verify test passes and no existing tests break (use BashOutput tool)
 - Create `.claude/tdd.green` state file
 - Store minimal implementation patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY implementation code, no tests
+- **BACON VERIFICATION**: Confirm bacon shows all tests passing
 
 **REFACTOR Phase** - Use Task tool with `refactor-implementer` agent:
 
 - Remove duplication and improve code structure
 - Extract pure functions (functional core / imperative shell)
-- Keep all tests green throughout refactoring
+- **Monitor bacon output** to ensure all tests stay green throughout refactoring (use BashOutput tool)
 - Use cargo MCP server for `cargo_clippy` and `cargo_fmt_check`
 - Store refactoring patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY implementation improvements, no test changes
+- **BACON VERIFICATION**: Confirm bacon shows no test regressions during refactoring
 - **COMMIT**: Create descriptive commit with Claude Code attribution
 
 **TYPE PASS**: Use Task tool with `type-architect` to replace primitives with nutype domain types
@@ -132,7 +147,8 @@ Use Task tool with `test-hardener` agent:
 
 - For each test added/changed, propose type/API changes that make failures impossible at compile time
 - If safe, implement type changes with small diffs
-- Update call sites and re-run cargo MCP server `cargo_clippy` and `cargo_test`
+- Update call sites and **monitor bacon output** to verify no test regressions (use BashOutput tool)
+- Use cargo MCP server for `cargo_clippy` only - bacon handles continuous test monitoring
 
 ### G) EXPERT CHECK (Optional)
 
@@ -192,6 +208,7 @@ Use Task tool with `pr-manager` agent:
 **COORDINATOR MUST VALIDATE** every TDD agent response before acceptance:
 
 ### Red-Implementer Validation
+
 - ✅ **Required**: Response begins with "I am red-implementer. I write ONLY tests. I do NOT write implementation code."
 - ✅ **Required**: Contains test code blocks with `// Test that verifies [specific behavior]`
 - ✅ **Required**: Ends with "Test written and failing. Ready for green-implementer."
@@ -200,6 +217,7 @@ Use Task tool with `pr-manager` agent:
 - ❌ **Forbidden**: Modifications to existing implementation code
 
 ### Green-Implementer Validation
+
 - ✅ **Required**: Response begins with "I am green-implementer. I write ONLY implementation code. I do NOT write tests."
 - ✅ **Required**: Contains implementation code blocks with `// Minimal implementation to pass test`
 - ✅ **Required**: Ends with "Test now passes. Ready for refactor-implementer or next red cycle."
@@ -208,6 +226,7 @@ Use Task tool with `pr-manager` agent:
 - ❌ **Forbidden**: Modifications to existing test code
 
 ### Refactor-Implementer Validation
+
 - ✅ **Required**: Response begins with "I am refactor-implementer. I improve ONLY implementation code. I do NOT modify tests."
 - ✅ **Required**: Contains implementation improvements only
 - ✅ **Required**: Ends with "Code improved. All tests still green. Ready for next red cycle."
@@ -216,7 +235,9 @@ Use Task tool with `pr-manager` agent:
 - ❌ **Forbidden**: Changes to test behavior or expectations
 
 ### Violation Response Protocol
+
 **If validation fails:**
+
 1. **Immediately re-delegate** to the same agent with role reminder
 2. **Include validation error** in the re-delegation prompt
 3. **Do NOT proceed** with workflow until validation passes
@@ -241,11 +262,13 @@ Agents will format information requests as:
 ## Information Requests
 
 ### Request 1: [Brief Description]
+
 - **Target Agent**: [agent-name]
 - **Request**: [specific information needed]
 - **Context**: [why this information is needed]
 
 ### Request 2: [Brief Description]
+
 - **Target Agent**: [agent-name]
 - **Request**: [specific information needed]
 - **Context**: [why this information is needed]
@@ -359,11 +382,13 @@ implementer response includes:
 ## Information Requests
 
 ### Request 1: WASM Runtime API Documentation
+
 - **Target Agent**: researcher
 - **Request**: Find official documentation for wasmtime crate's async execution APIs
 - **Context**: Need to implement async WASM module execution for agent runtime
 
 Coordinator action:
+
 1. Use Task tool with researcher agent
 2. Provide context: "implementer needs wasmtime async execution docs for story-051"
 3. Collect researcher response with documentation links and examples
@@ -378,11 +403,13 @@ type-architect response includes:
 ## Information Requests
 
 ### Request 1: Validation of Resource Limit Types
+
 - **Target Agent**: expert
 - **Request**: Review proposed CpuFuel and MemoryBytes newtypes for soundness
 - **Context**: Ensuring resource limits are mathematically sound and prevent overflow
 
 Coordinator action:
+
 1. Use Task tool with expert agent
 2. Provide type-architect's proposed designs
 3. Collect expert's soundness validation and suggestions
@@ -441,7 +468,7 @@ Coordinator action:
 ## Critical Rules
 
 - Follow Kent Beck TDD discipline strictly: Red→Green→Refactor
-- Use cargo MCP server `cargo_test` for all testing
+- **Use bacon for continuous testing** instead of manual test commands - monitor BashOutput for test feedback
 - Treat clippy warnings as errors (`-- -D warnings`)
 - **NEVER** add clippy allow attributes without explicit team approval
 - All new domain types must use nutype with sanitize/validate

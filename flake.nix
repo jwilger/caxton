@@ -39,6 +39,7 @@
             cargo-watch
             cargo-expand
             cargo-edit
+            bacon
             just
             pkg-config
             openssl
@@ -48,6 +49,22 @@
 
           # Configure development environment
           shellHook = ''
+            # Create local dependency directories
+            mkdir -p .dependencies/nodejs
+            mkdir -p .dependencies/rust
+
+            # Configure Node.js/npm to use local directory
+            export NPM_CONFIG_PREFIX="$PWD/.dependencies/nodejs"
+            export NPM_CONFIG_CACHE="$PWD/.dependencies/nodejs/cache"
+            export NODE_PATH="$PWD/.dependencies/nodejs/lib/node_modules"
+            export PATH="$PWD/.dependencies/nodejs/bin:$PATH"
+
+            # Configure Cargo to use local directory
+            export CARGO_HOME="$PWD/.dependencies/rust/cargo"
+            export RUSTUP_HOME="$PWD/.dependencies/rust/rustup"
+            export PATH="$PWD/.dependencies/rust/cargo/bin:$PATH"
+
+            # Ensure cargo-mcp is installed in local directory
             cargo install --locked cargo-mcp
 
             echo "🦀 Caxton Development Environment"
@@ -64,7 +81,7 @@
             echo "   - --no-verify is blocked (use /usr/bin/git for emergencies)"
             echo ""
 
-            # Ensure claude code is available
+            # Ensure claude code is available (install to local directory)
             # First check if claude code is installed
             if ! command -v claude &> /dev/null; then
               npx @anthropic-ai/claude-code install --force latest
@@ -74,6 +91,11 @@
             echo "🧠 MCP Memory Server configured via Claude Code"
             echo "   - Check status: claude mcp list"
             echo "   - Memory file: .claude/sparc-memory.jsonl"
+            echo ""
+
+            echo "📦 Dependency directories:"
+            echo "   - Node.js packages: .dependencies/nodejs/"
+            echo "   - Rust/Cargo packages: .dependencies/rust/"
             echo ""
 
             echo "📋 Common commands:"

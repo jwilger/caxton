@@ -98,3 +98,5 @@ hive-mind-prompt-*.txt
 .claude/*.green
 .claude/branch.info
 .claude/plan.approved
+
+.dependencies
