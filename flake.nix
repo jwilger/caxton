@@ -49,6 +49,18 @@
 
           # Configure development environment
           shellHook = ''
+            # Validate required environment variables
+            if [ -z "$GITHUB_MCP_TOKEN" ]; then
+              echo "❌ ERROR: GITHUB_MCP_TOKEN environment variable is required"
+              echo "   Please set your GitHub Personal Access Token:"
+              echo "   export GITHUB_MCP_TOKEN=your_github_token_here"
+              echo ""
+              echo "   Token requirements:"
+              echo "   - GitHub Personal Access Token with repo permissions"
+              echo "   - Used for GitHub API access via MCP server"
+              exit 1
+            fi
+
             # Create local dependency directories
             mkdir -p .dependencies/nodejs
             mkdir -p .dependencies/rust
@@ -82,15 +94,28 @@
             echo ""
 
             # Ensure claude code is available (install to local directory)
-            # First check if claude code is installed
             if ! command -v claude &> /dev/null; then
               npx @anthropic-ai/claude-code install --force latest
             fi
 
-            # MCP Memory Server configured via 'claude mcp' command
-            echo "🧠 MCP Memory Server configured via Claude Code"
+            # Configure MCP servers for project
+            echo "🔧 Configuring MCP servers..."
+
+            # Add MCP servers with proper configuration
+            claude mcp add sparc-memory npx @modelcontextprotocol/server-memory
+            claude mcp add cargo cargo-mcp serve
+            claude mcp add --transport=http --header="Authorization: Bearer $GITHUB_MCP_TOKEN" github https://api.githubcopilot.com/mcp/
+            claude mcp add git npx @cyanheads/git-mcp-server
+
+            echo "✅ MCP servers configured successfully"
+            echo ""
+
+            echo "🧠 MCP servers configured:"
+            echo "   - sparc-memory: SPARC workflow knowledge storage"
+            echo "   - cargo: Rust/Cargo integration"
+            echo "   - github: GitHub API with Bearer token auth"
+            echo "   - git: Enhanced git operations"
             echo "   - Check status: claude mcp list"
-            echo "   - Memory file: .claude/sparc-memory.jsonl"
             echo ""
 
             echo "📦 Dependency directories:"
@@ -103,6 +128,7 @@
             echo "  cargo watch -x test  # Auto-run tests on changes"
             echo "  cargo clippy         # Lint code"
             echo "  cargo fmt           # Format code"
+            echo "  bacon --headless     # Continuous testing"
             echo ""
           '';
         };

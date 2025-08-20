@@ -100,6 +100,7 @@ jobs:
     outputs:
       security-passed: ${{ steps.validate.outputs.passed }}
       workflow-trigger: ${{ steps.validate.outputs.trigger }}
+      skip-cargo-publish: ${{ steps.validate.outputs.skip-cargo-publish }}
     steps:
       - name: Validate security status
         id: validate
@@ -161,8 +162,18 @@ jobs:
             exit 1
           fi
 
+          # Determine if cargo publish should be skipped based on token availability
+          if [[ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]]; then
+            SKIP_CARGO_PUBLISH="true"
+            echo "::warning::CARGO_REGISTRY_TOKEN not set - skipping release publication"
+          else
+            SKIP_CARGO_PUBLISH="false"
+            echo "✅ CARGO_REGISTRY_TOKEN is configured"
+          fi
+
           echo "passed=$SECURITY_PASSED" >> $GITHUB_OUTPUT
           echo "trigger=${{ github.event_name }}" >> $GITHUB_OUTPUT
+          echo "skip-cargo-publish=$SKIP_CARGO_PUBLISH" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
   # ============================================================================
@@ -225,14 +236,12 @@ jobs:
         run: |
           echo "::group::Release Environment Validation"
 
-          # Check required secrets with graceful handling
-          if [[ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]]; then
-            echo "::warning::CARGO_REGISTRY_TOKEN not set - skipping release publication"
+          # Token availability already determined in security gate
+          echo "Skip cargo publish: ${{ needs.security-gate.outputs.skip-cargo-publish }}"
+          if [[ "${{ needs.security-gate.outputs.skip-cargo-publish }}" == "true" ]]; then
             echo "::warning::Release will be created in GitHub but not published to crates.io"
-            echo "SKIP_CARGO_PUBLISH=true" >> $GITHUB_ENV
           else
-            echo "✅ CARGO_REGISTRY_TOKEN is configured"
-            echo "SKIP_CARGO_PUBLISH=false" >> $GITHUB_ENV
+            echo "✅ Release will be published to both GitHub and crates.io"
           fi
 
           # Validate repository state
@@ -252,8 +261,8 @@ jobs:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN || secrets.GITHUB_TOKEN }}
-          # Only set CARGO_REGISTRY_TOKEN if it exists to prevent authentication failures
-          CARGO_REGISTRY_TOKEN: ${{ env.SKIP_CARGO_PUBLISH == 'false' && secrets.CARGO_REGISTRY_TOKEN || '' }}
+          # Use more reliable token detection based on security gate output
+          CARGO_REGISTRY_TOKEN: ${{ needs.security-gate.outputs.skip-cargo-publish == 'false' && secrets.CARGO_REGISTRY_TOKEN || '' }}
           # Enhanced logging for debugging
           RUST_LOG: debug
 
@@ -266,7 +275,7 @@ jobs:
 
           if [[ "${{ job.status }}" == "success" ]]; then
             echo "✅ Release completed successfully"
-            if [[ "$SKIP_CARGO_PUBLISH" == "true" ]]; then
+            if [[ "${{ needs.security-gate.outputs.skip-cargo-publish }}" == "true" ]]; then
               echo "ℹ️ Note: Crates.io publication was skipped due to missing CARGO_REGISTRY_TOKEN"
               echo "ℹ️ GitHub release was created, but package was not published to crates.io"
             else
