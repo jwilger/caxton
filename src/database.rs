@@ -592,3 +592,6 @@ mod tests {
         assert!(pool_error_string.contains("pool error"));
     }
 }
+
+// Re-export storage types for convenient access alongside database types
+pub use crate::storage::{AgentStorage, StoredAgent};

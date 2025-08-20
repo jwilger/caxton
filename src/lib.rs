@@ -21,6 +21,8 @@ pub mod runtime;
 pub mod sandbox;
 /// Security policy configuration and enforcement
 pub mod security;
+/// Agent storage module for SQLite persistence
+pub mod storage;
 
 /// Core agent lifecycle management orchestration
 pub mod agent_lifecycle_manager;
@@ -45,6 +47,7 @@ pub use domain_types::{
     MessageSize, PermissionName, QueueDepth, RateLimitPerSecond, ResourceCreationError,
     RetryAttempt, StorageCleanupIntervalMs, TestAgentId, TestSequence, ValidationError, WorkerId,
 };
+pub use storage::{AgentStorage, StoredAgent};
 // Re-export key domain types at the crate level
 pub use domain::{
     AgentLifecycle, AgentLifecycleState, AgentVersion, CustomValidationRule, DeploymentConfig,
