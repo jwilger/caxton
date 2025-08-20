@@ -42,7 +42,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_registration_and_stats() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Initially no agents
         let initial_stats = router.get_stats().await.unwrap();
@@ -63,7 +63,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_deregistration() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Create and register test agent
         let (agent, capabilities) = create_test_agent(1, vec!["data-processing"]);
@@ -86,7 +86,7 @@ mod tests {
     #[tokio::test]
     async fn test_multiple_agent_registration() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Register multiple agents
         let (agent1, caps1) = create_test_agent(1, vec!["data-processing"]);
@@ -110,7 +110,7 @@ mod tests {
         const NUM_CONCURRENT_OPS: usize = 100;
 
         let config = test_config();
-        let router = std::sync::Arc::new(MessageRouterImpl::new(config).unwrap());
+        let router = std::sync::Arc::new(MessageRouterImpl::new(config).await.unwrap());
         let mut handles = Vec::new();
 
         // Spawn concurrent registration operations
@@ -152,7 +152,7 @@ mod tests {
         const STATS_CALLS: usize = 100;
 
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
         let mut agent_ids = Vec::with_capacity(NUM_AGENTS);
 
         // Registration phase
@@ -192,7 +192,7 @@ mod tests {
     #[tokio::test]
     async fn test_error_conditions() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Test deregistration of non-existent agent
         let nonexistent_id = AgentId::generate();
@@ -218,7 +218,7 @@ mod tests {
     #[tokio::test]
     async fn test_health_check() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Start the router so health checks work
         router.start().await.unwrap();
@@ -245,7 +245,7 @@ mod tests {
     #[tokio::test]
     async fn test_router_lifecycle() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Start the router
         router.start().await.unwrap();
@@ -275,7 +275,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_state_management() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::new(config).await.unwrap();
 
         // Register an agent
         let (agent, capabilities) = create_test_agent(1, vec!["state-test"]);
@@ -292,5 +292,49 @@ mod tests {
         // Verify agent is still in stats
         let stats = router.get_stats().await.unwrap();
         assert!(stats.agent_queue_depths.contains_key(&agent_id));
+    }
+
+    #[tokio::test]
+    async fn test_should_persist_and_lookup_routes_when_storing_routing_table() {
+        // Test that verifies route persistence and lookup for message delivery optimization
+        let config = test_config();
+        let router = MessageRouterImpl::new(config).await.unwrap();
+        router.start().await.unwrap();
+
+        // Create test route data
+        let agent_id = AgentId::generate();
+        let node_id = NodeId::generate();
+        let route_info = RouteInfo::new(
+            node_id,
+            RouteHops::try_new(1).unwrap(),
+            MessageTimestamp::now(),
+        );
+
+        // This should store the route for fast lookup during message routing
+        let storage_result = router.store_route(agent_id, route_info.clone()).await;
+        assert!(storage_result.is_ok(), "Route storage should succeed");
+
+        // This should retrieve the stored route in sub-millisecond time for message delivery
+        let lookup_result = router.lookup_route(agent_id).await;
+        assert!(lookup_result.is_ok(), "Route lookup should succeed");
+
+        let retrieved_route = lookup_result.unwrap();
+        assert!(
+            retrieved_route.is_some(),
+            "Stored route should be retrievable"
+        );
+
+        let route = retrieved_route.unwrap();
+        assert_eq!(
+            route.node_id, node_id,
+            "Retrieved route should match stored node ID"
+        );
+        assert_eq!(
+            route.hops,
+            RouteHops::try_new(1).unwrap(),
+            "Retrieved route should match stored hop count"
+        );
+
+        router.shutdown().await.unwrap();
     }
 }

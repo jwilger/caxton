@@ -3,28 +3,34 @@
 //! Coordinates message routing between agents using a coordination-first architecture
 //! with high-performance async processing and comprehensive error handling.
 
-use crate::message_router::{
-    config::RouterConfig,
-    domain_types::{
-        AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationCreatedAt,
-        ConversationId, DeliveryOptions, FailureReason, FipaMessage, LocalAgent, MessageContent,
-        MessageCount, MessageId, MessageTimestamp, NodeId, Performative, ProtocolName, RouteHops,
-    },
-    traits::{
-        AgentRegistry, ConversationError, ConversationManager, ConversationStats, DeadLetterStats,
-        DeliveryEngine, DeliveryError, FailureHandler, HealthStatus, MessageRouter,
-        MetricsCollector, RegistryError, RouterError, RouterStats,
+use crate::{
+    database::{DatabaseConfig, DatabaseConnection, DatabaseError, DatabasePath},
+    message_router::{
+        config::RouterConfig,
+        domain_types::{
+            AgentId, AgentLocation, AgentState, CapabilityName, Conversation,
+            ConversationCreatedAt, ConversationId, DeliveryOptions, FailureReason, FipaMessage,
+            LocalAgent, MessageContent, MessageCount, MessageId, MessageTimestamp, NodeId,
+            Performative, ProtocolName, RouteHops, RouteInfo,
+        },
+        traits::{
+            AgentRegistry, ConversationError, ConversationManager, ConversationStats,
+            DeadLetterStats, DeliveryEngine, DeliveryError, FailureHandler, HealthStatus,
+            MessageRouter, MetricsCollector, RegistryError, RouterError, RouterStats,
+        },
     },
 };
 use async_trait::async_trait;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
+use uuid::Uuid;
 
 /// Main message router implementation
 ///
@@ -62,6 +68,12 @@ pub struct MessageRouterImpl {
 
     // Metrics collection
     metrics_collector: Option<Arc<dyn MetricsCollector>>,
+
+    // Routing storage for persistent message delivery optimization
+    routing_storage: Arc<RouteStorage>,
+
+    // In-memory cache for sub-millisecond lookups
+    routing_cache: DashMap<AgentId, RouteInfo>,
 }
 
 /// Internal routing task
@@ -269,7 +281,7 @@ impl MessageRouterImpl {
     /// # Errors
     ///
     /// Returns a `RouterError` if configuration validation fails or component creation fails.
-    pub fn new(config: RouterConfig) -> Result<Self, RouterError> {
+    pub async fn new(config: RouterConfig) -> Result<Self, RouterError> {
         let span = span!(Level::INFO, "router_creation");
         let _enter = span.enter();
 
@@ -308,6 +320,16 @@ impl MessageRouterImpl {
         // Create throughput tracker
         let throughput_tracker = Arc::new(ThroughputTracker::new(Duration::from_secs(60)));
 
+        // Initialize persistent route storage
+        let routing_storage =
+            Arc::new(
+                RouteStorage::new()
+                    .await
+                    .map_err(|e| RouterError::ConfigurationError {
+                        message: format!("Failed to initialize route storage: {e}"),
+                    })?,
+            );
+
         let router = Self {
             config,
             delivery_engine,
@@ -324,6 +346,8 @@ impl MessageRouterImpl {
             inbound_receiver: Arc::new(RwLock::new(Some(inbound_receiver))),
             routing_semaphore,
             metrics_collector,
+            routing_storage,
+            routing_cache: DashMap::new(),
         };
 
         info!("Message router created successfully");
@@ -644,6 +668,75 @@ impl MessageRouterImpl {
             debug!("Metrics collection terminated");
         });
     }
+
+    /// Stores route information for message delivery optimization
+    ///
+    /// Uses `SQLite` for persistence and updates in-memory cache for fast lookups.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if route storage fails or database operations fail.
+    /// Performance target: < 1ms including cache update.
+    pub async fn store_route(
+        &self,
+        agent_id: AgentId,
+        route_info: RouteInfo,
+    ) -> Result<(), RouterError> {
+        // Store in persistent storage (functional core + imperative shell)
+        self.routing_storage
+            .store_route(agent_id, &route_info)
+            .await
+            .map_err(|e| RouterError::ConfigurationError {
+                message: format!("Route storage failed: {e}"),
+            })?;
+
+        // Update cache for sub-millisecond lookups (imperative shell)
+        self.routing_cache.insert(agent_id, route_info);
+
+        Ok(())
+    }
+
+    /// Looks up route information for an agent
+    ///
+    /// Uses in-memory cache first for sub-millisecond performance, falls back to `SQLite`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if route lookup fails or database operations fail.
+    /// Performance target: < 1ms for cache hits, < 5ms for cache misses.
+    pub async fn lookup_route(&self, agent_id: AgentId) -> Result<Option<RouteInfo>, RouterError> {
+        // Try cache first for sub-millisecond performance (imperative shell)
+        if let Some(route) = self.routing_cache.get(&agent_id) {
+            let route_info = route.clone();
+            drop(route); // Release lock immediately
+
+            // Check if route is still fresh (functional core)
+            if route_is_fresh(&route_info) {
+                return Ok(Some(route_info));
+            }
+            // Remove stale route from cache
+            self.routing_cache.remove(&agent_id);
+        }
+
+        // Cache miss or stale route - query persistent storage (functional core + imperative shell)
+        match self.routing_storage.lookup_route(agent_id).await {
+            Ok(Some(route_info)) => {
+                // Update cache for future lookups (imperative shell)
+                if route_is_fresh(&route_info) {
+                    self.routing_cache.insert(agent_id, route_info.clone());
+                    Ok(Some(route_info))
+                } else {
+                    // Route expired, clean up storage
+                    let _ = self.routing_storage.remove_route(agent_id).await;
+                    Ok(None)
+                }
+            }
+            Ok(None) => Ok(None),
+            Err(e) => Err(RouterError::ConfigurationError {
+                message: format!("Route lookup failed: {e}"),
+            }),
+        }
+    }
 }
 
 /// Implementation of Clone for `MessageRouterImpl` using Arc for shared ownership
@@ -665,6 +758,8 @@ impl Clone for MessageRouterImpl {
             inbound_receiver: Arc::clone(&self.inbound_receiver),
             routing_semaphore: Arc::clone(&self.routing_semaphore),
             metrics_collector: self.metrics_collector.clone(),
+            routing_storage: Arc::clone(&self.routing_storage),
+            routing_cache: DashMap::new(), // New instances get empty cache
         }
     }
 }
@@ -1593,5 +1688,282 @@ impl MetricsCollector for MetricsCollectorImpl {
 
     fn record_agent_deregistered(&self, _agent_id: AgentId) {
         // Placeholder implementation
+    }
+}
+
+// =============================================================================
+// FUNCTIONAL CORE - Pure functions for route operations
+// =============================================================================
+
+/// Pure function to check if a route is still fresh (functional core)
+fn route_is_fresh(route_info: &RouteInfo) -> bool {
+    std::time::SystemTime::now() < route_info.expires_at.as_system_time()
+}
+
+/// Pure SQL generation functions for route storage operations
+mod route_sql {
+    /// Generate SQL for creating routes table (functional core)
+    pub(super) fn create_routes_table() -> &'static str {
+        "CREATE TABLE IF NOT EXISTS routes (
+            agent_id TEXT PRIMARY KEY,
+            node_id TEXT NOT NULL,
+            hops INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            expires_at INTEGER NOT NULL
+        )"
+    }
+
+    /// Generate SQL for inserting/updating route (functional core)
+    pub(super) fn upsert_route() -> &'static str {
+        "INSERT OR REPLACE INTO routes (agent_id, node_id, hops, updated_at, expires_at) VALUES (?, ?, ?, ?, ?)"
+    }
+
+    /// Generate SQL for selecting route by agent ID (functional core)
+    pub(super) fn select_route_by_agent_id() -> &'static str {
+        "SELECT agent_id, node_id, hops, updated_at, expires_at FROM routes WHERE agent_id = ?"
+    }
+
+    /// Generate SQL for removing expired routes (functional core)
+    pub(super) fn delete_expired_routes() -> &'static str {
+        "DELETE FROM routes WHERE expires_at < ?"
+    }
+
+    /// Generate SQL for removing specific route (functional core)
+    pub(super) fn delete_route_by_agent_id() -> &'static str {
+        "DELETE FROM routes WHERE agent_id = ?"
+    }
+}
+
+/// Pure data mapping functions for route storage
+mod route_mapping {
+    use super::{AgentId, MessageTimestamp, NodeId, RouteHops, RouteInfo, Uuid};
+    use crate::database::DatabaseError;
+    use std::time::UNIX_EPOCH;
+
+    /// Convert `AgentId` to string for database storage (functional core)
+    pub(super) fn agent_id_to_string(id: AgentId) -> String {
+        id.to_string()
+    }
+
+    /// Convert `NodeId` to string for database storage (functional core)
+    pub(super) fn node_id_to_string(id: NodeId) -> String {
+        id.to_string()
+    }
+
+    /// Convert `MessageTimestamp` to Unix timestamp for database storage (functional core)
+    #[allow(clippy::cast_possible_wrap)] // Unix timestamps fit in i64 for reasonable time ranges
+    pub(super) fn timestamp_to_unix(timestamp: MessageTimestamp) -> i64 {
+        timestamp
+            .as_system_time()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64
+    }
+
+    /// Parse `NodeId` from database string (functional core)
+    pub(super) fn parse_node_id(id_str: &str) -> Result<NodeId, DatabaseError> {
+        let uuid = Uuid::parse_str(id_str).map_err(|e| {
+            DatabaseError::Storage(crate::database::StorageError::Database {
+                message: format!("Invalid node ID format: {e}"),
+            })
+        })?;
+        Ok(NodeId::from(uuid))
+    }
+
+    /// Parse `RouteHops` from database integer (functional core)
+    pub(super) fn parse_route_hops(hops: i64) -> Result<RouteHops, DatabaseError> {
+        let hops_u8 = u8::try_from(hops).map_err(|e| {
+            DatabaseError::Storage(crate::database::StorageError::Database {
+                message: format!("Invalid route hops value: {e}"),
+            })
+        })?;
+
+        RouteHops::try_new(hops_u8).map_err(|e| {
+            DatabaseError::Storage(crate::database::StorageError::Database {
+                message: format!("Route hops validation failed: {e}"),
+            })
+        })
+    }
+
+    /// Parse `MessageTimestamp` from Unix timestamp (functional core)
+    #[allow(clippy::cast_sign_loss)] // Valid Unix timestamps are positive
+    pub(super) fn parse_timestamp(unix_timestamp: i64) -> MessageTimestamp {
+        let system_time = UNIX_EPOCH + std::time::Duration::from_secs(unix_timestamp as u64);
+        MessageTimestamp::new(system_time)
+    }
+
+    /// Create `RouteInfo` from parsed components (functional core)
+    pub(super) fn create_route_info(
+        node_id: NodeId,
+        hops: RouteHops,
+        updated_at: MessageTimestamp,
+        expires_at: MessageTimestamp,
+    ) -> RouteInfo {
+        RouteInfo {
+            node_id,
+            hops,
+            updated_at,
+            expires_at,
+        }
+    }
+}
+
+// =============================================================================
+// IMPERATIVE SHELL - Persistent route storage
+// =============================================================================
+
+/// Route storage implementation using `SQLite` for persistence
+///
+/// Follows functional core / imperative shell pattern:
+/// - Functional core: SQL generation, data mapping, validation
+/// - Imperative shell: Database I/O operations, connection management
+pub struct RouteStorage {
+    connection: DatabaseConnection,
+}
+
+impl RouteStorage {
+    /// Create new route storage with in-memory `SQLite` database (imperative shell)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database initialization fails.
+    pub async fn new() -> Result<Self, DatabaseError> {
+        // Create a temporary SQLite database file for route storage
+        // This provides persistence with excellent performance for routing data
+        let temp_dir = std::env::temp_dir();
+        let db_file = temp_dir.join(format!("caxton_routes_{}.db", uuid::Uuid::new_v4()));
+        let db_path = DatabasePath::new(db_file)?;
+
+        let config = DatabaseConfig::for_testing(db_path)
+            .with_wal_mode(false) // Not needed for in-memory
+            .with_foreign_keys(false); // Simpler for route storage
+
+        let connection = DatabaseConnection::initialize(config).await?;
+
+        let storage = Self { connection };
+
+        // Initialize the routes table (imperative shell)
+        storage.ensure_routes_table_exists().await?;
+
+        Ok(storage)
+    }
+
+    /// Store route information in database (imperative shell)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database operations fail.
+    pub async fn store_route(
+        &self,
+        agent_id: AgentId,
+        route_info: &RouteInfo,
+    ) -> Result<(), DatabaseError> {
+        // Convert domain types to database format (functional core)
+        let agent_id_str = route_mapping::agent_id_to_string(agent_id);
+        let node_id_str = route_mapping::node_id_to_string(route_info.node_id);
+        let hops = i64::from(route_info.hops.into_inner());
+        let updated_at = route_mapping::timestamp_to_unix(route_info.updated_at);
+        let expires_at = route_mapping::timestamp_to_unix(route_info.expires_at);
+
+        // Execute database operation (imperative shell)
+        sqlx::query(route_sql::upsert_route())
+            .bind(agent_id_str)
+            .bind(node_id_str)
+            .bind(hops)
+            .bind(updated_at)
+            .bind(expires_at)
+            .execute(self.connection.pool())
+            .await?;
+
+        Ok(())
+    }
+
+    /// Lookup route information by agent ID (imperative shell)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database operations fail.
+    pub async fn lookup_route(
+        &self,
+        agent_id: AgentId,
+    ) -> Result<Option<RouteInfo>, DatabaseError> {
+        // Convert agent ID for query (functional core)
+        let agent_id_str = route_mapping::agent_id_to_string(agent_id);
+
+        // Execute database query (imperative shell)
+        let result = sqlx::query(route_sql::select_route_by_agent_id())
+            .bind(agent_id_str)
+            .fetch_optional(self.connection.pool())
+            .await?;
+
+        if let Some(row) = result {
+            // Extract raw data from database row (imperative shell)
+            let node_id_str: String = row.get("node_id");
+            let hops: i64 = row.get("hops");
+            let updated_at: i64 = row.get("updated_at");
+            let expires_at: i64 = row.get("expires_at");
+
+            // Convert database format to domain types (functional core)
+            let node_id = route_mapping::parse_node_id(&node_id_str)?;
+            let route_hops = route_mapping::parse_route_hops(hops)?;
+            let updated_timestamp = route_mapping::parse_timestamp(updated_at);
+            let expires_timestamp = route_mapping::parse_timestamp(expires_at);
+
+            // Create domain object (functional core)
+            let route_info = route_mapping::create_route_info(
+                node_id,
+                route_hops,
+                updated_timestamp,
+                expires_timestamp,
+            );
+
+            Ok(Some(route_info))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Remove route by agent ID (imperative shell)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database operations fail.
+    pub async fn remove_route(&self, agent_id: AgentId) -> Result<(), DatabaseError> {
+        let agent_id_str = route_mapping::agent_id_to_string(agent_id);
+
+        sqlx::query(route_sql::delete_route_by_agent_id())
+            .bind(agent_id_str)
+            .execute(self.connection.pool())
+            .await?;
+
+        Ok(())
+    }
+
+    /// Clean up expired routes (imperative shell)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database operations fail.
+    #[allow(clippy::cast_possible_wrap)] // Unix timestamps fit in i64 for reasonable time ranges
+    pub async fn cleanup_expired_routes(&self) -> Result<u64, DatabaseError> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        let result = sqlx::query(route_sql::delete_expired_routes())
+            .bind(now)
+            .execute(self.connection.pool())
+            .await?;
+
+        Ok(result.rows_affected())
+    }
+
+    /// Ensure routes table exists in database (imperative shell)
+    async fn ensure_routes_table_exists(&self) -> Result<(), DatabaseError> {
+        sqlx::query(route_sql::create_routes_table())
+            .execute(self.connection.pool())
+            .await?;
+        Ok(())
     }
 }
