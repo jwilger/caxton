@@ -919,6 +919,44 @@ pub enum ValidationError {
     ConstraintViolation { constraint: String },
 }
 
+/// Database schema version
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 1000),
+    derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Serialize,
+        Deserialize,
+        Display,
+        Default,
+        TryFrom,
+        Into
+    ),
+    default = 0
+)]
+pub struct DatabaseSchemaVersion(u32);
+
+impl DatabaseSchemaVersion {
+    /// Gets the value as u32
+    pub fn as_u32(&self) -> u32 {
+        self.into_inner()
+    }
+
+    /// Create a new schema version
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the version is invalid according to nutype validation rules
+    pub fn new(version: u32) -> Result<Self, DatabaseSchemaVersionError> {
+        Self::try_new(version)
+    }
+}
+
 /// Resource creation and management errors
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 #[allow(missing_docs)] // Error variant fields are self-documenting through error messages

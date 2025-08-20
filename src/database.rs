@@ -8,9 +8,10 @@
 //! - **Functional Core**: Configuration validation, connection string generation
 //! - **Imperative Shell**: File system operations, SQLite connections
 
-use crate::domain_types::ConnectionPoolSize;
+use crate::domain_types::{ConnectionPoolSize, DatabaseSchemaVersion};
 use nutype::nutype;
-use sqlx::{Pool, Sqlite, SqlitePool};
+use sqlx::{Pool, Row, Sqlite, SqlitePool};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -44,6 +45,13 @@ pub enum StorageError {
     #[error("Connection pool error: {message}")]
     ConnectionPool {
         /// Error message from connection pool operation
+        message: String,
+    },
+
+    /// Migration error
+    #[error("Migration error: {message}")]
+    Migration {
+        /// Error message from migration operation
         message: String,
     },
 }
@@ -216,6 +224,262 @@ impl DatabaseConfig {
 pub struct DatabaseConnection {
     pool: Pool<Sqlite>,
     config: DatabaseConfig,
+    migration_registry: MigrationRegistry,
+}
+
+/// Migration script with version and SQL commands
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Migration {
+    version: DatabaseSchemaVersion,
+    description: String,
+    up_sql: Vec<String>,
+    down_sql: Vec<String>,
+}
+
+impl Migration {
+    /// Create a new migration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the description is empty or SQL is invalid
+    pub fn new(
+        version: DatabaseSchemaVersion,
+        description: String,
+        up_sql: Vec<String>,
+        down_sql: Vec<String>,
+    ) -> StorageResult<Self> {
+        if description.trim().is_empty() {
+            return Err(StorageError::Configuration {
+                field: "description".to_string(),
+                reason: "Migration description cannot be empty".to_string(),
+            });
+        }
+
+        if up_sql.is_empty() {
+            return Err(StorageError::Configuration {
+                field: "up_sql".to_string(),
+                reason: "Migration must have at least one up SQL statement".to_string(),
+            });
+        }
+
+        Ok(Self {
+            version,
+            description,
+            up_sql,
+            down_sql,
+        })
+    }
+
+    /// Get migration version
+    pub fn version(&self) -> DatabaseSchemaVersion {
+        self.version
+    }
+
+    /// Get migration description
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    /// Get up SQL statements
+    pub fn up_sql(&self) -> &[String] {
+        &self.up_sql
+    }
+
+    /// Get down SQL statements (for rollbacks)
+    pub fn down_sql(&self) -> &[String] {
+        &self.down_sql
+    }
+}
+
+/// Migration registry for managing schema migrations (functional core)
+#[derive(Clone, Debug, Default)]
+pub struct MigrationRegistry {
+    migrations: BTreeMap<u32, Migration>,
+}
+
+impl MigrationRegistry {
+    /// Create a new migration registry
+    pub fn new() -> Self {
+        let mut registry = Self::default();
+        registry.register_core_migrations();
+        registry
+    }
+
+    /// Register a migration (functional core)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the migration is invalid or conflicts with existing migrations
+    pub fn register(&mut self, migration: Migration) -> StorageResult<()> {
+        let version = migration.version().as_u32();
+
+        if self.migrations.contains_key(&version) {
+            return Err(StorageError::Configuration {
+                field: "version".to_string(),
+                reason: format!("Migration version {version} already exists"),
+            });
+        }
+
+        self.migrations.insert(version, migration);
+        Ok(())
+    }
+
+    /// Get migration by version (functional core)
+    pub fn get_migration(&self, version: DatabaseSchemaVersion) -> Option<&Migration> {
+        self.migrations.get(&version.as_u32())
+    }
+
+    /// Get all migrations up to target version (functional core)
+    pub fn get_migrations_to(&self, target_version: DatabaseSchemaVersion) -> Vec<&Migration> {
+        self.migrations
+            .values()
+            .filter(|m| m.version().as_u32() <= target_version.as_u32())
+            .collect()
+    }
+
+    /// Get migrations between versions (functional core)
+    pub fn get_migrations_between(
+        &self,
+        from_version: DatabaseSchemaVersion,
+        to_version: DatabaseSchemaVersion,
+    ) -> Vec<&Migration> {
+        let from = from_version.as_u32();
+        let to = to_version.as_u32();
+
+        self.migrations
+            .values()
+            .filter(|m| {
+                let version = m.version().as_u32();
+                version > from && version <= to
+            })
+            .collect()
+    }
+
+    /// Get highest version (functional core)
+    pub fn highest_version(&self) -> Option<DatabaseSchemaVersion> {
+        self.migrations
+            .keys()
+            .max()
+            .and_then(|&v| DatabaseSchemaVersion::new(v).ok())
+    }
+
+    /// Validate migration path (functional core)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the migration path is invalid
+    pub fn validate_migration_path(
+        &self,
+        from_version: DatabaseSchemaVersion,
+        to_version: DatabaseSchemaVersion,
+    ) -> StorageResult<()> {
+        let from = from_version.as_u32();
+        let to = to_version.as_u32();
+
+        if to < from {
+            return Err(StorageError::Migration {
+                message: format!("Cannot migrate backwards from {from} to {to}"),
+            });
+        }
+
+        // Check that all intermediate versions exist
+        for version in (from + 1)..=to {
+            if !self.migrations.contains_key(&version) {
+                return Err(StorageError::Migration {
+                    message: format!("Missing migration for version {version}"),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Register core schema migrations (functional core)
+    fn register_core_migrations(&mut self) {
+        // Migration 1: Create agents table
+        if let Ok(migration) = Migration::new(
+            DatabaseSchemaVersion::new(1).expect("Version 1 should be valid"),
+            "Create agents table for agent registry storage".to_string(),
+            vec![
+                r"CREATE TABLE IF NOT EXISTS agents (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    wasm_module BLOB NOT NULL,
+                    config TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL
+                )"
+                .to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name)".to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status)".to_string(),
+            ],
+            vec![
+                "DROP INDEX IF EXISTS idx_agents_status".to_string(),
+                "DROP INDEX IF EXISTS idx_agents_name".to_string(),
+                "DROP TABLE IF EXISTS agents".to_string(),
+            ],
+        ) {
+            self.migrations.insert(1, migration);
+        }
+
+        // Migration 2: Create routes table
+        if let Ok(migration) = Migration::new(
+            DatabaseSchemaVersion::new(2).expect("Version 2 should be valid"),
+            "Create routes table for message routing".to_string(),
+            vec![
+                r"CREATE TABLE IF NOT EXISTS routes (
+                    id TEXT PRIMARY KEY,
+                    from_agent_id TEXT NOT NULL,
+                    to_agent_id TEXT NOT NULL,
+                    message_type TEXT NOT NULL,
+                    priority INTEGER NOT NULL DEFAULT 0,
+                    created_at INTEGER NOT NULL,
+                    FOREIGN KEY (from_agent_id) REFERENCES agents(id) ON DELETE CASCADE,
+                    FOREIGN KEY (to_agent_id) REFERENCES agents(id) ON DELETE CASCADE
+                )"
+                .to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_routes_from_agent ON routes(from_agent_id)"
+                    .to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_routes_to_agent ON routes(to_agent_id)".to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_routes_message_type ON routes(message_type)"
+                    .to_string(),
+            ],
+            vec![
+                "DROP INDEX IF EXISTS idx_routes_message_type".to_string(),
+                "DROP INDEX IF EXISTS idx_routes_to_agent".to_string(),
+                "DROP INDEX IF EXISTS idx_routes_from_agent".to_string(),
+                "DROP TABLE IF EXISTS routes".to_string(),
+            ],
+        ) {
+            self.migrations.insert(2, migration);
+        }
+
+        // Migration 3: Create conversations table
+        if let Ok(migration) = Migration::new(
+            DatabaseSchemaVersion::new(3).expect("Version 3 should be valid"),
+            "Create conversations table for message tracking".to_string(),
+            vec![
+                r"CREATE TABLE IF NOT EXISTS conversations (
+                    id TEXT PRIMARY KEY,
+                    participants TEXT NOT NULL,
+                    message_count INTEGER NOT NULL DEFAULT 0,
+                    last_message_at INTEGER,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at INTEGER NOT NULL
+                )".to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status)".to_string(),
+                "CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON conversations(last_message_at)".to_string(),
+            ],
+            vec![
+                "DROP INDEX IF EXISTS idx_conversations_last_message".to_string(),
+                "DROP INDEX IF EXISTS idx_conversations_status".to_string(),
+                "DROP TABLE IF EXISTS conversations".to_string(),
+            ],
+        ) {
+            self.migrations.insert(3, migration);
+        }
+    }
 }
 
 // Functional Core: Pure business logic
@@ -262,7 +526,11 @@ impl DatabaseConnection {
         // Apply database settings (imperative shell)
         Self::apply_database_settings(&pool, &config).await?;
 
-        Ok(Self { pool, config })
+        Ok(Self {
+            pool,
+            config,
+            migration_registry: MigrationRegistry::new(),
+        })
     }
 
     /// Ensure parent directory exists (imperative shell)
@@ -337,6 +605,188 @@ impl DatabaseConnection {
     /// Get the database configuration
     pub fn config(&self) -> &DatabaseConfig {
         &self.config
+    }
+
+    /// Get the current database schema version
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the schema version cannot be retrieved
+    pub async fn get_schema_version(&self) -> DatabaseResult<DatabaseSchemaVersion> {
+        // Use SQLite's user_version pragma to track schema version
+        let result = sqlx::query("PRAGMA user_version")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to get schema version: {e}"),
+                })
+            })?;
+
+        let version: i64 = result.get(0);
+        let version_u32 = u32::try_from(version).unwrap_or(0);
+
+        DatabaseSchemaVersion::new(version_u32).map_err(|_| {
+            DatabaseError::Storage(StorageError::Database {
+                message: format!("Invalid schema version: {version}"),
+            })
+        })
+    }
+
+    /// Migrate database to target schema version
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the migration fails
+    pub async fn migrate_to_version(
+        &self,
+        target_version: DatabaseSchemaVersion,
+    ) -> DatabaseResult<()> {
+        // Get current version
+        let current_version = self.get_schema_version().await?;
+
+        // If already at target version, nothing to do
+        if current_version == target_version {
+            return Ok(());
+        }
+
+        // Validate migration path using functional core
+        self.migration_registry
+            .validate_migration_path(current_version, target_version)
+            .map_err(DatabaseError::Storage)?;
+
+        // Get migrations to apply (functional core)
+        let migrations = self
+            .migration_registry
+            .get_migrations_between(current_version, target_version);
+
+        // Apply migrations within a transaction (imperative shell)
+        self.apply_migrations_in_transaction(&migrations, target_version)
+            .await
+    }
+
+    /// Apply migrations within a database transaction (imperative shell)
+    async fn apply_migrations_in_transaction(
+        &self,
+        migrations: &[&Migration],
+        target_version: DatabaseSchemaVersion,
+    ) -> DatabaseResult<()> {
+        let mut transaction = self.pool.begin().await.map_err(|e| {
+            DatabaseError::Storage(StorageError::Database {
+                message: format!("Failed to begin migration transaction: {e}"),
+            })
+        })?;
+
+        // Apply each migration
+        for migration in migrations {
+            for sql_statement in migration.up_sql() {
+                sqlx::query(sql_statement)
+                    .execute(&mut *transaction)
+                    .await
+                    .map_err(|e| {
+                        DatabaseError::Storage(StorageError::Migration {
+                            message: format!(
+                                "Failed to execute migration {} statement '{}': {e}",
+                                migration.version().as_u32(),
+                                sql_statement
+                            ),
+                        })
+                    })?;
+            }
+        }
+
+        // Update schema version in user_version pragma
+        let target = target_version.as_u32();
+        sqlx::query(&format!("PRAGMA user_version = {target}"))
+            .execute(&mut *transaction)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to update schema version to {target}: {e}"),
+                })
+            })?;
+
+        // Commit transaction
+        transaction.commit().await.map_err(|e| {
+            DatabaseError::Storage(StorageError::Database {
+                message: format!("Failed to commit migration transaction: {e}"),
+            })
+        })?;
+
+        Ok(())
+    }
+
+    /// Verify database schema integrity
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the integrity check fails
+    ///
+    /// # Panics
+    ///
+    /// Panics if `DatabaseSchemaVersion::new(0)` fails, which should never happen
+    pub async fn verify_schema_integrity(&self) -> DatabaseResult<()> {
+        // Use SQLite's integrity_check for data integrity
+        let integrity_result = sqlx::query("PRAGMA integrity_check")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Schema integrity check failed: {e}"),
+                })
+            })?;
+
+        let integrity_status: String = integrity_result.get(0);
+        if integrity_status != "ok" {
+            return Err(DatabaseError::Storage(StorageError::Database {
+                message: format!("Database integrity check failed: {integrity_status}"),
+            }));
+        }
+
+        // Also perform schema version validation
+        let current_version = self.get_schema_version().await?;
+        let highest_available = self
+            .migration_registry
+            .highest_version()
+            .unwrap_or(DatabaseSchemaVersion::new(0).expect("Version 0 should be valid"));
+
+        if current_version.as_u32() > highest_available.as_u32() {
+            return Err(DatabaseError::Storage(StorageError::Migration {
+                message: format!(
+                    "Database schema version {} is higher than highest available migration {}",
+                    current_version.as_u32(),
+                    highest_available.as_u32()
+                ),
+            }));
+        }
+
+        Ok(())
+    }
+
+    /// Get access to the migration registry for inspection (functional core access)
+    pub fn migration_registry(&self) -> &MigrationRegistry {
+        &self.migration_registry
+    }
+
+    /// Check if specific table exists in the database
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the table check fails
+    pub async fn table_exists(&self, table_name: &str) -> DatabaseResult<bool> {
+        let result =
+            sqlx::query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1")
+                .bind(table_name)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| {
+                    DatabaseError::Storage(StorageError::Database {
+                        message: format!("Failed to check if table '{table_name}' exists: {e}"),
+                    })
+                })?;
+
+        let count: i64 = result.get(0);
+        Ok(count > 0)
     }
 }
 
@@ -590,6 +1040,39 @@ mod tests {
         };
         let pool_error_string = format!("{pool_error}");
         assert!(pool_error_string.contains("pool error"));
+    }
+
+    #[tokio::test]
+    async fn test_should_migrate_schema_from_version_zero_to_version_one_when_upgrading() {
+        // Test that verifies database schema can be safely migrated between versions
+        use crate::domain_types::DatabaseSchemaVersion;
+
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("migration_test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        // Initialize database with version 0 schema
+        let connection = DatabaseConnection::initialize(config).await.unwrap();
+
+        // Verify initial schema version is 0
+        let initial_version = connection.get_schema_version().await.unwrap();
+        assert_eq!(initial_version, DatabaseSchemaVersion::new(0).unwrap());
+
+        // Attempt to migrate to version 1
+        let target_version = DatabaseSchemaVersion::new(1).unwrap();
+        let migration_result = connection.migrate_to_version(target_version).await;
+
+        // Verify migration succeeded
+        assert!(migration_result.is_ok());
+
+        // Verify schema version was updated
+        let final_version = connection.get_schema_version().await.unwrap();
+        assert_eq!(final_version, target_version);
+
+        // Verify database integrity after migration
+        let integrity_check = connection.verify_schema_integrity().await;
+        assert!(integrity_check.is_ok());
     }
 }
 
