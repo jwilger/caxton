@@ -150,7 +150,10 @@ pub mod traits;
 pub use config::{ConfigError, RouterConfig, RouterConfigBuilder};
 pub use domain_types::*;
 pub use router::MessageRouterImpl;
-pub use traits::*;
+// Re-export traits selectively to avoid conflicts
+pub use traits::{
+    AgentRegistry, ConversationManager, DeliveryEngine, FailureHandler, MessageRouter,
+};
 
 // Core implementation modules (will be implemented in REFINEMENT phase)
 // mod delivery;
@@ -160,5 +163,5 @@ pub use traits::*;
 // mod storage;
 // mod observability;
 
-// Re-export main types
-pub use traits::MessageRouter;
+// Re-export storage implementation
+pub use crate::storage::ConversationStorage;

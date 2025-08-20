@@ -6,10 +6,11 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 #![allow(clippy::cast_precision_loss)] // For performance measurement calculations
 
+use caxton::message_router::traits::RouterError;
 use caxton::message_router::{
     AgentId, AgentName, AgentQueueSize, AgentState, ConversationId, DeliveryOptions, FipaMessage,
     LocalAgent, MessageContent, MessageId, MessageRouter, MessageRouterImpl, MessageTimestamp,
-    Performative, RouterConfig, RouterError,
+    Performative, RouterConfig,
 };
 use std::collections::HashSet;
 use std::sync::Arc;

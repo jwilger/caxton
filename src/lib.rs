@@ -47,7 +47,7 @@ pub use domain_types::{
     MessageSize, PermissionName, QueueDepth, RateLimitPerSecond, ResourceCreationError,
     RetryAttempt, StorageCleanupIntervalMs, TestAgentId, TestSequence, ValidationError, WorkerId,
 };
-pub use storage::{AgentStorage, StoredAgent};
+pub use storage::{AgentStorage, ConversationState, ConversationStorage, StoredAgent};
 // Re-export key domain types at the crate level
 pub use domain::{
     AgentLifecycle, AgentLifecycleState, AgentVersion, CustomValidationRule, DeploymentConfig,
