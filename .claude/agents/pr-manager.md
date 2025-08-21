@@ -109,6 +109,28 @@ All GitHub comments MUST use this exact format:
 4. **MAXIMUM RETRY LIMIT**: Allow up to 3 retry attempts for pre-commit hook fixes
 5. **ESCALATION**: If hooks still fail after 3 attempts, report to coordinator with specific error details
 
+#### CRITICAL COMMIT VERIFICATION RULES (MANDATORY)
+
+**RULE 1: ALWAYS VERIFY COMMIT SUCCESS**
+- **After EVERY commit attempt**: MUST run `git status` to verify commit actually succeeded
+- **Check for uncommitted changes**: If `git status` shows files still staged or modified, the commit failed
+- **Pre-commit hook side effects**: Hooks may modify files during commit, requiring re-staging even on apparent success
+- **Verification before push**: Never attempt push without confirming commit succeeded via `git status`
+
+**RULE 2: ESCALATE COMPLEX PRE-COMMIT HOOK FAILURES**
+- **When hooks fail requiring code changes** (not just formatting): MUST escalate to SPARC coordinator
+- **Do NOT attempt to fix code issues yourself**: Only handle automatic formatting/linting changes
+- **Examples requiring escalation**:
+  - Clippy warnings/errors requiring code logic changes
+  - Test failures requiring implementation fixes
+  - Build errors requiring dependency or code structure changes
+  - Type errors requiring refactoring
+- **Examples you CAN handle automatically**:
+  - Formatting changes (rustfmt, prettier, etc.)
+  - Whitespace fixes (trailing whitespace, end-of-file)
+  - Import organization/sorting
+- **Escalation format**: "Pre-commit hook failure requires code changes beyond formatting - escalating to coordinator: [specific error details]"
+
 #### Commit Workflow with Hook Handling
 
 **MANDATORY COMMIT PROCESS**:
@@ -117,21 +139,37 @@ All GitHub comments MUST use this exact format:
 # Step 1: Initial commit attempt
 git commit -m "commit message"
 
-# Step 2: Check exit code and output
-if commit_failed:
-    # Step 3: Check for hook-modified files
+# Step 2: CRITICAL - Always verify commit success
+git status  # MANDATORY after every commit attempt
+
+# Step 3: Analyze commit result
+if commit_failed OR git_status_shows_uncommitted_changes:
+    # Step 4: Check commit output for hook failure type
+    if requires_code_changes (not just formatting):
+        # RULE 2: Escalate to coordinator - do NOT attempt fixes
+        escalate_to_coordinator("Pre-commit hook failure requires code changes beyond formatting")
+        return
+
+    # Step 5: Handle formatting-only failures
+    # Check for hook-modified files
     git status
 
-    # Step 4: Re-stage any modified files
+    # Step 6: Re-stage any modified files
     git add .  # or specific files that were modified
 
-    # Step 5: Retry commit (up to 3 times)
+    # Step 7: Retry commit (up to 3 times)
     git commit -m "commit message"
 
-    # Step 6: If still failing, escalate with error details
+    # Step 8: CRITICAL - Verify retry success
+    git status  # MANDATORY verification after retry
 
-# Step 7: MANDATORY - Always push after successful commit
-git push origin [current-branch]
+    # Step 9: If still failing after 3 attempts, escalate with error details
+
+# Step 10: MANDATORY - Only push after confirmed successful commit
+if git_status_clean:
+    git push origin [current-branch]
+else:
+    escalate_to_coordinator("Commit verification failed - git status shows uncommitted changes")
 ```
 
 #### Example Hook Failure Handling
@@ -139,19 +177,28 @@ git push origin [current-branch]
 **Commit Output Analysis Examples:**
 
 ```
-FAILURE CASE 1 - Formatting Changes:
+FAILURE CASE 1 - Formatting Changes (CAN HANDLE):
 "files were modified by this hook"
 "To apply these formatting changes, run: git add -u"
-→ ACTION: Run git add -u, then retry commit
+→ ACTION: Run git status, git add -u, retry commit, verify with git status
 
-FAILURE CASE 2 - Clippy Fixes:
+FAILURE CASE 2 - Code Logic Issues (MUST ESCALATE):
 "error: could not compile due to previous error"
-"clippy::needless_option_as_deref"
-→ ACTION: Run git add affected files, retry commit
+"clippy::needless_option_as_deref requires code refactoring"
+→ ACTION: Escalate to coordinator - requires code changes beyond formatting
 
-FAILURE CASE 3 - New Files Created:
+FAILURE CASE 3 - Test Failures (MUST ESCALATE):
+"test failed: expected behavior X but got Y"
+→ ACTION: Escalate to coordinator - requires implementation fixes
+
+FAILURE CASE 4 - New Files Created (CAN HANDLE):
 "Created new file: CHANGELOG.md"
-→ ACTION: Run git add CHANGELOG.md, retry commit
+→ ACTION: Run git status, git add CHANGELOG.md, retry commit, verify with git status
+
+FAILURE CASE 5 - Whitespace Fixes (CAN HANDLE):
+"Fixing trailing whitespace in file.rs"
+"files were modified by this hook"
+→ ACTION: Run git status, git add ., retry commit, verify with git status
 ```
 
 #### Post-Commit Push Requirements (CRITICAL)
@@ -353,7 +400,10 @@ await create_entities([
     observations: [
       "Pre-commit hooks often modify files during commit, requiring re-staging",
       "Maximum 3 retry attempts prevents infinite loops with problematic hooks",
-      "git status after failed commit reveals which files need re-staging"
+      "git status after failed commit reveals which files need re-staging",
+      "CRITICAL: Always verify commit success with git status after every attempt",
+      "Escalate hook failures requiring code changes (not formatting) to coordinator",
+      "Only handle automatic formatting/linting changes - never attempt code fixes"
     ]
   }
 ]);
