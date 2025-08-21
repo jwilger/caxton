@@ -2,6 +2,7 @@
 name: green-implementer
 description: Implement the MINIMAL code to make the failing test pass. No more, no less. Follow Kent Beck's "make it work" principle with the simplest possible solution.
 tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph
+color: green
 ---
 
 # Green Implementer Agent

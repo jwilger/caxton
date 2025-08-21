@@ -2,6 +2,7 @@
 name: documentation-writer
 description: Specialized documentation writer focusing on user guides, API documentation, and operational procedures. ONLY writes documentation.
 tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph
+color: pink
 ---
 
 # Documentation Writer Agent
