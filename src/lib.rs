@@ -15,7 +15,7 @@ pub mod host_functions;
 pub mod message_router;
 /// Resource management and limit enforcement
 pub mod resource_manager;
-/// WebAssembly runtime module for agent lifecycle management
+/// `WebAssembly` runtime module for agent lifecycle management
 pub mod runtime;
 /// Sandbox module for isolated agent execution
 pub mod sandbox;

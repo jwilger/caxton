@@ -1,6 +1,6 @@
 //! Agent Registry Storage Tests - Story 004: Local State Storage
 //!
-//! This test suite covers agent persistence using embedded SQLite storage.
+//! This test suite covers agent persistence using embedded `SQLite` storage.
 //! Tests verify that agents can be stored and retrieved across Caxton instance restarts.
 
 use caxton::AgentStorage;
@@ -8,7 +8,7 @@ use caxton::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
 use caxton::domain_types::{AgentId, AgentName};
 use tempfile::tempdir;
 
-/// Test that verifies agent can be stored and retrieved from SQLite database
+/// Test that verifies agent can be stored and retrieved from `SQLite` database
 #[tokio::test]
 async fn test_should_persist_agent_to_database_when_storing_agent() {
     // Arrange: Set up temporary database

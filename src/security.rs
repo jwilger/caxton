@@ -12,7 +12,7 @@ pub enum FeatureState {
     Disabled,
 }
 
-/// WebAssembly features that can be enabled or disabled
+/// `WebAssembly` features that can be enabled or disabled
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WasmFeatures {
     /// Enable SIMD (Single Instruction, Multiple Data) instructions
@@ -107,7 +107,7 @@ impl Default for AccessPermissions {
 /// Security policy defining WASM feature restrictions and permissions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityPolicy {
-    /// WebAssembly features configuration
+    /// `WebAssembly` features configuration
     pub wasm_features: WasmFeatures,
     /// System access permissions
     pub access_permissions: AccessPermissions,

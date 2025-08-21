@@ -5,7 +5,7 @@ use crate::domain_types::{
 };
 use std::collections::HashMap;
 
-/// Registry for managing host functions exposed to WebAssembly agents
+/// Registry for managing host functions exposed to `WebAssembly` agents
 pub struct HostFunctions {
     registered_functions: HashMap<HostFunctionName, FunctionMetadata>,
 }

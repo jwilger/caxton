@@ -556,22 +556,22 @@ impl RouterConfig {
         Ok(())
     }
 
-    /// Saves configuration to JSON file
+    /// Saves configuration to `JSON` file
     ///
     /// # Errors
     ///
-    /// Returns `ConfigError` if JSON serialization fails or file write fails
+    /// Returns `ConfigError` if `JSON` serialization fails or file write fails
     pub fn save_to_file<P: AsRef<std::path::Path>>(&self, path: P) -> Result<(), ConfigError> {
         let json = serde_json::to_string_pretty(self)?;
         std::fs::write(path, json)?;
         Ok(())
     }
 
-    /// Loads configuration from JSON file
+    /// Loads configuration from `JSON` file
     ///
     /// # Errors
     ///
-    /// Returns `ConfigError` if file read fails or JSON deserialization fails
+    /// Returns `ConfigError` if file read fails or `JSON` deserialization fails
     pub fn load_from_file<P: AsRef<std::path::Path>>(path: P) -> Result<Self, ConfigError> {
         let json = std::fs::read_to_string(path)?;
         let config: Self = serde_json::from_str(&json)?;

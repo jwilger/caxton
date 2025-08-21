@@ -292,7 +292,7 @@ impl ConversationCreatedAt {
     }
 }
 
-/// OpenTelemetry trace ID
+/// `OpenTelemetry` trace ID
 #[nutype(
     validate(len_char_min = 1, len_char_max = 100),
     derive(
@@ -309,7 +309,7 @@ impl ConversationCreatedAt {
 )]
 pub struct TraceId(String);
 
-/// OpenTelemetry span ID
+/// `OpenTelemetry` span ID
 #[nutype(
     validate(len_char_min = 1, len_char_max = 100),
     derive(
@@ -900,7 +900,7 @@ pub struct FipaMessage {
     pub delivery_options: DeliveryOptions,
 }
 
-/// OpenTelemetry trace context
+/// `OpenTelemetry` trace context
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraceContext {
     pub trace_id: TraceId,

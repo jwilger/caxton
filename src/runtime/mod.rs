@@ -43,7 +43,7 @@ impl ExecutionResult {
     }
 }
 
-/// Configuration for the WebAssembly runtime
+/// Configuration for the `WebAssembly` runtime
 #[derive(Debug, Clone)]
 pub struct WasmRuntimeConfig {
     /// Resource limits for agents
@@ -67,7 +67,7 @@ impl Default for WasmRuntimeConfig {
     }
 }
 
-/// Main WebAssembly runtime for managing agents
+/// Main `WebAssembly` runtime for managing agents
 pub struct WasmRuntime {
     engine: Arc<Engine>,
     agents: Arc<DashMap<AgentId, Agent>>,
@@ -140,7 +140,7 @@ impl ResourceUsage {
 }
 
 impl WasmRuntime {
-    /// Creates a new WebAssembly runtime with the given configuration
+    /// Creates a new `WebAssembly` runtime with the given configuration
     ///
     /// # Errors
     ///
@@ -191,7 +191,7 @@ impl WasmRuntime {
         &self.resource_manager
     }
 
-    /// Deploys a new agent from WebAssembly bytecode
+    /// Deploys a new agent from `WebAssembly` bytecode
     ///
     /// # Errors
     ///

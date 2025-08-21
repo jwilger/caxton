@@ -142,7 +142,7 @@ impl Sandbox {
         Ok(functions)
     }
 
-    /// Initializes the sandbox with a WebAssembly module
+    /// Initializes the sandbox with a `WebAssembly` module
     ///
     /// # Errors
     ///
