@@ -1,6 +1,6 @@
 //! Conversation Storage Tests - Story 004: Local State Storage  
 //!
-//! This test suite covers conversation state persistence using embedded SQLite storage.
+//! This test suite covers conversation state persistence using embedded `SQLite` storage.
 //! Tests verify that conversation metadata can be persisted and retrieved across
 //! Caxton instance restarts to maintain message threading and context.
 
@@ -12,7 +12,7 @@ use caxton::message_router::domain_types::{
 use std::collections::HashSet;
 use tempfile::tempdir;
 
-/// Test that verifies conversation state can be persisted and retrieved from SQLite database
+/// Test that verifies conversation state can be persisted and retrieved from `SQLite` database
 #[tokio::test]
 async fn test_should_persist_conversation_state_when_storing_conversation() {
     // Arrange: Set up temporary database

@@ -790,6 +790,9 @@ impl DatabaseConnection {
     }
 }
 
+// Re-export storage types for convenient access alongside database types
+pub use crate::storage::{AgentStorage, StoredAgent};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1075,6 +1078,3 @@ mod tests {
         assert!(integrity_check.is_ok());
     }
 }
-
-// Re-export storage types for convenient access alongside database types
-pub use crate::storage::{AgentStorage, StoredAgent};
