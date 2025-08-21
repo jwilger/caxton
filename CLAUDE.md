@@ -19,7 +19,7 @@ bacon check                         # Run cargo check continuously
 
 #### Bacon Integration Workflow
 
-1. **Start bacon at beginning of work session**: `bacon --headless` (runs as background process)
+1. **Start bacon at beginning of work session**: Check if already running first, then `bacon --headless` (runs as background process)
 2. **Monitor bacon output**: Use BashOutput tool to check test results and compilation feedback
 3. **React to failures immediately**: Address compilation errors and test failures as they occur
 4. **Look for expected failures**: During TDD, expect to see specific test failures in bacon output
@@ -551,3 +551,5 @@ NEVER proactively create documentation files (\*.md) or README files. Only creat
 - Research findings, planning decisions, implementation patterns, and insights MUST be preserved
 - The SPARC orchestrator will enforce memory storage compliance
 - Knowledge not stored represents wasted learning opportunities and repeated mistakes
+
+- When making commits, if the changes consist entirely of changes to development tooling or configuration of development tools or CI workflows, then they should always be labeled as "chore". If something is not part of the actual user-facing Caxton functionality, it should never be labeled as a feature.

@@ -25,7 +25,10 @@ Execute the complete SPARC workflow directly, using specialized agents for each 
 **CRITICAL FIRST STEP**: Before delegating to any agents, the SPARC coordinator MUST:
 
 1. **Set Cargo Working Directory**: Call `mcp__cargo__set_working_directory` with the absolute path to the project root (where Cargo.toml exists)
-2. **Start Bacon Continuous Testing**: Launch `bacon --headless` in background for real-time test monitoring
+2. **Start Bacon Continuous Testing (If Not Running)**:
+   - First check if bacon is already running with `ps aux | grep "bacon --headless" | grep -v grep`
+   - Only launch `bacon --headless` in background if no existing bacon process is found
+   - Use descriptive command description like "Start bacon continuous testing in background" for better task identification
 3. **Verify Setup**: Ensure the working directory is set correctly and bacon is running for all subsequent operations
 
 This ensures all agents have proper access to cargo commands and continuous test feedback without manual test execution.
