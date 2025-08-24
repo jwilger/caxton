@@ -1,12 +1,14 @@
 ---
-description: Create draft PR for the completed story by delegating to pr-manager agent
+description:
+  Create draft PR for the completed story by delegating to pr-manager agent
 argument-hint: [optional story context]
 allowed-tools: Task
 ---
 
 # Create Pull Request
 
-Delegate to the pr-manager subagent to create a draft pull request for the completed story.
+Delegate to the pr-manager subagent to create a draft pull request for the
+completed story.
 
 ## Delegation Process
 
@@ -24,27 +26,34 @@ The PR manager should create descriptions following this format:
 
 ```markdown
 ## Story Context
+
 {Story description and acceptance criteria}
 
 ## Implementation Summary
+
 - {List of key changes}
 - {Files modified}
 - {New domain types introduced}
 
 ## Testing
+
 - {Tests added/modified}
 - {How to verify the changes}
 
 ## Notes
+
 {Any additional context for reviewers}
 
 ---
-*This PR was created by Claude Code as part of the SPARC workflow. All commits follow strict TDD discipline with Red→Green→Refactor cycles.*
+
+_This PR was created by Claude Code as part of the SPARC workflow. All commits
+follow strict TDD discipline with Red→Green→Refactor cycles._
 ```
 
 ## Delegation Notes
 
 This command acts as a pure orchestrator:
+
 - NEVER perform git or GitHub operations directly
 - NEVER read code files or run commands
 - ONLY use Task tool to delegate to pr-manager agent
