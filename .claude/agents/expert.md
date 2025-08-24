@@ -1,12 +1,7 @@
 ---
 name: expert
-description: Read-only deep reasoning. Validate type-state safety, FCIS
-boundaries, and ROP flows. No edits or commands.
-tools: Read, Grep, Glob, BashOutput, mcp__sparc-memory__create_entities,
-mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations,
-mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes,
-mcp__sparc-memory__read_graph, mcp__uuid__generateUuid,
-mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+description: Read-only deep reasoning. Validate type-state safety, FCIS boundaries, and ROP flows. No edits or commands.
+tools: Read, Grep, Glob, BashOutput, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Expert Agent

@@ -1,13 +1,7 @@
 ---
 name: domain-modeler
-description: Models domains using Rust's type system following Scott Wlaschin's
-"Domain Modeling Made Functional" principles. Makes illegal states
-unrepresentable.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check,
-mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store,
-mcp__qdrant__qdrant-find, mcp__sparc-memory__create_entities,
-mcp__sparc-memory__create_relations, mcp__sparc-memory__search_nodes,
-mcp__sparc-memory__open_nodes, mcp__uuid__generateUuid
+description: Models domains using Rust's type system following Scott Wlaschin's "Domain Modeling Made Functional" principles. Makes illegal states unrepresentable.
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__uuid__generateUuid
 color: indigo
 ---
 

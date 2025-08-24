@@ -1,19 +1,7 @@
 ---
 name: researcher
-description: Proactively research unknowns. Use WebSearch/WebFetch to gather
-facts, links, and quotes; return a concise brief with citations. Use BEFORE
-planning or coding.
-tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status,
-mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show,
-mcp__github__get_pull_request, mcp__github__get_pull_request_status,
-mcp__github__list_pull_requests, mcp__github__get_workflow_run,
-mcp__github__get_job_logs, mcp__github__list_workflow_runs,
-mcp__github__list_workflow_jobs, mcp__github__get_pull_request_files,
-mcp__github__get_pull_request_comments, mcp__sparc-memory__create_entities,
-mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations,
-mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes,
-mcp__sparc-memory__read_graph, mcp__uuid__generateUuid,
-mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+description: Proactively research unknowns. Use WebSearch/WebFetch to gather facts, links, and quotes; return a concise brief with citations. Use BEFORE planning or coding.
+tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__github__get_pull_request, mcp__github__get_pull_request_status, mcp__github__list_pull_requests, mcp__github__get_workflow_run, mcp__github__get_job_logs, mcp__github__list_workflow_runs, mcp__github__list_workflow_jobs, mcp__github__get_pull_request_files, mcp__github__get_pull_request_comments, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Researcher Agent

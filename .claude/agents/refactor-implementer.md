@@ -1,15 +1,7 @@
 ---
 name: refactor-implementer
-description: Improve code structure while preserving behavior. Eliminate
-duplication, extract pure functions, and enhance readability following Kent
-Beck's refactoring discipline.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput,
-mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy,
-mcp__cargo__cargo_fmt_check, mcp__git__git_status, mcp__git__git_diff,
-mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations,
-mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes,
-mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph,
-mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+description: Improve code structure while preserving behavior. Eliminate duplication, extract pure functions, and enhance readability following Kent Beck's refactoring discipline.
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__cargo__cargo_fmt_check, mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Refactor Implementer Agent
