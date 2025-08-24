@@ -25,29 +25,12 @@
 
         rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
-        # Python environment with numpy support and Qdrant dependencies
-        pythonEnv = pkgs.python3.withPackages (
-          ps: with ps; [
-            pip
-            setuptools
-            wheel
-            numpy
-            scipy
-            grpcio
-            protobuf
-            httpx
-            pydantic
-            typing-extensions
-            # Additional packages that mcp-server-qdrant might need
-          ]
-        );
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             rustToolchain
             nodejs
-            pythonEnv # Use the Python environment with numpy
             uv
             git
             gh
@@ -80,8 +63,6 @@
             pkgs.lapack
           ];
 
-          # Help Python find numpy and other compiled packages
-          PYTHONPATH = "${pythonEnv}/lib/python3.11/site-packages";
 
           # Configure development environment
           shellHook = ''
@@ -151,30 +132,9 @@
             claude mcp add --transport=http --header="Authorization: Bearer $GITHUB_MCP_TOKEN" github https://api.githubcopilot.com/mcp/
             claude mcp add git npx @cyanheads/git-mcp-server
 
-            # Configure Qdrant MCP server to use Nix Python with pre-built numpy
-            # This avoids numpy compilation issues on NixOS
-
-            # Create a wrapper script for the Qdrant MCP server
-            mkdir -p .dependencies/scripts
-            cat > .dependencies/scripts/qdrant-mcp-wrapper <<EOF
-#!/usr/bin/env bash
-# Use uv with the Nix-provided Python that has numpy pre-installed
-export UV_PYTHON="${pythonEnv}/bin/python"
-export PYTHONPATH="${pythonEnv}/lib/python3.11/site-packages:\$PYTHONPATH"
-export LD_LIBRARY_PATH="${
-              pkgs.lib.makeLibraryPath [
-                pkgs.stdenv.cc.cc.lib
-                pkgs.zlib
-                pkgs.blas
-                pkgs.lapack
-              ]
-            }:\$LD_LIBRARY_PATH"
-uv run --with mcp-server-qdrant --python "${pythonEnv}/bin/python" -- python -m mcp_server_qdrant
-EOF
-            chmod +x .dependencies/scripts/qdrant-mcp-wrapper
-
-            # Add the MCP server using our wrapper
-            claude mcp add qdrant .dependencies/scripts/qdrant-mcp-wrapper
+            # Install and configure MCP servers
+            uv tool install mcp-server-qdrant  # Creates executable in ~/.local/bin
+            claude mcp add qdrant mcp-server-qdrant
 
             claude mcp add uuid node .dependencies/nodejs/lib/node_modules/uuid-mcp/build/index.js
 
