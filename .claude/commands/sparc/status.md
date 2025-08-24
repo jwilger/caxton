@@ -1,21 +1,25 @@
 ---
-description: Check current branch, PR status, and story progress using pr-manager agent
+description:
+  Check current branch, PR status, and story progress using pr-manager agent
 allowed-tools: Task
 ---
 
 # Check SPARC Status
 
-Delegate to the pr-manager subagent to check the current status of branch, PR, and story progress.
+Delegate to the pr-manager subagent to check the current status of branch, PR,
+and story progress.
 
 ## Information Displayed
 
 ### Branch Status
+
 - Current branch name
 - Relation to main branch (ahead/behind)
 - Uncommitted changes
 - Story association (from `.claude/branch.info`)
 
 ### PR Status (if exists)
+
 - PR number and title
 - Current state (draft/ready/merged/closed)
 - Review status and requested reviewers
@@ -23,18 +27,20 @@ Delegate to the pr-manager subagent to check the current status of branch, PR, a
 - CI/check status
 
 ### Story Progress
+
 - Current story ID and title
 - SPARC phase (research/plan/implement/expert/pr/review)
 - TDD state (red/green/refactor)
 - Plan approval status
 
 ### GitHub Authentication
+
 - Authentication status with GitHub
 - Repository access verification
 
 ## Example Output Format
 
-```
+```text
 📋 SPARC Status Report
 
 🌿 Branch: story-001-wasm-runtime-foundation

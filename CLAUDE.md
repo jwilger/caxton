@@ -1,29 +1,121 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
+
+## Memory System Usage (IMPORTANT)
+
+### Dual-Stage Memory Architecture
+
+**USE THROUGHOUT ALL CONVERSATIONS**: The dual-stage memory system (qdrant +
+sparc-memory) should be actively used in ALL interactions, not just during agent
+operations or SPARC workflows.
+
+#### When to Store Memories
+
+Store knowledge whenever you:
+
+- Learn something new about the codebase architecture or patterns
+- Discover user preferences or project conventions
+- Understand a complex technical concept or solution
+- Find important relationships between components
+- Identify recurring patterns or anti-patterns
+- Debug and solve non-trivial issues
+- Make architectural or design decisions
+
+#### Memory Storage Protocol (For All Conversations)
+
+1. **Generate UUID**: Use `mcp__uuid__generateUuid` for unique identification
+2. **Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
+   including:
+   - Context of the discovery
+   - Technical details
+   - Relationships to other concepts
+   - Include UUID tag at the END: `[UUID: {generated-uuid}]`
+3. **Create Graph Node Using UUID**: Use `mcp__sparc-memory__create_entities`
+   with:
+   - **CRITICAL**: Set `name` field to the UUID string (e.g.,
+     "550e8400-e29b-41d4-a716-446655440000")
+   - Set `entityType` to describe the type (e.g., "research-finding",
+     "implementation-pattern")
+   - Add observations that describe what this memory represents
+4. **Link Relationships Between UUIDs**: Use
+   `mcp__sparc-memory__create_relations` with:
+   - `from`: Source UUID string
+   - `to`: Target UUID string
+   - `relationType`: Describes the relationship
+
+#### Search Before Acting (CRITICAL UUID-Based Workflow)
+
+Before diving into any task, follow this EXACT search pattern:
+
+1. **Semantic Search First**: Use `mcp__qdrant__qdrant-find` to find relevant
+   memories
+2. **Extract UUIDs from Results**: Parse each returned memory for `[UUID: xxx]`
+   tags
+3. **Graph Node Lookup**: For EACH UUID found:
+   - Use `mcp__sparc-memory__open_nodes` with `names: ["uuid-string-here"]`
+   - **NEVER** search sparc-memory by semantic entity names
+4. **Traverse Relationships**: From opened nodes, follow relations to find
+   connected UUIDs
+5. **Secondary Qdrant Search**: Use the related UUIDs to search qdrant for
+   additional context
+
+**CRITICAL**: sparc-memory nodes are ALWAYS accessed by UUID, never by
+descriptive names
+
+#### Example Memory Storage Scenarios
+
+- **Bug Fix**: Store the bug pattern, root cause, and solution for future
+  reference
+- **Code Pattern**: Store effective patterns discovered during implementation
+- **User Preference**: Store coding style preferences, tool choices, workflow
+  preferences
+- **Architecture Decision**: Store rationale, trade-offs, and implementation
+  details
+- **Performance Optimization**: Store before/after metrics and optimization
+  techniques
+
+**Remember**: Every conversation is a learning opportunity. Knowledge not stored
+is knowledge lost.
 
 ## Development Commands
 
 ### Bacon Continuous Testing Integration
 
-**CRITICAL**: Always use bacon for continuous testing instead of manual test commands. Bacon provides real-time feedback and eliminates the need for manual test execution.
+**CRITICAL**: Always use bacon for continuous testing instead of manual test
+commands. Bacon provides real-time feedback and eliminates the need for manual
+test execution.
 
-#### Bacon Setup and Usage
+#### Bacon Setup and Usage (MANDATORY)
 
 ```bash
+# MANDATORY: Start bacon in headless mode at beginning of ANY work session
 bacon --headless                     # Start bacon in background for continuous testing
+# Use run_in_background: true when starting via Bash tool
+
+# Optional interactive modes (for human use only):
 bacon nextest                       # Explicitly run nextest job
 bacon clippy                        # Run clippy continuously
 bacon check                         # Run cargo check continuously
 ```
 
-#### Bacon Integration Workflow
+#### Bacon Integration Workflow (NON-NEGOTIABLE)
 
-1. **Start bacon at beginning of work session**: `bacon --headless` (runs as background process)
-2. **Monitor bacon output**: Use BashOutput tool to check test results and compilation feedback
-3. **React to failures immediately**: Address compilation errors and test failures as they occur
-4. **Look for expected failures**: During TDD, expect to see specific test failures in bacon output
+1. **MANDATORY STARTUP**: ALWAYS check if bacon is running, start with
+   `bacon --headless` if not
+   - Use: `ps aux | grep "bacon --headless" | grep -v grep` to check
+   - Start with: `bacon --headless` using `run_in_background: true`
+   - **CRITICAL**: TDD cycle CANNOT function without bacon running
+2. **Monitor bacon output**: Use BashOutput tool to check test results and
+   compilation feedback
+3. **React to failures immediately**: Address compilation errors and test
+   failures as they occur
+4. **Look for expected failures**: During TDD, expect to see specific test
+   failures in bacon output
 5. **Verify success**: Confirm all tests pass before committing changes
+6. **NEVER use manual test commands**: No `cargo test`, `cargo nextest run`,
+   etc. - bacon only!
 
 #### Manual Testing (Only When Bacon Unavailable)
 
@@ -57,25 +149,76 @@ cargo edit                         # Dependency management
 
 ## Architecture Overview
 
-Caxton is a **multi-agent orchestration server** that provides WebAssembly-based agent isolation, FIPA-compliant messaging, and comprehensive observability. It runs as a standalone server process (like PostgreSQL or Redis) rather than a library.
+Caxton is a **multi-agent orchestration server** that provides WebAssembly-based
+agent isolation, FIPA-compliant messaging, and comprehensive observability. It
+runs as a standalone server process (like PostgreSQL or Redis) rather than a
+library.
 
 ### Core Components
 
-- **Agent Runtime Environment**: Manages WebAssembly agent lifecycle with sandboxing and resource limits
-- **FIPA Message Router**: High-performance async message routing between agents with conversation tracking
-- **Security & Sandboxing**: WebAssembly isolation with CPU/memory limits and host function restrictions
-- **Observability Layer**: Built-in structured logging, metrics (Prometheus), and distributed tracing (OpenTelemetry)
-- **Agent Lifecycle Management**: Deployment strategies including blue-green, canary, and shadow deployments
+- **Agent Runtime Environment**: Manages WebAssembly agent lifecycle with
+  sandboxing and resource limits
+- **FIPA Message Router**: High-performance async message routing between agents
+  with conversation tracking
+- **Security & Sandboxing**: WebAssembly isolation with CPU/memory limits and
+  host function restrictions
+- **Observability Layer**: Built-in structured logging, metrics (Prometheus),
+  and distributed tracing (OpenTelemetry)
+- **Agent Lifecycle Management**: Deployment strategies including blue-green,
+  canary, and shadow deployments
 
-### Domain Model Philosophy
+### Domain Model Philosophy (Scott Wlaschin Approach)
 
-The codebase follows **type-driven development** principles:
+The codebase follows **Domain Modeling Made Functional** principles inspired by
+Scott Wlaschin:
 
-- Illegal states are unrepresentable through the type system
-- Phantom types for agent state transitions (`Agent<Unloaded>` → `Agent<Loaded>` → `Agent<Running>`)
-- Smart constructors with validation (e.g., `AgentId`, `Percentage`)
-- Comprehensive error types with domain-specific variants
-- nutype crate for eliminating primitive obsession
+#### Core Philosophy: "Make Illegal States Unrepresentable"
+
+- **Type-driven domain design**: Use Rust's type system to encode business rules
+- **Parse, don't validate**: Transform unstructured data into structured types
+  at boundaries
+- **Algebraic data types**: Sum types (enums) for OR, Product types (structs)
+  for AND
+- **Total functions over partial**: Prefer functions that work for all inputs of
+  their type
+- **Railway-oriented programming**: Model workflows as Result chains
+
+#### Implementation Patterns
+
+- **Domain primitives with nutype**: Eliminate primitive obsession with
+  validated newtypes
+- **Phantom types for state machines**: (`Agent<Unloaded>` → `Agent<Loaded>` →
+  `Agent<Running>`)
+- **Smart constructors with validation**: Ensure only valid data can exist
+- **Comprehensive error types**: Domain-specific error variants that guide
+  handling
+- **Workflow signatures without implementations**: Define domain operations as
+  function signatures
+
+#### Domain-First Development
+
+Use `/sparc/model` command for pure domain modeling:
+
+- Create domain types that make illegal states unrepresentable
+- Model state machines and workflows as types
+- Define trait-based capabilities
+- Focus on **what** the domain is, not **how** it works
+
+#### When to Use Domain Modeling vs Full SPARC
+
+**Use `/sparc/model` when:**
+
+- Starting a new feature area and need to establish domain types first
+- Complex business rules need to be encoded in the type system
+- You want to explore the problem space before implementing solutions
+- The domain is unclear and needs type-driven exploration
+
+**Use `/sparc` (full workflow) when:**
+
+- Domain types already exist and you need to implement functionality
+- Building on existing domain foundation
+- Ready for test-driven development cycles
+- Implementation work needs to be done
 
 ### Key Domain Types
 
@@ -83,9 +226,12 @@ Located in `src/domain_types.rs` and `src/domain/`:
 
 - **Agent Identity**: `AgentId`, `AgentName` with validation
 - **Resources**: `CpuFuel`, `MemoryBytes`, `MaxAgentMemory` with limits
-- **Messaging**: `MessageId`, `ConversationId`, `Performative` for FIPA compliance
-- **Deployment**: `DeploymentId`, `DeploymentStrategy`, `DeploymentStatus` for lifecycle management
-- **Security**: `WasmSecurityPolicy`, `ResourceLimits`, `ValidationRule` for sandboxing
+- **Messaging**: `MessageId`, `ConversationId`, `Performative` for FIPA
+  compliance
+- **Deployment**: `DeploymentId`, `DeploymentStrategy`, `DeploymentStatus` for
+  lifecycle management
+- **Security**: `WasmSecurityPolicy`, `ResourceLimits`, `ValidationRule` for
+  sandboxing
 
 ## Code Structure
 
@@ -119,24 +265,31 @@ Located in `src/domain_types.rs` and `src/domain/`:
 
 ## Testing Patterns
 
-The project uses comprehensive testing with nextest via bacon for continuous feedback:
+The project uses comprehensive testing with nextest via bacon for continuous
+feedback:
 
 - Property-based testing for domain validation with immediate feedback
 - WASM fixture generation for integration tests with continuous validation
 - Resource limit testing with controlled memory/CPU consumption
-- **Bacon Integration**: Continuous test monitoring eliminates manual test execution
-- **Expected Failure Detection**: During TDD, bacon shows expected test failures in real-time
-- **Immediate Error Response**: Compilation errors and test failures appear instantly in bacon output
+- **Bacon Integration**: Continuous test monitoring eliminates manual test
+  execution
+- **Expected Failure Detection**: During TDD, bacon shows expected test failures
+  in real-time
+- **Immediate Error Response**: Compilation errors and test failures appear
+  instantly in bacon output
 
 ## Key Architectural Decisions
 
 Reference the ADR documentation in `docs/adr/` for detailed rationales:
 
-1. **Observability First** (ADR-0001): Every operation is instrumented with tracing
+1. **Observability First** (ADR-0001): Every operation is instrumented with
+   tracing
 2. **WebAssembly Isolation** (ADR-0002): Agents run in secure WASM sandboxes
 3. **FIPA Messaging** (ADR-0003): Standard agent communication protocols
-4. **Type Safety** (ADR-0018): Domain types with nutype to prevent primitive obsession
-5. **Coordination First** (ADR-0014): Lightweight coordination instead of shared databases
+4. **Type Safety** (ADR-0018): Domain types with nutype to prevent primitive
+   obsession
+5. **Coordination First** (ADR-0014): Lightweight coordination instead of shared
+   databases
 
 ## Development Conventions
 
@@ -145,7 +298,10 @@ Reference the ADR documentation in `docs/adr/` for detailed rationales:
 - **Resource Safety**: Always validate resource limits before allocation
 - **State Machines**: Use phantom types for compile-time state validation
 - **Testing**: Write property-based tests for validation logic
-- **Dependency Management**: Always use package manager CLI tools (`cargo add`, `cargo remove`) to install/update dependencies. Never manually edit Cargo.toml version numbers. This ensures we use the latest compatible versions and avoid version conflicts.
+- **Dependency Management**: Always use package manager CLI tools (`cargo add`,
+  `cargo remove`) to install/update dependencies. Never manually edit Cargo.toml
+  version numbers. This ensures we use the latest compatible versions and avoid
+  version conflicts.
 
 ## External Dependencies
 
@@ -155,13 +311,17 @@ The project uses Nix for development environment management:
 - Development tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit
 - Optional: just for task automation
 - Ad-hoc: use `nix shell` to use a tool that is not currently installed.
-- Update Flake: For tools you regularly use, consider adding them to the flake.nix file
+- Update Flake: For tools you regularly use, consider adding them to the
+  flake.nix file
 
 ## Rust Type-Driven Rules
 
 - **Illegal states are unrepresentable**: prefer domain types over primitives.
-- All new domain types use `nutype` with `sanitize(...)` and `validate(...)`. Derive at least: `Clone, Debug, Eq, PartialEq, Display`; add `Serialize, Deserialize` where needed.
-- Prefer `Result<T, DomainError>` over panics. Panics only for truly unreachable states.
+- All new domain types use `nutype` with `sanitize(...)` and `validate(...)`.
+  Derive at least: `Clone, Debug, Eq, PartialEq, Display`; add
+  `Serialize, Deserialize` where needed.
+- Prefer `Result<T, DomainError>` over panics. Panics only for truly unreachable
+  states.
 
 ### Example
 
@@ -176,15 +336,20 @@ pub struct AgentName(String);
 
 ## Code Quality Enforcement - CRITICAL
 
-**NEVER ADD ALLOW ATTRIBUTES** - This is a hard rule with zero exceptions without team approval.
+**NEVER ADD ALLOW ATTRIBUTES** - This is a hard rule with zero exceptions
+without team approval.
 
-- **NEVER** use `#![allow(clippy::...)]` or `#[allow(clippy::...)]` without explicit team approval
+- **NEVER** use `#![allow(clippy::...)]` or `#[allow(clippy::...)]` without
+  explicit team approval
 - **NEVER** bypass pre-commit hooks or ignore clippy warnings/errors
-- **ALWAYS** fix the underlying issue causing the warning instead of suppressing it
+- **ALWAYS** fix the underlying issue causing the warning instead of suppressing
+  it
 - Pre-commit hooks MUST pass with `-D warnings` (treat warnings as errors)
 - If build fails with warnings, FIX the warnings - don't suppress them
-- When facing extensive warnings, create a GitHub issue and systematic plan to address them
-- The only acceptable temporary measure is to create a focused story (like Story 053) to address them systematically
+- When facing extensive warnings, create a GitHub issue and systematic plan to
+  address them
+- The only acceptable temporary measure is to create a focused story (like
+  Story 053) to address them systematically
 
 **Exception Process (Rare):**
 
@@ -204,17 +369,18 @@ pub struct AgentName(String);
 **Pre-commit Hook Enforcement:**
 
 - Pre-commit hooks are MANDATORY and must not be bypassed
-- Use `git commit --no-verify` only in genuine emergencies with team notification
+- Use `git commit --no-verify` only in genuine emergencies with team
+  notification
 - If pre-commit hooks fail, fix the issues - don't bypass them
 - Allow attribute detection prevents commits with new suppressions
 
-Testing Discipline (Kent Beck)
-Work in strict Red → Green → Refactor -> Red -> Green -> Refactor -> ... loops with one failing test at a time.
+Testing Discipline (Kent Beck) Work in strict Red → Green → Refactor -> Red ->
+Green -> Refactor -> ... loops with one failing test at a time.
 
 Use `mcp__cargo__cargo_test` for all tests; treat clippy warnings as errors.
 
-Functional Core / Imperative Shell
-Put pure logic in the core (no I/O, no mutation beyond local scope).
+Functional Core / Imperative Shell Put pure logic in the core (no I/O, no
+mutation beyond local scope).
 
 Keep an imperative shell for I/O; inject dependencies via traits.
 
@@ -222,39 +388,78 @@ Model workflows as Result pipelines (railway style).
 
 ## GitHub PR Workflow
 
-The SPARC workflow integrates with GitHub pull requests to ensure professional development practices:
+The SPARC workflow integrates with GitHub pull requests to ensure professional
+development practices:
 
 ### Story Development Flow
 
 1. **Story Selection**: Choose from PLANNING.md
 2. **Branch Creation**: `story-{id}-{slug}` feature branches
-3. **Standard SPARC**: Research → Plan → Implement → Expert (with mandatory memory storage)
+3. **Standard SPARC**: Research → Plan → Implement → Expert (with mandatory
+   memory storage)
 4. **PR Creation**: Draft PRs with comprehensive descriptions
-5. **Story Completion**: MANDATORY update of PLANNING.md to mark story as completed (included in same PR)
+5. **Story Completion**: MANDATORY update of PLANNING.md to mark story as
+   completed (included in same PR)
 6. **Review Loop**: Address feedback with Claude Code attribution
 7. **Human Merge**: Only humans mark PRs ready-for-review
 
 ### MANDATORY Memory Storage (CRITICAL)
 
-**Every SPARC phase MUST store knowledge in MCP memory for systematic improvement:**
+**Every SPARC phase MUST store knowledge using the dual-memory architecture:**
 
-- **Research Phase**: MUST store findings, sources, patterns, and API documentation
-- **Planning Phase**: MUST store strategies, decisions, task breakdowns, and rationale
-- **Implementation Phase**: MUST store TDD cycles, type improvements, patterns, and solutions
-- **Expert Review Phase**: MUST store insights, quality patterns, and architectural analysis
+#### Memory Storage Protocol (UUID-Based Linking)
+
+1. **Generate UUID**: Use `mcp__uuid__generateUuid` to create unique identifier
+2. **Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
+   - Include UUID tag at the END: `[UUID: {generated-uuid}]`
+3. **Create Graph Node**: Use `mcp__sparc-memory__create_entities` with:
+   - **name**: The UUID string itself (e.g.,
+     "550e8400-e29b-41d4-a716-446655440000")
+   - **entityType**: Descriptive type (e.g., "research-finding",
+     "implementation-pattern")
+   - **observations**: Array of descriptive strings about this memory
+4. **Link UUIDs**: Use `mcp__sparc-memory__create_relations` with:
+   - **from**: Source UUID string
+   - **to**: Target UUID string
+   - **relationType**: Relationship description
+
+#### Required Storage by Phase
+
+- **Research Phase**: MUST store findings, sources, patterns, and API
+  documentation
+- **Planning Phase**: MUST store strategies, decisions, task breakdowns, and
+  rationale
+- **Implementation Phase**: MUST store TDD cycles, type improvements, patterns,
+  and solutions
+- **Expert Review Phase**: MUST store insights, quality patterns, and
+  architectural analysis
 - **PR Management**: MUST store workflow patterns, strategies, and outcomes
 
-**Knowledge not stored is knowledge lost. This is not optional and will be enforced by the SPARC orchestrator.**
+#### Dual-System Search Strategy
+
+- **Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by
+  meaning
+- **Graph Traversal**: Use `mcp__sparc-memory__search_nodes` to find related
+  memories
+- **Combined Workflow**: Search qdrant → extract UUIDs → traverse graph for
+  context
+
+**Knowledge not stored is knowledge lost. This is not optional and will be
+enforced by the SPARC orchestrator.**
 
 ### MANDATORY PLANNING.md Updates (CRITICAL)
 
 **Every story completion MUST update PLANNING.md in the same PR:**
 
 - **Story marking**: Change `- [ ]` to `- [x]` for completed story
-- **Completion status**: Add completion indicator with brief summary (e.g., "✅ (COMPLETED - All acceptance criteria met)")
-- **Same PR requirement**: PLANNING.md update MUST be committed as part of the story implementation PR
-- **Validation**: Story ID must match current branch and be verified before marking complete
-- **Enforcement**: pr-manager agent has exclusive authority and responsibility for this update
+- **Completion status**: Add completion indicator with brief summary (e.g., "✅
+  (COMPLETED - All acceptance criteria met)")
+- **Same PR requirement**: PLANNING.md update MUST be committed as part of the
+  story implementation PR
+- **Validation**: Story ID must match current branch and be verified before
+  marking complete
+- **Enforcement**: pr-manager agent has exclusive authority and responsibility
+  for this update
 
 **Example completion format**:
 
@@ -263,7 +468,8 @@ The SPARC workflow integrates with GitHub pull requests to ensure professional d
 + [x] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected vulnerability ✅ (COMPLETED - All acceptance criteria met)
 ```
 
-**Automation**: The SPARC workflow will automatically fail if PLANNING.md is not updated during story completion.
+**Automation**: The SPARC workflow will automatically fail if PLANNING.md is not
+updated during story completion.
 
 ### Branch Management
 
@@ -290,18 +496,23 @@ PRs created in **draft status only** - humans control ready-for-review.
 
 Primary commands:
 
-- `/sparc` - Full story workflow with PR integration
+- `/sparc` - Full story workflow with PR integration (includes TDD cycles)
+- `/sparc/model` - Pure domain modeling using Scott Wlaschin's principles (NO
+  implementation)
 - `/sparc/pr` - Create draft PR for completed story
 - `/sparc/review` - Respond to PR feedback
 - `/sparc/status` - Check branch/PR/story status
 
-Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, documentation-writer, pr-manager.
+Subagents: researcher, planner, domain-modeler, implementer, type-architect,
+test-hardener, expert, documentation-writer, pr-manager.
 
-After each story: run `mcp__cargo__cargo_clippy`, `mcp__cargo__cargo_fmt_check`, and `mcp__cargo__cargo_test`.
+After each story: run `mcp__cargo__cargo_clippy`, `mcp__cargo__cargo_fmt_check`,
+and `mcp__cargo__cargo_test`.
 
 ### SPARC Coordinator Role (CRITICAL)
 
-**When running under the `/sparc` command, the main agent (SPARC coordinator) has ONE job:**
+**When running under the `/sparc` command, the main agent (SPARC coordinator)
+has ONE job:**
 
 The SPARC coordinator is STRICTLY an orchestrator and MUST NOT:
 
@@ -314,47 +525,104 @@ The SPARC coordinator is STRICTLY an orchestrator and MUST NOT:
 
 The SPARC coordinator's ONLY responsibilities are:
 
-1. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents for each phase
+1. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents
+   for each phase
 2. **Relay information** - Pass outputs from one subagent to another as needed
-3. **Interface with human** - Present subagent results to the user and collect approvals
-4. **Track workflow state** - Know which SPARC phase is active and what comes next
+3. **Interface with human** - Present subagent results to the user and collect
+   approvals
+4. **Track workflow state** - Know which SPARC phase is active and what comes
+   next
 5. **Enforce process** - Ensure all SPARC phases execute in the correct order
-6. **Enforce TDD discipline** - Ensure proper Red→Green→Refactor cycles with agent authority
-7. **Verify memory usage** - Ensure all agents search and store knowledge appropriately
+6. **Enforce TDD discipline** - Ensure proper Red→Green→Refactor cycles with
+   agent authority
+7. **Verify memory usage** - Ensure all agents search and store knowledge
+   appropriately
 
-**TDD Cycle Authority and Control (CRITICAL):**
+#### Domain Modeling Integration (CRITICAL)
 
-- **Red-implementer has FINAL authority** on cycle completion - no other agent can override their assessment
-- **Minimum one complete cycle** required per story (Red→Green→Refactor)
-- **Strict ping-pong enforcement** - Red and Green agents alternate with smallest possible changes
-- **Planner verification gate** - Planner MUST approve before refactor-implementer can proceed
-- **No test modification in green** - Green-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
-- **No test modification in refactor** - Refactor-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
+**When to invoke domain-modeler during SPARC workflow:**
+
+- **During Planning Phase**: If planner identifies missing or inadequate domain
+  types
+- **During Implementation**: If red/green/refactor agents identify need for
+  stronger types
+- **Type Escalation Protocol**: When implementers discover illegal states are
+  representable
+- **Before TDD Cycles**: When story requires new domain concepts not yet modeled
+
+**Domain-modeler handoff protocol:**
+
+1. **Invocation Trigger**: Planner or implementer identifies domain modeling
+   need
+2. **Context Passing**: Provide domain requirements and business rules to
+   domain-modeler
+3. **Type Creation**: Domain-modeler creates types with nutype, phantom types,
+   traits
+4. **NO IMPLEMENTATION**: Domain-modeler provides only types and signatures
+5. **Return to TDD**: After domain modeling, resume normal Red→Green→Refactor
+   cycles
+
+#### TDD Cycle Authority and Control (CRITICAL)
+
+- **Red-implementer has FINAL authority** on cycle completion - no other agent
+  can override their assessment
+- **Minimum one complete cycle** required per story (Red→Green→Red→...→Refactor)
+- **CRITICAL FLOW**: Green ALWAYS returns to Red (never directly to Refactor)
+  - After Green makes tests pass → Red decides: write another test OR proceed to
+    Refactor
+  - Only Red-implementer can authorize moving to Refactor phase
+- **Strict ping-pong enforcement** - Red and Green agents alternate with
+  smallest possible changes
+- **No test modification in green** - Green-implementer PROHIBITED from changing
+  tests; must hand back to red-implementer if needed
+- **No test modification in refactor** - Refactor-implementer PROHIBITED from
+  changing tests; must hand back to red-implementer if needed
+- **Refactor escalation** - If refactor-implementer discovers missing
+  functionality, MUST escalate back to coordinator (cannot add features)
+- **Domain type escalation** - If any implementer discovers representable
+  illegal states, MUST escalate to coordinator for domain-modeler invocation
 
 **Memory Usage Enforcement (MANDATORY):**
 
-- **All agents MUST search MCP memory** for relevant knowledge when receiving control
-- **All agents MUST store patterns and insights** after completing their work
-- **Coordinator tracks compliance** - Agents failing memory requirements will be reprimanded
+- **All agents MUST search both systems** for relevant knowledge when receiving
+  control:
+  - Use `mcp__qdrant__qdrant-find` for semantic search
+  - Use `mcp__sparc-memory__search_nodes` for entity relationships
+- **All agents MUST store patterns and insights** using dual-memory protocol:
+  - Generate UUID with `mcp__uuid__generateUuid`
+  - Store content in qdrant with UUID tag
+  - Create/update entity graph in sparc-memory
+- **Coordinator tracks compliance** - Agents failing memory requirements will be
+  reprimanded
 
 ALL actual work MUST be performed by the specialized subagents:
 
 - `researcher` - Gathers information and creates research briefs
 - `planner` - Creates implementation plans following TDD principles
-- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL AUTHORITY on cycle completion) (CAN ONLY modify test code)
-- `green-implementer` - Implements minimal code to make tests pass (CANNOT modify tests)
-- `refactor-implementer` - Improves code structure while preserving behavior (CANNOT modify tests)
-- `type-architect` - Designs domain types and type-state machines (CANNOT modify tests)
+- `domain-modeler` - Creates domain types using Scott Wlaschin's principles (NO
+  implementation logic)
+- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL
+  AUTHORITY on cycle completion) (CAN ONLY modify test code)
+- `green-implementer` - Implements minimal code to make tests pass (CANNOT
+  modify tests)
+- `refactor-implementer` - Improves code structure while preserving behavior
+  (CANNOT modify tests)
+- `type-architect` - Refines existing types to strengthen guarantees (CANNOT
+  modify tests)
 - `test-hardener` - Strengthens tests and proposes type improvements
-- `expert` - Reviews code for correctness and best practices (CANNOT modify code)
-- `documentation-writer` - Creates user guides, API docs, and operational procedures (ONLY writes documentation)
+- `expert` - Reviews code for correctness and best practices (CANNOT modify
+  code)
+- `documentation-writer` - Creates user guides, API docs, and operational
+  procedures (ONLY writes documentation)
 - `pr-manager` - Handles GitHub PR operations and local git operations
 
-The coordinator is a pure orchestrator - think of it as a project manager who doesn't code but enforces strict TDD discipline.
+The coordinator is a pure orchestrator - think of it as a project manager who
+doesn't code but enforces strict TDD discipline.
 
 ## SPARC Coordinator Verification Protocols (CRITICAL)
 
-**MANDATORY VERIFICATION**: The SPARC coordinator MUST verify actual work completion at each TDD phase to prevent phantom claims.
+**MANDATORY VERIFICATION**: The SPARC coordinator MUST verify actual work
+completion at each TDD phase to prevent phantom claims.
 
 ### Red Phase Verification (MANDATORY)
 
@@ -388,13 +656,15 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
 
 **Red Phase Failure Protocol**:
 
-- If verification fails: "RED PHASE VERIFICATION FAILED - No actual tests detected"
+- If verification fails: "RED PHASE VERIFICATION FAILED - No actual tests
+  detected"
 - Immediately return control to red-implementer with specific failure details
 - Do NOT proceed to Green phase until actual tests are verified
 
 ### Green Phase Verification (MANDATORY)
 
-**After green-implementer claims implementation completion, coordinator MUST verify:**
+**After green-implementer claims implementation completion, coordinator MUST
+verify:**
 
 1. **Implementation File Verification**:
 
@@ -418,6 +688,7 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
    ```
 
 4. **No Test Modification Verification**:
+
    ```bash
    # Verify green-implementer did not modify tests
    Read tool: test files to confirm no unauthorized changes
@@ -426,13 +697,16 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
 **Green Phase Failure Protocol**:
 
 - If tests still fail: "GREEN PHASE VERIFICATION FAILED - Tests still failing"
-- If no implementation detected: "GREEN PHASE VERIFICATION FAILED - No implementation changes detected"
-- If test modifications detected: "GREEN PHASE VIOLATION - Unauthorized test modifications detected"
+- If no implementation detected: "GREEN PHASE VERIFICATION FAILED - No
+  implementation changes detected"
+- If test modifications detected: "GREEN PHASE VIOLATION - Unauthorized test
+  modifications detected"
 - Return control to appropriate agent based on failure type
 
 ### Refactor Phase Verification (MANDATORY)
 
-**After refactor-implementer claims refactoring completion, coordinator MUST verify:**
+**After refactor-implementer claims refactoring completion, coordinator MUST
+verify:**
 
 1. **Code Structure Verification**:
 
@@ -456,6 +730,7 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
    ```
 
 4. **Quality Improvement Verification**:
+
    ```bash
    # Check for actual improvements (reduced complexity, better naming, etc.)
    cargo clippy
@@ -463,9 +738,12 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
 
 **Refactor Phase Failure Protocol**:
 
-- If tests fail: "REFACTOR PHASE VERIFICATION FAILED - Tests broken by refactoring"
-- If no changes detected: "REFACTOR PHASE VERIFICATION FAILED - No refactoring changes detected"
-- If test modifications detected: "REFACTOR PHASE VIOLATION - Unauthorized test modifications detected"
+- If tests fail: "REFACTOR PHASE VERIFICATION FAILED - Tests broken by
+  refactoring"
+- If no changes detected: "REFACTOR PHASE VERIFICATION FAILED - No refactoring
+  changes detected"
+- If test modifications detected: "REFACTOR PHASE VIOLATION - Unauthorized test
+  modifications detected"
 - Return control to appropriate agent based on failure type
 
 ### Phantom Claim Detection (ZERO TOLERANCE)
@@ -490,8 +768,10 @@ The coordinator is a pure orchestrator - think of it as a project manager who do
 **Escalation Protocol for Phantom Claims**:
 
 1. **First Detection**: Warning with specific verification failure details
-2. **Second Detection**: Formal reprimand with requirement to demonstrate understanding
-3. **Third Detection**: Agent replacement with expert review of all previous work
+2. **Second Detection**: Formal reprimand with requirement to demonstrate
+   understanding
+3. **Third Detection**: Agent replacement with expert review of all previous
+   work
 
 ### Verification Command Reference
 
@@ -516,38 +796,47 @@ cargo check
 cargo clippy
 ```
 
-**Verification is MANDATORY, not optional. Phantom claims are unacceptable and will result in immediate agent remediation.**
+**Verification is MANDATORY, not optional. Phantom claims are unacceptable and
+will result in immediate agent remediation.**
 
 ## Code Quality Gates (CRITICAL)
 
 - All clippy warnings MUST be fixed, not suppressed with allow attributes
 - Pre-commit hooks MUST pass without `--no-verify` bypasses
 - If extensive warnings exist, create a systematic cleanup story (see Story 053)
-- Never commit code that adds new allow attributes without explicit team approval
+- Never commit code that adds new allow attributes without explicit team
+  approval
 
 ## Property-Based Testing
 
 Use proptest for invariants of domain types and parsers.
 
-When a test reveals a representational gap, strengthen types so the failure becomes impossible.
+When a test reveals a representational gap, strengthen types so the failure
+becomes impossible.
 
 ## Important Instruction Reminders
 
-Do what has been asked; nothing more, nothing less.
-NEVER create files unless they're absolutely necessary for achieving your goal.
-ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
+Do what has been asked; nothing more, nothing less. NEVER create files unless
+they're absolutely necessary for achieving your goal. ALWAYS prefer editing an
+existing file to creating a new one. NEVER proactively create documentation
+files (\*.md) or README files. Only create documentation files if explicitly
+requested by the User.
 
 **CRITICAL CODE QUALITY RULES:**
 
-- NEVER add clippy allow attributes (`#[allow(clippy::...)]` or `#![allow(clippy::...)]`) without explicit team approval
-- NEVER bypass pre-commit hooks with `--no-verify` unless it's a genuine emergency with team notification
+- NEVER add clippy allow attributes (`#[allow(clippy::...)]` or
+  `#![allow(clippy::...)]`) without explicit team approval
+- NEVER bypass pre-commit hooks with `--no-verify` unless it's a genuine
+  emergency with team notification
 - ALWAYS fix clippy warnings instead of suppressing them
-- If facing many warnings, create a systematic cleanup story and plan - don't suppress them
+- If facing many warnings, create a systematic cleanup story and plan - don't
+  suppress them
 
 **CRITICAL MEMORY STORAGE RULES:**
 
 - EVERY agent MUST store knowledge after significant actions
-- Research findings, planning decisions, implementation patterns, and insights MUST be preserved
+- Research findings, planning decisions, implementation patterns, and insights
+  MUST be preserved
 - The SPARC orchestrator will enforce memory storage compliance
-- Knowledge not stored represents wasted learning opportunities and repeated mistakes
+- Knowledge not stored represents wasted learning opportunities and repeated
+  mistakes

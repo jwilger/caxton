@@ -5,4 +5,5 @@ allowed-tools: Task
 
 # Perform Research
 
-Use the researcher subagent to investigate this task and produce a “Research Brief” with citations and open questions.
+Use the researcher subagent to investigate this task and produce a “Research
+Brief” with citations and open questions.
