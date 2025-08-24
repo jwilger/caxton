@@ -272,10 +272,6 @@ The development environment uses Model Context Protocol (MCP) servers for tool a
 - `get_pull_request_status`, `list_pull_requests` - PR queries
 - `add_issue_comment`, `create_and_submit_pull_request_review` - Code reviews
 
-**SPARC Memory MCP Server** (`sparc-memory` namespace):
-- `create_entities`, `search_nodes`, `add_observations` - Knowledge storage
-- Accumulates development patterns, architectural insights, and lessons learned
-- Enables systematic improvement across development sessions
 
 ### Development Workflow (SPARC)
 
