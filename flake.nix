@@ -124,8 +124,6 @@
             pre-commit install-hooks
 
             # Add MCP servers with proper configuration
-
-            npm install -g uuid-mcp
             claude mcp add cargo cargo-mcp serve
             claude mcp add --transport=http --header="Authorization: Bearer $GITHUB_MCP_TOKEN" github https://api.githubcopilot.com/mcp/
             claude mcp add git npx @cyanheads/git-mcp-server
@@ -134,14 +132,11 @@
             uv tool install mcp-server-qdrant  # Creates executable in ~/.local/bin
             claude mcp add qdrant mcp-server-qdrant
 
-            claude mcp add uuid node .dependencies/nodejs/lib/node_modules/uuid-mcp/build/index.js
-
             echo "✅ MCP servers configured successfully"
             echo ""
 
             echo "🧠 MCP servers configured:"
-            echo "   - qdrant: Semantic memory storage (dual-memory system)"
-            echo "   - uuid: UUID generation for memory tracking"
+            echo "   - qdrant: Semantic memory storage"
             echo "   - cargo: Rust/Cargo integration"
             echo "   - github: GitHub API with Bearer token auth"
             echo "   - git: Enhanced git operations"
