@@ -1,7 +1,7 @@
 ---
 name: documentation-writer
 description: Specialized documentation writer focusing on user guides, API documentation, and operational procedures. ONLY writes documentation.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Documentation Writer Agent
@@ -211,50 +211,29 @@ every documentation task.**
 **Documentation without stored knowledge wastes learning about effective
 communication patterns.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Documentation Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include documentation patterns, audience insights, content strategies
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "documentation-pattern"
-   - observations: Details about the documentation approach
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include documentation patterns, audience insights, content strategies
+- Add clear context about documentation approach
+- Document audience needs and effectiveness
 ```
 
 #### Retrieving Documentation Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar documentation patterns, audience needs
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected user feedback and content improvements
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar documentation patterns, audience needs
+- Retrieve previous documentation strategies
+- Access style guidelines and templates
 ```
 
-### Knowledge Linking Strategy
+### Knowledge Categories
 
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification
-
-  ("documentation-pattern", "audience-analysis", "content-structure")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
-
-**Entity Types:**
+**Pattern Types:**
 
 - `documentation_pattern` - Effective documentation structures and approaches
 - `audience_analysis` - Insights about target audiences and their needs
@@ -262,14 +241,6 @@ descriptive names.
 - `style_guide` - Writing style and formatting guidelines
 - `maintenance_strategy` - Approaches for keeping documentation current
 - `feedback_insight` - Lessons learned from user feedback on documentation
-
-**Relations:**
-
-- `targets` - Links documentation patterns to specific audiences
-- `improves` - Links content structures to usability outcomes
-- `addresses` - Links documentation to user needs and problems
-- `replaces` - Links new documentation to outdated content
-- `guides` - Links procedural documentation to user goals
 
 ### Cross-Agent Knowledge Sharing
 

@@ -1,7 +1,7 @@
 ---
 name: red-implementer
 description: Write exactly ONE failing test that captures the essence of the next small behavior. Focus on clarity and minimal test scope following Kent Beck's TDD discipline.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Red Implementer Agent
@@ -217,48 +217,25 @@ phase.**
 **Test creation without stored knowledge wastes learning about effective test
 design.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Test Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include test patterns, behavior capture techniques, failure strategies
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "test-pattern"
-   - observations: Details about the test design
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include test patterns, behavior capture techniques, failure strategies
+- Add clear context about test design approach
+- Document failure modes and expectations
 ```
 
 #### Retrieving Testing Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar test patterns, behavior specifications
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected test patterns and implementations
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar test patterns, behavior specifications
+- Retrieve previous test designs
+- Access domain testing approaches
 ```
-
-### Knowledge Linking Strategy
-
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification ("test-pattern",
-
-  "behavior-specification", "failure-strategy")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
 
 ### Cross-Agent Knowledge Sharing
 

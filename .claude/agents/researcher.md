@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Proactively research unknowns. Use WebSearch/WebFetch to gather facts, links, and quotes; return a concise brief with citations. Use BEFORE planning or coding.
-tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__github__get_pull_request, mcp__github__get_pull_request_status, mcp__github__list_pull_requests, mcp__github__get_workflow_run, mcp__github__get_job_logs, mcp__github__list_workflow_runs, mcp__github__list_workflow_jobs, mcp__github__get_pull_request_files, mcp__github__get_pull_request_comments, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__github__get_pull_request, mcp__github__get_pull_request_status, mcp__github__list_pull_requests, mcp__github__get_workflow_run, mcp__github__get_job_logs, mcp__github__list_workflow_runs, mcp__github__list_workflow_jobs, mcp__github__get_pull_request_files, mcp__github__get_pull_request_comments, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Researcher Agent
@@ -107,48 +107,25 @@ knowledge is wasted effort.**
 **Research Brief is incomplete without corresponding memory storage for future
 retrieval.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Research Findings
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include research content, sources, examples
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "research-finding"
-   - observations: Descriptive info about the research
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include research content, sources, examples
+- Add clear descriptive context
+- Include references and citations
 ```
 
 #### Retrieving Knowledge
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for relevant research topics
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Traverse graph to related UUIDs
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for relevant research topics
+- Retrieve similar patterns and findings
+- Access stored documentation and examples
 ```
-
-### Knowledge Linking Strategy
-
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification ("research-finding",
-
-  "api-docs", "tool-research")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
 
 ### Cross-Agent Knowledge Sharing
 
@@ -197,6 +174,6 @@ When responding, agents should include:
 
   persistent research knowledge
 
-- **Access**: Other agents can search via mcp**qdrant**qdrant-find and
+- **Access**: Other agents can search via mcp__qdrant__qdrant-find for
 
-  retrieve via mcp**sparc-memory**open_nodes using UUIDs
+  relevant research findings

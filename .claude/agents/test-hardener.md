@@ -1,7 +1,7 @@
 ---
 name: test-hardener
 description: Convert "example tests" into stronger guarantees. Propose types that make entire classes of tests impossible to fail.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Test Hardener Agent
@@ -223,78 +223,40 @@ knowledge building:
 
   modules or boundaries
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Test Hardening Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include test hardening insights, type improvements, validation patterns
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "test-hardening-pattern"
-   - observations: Details about the test improvement approach
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include test hardening insights, type improvements, validation patterns
+- Add clear context about test improvement approach
+- Document safety guarantees achieved
 ```
 
 #### Retrieving Test Hardening Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar test weaknesses, type improvement strategies
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected type architectures and implementation
-   patterns
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar test weaknesses, type improvement strategies
+- Retrieve previous test hardening patterns
+- Access validation approaches
 ```
 
-### Knowledge Linking Strategy
+### Knowledge Categories
 
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification
+**Pattern Types:**
 
-  ("test-hardening-pattern", "type-improvement-strategy", "validation-pattern")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
-
-**Entity Types:**
-
-- `test_hardening_pattern` - Common test weaknesses and their
-
-  type-based solutions
-
-- `type_improvement_strategy` - Successful domain type designs and
-
-  their outcomes
-
-- `validation_pattern` - Effective nutype validation rules and
-
-  sanitization approaches
-
+- `test_hardening_pattern` - Common test weaknesses and their type-based
+  solutions
+- `type_improvement_strategy` - Successful domain type designs and their
+  outcomes
+- `validation_pattern` - Effective nutype validation rules and sanitization
+  approaches
 - `state_machine_design` - Phantom type patterns for business rule encoding
-- `property_test_insight` - Effective property-based testing patterns
-
-  for domain types
-
+- `property_test_insight` - Effective property-based testing patterns for
+  domain types
 - `safety_gain` - Documented improvements in compile-time safety guarantees
-
-**Relations:**
-
-- `eliminates` - Links type improvements to classes of bugs they prevent
-- `strengthens` - Links test improvements to the guarantees they now provide
-- `validates` - Links validation patterns to the invariants they enforce
-- `encodes` - Links state machine types to the business rules they represent
-- `prevents` - Links domain types to the runtime errors they make impossible
 
 ### Cross-Agent Knowledge Sharing
 

@@ -1,7 +1,7 @@
 ---
 name: pr-manager
 description: Manages GitHub branches, PRs, and comments with Claude Code attribution and safety guards
-tools: BashOutput, mcp__git__git_status, mcp__git__git_branch, mcp__git__git_checkout, mcp__git__git_add, mcp__git__git_commit, mcp__git__git_push, mcp__git__git_pull, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_merge, mcp__git__git_remote, mcp__git__git_show, mcp__git__git_fetch, mcp__git__git_reset, mcp__git__git_stash, mcp__git__git_tag, mcp__git__git_init, mcp__git__git_clone, mcp__git__git_clean, mcp__git__git_rebase, mcp__git__git_cherry_pick, mcp__git__git_worktree, mcp__git__git_set_working_dir, mcp__git__git_clear_working_dir, mcp__git__git_wrapup_instructions, mcp__github__create_branch, mcp__github__create_pull_request, mcp__github__add_issue_comment, mcp__github__get_pull_request, mcp__github__list_pull_requests, mcp__github__get_pull_request_status, mcp__github__merge_pull_request, mcp__github__update_pull_request, mcp__github__get_pull_request_comments, mcp__github__create_and_submit_pull_request_review, mcp__github__get_pull_request_diff, mcp__github__get_pull_request_files, mcp__github__get_pull_request_reviews, mcp__github__list_branches, mcp__github__list_commits, mcp__github__get_commit, mcp__github__list_tags, mcp__github__get_tag, mcp__github__search_code, mcp__github__search_repositories, mcp__github__search_issues, mcp__github__search_pull_requests, mcp__github__search_users, mcp__github__search_orgs, mcp__github__get_workflow_run, mcp__github__list_workflow_runs, mcp__github__get_job_logs, mcp__github__list_workflow_jobs, mcp__github__run_workflow, mcp__github__rerun_workflow_run, mcp__github__rerun_failed_jobs, mcp__github__cancel_workflow_run, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: BashOutput, mcp__git__git_status, mcp__git__git_branch, mcp__git__git_checkout, mcp__git__git_add, mcp__git__git_commit, mcp__git__git_push, mcp__git__git_pull, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_merge, mcp__git__git_remote, mcp__git__git_show, mcp__git__git_fetch, mcp__git__git_reset, mcp__git__git_stash, mcp__git__git_tag, mcp__git__git_init, mcp__git__git_clone, mcp__git__git_clean, mcp__git__git_rebase, mcp__git__git_cherry_pick, mcp__git__git_worktree, mcp__git__git_set_working_dir, mcp__git__git_clear_working_dir, mcp__git__git_wrapup_instructions, mcp__github__create_branch, mcp__github__create_pull_request, mcp__github__add_issue_comment, mcp__github__get_pull_request, mcp__github__list_pull_requests, mcp__github__get_pull_request_status, mcp__github__merge_pull_request, mcp__github__update_pull_request, mcp__github__get_pull_request_comments, mcp__github__create_and_submit_pull_request_review, mcp__github__get_pull_request_diff, mcp__github__get_pull_request_files, mcp__github__get_pull_request_reviews, mcp__github__list_branches, mcp__github__list_commits, mcp__github__get_commit, mcp__github__list_tags, mcp__github__get_tag, mcp__github__search_code, mcp__github__search_repositories, mcp__github__search_issues, mcp__github__search_pull_requests, mcp__github__search_users, mcp__github__search_orgs, mcp__github__get_workflow_run, mcp__github__list_workflow_runs, mcp__github__get_job_logs, mcp__github__list_workflow_jobs, mcp__github__run_workflow, mcp__github__rerun_workflow_run, mcp__github__rerun_failed_jobs, mcp__github__cancel_workflow_run, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # PR Manager Agent
@@ -395,50 +395,29 @@ Store PR management patterns and workflow insights for process improvement:
 
   formatting and linting hook modifications
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing PR Management Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include PR workflows, merge strategies, commit patterns
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "pr-management-pattern"
-   - observations: Details about the PR workflow approach
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include PR workflows, merge strategies, commit patterns
+- Add clear context about PR workflow approach
+- Document successful strategies and resolutions
 ```
 
 #### Retrieving PR Management Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar PR workflows, commit patterns, merge strategies
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected quality standards and workflow improvements
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar PR workflows, commit patterns, merge strategies
+- Retrieve previous workflow patterns
+- Access GitHub best practices
 ```
 
-### Knowledge Linking Strategy
+### Knowledge Categories
 
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification
-
-  ("pr-management-pattern", "commit-failure-pattern", "merge-strategy")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
-
-**Entity Types:**
+**Pattern Types:**
 
 - `pr_pattern` - Successful PR creation, management, and workflow patterns
 - `review_process` - Effective code review and feedback resolution strategies
@@ -448,17 +427,7 @@ descriptive names.
 - `quality_gate` - Pre-merge validation and quality assurance patterns
 - `commit_failure_pattern` - Pre-commit hook failures and resolution strategies
 - `push_failure_pattern` - Push operation failures and recovery approaches
-- `hook_remediation` - Strategies for handling hook-modified files and
-
-  retry logic
-
-**Relations:**
-
-- `enables` - Links workflow patterns to development outcomes
-- `prevents` - Links quality gates to avoided problems
-- `improves` - Links process improvements to workflow efficiency
-- `automates` - Links GitHub workflows to manual process elimination
-- `validates` - Links quality gates to merge criteria
+- `hook_remediation` - Strategies for handling hook-modified files and retry logic
 
 ### Cross-Agent Knowledge Sharing
 

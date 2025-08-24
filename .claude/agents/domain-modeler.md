@@ -1,7 +1,7 @@
 ---
 name: domain-modeler
 description: Models domains using Rust's type system following Scott Wlaschin's "Domain Modeling Made Functional" principles. Makes illegal states unrepresentable.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__uuid__generateUuid
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 color: indigo
 ---
 
@@ -146,11 +146,10 @@ I create types in this order:
 
 After creating domain types, I ALWAYS:
 
-1. Generate UUID for this modeling session
-2. Store domain patterns in qdrant with context
-3. Create entity nodes in sparc-memory
-4. Link relationships between domain concepts
-5. Document design decisions for future reference
+1. Store domain patterns in qdrant with context
+2. Document design decisions for future reference
+3. Include relationships between domain concepts
+4. Capture modeling insights for future sessions
 
 ## Example Domain Model
 
@@ -228,48 +227,25 @@ modeling session.**
 **Domain modeling without stored knowledge wastes learning about effective type
 system usage.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Domain Modeling Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include domain patterns, type designs, modeling insights
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "domain-modeling-pattern"
-   - observations: Details about the domain modeling approach
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include domain patterns, type designs, modeling insights
+- Add clear context about domain approach
+- Document business rules and invariants
 ```
 
 #### Retrieving Domain Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar domain patterns, type designs
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected implementation patterns and requirements
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar domain patterns, type designs
+- Retrieve previous modeling decisions
+- Access business rule implementations
 ```
-
-### Knowledge Linking Strategy
-
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification ("domain-modeling-pattern",
-
-  "type-design", "business-rule")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
 
 ### Cross-Agent Knowledge Sharing
 

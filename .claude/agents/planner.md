@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Produce a minimal, verifiable plan for a SINGLE story with TDD and type-first design. No code output.
-tools: Read, Grep, Glob, mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph, mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Grep, Glob, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Planner Agent
@@ -55,48 +55,25 @@ ensures systematic improvement.**
 **Plans without stored knowledge are incomplete and waste learning
 opportunities.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Planning Knowledge
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include strategies, task breakdowns, decisions
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "planning-decision"
-   - observations: Details about the plan
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include strategies, task breakdowns, decisions
+- Add clear context about planning approach
+- Include rationale and architectural decisions
 ```
 
 #### Retrieving Planning Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar planning patterns
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected planning/research UUIDs
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar planning patterns
+- Retrieve previous planning strategies
+- Access task breakdown templates
 ```
-
-### Knowledge Linking Strategy
-
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification ("planning-decision",
-
-  "task-breakdown", "tdd-pattern")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
 
 ### Cross-Agent Knowledge Sharing
 
@@ -149,6 +126,6 @@ strategy]
 
   architectural decisions
 
-- **Access**: Other agents can search via mcp**qdrant**qdrant-find and
+- **Access**: Other agents can search via mcp__qdrant__qdrant-find for
 
-  retrieve via mcp**sparc-memory**open_nodes using UUIDs
+  relevant planning patterns

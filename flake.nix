@@ -63,7 +63,6 @@
             pkgs.lapack
           ];
 
-
           # Configure development environment
           shellHook = ''
             # Validate required environment variables
@@ -127,7 +126,6 @@
             # Add MCP servers with proper configuration
 
             npm install -g uuid-mcp
-            claude mcp add sparc-memory npx @modelcontextprotocol/server-memory
             claude mcp add cargo cargo-mcp serve
             claude mcp add --transport=http --header="Authorization: Bearer $GITHUB_MCP_TOKEN" github https://api.githubcopilot.com/mcp/
             claude mcp add git npx @cyanheads/git-mcp-server
@@ -142,7 +140,6 @@
             echo ""
 
             echo "🧠 MCP servers configured:"
-            echo "   - sparc-memory: SPARC workflow knowledge storage (graph)"
             echo "   - qdrant: Semantic memory storage (dual-memory system)"
             echo "   - uuid: UUID generation for memory tracking"
             echo "   - cargo: Rust/Cargo integration"
