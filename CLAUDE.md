@@ -2,28 +2,85 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Memory System Usage (IMPORTANT)
+
+### Dual-Stage Memory Architecture
+
+**USE THROUGHOUT ALL CONVERSATIONS**: The dual-stage memory system (qdrant + sparc-memory) should be
+actively used in ALL interactions, not just during agent operations or SPARC workflows.
+
+#### When to Store Memories
+
+Store knowledge whenever you:
+
+- Learn something new about the codebase architecture or patterns
+- Discover user preferences or project conventions
+- Understand a complex technical concept or solution
+- Find important relationships between components
+- Identify recurring patterns or anti-patterns
+- Debug and solve non-trivial issues
+- Make architectural or design decisions
+
+#### Memory Storage Protocol (For All Conversations)
+
+1. **Generate UUID**: Use `mcp__uuid__generateUuid` for unique identification
+2. **Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content including:
+   - Context of the discovery
+   - Technical details
+   - Relationships to other concepts
+   - Include metadata tags: `[Entity: name, Type: type, UUID: {uuid}]`
+3. **Create Graph Nodes**: Use `mcp__sparc-memory__create_entities` for important entities
+4. **Link Relationships**: Use `mcp__sparc-memory__create_relations` to connect related concepts
+
+#### Search Before Acting
+
+Before diving into any task:
+
+- **Semantic Search**: Use `mcp__qdrant__qdrant-find` to find relevant past experiences
+- **Graph Traversal**: Use `mcp__sparc-memory__search_nodes` to explore related entities
+- **Combined Strategy**: Start with semantic search, then traverse the graph for deeper context
+
+#### Example Memory Storage Scenarios
+
+- **Bug Fix**: Store the bug pattern, root cause, and solution for future reference
+- **Code Pattern**: Store effective patterns discovered during implementation
+- **User Preference**: Store coding style preferences, tool choices, workflow preferences
+- **Architecture Decision**: Store rationale, trade-offs, and implementation details
+- **Performance Optimization**: Store before/after metrics and optimization techniques
+
+**Remember**: Every conversation is a learning opportunity. Knowledge not stored is knowledge lost.
+
 ## Development Commands
 
 ### Bacon Continuous Testing Integration
 
-**CRITICAL**: Always use bacon for continuous testing instead of manual test commands. Bacon provides real-time feedback and eliminates the need for manual test execution.
+**CRITICAL**: Always use bacon for continuous testing instead of manual test commands. Bacon
+provides real-time feedback and eliminates the need for manual test execution.
 
-#### Bacon Setup and Usage
+#### Bacon Setup and Usage (MANDATORY)
 
 ```bash
+# MANDATORY: Start bacon in headless mode at beginning of ANY work session
 bacon --headless                     # Start bacon in background for continuous testing
+# Use run_in_background: true when starting via Bash tool
+
+# Optional interactive modes (for human use only):
 bacon nextest                       # Explicitly run nextest job
 bacon clippy                        # Run clippy continuously
 bacon check                         # Run cargo check continuously
 ```
 
-#### Bacon Integration Workflow
+#### Bacon Integration Workflow (NON-NEGOTIABLE)
 
-1. **Start bacon at beginning of work session**: `bacon --headless` (runs as background process)
+1. **MANDATORY STARTUP**: ALWAYS check if bacon is running, start with `bacon --headless` if not
+   - Use: `ps aux | grep "bacon --headless" | grep -v grep` to check
+   - Start with: `bacon --headless` using `run_in_background: true`
+   - **CRITICAL**: TDD cycle CANNOT function without bacon running
 2. **Monitor bacon output**: Use BashOutput tool to check test results and compilation feedback
 3. **React to failures immediately**: Address compilation errors and test failures as they occur
 4. **Look for expected failures**: During TDD, expect to see specific test failures in bacon output
 5. **Verify success**: Confirm all tests pass before committing changes
+6. **NEVER use manual test commands**: No `cargo test`, `cargo nextest run`, etc. - bacon only!
 
 #### Manual Testing (Only When Bacon Unavailable)
 
@@ -67,15 +124,47 @@ Caxton is a **multi-agent orchestration server** that provides WebAssembly-based
 - **Observability Layer**: Built-in structured logging, metrics (Prometheus), and distributed tracing (OpenTelemetry)
 - **Agent Lifecycle Management**: Deployment strategies including blue-green, canary, and shadow deployments
 
-### Domain Model Philosophy
+### Domain Model Philosophy (Scott Wlaschin Approach)
 
-The codebase follows **type-driven development** principles:
+The codebase follows **Domain Modeling Made Functional** principles inspired by Scott Wlaschin:
 
-- Illegal states are unrepresentable through the type system
-- Phantom types for agent state transitions (`Agent<Unloaded>` → `Agent<Loaded>` → `Agent<Running>`)
-- Smart constructors with validation (e.g., `AgentId`, `Percentage`)
-- Comprehensive error types with domain-specific variants
-- nutype crate for eliminating primitive obsession
+#### Core Philosophy: "Make Illegal States Unrepresentable"
+
+- **Type-driven domain design**: Use Rust's type system to encode business rules
+- **Parse, don't validate**: Transform unstructured data into structured types at boundaries
+- **Algebraic data types**: Sum types (enums) for OR, Product types (structs) for AND
+- **Total functions over partial**: Prefer functions that work for all inputs of their type
+- **Railway-oriented programming**: Model workflows as Result chains
+
+#### Implementation Patterns
+
+- **Domain primitives with nutype**: Eliminate primitive obsession with validated newtypes
+- **Phantom types for state machines**: (`Agent<Unloaded>` → `Agent<Loaded>` → `Agent<Running>`)
+- **Smart constructors with validation**: Ensure only valid data can exist
+- **Comprehensive error types**: Domain-specific error variants that guide handling
+- **Workflow signatures without implementations**: Define domain operations as function signatures
+
+#### Domain-First Development
+
+Use `/sparc/model` command for pure domain modeling:
+- Create domain types that make illegal states unrepresentable
+- Model state machines and workflows as types
+- Define trait-based capabilities
+- Focus on **what** the domain is, not **how** it works
+
+#### When to Use Domain Modeling vs Full SPARC
+
+**Use `/sparc/model` when:**
+- Starting a new feature area and need to establish domain types first
+- Complex business rules need to be encoded in the type system
+- You want to explore the problem space before implementing solutions
+- The domain is unclear and needs type-driven exploration
+
+**Use `/sparc` (full workflow) when:**
+- Domain types already exist and you need to implement functionality
+- Building on existing domain foundation
+- Ready for test-driven development cycles
+- Implementation work needs to be done
 
 ### Key Domain Types
 
@@ -236,13 +325,30 @@ The SPARC workflow integrates with GitHub pull requests to ensure professional d
 
 ### MANDATORY Memory Storage (CRITICAL)
 
-**Every SPARC phase MUST store knowledge in MCP memory for systematic improvement:**
+**Every SPARC phase MUST store knowledge using the dual-memory architecture:**
+
+#### Memory Storage Protocol
+
+1. **Generate UUID**: Use `mcp__uuid__generateUuid` to create unique identifier
+2. **Store Content**: Use `mcp__qdrant__qdrant-store` to save the actual memory content
+3. **Format**: Include metadata in the memory text: `[Entity: name, Type: type, UUID: {generated-uuid}]`
+4. **Graph Relations**: Use `mcp__sparc-memory__create_entities` and
+   `mcp__sparc-memory__create_relations` to build entity graph
+5. **Cross-Reference**: Store UUID as node in sparc-memory, linking to related entities
+
+#### Required Storage by Phase
 
 - **Research Phase**: MUST store findings, sources, patterns, and API documentation
 - **Planning Phase**: MUST store strategies, decisions, task breakdowns, and rationale
 - **Implementation Phase**: MUST store TDD cycles, type improvements, patterns, and solutions
 - **Expert Review Phase**: MUST store insights, quality patterns, and architectural analysis
 - **PR Management**: MUST store workflow patterns, strategies, and outcomes
+
+#### Dual-System Search Strategy
+
+- **Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by meaning
+- **Graph Traversal**: Use `mcp__sparc-memory__search_nodes` to find related memories
+- **Combined Workflow**: Search qdrant → extract UUIDs → traverse graph for context
 
 **Knowledge not stored is knowledge lost. This is not optional and will be enforced by the SPARC orchestrator.**
 
@@ -290,12 +396,13 @@ PRs created in **draft status only** - humans control ready-for-review.
 
 Primary commands:
 
-- `/sparc` - Full story workflow with PR integration
+- `/sparc` - Full story workflow with PR integration (includes TDD cycles)
+- `/sparc/model` - Pure domain modeling using Scott Wlaschin's principles (NO implementation)
 - `/sparc/pr` - Create draft PR for completed story
 - `/sparc/review` - Respond to PR feedback
 - `/sparc/status` - Check branch/PR/story status
 
-Subagents: researcher, planner, implementer, type-architect, test-hardener, expert, documentation-writer, pr-manager.
+Subagents: researcher, planner, domain-modeler, implementer, type-architect, test-hardener, expert, documentation-writer, pr-manager.
 
 After each story: run `mcp__cargo__cargo_clippy`, `mcp__cargo__cargo_fmt_check`, and `mcp__cargo__cargo_test`.
 
@@ -322,29 +429,61 @@ The SPARC coordinator's ONLY responsibilities are:
 6. **Enforce TDD discipline** - Ensure proper Red→Green→Refactor cycles with agent authority
 7. **Verify memory usage** - Ensure all agents search and store knowledge appropriately
 
-**TDD Cycle Authority and Control (CRITICAL):**
+#### Domain Modeling Integration (CRITICAL)
+
+**When to invoke domain-modeler during SPARC workflow:**
+
+- **During Planning Phase**: If planner identifies missing or inadequate domain types
+- **During Implementation**: If red/green/refactor agents identify need for stronger types
+- **Type Escalation Protocol**: When implementers discover illegal states are representable
+- **Before TDD Cycles**: When story requires new domain concepts not yet modeled
+
+**Domain-modeler handoff protocol:**
+
+1. **Invocation Trigger**: Planner or implementer identifies domain modeling need
+2. **Context Passing**: Provide domain requirements and business rules to domain-modeler
+3. **Type Creation**: Domain-modeler creates types with nutype, phantom types, traits
+4. **NO IMPLEMENTATION**: Domain-modeler provides only types and signatures
+5. **Return to TDD**: After domain modeling, resume normal Red→Green→Refactor cycles
+
+#### TDD Cycle Authority and Control (CRITICAL)
 
 - **Red-implementer has FINAL authority** on cycle completion - no other agent can override their assessment
-- **Minimum one complete cycle** required per story (Red→Green→Refactor)
+- **Minimum one complete cycle** required per story (Red→Green→Red→...→Refactor)
+- **CRITICAL FLOW**: Green ALWAYS returns to Red (never directly to Refactor)
+  - After Green makes tests pass → Red decides: write another test OR proceed to Refactor
+  - Only Red-implementer can authorize moving to Refactor phase
 - **Strict ping-pong enforcement** - Red and Green agents alternate with smallest possible changes
-- **Planner verification gate** - Planner MUST approve before refactor-implementer can proceed
-- **No test modification in green** - Green-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
-- **No test modification in refactor** - Refactor-implementer PROHIBITED from changing tests; must hand back to red-implementer if needed
+- **No test modification in green** - Green-implementer PROHIBITED from changing tests; must
+  hand back to red-implementer if needed
+- **No test modification in refactor** - Refactor-implementer PROHIBITED from changing tests;
+  must hand back to red-implementer if needed
+- **Refactor escalation** - If refactor-implementer discovers missing functionality, MUST escalate
+  back to coordinator (cannot add features)
+- **Domain type escalation** - If any implementer discovers representable illegal states, MUST
+  escalate to coordinator for domain-modeler invocation
 
 **Memory Usage Enforcement (MANDATORY):**
 
-- **All agents MUST search MCP memory** for relevant knowledge when receiving control
-- **All agents MUST store patterns and insights** after completing their work
+- **All agents MUST search both systems** for relevant knowledge when receiving control:
+  - Use `mcp__qdrant__qdrant-find` for semantic search
+  - Use `mcp__sparc-memory__search_nodes` for entity relationships
+- **All agents MUST store patterns and insights** using dual-memory protocol:
+  - Generate UUID with `mcp__uuid__generateUuid`
+  - Store content in qdrant with UUID tag
+  - Create/update entity graph in sparc-memory
 - **Coordinator tracks compliance** - Agents failing memory requirements will be reprimanded
 
 ALL actual work MUST be performed by the specialized subagents:
 
 - `researcher` - Gathers information and creates research briefs
 - `planner` - Creates implementation plans following TDD principles
-- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL AUTHORITY on cycle completion) (CAN ONLY modify test code)
+- `domain-modeler` - Creates domain types using Scott Wlaschin's principles (NO implementation logic)
+- `red-implementer` - Writes failing tests that capture behavioral intent (FINAL AUTHORITY on
+  cycle completion) (CAN ONLY modify test code)
 - `green-implementer` - Implements minimal code to make tests pass (CANNOT modify tests)
 - `refactor-implementer` - Improves code structure while preserving behavior (CANNOT modify tests)
-- `type-architect` - Designs domain types and type-state machines (CANNOT modify tests)
+- `type-architect` - Refines existing types to strengthen guarantees (CANNOT modify tests)
 - `test-hardener` - Strengthens tests and proposes type improvements
 - `expert` - Reviews code for correctness and best practices (CANNOT modify code)
 - `documentation-writer` - Creates user guides, API docs, and operational procedures (ONLY writes documentation)
