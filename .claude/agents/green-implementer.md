@@ -8,7 +8,8 @@ mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy,
 mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities,
 mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations,
 mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes,
-mcp__sparc-memory__read_graph
+mcp__sparc-memory__read_graph, mcp__uuid__generateUuid,
+mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Green Implementer Agent

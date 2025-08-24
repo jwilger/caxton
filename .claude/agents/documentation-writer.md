@@ -5,7 +5,8 @@ documentation, and operational procedures. ONLY writes documentation.
 tools: Read, Write, Edit, MultiEdit, Grep, Glob,
 mcp__sparc-memory__create_entities, mcp__sparc-memory__create_relations,
 mcp__sparc-memory__add_observations, mcp__sparc-memory__search_nodes,
-mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph
+mcp__sparc-memory__open_nodes, mcp__sparc-memory__read_graph,
+mcp__uuid__generateUuid, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Documentation Writer Agent
