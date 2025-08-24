@@ -1,0 +1,9 @@
+[build]
+rustflags = ["-D", "warnings"]
+
+[alias]
+# Clippy with deny warnings
+clippy-strict = "clippy -- -D warnings"
+
+# Test with deny warnings
+test-strict = "test -- --deny warnings"
