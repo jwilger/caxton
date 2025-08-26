@@ -23,7 +23,16 @@
 
 use crate::database::{DatabaseConnection, DatabaseResult};
 use crate::domain_types::{AgentId, AgentName};
+use crate::message_router::domain_types::{
+    Conversation, ConversationCreatedAt, ConversationId, MessageCount, MessageTimestamp,
+    ProtocolName,
+};
+use crate::message_router::traits::ConversationError;
 use async_trait::async_trait;
+use sqlx::Row;
+use std::collections::HashSet;
+use std::sync::Once;
+use tracing::{info, instrument, warn};
 
 /// Persistent storage interface for agent registry operations.
 ///
@@ -159,6 +168,409 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
         crate::message_router::traits::RouterError,
     > {
         unimplemented!("Message listing not yet implemented")
+    }
+}
+
+// SQL Constants for ConversationStorage
+const CREATE_CONVERSATION_STORAGE_TABLE: &str = r"
+CREATE TABLE IF NOT EXISTS conversations (
+    conversation_id TEXT PRIMARY KEY,
+    protocol_name TEXT,
+    created_at INTEGER NOT NULL,
+    last_activity INTEGER NOT NULL,
+    message_count INTEGER NOT NULL DEFAULT 0,
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+    CHECK (length(conversation_id) = 36),
+    CHECK (message_count >= 0)
+);
+";
+
+const CREATE_CONVERSATION_PARTICIPANTS_TABLE: &str = r"
+CREATE TABLE IF NOT EXISTS conversation_participants (
+    conversation_id TEXT NOT NULL,
+    participant_id TEXT NOT NULL,
+    PRIMARY KEY (conversation_id, participant_id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id),
+    CHECK (length(conversation_id) = 36),
+    CHECK (length(participant_id) = 36)
+);
+";
+
+const INSERT_CONVERSATION: &str = r"
+INSERT OR REPLACE INTO conversations (
+    conversation_id, protocol_name, created_at, last_activity, message_count, is_archived
+) VALUES (?, ?, ?, ?, ?, ?);
+";
+
+const INSERT_PARTICIPANT: &str = r"
+INSERT INTO conversation_participants (conversation_id, participant_id)
+VALUES (?, ?);
+";
+
+const DELETE_PARTICIPANTS: &str = r"
+DELETE FROM conversation_participants WHERE conversation_id = ?;
+";
+
+const SELECT_CONVERSATION: &str = r"
+SELECT conversation_id, protocol_name, created_at, last_activity, message_count, is_archived
+FROM conversations WHERE conversation_id = ?;
+";
+
+const SELECT_PARTICIPANTS: &str = r"
+SELECT participant_id FROM conversation_participants WHERE conversation_id = ?;
+";
+
+const UPDATE_CONVERSATION_ARCHIVE_STATUS: &str = r"
+UPDATE conversations SET is_archived = TRUE WHERE conversation_id = ?;
+";
+
+const SELECT_AGENT_CONVERSATIONS: &str = r"
+SELECT DISTINCT c.conversation_id
+FROM conversations c
+JOIN conversation_participants p ON c.conversation_id = p.conversation_id
+WHERE p.participant_id = ? AND c.is_archived = FALSE
+ORDER BY c.last_activity DESC;
+";
+
+static CONVERSATION_SCHEMA_CREATED: Once = Once::new();
+
+/// SQLite-based implementation for conversation persistence
+///
+/// Minimal implementation to pass test
+pub struct SqliteConversationStorage {
+    connection: DatabaseConnection,
+}
+
+impl SqliteConversationStorage {
+    /// Creates a new `SqliteConversationStorage` instance
+    pub fn new(connection: DatabaseConnection) -> Self {
+        Self { connection }
+    }
+
+    /// Ensures conversation schema is initialized
+    async fn ensure_schema_initialized(&self) -> Result<(), ConversationError> {
+        let pool = self.connection.pool();
+
+        // Create conversations table
+        sqlx::query(CREATE_CONVERSATION_STORAGE_TABLE)
+            .execute(pool)
+            .await
+            .map_err(|e| ConversationError::StorageError {
+                source: Box::new(e),
+            })?;
+
+        // Create participants table
+        sqlx::query(CREATE_CONVERSATION_PARTICIPANTS_TABLE)
+            .execute(pool)
+            .await
+            .map_err(|e| ConversationError::StorageError {
+                source: Box::new(e),
+            })?;
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl crate::message_router::traits::ConversationStorage for SqliteConversationStorage {
+    #[instrument(skip(self, conversation))]
+    async fn save_conversation(
+        &self,
+        conversation: &Conversation,
+    ) -> Result<(), ConversationError> {
+        // Minimal implementation to pass test
+        CONVERSATION_SCHEMA_CREATED.call_once(|| {
+            // Schema will be created on first database operation
+        });
+
+        self.ensure_schema_initialized().await?;
+
+        let pool = self.connection.pool();
+
+        // Clear existing participants
+        sqlx::query(DELETE_PARTICIPANTS)
+            .bind(conversation.id.to_string())
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                warn!(
+                    "Failed to delete participants for conversation {}: {}",
+                    conversation.id, e
+                );
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        // Insert conversation record
+        let protocol_name = conversation
+            .protocol
+            .as_ref()
+            .map(std::string::ToString::to_string);
+        let created_at = i64::try_from(
+            conversation
+                .created_at
+                .into_inner()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        )
+        .map_err(|e| {
+            warn!(
+                "Failed to convert created_at timestamp for conversation {}: {}",
+                conversation.id, e
+            );
+            ConversationError::StorageError {
+                source: Box::new(e),
+            }
+        })?;
+        let last_activity = i64::try_from(
+            conversation
+                .last_activity
+                .into_inner()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        )
+        .map_err(|e| {
+            warn!(
+                "Failed to convert last_activity timestamp for conversation {}: {}",
+                conversation.id, e
+            );
+            ConversationError::StorageError {
+                source: Box::new(e),
+            }
+        })?;
+        let message_count =
+            u32::try_from(conversation.message_count.into_inner()).map_err(|e| {
+                warn!(
+                    "Failed to convert message_count for conversation {}: {}",
+                    conversation.id, e
+                );
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        sqlx::query(INSERT_CONVERSATION)
+            .bind(conversation.id.to_string())
+            .bind(protocol_name)
+            .bind(created_at)
+            .bind(last_activity)
+            .bind(message_count)
+            .bind(false) // is_archived
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                warn!("Failed to insert conversation {}: {}", conversation.id, e);
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        // Insert participants
+        for participant in &conversation.participants {
+            sqlx::query(INSERT_PARTICIPANT)
+                .bind(conversation.id.to_string())
+                .bind(participant.to_string())
+                .execute(pool)
+                .await
+                .map_err(|e| {
+                    warn!(
+                        "Failed to insert participant {} for conversation {}: {}",
+                        participant, conversation.id, e
+                    );
+                    ConversationError::StorageError {
+                        source: Box::new(e),
+                    }
+                })?;
+        }
+
+        info!(
+            "Saved conversation {} with {} participants",
+            conversation.id,
+            conversation.participants.len()
+        );
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    async fn load_conversation(
+        &self,
+        conversation_id: ConversationId,
+    ) -> Result<Option<Conversation>, ConversationError> {
+        let pool = self.connection.pool();
+
+        // Load conversation record
+        let conversation_row = sqlx::query(SELECT_CONVERSATION)
+            .bind(conversation_id.to_string())
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| {
+                warn!("Failed to load conversation {}: {}", conversation_id, e);
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        let Some(conversation_row) = conversation_row else {
+            return Ok(None);
+        };
+
+        // Load participants
+        let participant_rows = sqlx::query(SELECT_PARTICIPANTS)
+            .bind(conversation_id.to_string())
+            .fetch_all(pool)
+            .await
+            .map_err(|e| {
+                warn!(
+                    "Failed to load participants for conversation {}: {}",
+                    conversation_id, e
+                );
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        // Parse participants
+        let mut participants = HashSet::new();
+        for row in participant_rows {
+            let participant_str: String = row.get("participant_id");
+            let participant_uuid = participant_str.parse::<uuid::Uuid>().map_err(|e| {
+                warn!(
+                    "Failed to parse participant UUID {}: {}",
+                    participant_str, e
+                );
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+            participants.insert(AgentId::new(participant_uuid));
+        }
+
+        // Parse conversation fields
+        let protocol_name_str: Option<String> = conversation_row.get("protocol_name");
+        let protocol = if let Some(name) = protocol_name_str {
+            Some(
+                ProtocolName::try_new(name).map_err(|e| ConversationError::StorageError {
+                    source: Box::new(e),
+                })?,
+            )
+        } else {
+            None
+        };
+
+        let created_at_secs: i64 = conversation_row.get("created_at");
+        let created_at = ConversationCreatedAt::new(
+            std::time::UNIX_EPOCH
+                + std::time::Duration::from_secs(u64::try_from(created_at_secs).map_err(|e| {
+                    warn!(
+                        "Failed to convert created_at timestamp for conversation {}: {}",
+                        conversation_id, e
+                    );
+                    ConversationError::StorageError {
+                        source: Box::new(e),
+                    }
+                })?),
+        );
+
+        let last_activity_secs: i64 = conversation_row.get("last_activity");
+        let last_activity = MessageTimestamp::new(
+            std::time::UNIX_EPOCH
+                + std::time::Duration::from_secs(u64::try_from(last_activity_secs).map_err(
+                    |e| {
+                        warn!(
+                            "Failed to convert last_activity timestamp for conversation {}: {}",
+                            conversation_id, e
+                        );
+                        ConversationError::StorageError {
+                            source: Box::new(e),
+                        }
+                    },
+                )?),
+        );
+
+        let message_count_val: u32 = conversation_row.get("message_count");
+        let message_count = MessageCount::new(message_count_val as usize);
+
+        let conversation = Conversation {
+            id: conversation_id,
+            participants,
+            protocol,
+            created_at,
+            last_activity,
+            message_count,
+        };
+
+        info!(
+            "Loaded conversation {} with {} participants",
+            conversation_id,
+            conversation.participants.len()
+        );
+        Ok(Some(conversation))
+    }
+
+    #[instrument(skip(self, conversation))]
+    async fn archive_conversation(
+        &self,
+        conversation: &Conversation,
+    ) -> Result<(), ConversationError> {
+        let pool = self.connection.pool();
+
+        sqlx::query(UPDATE_CONVERSATION_ARCHIVE_STATUS)
+            .bind(conversation.id.to_string())
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                warn!("Failed to archive conversation {}: {}", conversation.id, e);
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        info!("Archived conversation {}", conversation.id);
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    async fn list_agent_conversations(
+        &self,
+        agent_id: AgentId,
+    ) -> Result<Vec<ConversationId>, ConversationError> {
+        let pool = self.connection.pool();
+
+        let rows = sqlx::query(SELECT_AGENT_CONVERSATIONS)
+            .bind(agent_id.to_string())
+            .fetch_all(pool)
+            .await
+            .map_err(|e| {
+                warn!("Failed to list conversations for agent {}: {}", agent_id, e);
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+        let mut conversation_ids = Vec::new();
+        for row in rows {
+            let conversation_id_str: String = row.get("conversation_id");
+            let conversation_uuid = conversation_id_str.parse::<uuid::Uuid>().map_err(|e| {
+                warn!(
+                    "Failed to parse conversation UUID {}: {}",
+                    conversation_id_str, e
+                );
+                ConversationError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+            conversation_ids.push(ConversationId::new(conversation_uuid));
+        }
+
+        info!(
+            "Listed {} conversations for agent {}",
+            conversation_ids.len(),
+            agent_id
+        );
+        Ok(conversation_ids)
     }
 }
 
