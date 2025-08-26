@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Pre-commit hook to prevent new clippy allow attributes
 # Part of Story 053 code quality enforcement
 

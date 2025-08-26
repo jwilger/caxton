@@ -1,11 +1,7 @@
 ---
 name: expert
-description: Read-only deep reasoning. Validate type-state safety, FCIS
-boundaries, and ROP flows. No edits or commands.
-tools: Read, Grep, Glob, BashOutput, mcp__sparc-memory__create_entities,
-mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations,
-mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes,
-mcp__sparc-memory__read_graph
+description: Read-only deep reasoning. Validate type-state safety, FCIS boundaries, and ROP flows. No edits or commands.
+tools: Read, Grep, Glob, BashOutput, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Expert Agent
@@ -64,50 +60,29 @@ building:
 
   across the codebase
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Expert Review Insights
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include architectural insights, quality patterns, safety analysis
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "expert-review"
-   - observations: Details about the architectural analysis
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include architectural insights, quality patterns, safety analysis
+- Add clear context about architectural analysis
+- Document cross-cutting concerns
 ```
 
 #### Retrieving Expert Knowledge
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar architectural patterns, quality concerns
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected implementation patterns and design decisions
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar architectural patterns, quality concerns
+- Retrieve previous review insights
+- Access safety analysis results
 ```
 
-### Knowledge Linking Strategy
+### Knowledge Categories
 
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification ("expert-review",
-
-  "quality-pattern", "architecture-decision")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
-
-**Entity Types:**
+**Pattern Types:**
 
 - `review_pattern` - Common code quality issues and solutions
 - `quality_pattern` - Successful architectural and implementation practices
@@ -115,14 +90,6 @@ descriptive names.
 - `safety_analysis` - Security, type safety, and resource safety findings
 - `cross_cutting_concern` - System-wide patterns affecting multiple areas
 - `refactoring_opportunity` - Systematic improvements across codebase
-
-**Relations:**
-
-- `violates` - Links code patterns to architectural principles
-- `implements` - Links code to architectural decisions
-- `affects` - Links cross-cutting concerns to specific modules
-- `improves` - Links refactoring opportunities to quality outcomes
-- `validates` - Links safety analysis to security requirements
 
 ### Cross-Agent Knowledge Sharing
 
