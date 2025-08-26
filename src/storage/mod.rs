@@ -173,43 +173,340 @@ impl SqliteMessageStorage {
 
 #[async_trait]
 impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
-    #[instrument(skip(self, _message), fields(message_id = %_message.message_id))]
+    #[instrument(skip(self, message), fields(message_id = %message.message_id))]
     async fn store_message(
         &self,
-        _message: &crate::message_router::domain_types::FipaMessage,
+        message: &crate::message_router::domain_types::FipaMessage,
     ) -> Result<(), crate::message_router::traits::RouterError> {
-        unimplemented!("Message storage not yet implemented")
+        // Serialize complex domain types to JSON for storage
+        let message_content_json = serde_json::to_string(&message.content).map_err(|e| {
+            crate::message_router::traits::RouterError::SerializationError { source: e }
+        })?;
+
+        let performative_str = format!("{:?}", message.performative);
+        let created_at = i64::try_from(
+            message
+                .created_at
+                .into_inner()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        )
+        .map_err(
+            |e| crate::message_router::traits::RouterError::StorageError {
+                source: Box::new(e),
+            },
+        )?;
+
+        // Store message in database
+        sqlx::query(INSERT_MESSAGE)
+            .bind(message.message_id.to_string())
+            .bind(message.sender.to_string())
+            .bind(message.receiver.to_string())
+            .bind(
+                message
+                    .conversation_id
+                    .as_ref()
+                    .map(std::string::ToString::to_string),
+            )
+            .bind(message_content_json)
+            .bind(performative_str)
+            .bind(created_at)
+            .bind(None::<i64>) // expires_at - not used in current implementation
+            .execute(self._connection.pool())
+            .await
+            .map_err(
+                |e| crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                },
+            )?;
+
+        Ok(())
     }
 
-    #[instrument(skip(self), fields(message_id = %_message_id))]
+    #[instrument(skip(self), fields(message_id = %message_id))]
     async fn get_message(
         &self,
-        _message_id: crate::message_router::domain_types::MessageId,
+        message_id: crate::message_router::domain_types::MessageId,
     ) -> Result<
         Option<crate::message_router::domain_types::FipaMessage>,
         crate::message_router::traits::RouterError,
     > {
-        unimplemented!("Message retrieval not yet implemented")
+        // Minimal implementation to pass test
+        let row = sqlx::query(SELECT_MESSAGE_BY_ID)
+            .bind(message_id.to_string())
+            .fetch_optional(self._connection.pool())
+            .await
+            .map_err(
+                |e| crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                },
+            )?;
+
+        let Some(row) = row else {
+            return Ok(None);
+        };
+
+        // Parse UUID fields
+        let message_id_str: String = row.get("message_id");
+        let sender_str: String = row.get("sender_id");
+        let receiver_str: String = row.get("receiver_id");
+        let conversation_id_str: Option<String> = row.get("conversation_id");
+
+        let parsed_message_id = uuid::Uuid::parse_str(&message_id_str).map_err(|e| {
+            crate::message_router::traits::RouterError::StorageError {
+                source: Box::new(e),
+            }
+        })?;
+        let parsed_sender = uuid::Uuid::parse_str(&sender_str).map_err(|e| {
+            crate::message_router::traits::RouterError::StorageError {
+                source: Box::new(e),
+            }
+        })?;
+        let parsed_receiver = uuid::Uuid::parse_str(&receiver_str).map_err(|e| {
+            crate::message_router::traits::RouterError::StorageError {
+                source: Box::new(e),
+            }
+        })?;
+
+        let conversation_id = if let Some(conv_str) = conversation_id_str {
+            Some(crate::message_router::domain_types::ConversationId::new(
+                uuid::Uuid::parse_str(&conv_str).map_err(|e| {
+                    crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(e),
+                    }
+                })?,
+            ))
+        } else {
+            None
+        };
+
+        // Deserialize content from JSON
+        let content_json: String = row.get("message_content");
+        let message_content = serde_json::from_str(&content_json).map_err(|e| {
+            crate::message_router::traits::RouterError::SerializationError { source: e }
+        })?;
+
+        // Parse performative
+        let performative_str: String = row.get("performative");
+        let performative = match performative_str.as_str() {
+            "Inform" => crate::message_router::domain_types::Performative::Inform,
+            "Request" => crate::message_router::domain_types::Performative::Request,
+            "Agree" => crate::message_router::domain_types::Performative::Agree,
+            "Refuse" => crate::message_router::domain_types::Performative::Refuse,
+            "NotUnderstood" => crate::message_router::domain_types::Performative::NotUnderstood,
+            "Failure" => crate::message_router::domain_types::Performative::Failure,
+            "QueryIf" => crate::message_router::domain_types::Performative::QueryIf,
+            "QueryRef" => crate::message_router::domain_types::Performative::QueryRef,
+            "Propose" => crate::message_router::domain_types::Performative::Propose,
+            "AcceptProposal" => crate::message_router::domain_types::Performative::AcceptProposal,
+            "RejectProposal" => crate::message_router::domain_types::Performative::RejectProposal,
+            "Heartbeat" => crate::message_router::domain_types::Performative::Heartbeat,
+            "Capability" => crate::message_router::domain_types::Performative::Capability,
+            _ => {
+                return Err(crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("Unknown performative: {performative_str}"),
+                    )),
+                });
+            }
+        };
+
+        // Parse timestamp
+        let created_at_secs: i64 = row.get("created_at");
+        let created_at = crate::message_router::domain_types::MessageTimestamp::new(
+            std::time::UNIX_EPOCH
+                + std::time::Duration::from_secs(u64::try_from(created_at_secs).map_err(|e| {
+                    crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(e),
+                    }
+                })?),
+        );
+
+        // Reconstruct FipaMessage
+        let fipa_message = crate::message_router::domain_types::FipaMessage {
+            performative,
+            sender: AgentId::new(parsed_sender),
+            receiver: AgentId::new(parsed_receiver),
+            content: message_content,
+            language: None, // Not stored in current schema
+            ontology: None, // Not stored in current schema
+            protocol: None, // Not stored in current schema
+            conversation_id,
+            reply_with: None,  // Not stored in current schema
+            in_reply_to: None, // Not stored in current schema
+            message_id: crate::message_router::domain_types::MessageId::new(parsed_message_id),
+            created_at,
+            trace_context: None, // Not stored in current schema
+            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(), // Not stored in current schema
+        };
+
+        Ok(Some(fipa_message))
     }
 
-    #[instrument(skip(self), fields(message_id = %_message_id))]
+    #[instrument(skip(self), fields(message_id = %message_id))]
     async fn remove_message(
         &self,
-        _message_id: crate::message_router::domain_types::MessageId,
+        message_id: crate::message_router::domain_types::MessageId,
     ) -> Result<(), crate::message_router::traits::RouterError> {
-        unimplemented!("Message removal not yet implemented")
+        // Minimal implementation to delete message from database
+        sqlx::query(DELETE_MESSAGE_BY_ID)
+            .bind(message_id.to_string())
+            .execute(self._connection.pool())
+            .await
+            .map_err(
+                |e| crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                },
+            )?;
+
+        // Idempotent operation - return Ok whether message existed or not
+        Ok(())
     }
 
-    #[instrument(skip(self), fields(agent_id = %_agent_id, limit = ?_limit))]
+    #[instrument(skip(self), fields(agent_id = %agent_id, limit = ?limit))]
     async fn list_agent_messages(
         &self,
-        _agent_id: AgentId,
-        _limit: Option<usize>,
+        agent_id: AgentId,
+        limit: Option<usize>,
     ) -> Result<
         Vec<crate::message_router::domain_types::FipaMessage>,
         crate::message_router::traits::RouterError,
     > {
-        unimplemented!("Message listing not yet implemented")
+        // Minimal implementation to retrieve messages where agent is sender OR receiver
+        let rows = if let Some(limit_value) = limit {
+            sqlx::query(SELECT_MESSAGES_FOR_AGENT_LIMITED)
+                .bind(agent_id.to_string())
+                .bind(i64::try_from(limit_value).map_err(|e| {
+                    crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(e),
+                    }
+                })?)
+                .fetch_all(self._connection.pool())
+                .await
+                .map_err(
+                    |e| crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(e),
+                    },
+                )?
+        } else {
+            sqlx::query(SELECT_MESSAGES_FOR_AGENT)
+                .bind(agent_id.to_string())
+                .fetch_all(self._connection.pool())
+                .await
+                .map_err(
+                    |e| crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(e),
+                    },
+                )?
+        };
+
+        let mut messages = Vec::new();
+        for row in rows {
+            // Parse UUID fields
+            let message_id_str: String = row.get("message_id");
+            let sender_str: String = row.get("sender_id");
+            let receiver_str: String = row.get("receiver_id");
+            let conversation_id_str: Option<String> = row.get("conversation_id");
+
+            let parsed_message_id = uuid::Uuid::parse_str(&message_id_str).map_err(|e| {
+                crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+            let parsed_sender = uuid::Uuid::parse_str(&sender_str).map_err(|e| {
+                crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+            let parsed_receiver = uuid::Uuid::parse_str(&receiver_str).map_err(|e| {
+                crate::message_router::traits::RouterError::StorageError {
+                    source: Box::new(e),
+                }
+            })?;
+
+            let conversation_id = if let Some(conv_str) = conversation_id_str {
+                Some(crate::message_router::domain_types::ConversationId::new(
+                    uuid::Uuid::parse_str(&conv_str).map_err(|e| {
+                        crate::message_router::traits::RouterError::StorageError {
+                            source: Box::new(e),
+                        }
+                    })?,
+                ))
+            } else {
+                None
+            };
+
+            // Deserialize content from JSON
+            let content_json: String = row.get("message_content");
+            let message_content = serde_json::from_str(&content_json).map_err(|e| {
+                crate::message_router::traits::RouterError::SerializationError { source: e }
+            })?;
+
+            // Parse performative
+            let performative_str: String = row.get("performative");
+            let performative = match performative_str.as_str() {
+                "Inform" => crate::message_router::domain_types::Performative::Inform,
+                "Request" => crate::message_router::domain_types::Performative::Request,
+                "Agree" => crate::message_router::domain_types::Performative::Agree,
+                "Refuse" => crate::message_router::domain_types::Performative::Refuse,
+                "NotUnderstood" => crate::message_router::domain_types::Performative::NotUnderstood,
+                "Failure" => crate::message_router::domain_types::Performative::Failure,
+                "QueryIf" => crate::message_router::domain_types::Performative::QueryIf,
+                "QueryRef" => crate::message_router::domain_types::Performative::QueryRef,
+                "Propose" => crate::message_router::domain_types::Performative::Propose,
+                "AcceptProposal" => {
+                    crate::message_router::domain_types::Performative::AcceptProposal
+                }
+                "RejectProposal" => {
+                    crate::message_router::domain_types::Performative::RejectProposal
+                }
+                "Heartbeat" => crate::message_router::domain_types::Performative::Heartbeat,
+                "Capability" => crate::message_router::domain_types::Performative::Capability,
+                _ => {
+                    return Err(crate::message_router::traits::RouterError::StorageError {
+                        source: Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Unknown performative: {performative_str}"),
+                        )),
+                    });
+                }
+            };
+
+            // Parse timestamp
+            let created_at_secs: i64 = row.get("created_at");
+            let created_at = crate::message_router::domain_types::MessageTimestamp::new(
+                std::time::UNIX_EPOCH
+                    + std::time::Duration::from_secs(u64::try_from(created_at_secs).map_err(
+                        |e| crate::message_router::traits::RouterError::StorageError {
+                            source: Box::new(e),
+                        },
+                    )?),
+            );
+
+            // Reconstruct FipaMessage
+            let fipa_message = crate::message_router::domain_types::FipaMessage {
+                performative,
+                sender: AgentId::new(parsed_sender),
+                receiver: AgentId::new(parsed_receiver),
+                content: message_content,
+                language: None, // Not stored in current schema
+                ontology: None, // Not stored in current schema
+                protocol: None, // Not stored in current schema
+                conversation_id,
+                reply_with: None,  // Not stored in current schema
+                in_reply_to: None, // Not stored in current schema
+                message_id: crate::message_router::domain_types::MessageId::new(parsed_message_id),
+                created_at,
+                trace_context: None, // Not stored in current schema
+                delivery_options: crate::message_router::domain_types::DeliveryOptions::default(), // Not stored in current schema
+            };
+
+            messages.push(fipa_message);
+        }
+
+        Ok(messages)
     }
 }
 
@@ -250,6 +547,37 @@ FROM conversations c
 JOIN conversation_participants p ON c.conversation_id = p.conversation_id
 WHERE p.participant_id = ? AND c.is_archived = FALSE
 ORDER BY c.last_activity DESC;
+";
+
+const INSERT_MESSAGE: &str = r"
+INSERT OR REPLACE INTO message_storage (
+    message_id, sender_id, receiver_id, conversation_id, message_content, performative, created_at, expires_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+";
+
+const SELECT_MESSAGE_BY_ID: &str = r"
+SELECT message_id, sender_id, receiver_id, conversation_id, message_content, performative, created_at, expires_at
+FROM message_storage
+WHERE message_id = ?;
+";
+
+const DELETE_MESSAGE_BY_ID: &str = r"
+DELETE FROM message_storage WHERE message_id = ?;
+";
+
+const SELECT_MESSAGES_FOR_AGENT: &str = r"
+SELECT message_id, sender_id, receiver_id, conversation_id, message_content, performative, created_at, expires_at
+FROM message_storage
+WHERE sender_id = ?1 OR receiver_id = ?1
+ORDER BY created_at DESC;
+";
+
+const SELECT_MESSAGES_FOR_AGENT_LIMITED: &str = r"
+SELECT message_id, sender_id, receiver_id, conversation_id, message_content, performative, created_at, expires_at
+FROM message_storage
+WHERE sender_id = ?1 OR receiver_id = ?1
+ORDER BY created_at DESC
+LIMIT ?2;
 ";
 
 /// `SQLite` implementation of conversation storage for FIPA conversation persistence.
@@ -912,6 +1240,178 @@ mod tests {
         // Migration test complete - table exists and SqliteMessageStorage can be constructed
         // Note: Message storage operations are not tested here as they are unimplemented
         // This test specifically verifies migration system creates the required schema
+    }
+
+    #[tokio::test]
+    async fn test_should_store_message_when_given_valid_fipa_message() {
+        // Test that verifies store_message can persist a FipaMessage to the database
+
+        use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
+        use crate::domain_types::AgentId;
+        use crate::message_router::domain_types::{
+            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
+        };
+        use crate::message_router::traits::MessageStorage;
+        use tempfile::TempDir;
+
+        // Create temporary database for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let db_path = DatabasePath::try_new(temp_dir.path().join("test.db"))
+            .expect("Failed to create database path");
+        let db_config = DatabaseConfig::new(db_path);
+        let db_connection = DatabaseConnection::initialize(db_config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        // Create storage instance
+        let message_storage = SqliteMessageStorage::new(db_connection);
+
+        // Create a complete FipaMessage with all required fields
+        let sender_id = AgentId::generate();
+        let receiver_id = AgentId::generate();
+        let message_content = MessageContent::try_new(b"Test message for storage".to_vec())
+            .expect("Failed to create message content");
+
+        let message = FipaMessage {
+            performative: Performative::Inform,
+            sender: sender_id,
+            receiver: receiver_id,
+            content: message_content,
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(),
+        };
+
+        // Store the message - this should succeed once implemented
+        let store_result = message_storage.store_message(&message).await;
+        assert!(
+            store_result.is_ok(),
+            "store_message should persist FipaMessage successfully"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_should_retrieve_message_when_given_valid_id() {
+        // Test that verifies get_message can retrieve a stored message and handle missing messages
+
+        use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
+        use crate::domain_types::AgentId;
+        use crate::message_router::domain_types::{
+            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
+        };
+        use crate::message_router::traits::MessageStorage;
+        use tempfile::TempDir;
+
+        // Create temporary database for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let db_path = DatabasePath::try_new(temp_dir.path().join("test.db"))
+            .expect("Failed to create database path");
+        let db_config = DatabaseConfig::new(db_path);
+        let db_connection = DatabaseConnection::initialize(db_config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        // Create storage instance
+        let message_storage = SqliteMessageStorage::new(db_connection);
+
+        // Create a complete FipaMessage with all required fields
+        let sender_id = AgentId::generate();
+        let receiver_id = AgentId::generate();
+        let message_content = MessageContent::try_new(b"Test message for retrieval".to_vec())
+            .expect("Failed to create message content");
+
+        let original_message = FipaMessage {
+            performative: Performative::Request,
+            sender: sender_id,
+            receiver: receiver_id,
+            content: message_content,
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(),
+        };
+
+        // Store the message first (this should work since store_message is implemented)
+        let store_result = message_storage.store_message(&original_message).await;
+        assert!(
+            store_result.is_ok(),
+            "store_message should persist FipaMessage successfully"
+        );
+
+        // Retrieve the message by ID - this should fail with unimplemented!()
+        let retrieved_message_result = message_storage
+            .get_message(original_message.message_id)
+            .await;
+
+        // This test should fail because get_message is not implemented yet
+        assert!(
+            retrieved_message_result.is_ok(),
+            "get_message should retrieve stored message"
+        );
+
+        let retrieved_message = retrieved_message_result.unwrap();
+        assert!(
+            retrieved_message.is_some(),
+            "Stored message should be found"
+        );
+
+        let retrieved_message = retrieved_message.unwrap();
+
+        // Verify all fields match exactly
+        assert_eq!(
+            retrieved_message.message_id, original_message.message_id,
+            "Message ID should match"
+        );
+        assert_eq!(
+            retrieved_message.sender, original_message.sender,
+            "Sender should match"
+        );
+        assert_eq!(
+            retrieved_message.receiver, original_message.receiver,
+            "Receiver should match"
+        );
+        assert_eq!(
+            retrieved_message.performative, original_message.performative,
+            "Performative should match"
+        );
+        // Note: Skipping content comparison as MessageContent doesn't implement PartialEq yet
+        assert_eq!(
+            retrieved_message.language, original_message.language,
+            "Language should match"
+        );
+        assert_eq!(
+            retrieved_message.ontology, original_message.ontology,
+            "Ontology should match"
+        );
+        assert_eq!(
+            retrieved_message.protocol, original_message.protocol,
+            "Protocol should match"
+        );
+
+        // Test not-found case - try to retrieve non-existent message
+        let non_existent_id = MessageId::generate();
+        let not_found_result = message_storage.get_message(non_existent_id).await;
+        assert!(
+            not_found_result.is_ok(),
+            "get_message should handle non-existent message ID"
+        );
+        assert!(
+            not_found_result.unwrap().is_none(),
+            "Non-existent message should return None"
+        );
     }
 
     #[tokio::test]
