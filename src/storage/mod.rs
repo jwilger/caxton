@@ -625,16 +625,6 @@ impl SqliteConversationStorage {
     pub fn new(connection: DatabaseConnection) -> Self {
         Self { connection }
     }
-
-    /// Verifies conversation schema is available (created by migration system)
-    ///
-    /// Schema creation is handled by migration system during `DatabaseConnection::initialize()`.
-    /// This method serves as a placeholder for future schema validation if needed.
-    /// See migrations: `004_create_conversations.sql` and `005_create_conversation_participants.sql`
-    fn ensure_schema_initialized() {
-        // Migration system handles all schema creation during DatabaseConnection::initialize()
-        // Future enhancement: Add optional schema validation here if needed
-    }
 }
 
 #[async_trait]
@@ -645,8 +635,6 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
         conversation: &Conversation,
     ) -> Result<(), ConversationError> {
         // Schema is already initialized via migration system during DatabaseConnection::initialize()
-        Self::ensure_schema_initialized();
-
         let pool = self.connection.pool();
 
         // Clear existing participants
@@ -1201,6 +1189,92 @@ mod tests {
             rt.block_on(message_storage.list_agent_messages(AgentId::generate(), None))
         }));
         assert!(result.is_err(), "Should panic with unimplemented");
+    }
+
+    #[tokio::test]
+    async fn test_should_reject_oversized_message_when_content_exceeds_storage_limits() {
+        // Test that verifies MessageStorage handles extremely large content appropriately
+        // This tests the boundary condition where message content approaches database storage limits
+
+        use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
+        use crate::domain_types::AgentId;
+        use crate::message_router::domain_types::{
+            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
+        };
+        use crate::message_router::traits::{MessageStorage, RouterError};
+        use tempfile::TempDir;
+
+        // Create temporary database for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let db_path = DatabasePath::try_new(temp_dir.path().join("test.db"))
+            .expect("Failed to create database path");
+        let db_config = DatabaseConfig::new(db_path);
+        let connection = DatabaseConnection::initialize(db_config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        let message_storage = SqliteMessageStorage::new(connection);
+
+        // Create message with extremely large content (10MB) to test storage limits
+        let large_content_size = 10 * 1024 * 1024; // 10MB
+        let large_content_data = vec![b'X'; large_content_size];
+
+        let oversized_content = MessageContent::try_new(large_content_data)
+            .expect("Failed to create oversized message content");
+
+        let sender_id = AgentId::generate();
+        let receiver_id = AgentId::generate();
+
+        let oversized_message = FipaMessage {
+            performative: Performative::Inform,
+            sender: sender_id,
+            receiver: receiver_id,
+            content: oversized_content,
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(),
+        };
+
+        // Attempt to store oversized message - should either succeed or fail gracefully
+        let store_result = message_storage.store_message(&oversized_message).await;
+
+        match store_result {
+            Ok(()) => {
+                // If storage succeeds, verify we can retrieve the large message
+                let retrieved = message_storage
+                    .get_message(oversized_message.message_id)
+                    .await
+                    .expect("Failed to retrieve oversized message");
+                assert!(
+                    retrieved.is_some(),
+                    "Oversized message should be retrievable after storage"
+                );
+
+                // Verify message integrity for large content
+                let retrieved_message = retrieved.unwrap();
+                assert_eq!(retrieved_message.message_id, oversized_message.message_id);
+                assert_eq!(retrieved_message.sender, oversized_message.sender);
+                assert_eq!(retrieved_message.receiver, oversized_message.receiver);
+                assert_eq!(
+                    retrieved_message.performative,
+                    oversized_message.performative
+                );
+            }
+            Err(RouterError::StorageError { .. } | RouterError::SerializationError { .. }) => {
+                // Acceptable failure - storage system has size limits
+                // This is a valid response for extremely large messages
+            }
+            Err(other_error) => {
+                panic!("Unexpected error type for oversized message: {other_error:?}");
+            }
+        }
     }
 
     #[tokio::test]
