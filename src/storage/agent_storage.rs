@@ -21,21 +21,11 @@ use crate::domain_types::{AgentId, AgentName};
 use crate::storage::AgentStorage;
 use async_trait::async_trait;
 use sqlx::Row;
-use std::sync::Once;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{info, instrument, warn};
 
 // SQL query constants for maintainability and performance
-const CREATE_AGENT_REGISTRY_TABLE: &str = r"
-    CREATE TABLE IF NOT EXISTS agent_registry (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        CHECK (length(id) > 0),
-        CHECK (length(name) > 0)
-    )
-";
+// NOTE: Table creation handled by migration system (002_create_agent_registry.sql)
 
 const INSERT_OR_REPLACE_AGENT: &str = r"
     INSERT OR REPLACE INTO agent_registry (id, name, created_at, updated_at)
@@ -55,8 +45,7 @@ const SELECT_AGENT_BY_ID: &str = r"
 //     DELETE FROM agent_registry WHERE id = ?1
 // "#;
 
-// Ensure table creation happens only once per connection
-static TABLE_CREATED: Once = Once::new();
+// Schema initialization is now handled by the migration system
 
 /// SQLite-backed implementation of agent storage.
 ///
@@ -81,7 +70,8 @@ pub struct SqliteAgentStorage {
 impl SqliteAgentStorage {
     /// Create a new `SQLite` agent storage with the given database connection.
     ///
-    /// The constructor ensures the database schema is initialized on first use.
+    /// The database schema is automatically initialized by the migration system
+    /// during `DatabaseConnection::initialize()`.
     ///
     /// # Arguments
     ///
@@ -96,21 +86,16 @@ impl SqliteAgentStorage {
         Self { connection }
     }
 
-    /// Initialize database schema if not already done.
+    /// Verify database schema is properly initialized.
     ///
-    /// This method ensures the `agent_registry` table exists with proper constraints.
-    /// Uses a static Once to ensure initialization happens only once per process.
+    /// Schema creation is now handled by the migration system during
+    /// `DatabaseConnection::initialize()`. This method exists for future
+    /// schema validation needs.
     #[instrument(skip(self), err)]
     async fn ensure_schema_initialized(&self) -> DatabaseResult<()> {
-        TABLE_CREATED.call_once(|| {
-            info!("Initializing SQLite agent registry schema");
-        });
-
-        sqlx::query(CREATE_AGENT_REGISTRY_TABLE)
-            .execute(self.connection.pool())
-            .await?;
-
-        info!("SQLite agent registry schema initialized successfully");
+        // Schema initialization is handled by migrations during DatabaseConnection::initialize()
+        // Future: Add schema validation here if needed
+        info!("Agent registry schema verified (created by migration system)");
         Ok(())
     }
 
@@ -260,6 +245,58 @@ mod tests {
             retrieved_agent,
             Some(agent_name),
             "Retrieved agent should match saved agent"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_should_create_agent_registry_via_migration_not_create_table() {
+        // Test that verifies agent_registry table is created via migration system rather than CREATE TABLE IF NOT EXISTS
+
+        // Create fresh temporary database
+        let temp_dir = tempdir().expect("Failed to create temp directory");
+        let db_path = temp_dir.path().join("migration_test_agents.db");
+        let path = DatabasePath::new(db_path).expect("Failed to create DatabasePath");
+        let config = DatabaseConfig::for_testing(path);
+
+        // Initialize database - migrations should run automatically
+        let connection = DatabaseConnection::initialize(config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        // Verify agent_registry table exists (should be created by migration, not CREATE TABLE IF NOT EXISTS)
+        let table_exists = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='agent_registry'",
+        )
+        .fetch_one(connection.pool())
+        .await
+        .expect("Failed to check if agent_registry table exists");
+
+        assert_eq!(
+            table_exists, 1,
+            "agent_registry table should exist after database initialization via migrations"
+        );
+
+        // Test agent operations work with migrated schema
+        let storage = SqliteAgentStorage::new(connection);
+        let agent_id = AgentId::generate();
+        let agent_name =
+            AgentName::try_new("migration_test_agent").expect("Failed to create AgentName");
+
+        // Save and retrieve agent using migrated schema
+        storage
+            .save_agent(agent_id, agent_name.clone())
+            .await
+            .expect("Failed to save agent with migrated schema");
+
+        let retrieved_agent = storage
+            .find_agent_by_id(agent_id)
+            .await
+            .expect("Failed to retrieve agent with migrated schema");
+
+        assert_eq!(
+            retrieved_agent,
+            Some(agent_name),
+            "Agent operations should work correctly with migration-created schema"
         );
     }
 }

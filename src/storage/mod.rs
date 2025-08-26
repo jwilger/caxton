@@ -31,7 +31,6 @@ use crate::message_router::traits::ConversationError;
 use async_trait::async_trait;
 use sqlx::Row;
 use std::collections::HashSet;
-use std::sync::Once;
 use tracing::{info, instrument, warn};
 
 /// Persistent storage interface for agent registry operations.
@@ -118,14 +117,53 @@ pub trait AgentStorage: Send + Sync {
     async fn remove_agent(&self, agent_id: AgentId) -> DatabaseResult<()>;
 }
 
-/// Simple placeholder implementation for Message Storage to enable current tests.
-/// This will be fully implemented in a future story.
+/// `SQLite` implementation of message storage for FIPA message persistence.
+///
+/// This implementation stores FIPA messages in a dedicated `message_storage` table
+/// created via the migration system (`003_create_message_storage.sql`). The table
+/// schema includes optimized indexes for common query patterns including sender/receiver
+/// lookups and conversation-based filtering.
+///
+/// # Migration System Integration
+///
+/// Table creation is handled by the migration system during `DatabaseConnection::initialize()`.
+/// This ensures consistent schema versioning and eliminates the need for CREATE TABLE
+/// IF NOT EXISTS patterns. The migration includes performance indexes for:
+///
+/// - `sender_id` lookups with temporal ordering
+/// - `receiver_id` lookups with temporal ordering
+/// - `conversation_id` filtering with temporal ordering
+/// - `created_at` temporal queries
+///
+/// # Performance Characteristics
+///
+/// - Target: < 1ms average query time for individual message operations
+/// - Optimized indexes support efficient message routing and conversation retrieval
+/// - UUID format validation via CHECK constraints ensures data integrity
+/// - Schema designed for high-throughput message processing
+///
+/// # Implementation Status
+///
+/// Currently provides placeholder methods returning `unimplemented!()` errors.
+/// Full implementation with proper domain type integration, error handling,
+/// and observability will be completed in future development cycles.
 pub struct SqliteMessageStorage {
     _connection: DatabaseConnection,
 }
 
 impl SqliteMessageStorage {
     /// Creates a new `SqliteMessageStorage` instance.
+    ///
+    /// The provided database connection should already be initialized with the migration
+    /// system, ensuring the `message_storage` table and indexes are available.
+    ///
+    /// # Arguments
+    ///
+    /// * `connection` - Database connection with migration-created schema
+    ///
+    /// # Returns
+    ///
+    /// A new message storage instance ready for FIPA message persistence operations.
     pub fn new(connection: DatabaseConnection) -> Self {
         Self {
             _connection: connection,
@@ -135,6 +173,7 @@ impl SqliteMessageStorage {
 
 #[async_trait]
 impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
+    #[instrument(skip(self, _message), fields(message_id = %_message.message_id))]
     async fn store_message(
         &self,
         _message: &crate::message_router::domain_types::FipaMessage,
@@ -142,6 +181,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
         unimplemented!("Message storage not yet implemented")
     }
 
+    #[instrument(skip(self), fields(message_id = %_message_id))]
     async fn get_message(
         &self,
         _message_id: crate::message_router::domain_types::MessageId,
@@ -152,6 +192,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
         unimplemented!("Message retrieval not yet implemented")
     }
 
+    #[instrument(skip(self), fields(message_id = %_message_id))]
     async fn remove_message(
         &self,
         _message_id: crate::message_router::domain_types::MessageId,
@@ -159,6 +200,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
         unimplemented!("Message removal not yet implemented")
     }
 
+    #[instrument(skip(self), fields(agent_id = %_agent_id, limit = ?_limit))]
     async fn list_agent_messages(
         &self,
         _agent_id: AgentId,
@@ -172,29 +214,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
 }
 
 // SQL Constants for ConversationStorage
-const CREATE_CONVERSATION_STORAGE_TABLE: &str = r"
-CREATE TABLE IF NOT EXISTS conversations (
-    conversation_id TEXT PRIMARY KEY,
-    protocol_name TEXT,
-    created_at INTEGER NOT NULL,
-    last_activity INTEGER NOT NULL,
-    message_count INTEGER NOT NULL DEFAULT 0,
-    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
-    CHECK (length(conversation_id) = 36),
-    CHECK (message_count >= 0)
-);
-";
-
-const CREATE_CONVERSATION_PARTICIPANTS_TABLE: &str = r"
-CREATE TABLE IF NOT EXISTS conversation_participants (
-    conversation_id TEXT NOT NULL,
-    participant_id TEXT NOT NULL,
-    PRIMARY KEY (conversation_id, participant_id),
-    FOREIGN KEY (conversation_id) REFERENCES conversations(conversation_id),
-    CHECK (length(conversation_id) = 36),
-    CHECK (length(participant_id) = 36)
-);
-";
+// Table creation handled by migration system - see migrations/004_create_conversations.sql and migrations/005_create_conversation_participants.sql
 
 const INSERT_CONVERSATION: &str = r"
 INSERT OR REPLACE INTO conversations (
@@ -232,42 +252,60 @@ WHERE p.participant_id = ? AND c.is_archived = FALSE
 ORDER BY c.last_activity DESC;
 ";
 
-static CONVERSATION_SCHEMA_CREATED: Once = Once::new();
-
-/// SQLite-based implementation for conversation persistence
+/// `SQLite` implementation of conversation storage for FIPA conversation persistence.
 ///
-/// Minimal implementation to pass test
+/// This implementation stores conversation state and participants in dedicated
+/// `conversations` and `conversation_participants` tables created via the migration
+/// system (`004_create_conversations.sql`, `005_create_conversation_participants.sql`).
+/// The tables include optimized indexes for common query patterns.
+///
+/// # Migration System Integration
+///
+/// Table creation is handled by the migration system during `DatabaseConnection::initialize()`.
+/// This ensures consistent schema versioning and eliminates the need for CREATE TABLE
+/// IF NOT EXISTS patterns. The migration includes performance indexes for:
+///
+/// - conversation archival status filtering
+/// - temporal ordering for last activity queries
+/// - protocol-based conversation filtering
+/// - efficient participant lookups
+///
+/// # Performance Characteristics
+///
+/// - Target: < 1ms average query time for individual conversation operations
+/// - Optimized indexes support efficient conversation and participant queries
+/// - Foreign key constraints ensure referential integrity
+/// - Schema designed for multi-participant conversation scenarios
 pub struct SqliteConversationStorage {
     connection: DatabaseConnection,
 }
 
 impl SqliteConversationStorage {
-    /// Creates a new `SqliteConversationStorage` instance
+    /// Creates a new `SqliteConversationStorage` instance.
+    ///
+    /// The provided database connection should already be initialized with the migration
+    /// system, ensuring the `conversations` and `conversation_participants` tables and indexes
+    /// are available.
+    ///
+    /// # Arguments
+    ///
+    /// * `connection` - Database connection with migration-created schema
+    ///
+    /// # Returns
+    ///
+    /// A new conversation storage instance ready for FIPA conversation persistence operations.
     pub fn new(connection: DatabaseConnection) -> Self {
         Self { connection }
     }
 
-    /// Ensures conversation schema is initialized
-    async fn ensure_schema_initialized(&self) -> Result<(), ConversationError> {
-        let pool = self.connection.pool();
-
-        // Create conversations table
-        sqlx::query(CREATE_CONVERSATION_STORAGE_TABLE)
-            .execute(pool)
-            .await
-            .map_err(|e| ConversationError::StorageError {
-                source: Box::new(e),
-            })?;
-
-        // Create participants table
-        sqlx::query(CREATE_CONVERSATION_PARTICIPANTS_TABLE)
-            .execute(pool)
-            .await
-            .map_err(|e| ConversationError::StorageError {
-                source: Box::new(e),
-            })?;
-
-        Ok(())
+    /// Verifies conversation schema is available (created by migration system)
+    ///
+    /// Schema creation is handled by migration system during `DatabaseConnection::initialize()`.
+    /// This method serves as a placeholder for future schema validation if needed.
+    /// See migrations: `004_create_conversations.sql` and `005_create_conversation_participants.sql`
+    fn ensure_schema_initialized() {
+        // Migration system handles all schema creation during DatabaseConnection::initialize()
+        // Future enhancement: Add optional schema validation here if needed
     }
 }
 
@@ -278,12 +316,8 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
         &self,
         conversation: &Conversation,
     ) -> Result<(), ConversationError> {
-        // Minimal implementation to pass test
-        CONVERSATION_SCHEMA_CREATED.call_once(|| {
-            // Schema will be created on first database operation
-        });
-
-        self.ensure_schema_initialized().await?;
+        // Schema is already initialized via migration system during DatabaseConnection::initialize()
+        Self::ensure_schema_initialized();
 
         let pool = self.connection.pool();
 
@@ -839,5 +873,144 @@ mod tests {
             rt.block_on(message_storage.list_agent_messages(AgentId::generate(), None))
         }));
         assert!(result.is_err(), "Should panic with unimplemented");
+    }
+
+    #[tokio::test]
+    async fn test_should_create_message_storage_via_migration_not_create_table() {
+        // Test that verifies message_storage table is created via migration system, not CREATE TABLE IF NOT EXISTS
+
+        use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
+        use tempfile::TempDir;
+
+        // Create temporary database for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let db_path = DatabasePath::try_new(temp_dir.path().join("test.db"))
+            .expect("Failed to create database path");
+        let db_config = DatabaseConfig::new(db_path);
+
+        // Initialize database connection - this should run migrations automatically
+        let db_connection = DatabaseConnection::initialize(db_config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        // Verify message_storage table exists via sqlite_master query
+        let table_exists_query =
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='message_storage'";
+        let result = sqlx::query(table_exists_query)
+            .fetch_optional(db_connection.pool())
+            .await
+            .expect("Failed to query sqlite_master");
+
+        assert!(
+            result.is_some(),
+            "message_storage table should exist after database initialization via migrations"
+        );
+
+        // Create message storage instance to verify migration-created schema compatibility
+        let _message_storage = SqliteMessageStorage::new(db_connection);
+
+        // Migration test complete - table exists and SqliteMessageStorage can be constructed
+        // Note: Message storage operations are not tested here as they are unimplemented
+        // This test specifically verifies migration system creates the required schema
+    }
+
+    #[tokio::test]
+    async fn test_should_create_conversation_storage_via_migration_not_create_table() {
+        // Test that verifies conversations and conversation_participants tables are created via migrations with proper foreign key relationships
+
+        use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
+        use crate::domain_types::AgentId;
+        use crate::message_router::domain_types::{
+            Conversation, ConversationCreatedAt, ConversationId, MessageCount, MessageTimestamp,
+            ProtocolName,
+        };
+        use crate::message_router::traits::ConversationStorage;
+        use std::collections::HashSet;
+        use tempfile::TempDir;
+
+        // Create temporary database for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp directory");
+        let db_path = DatabasePath::try_new(temp_dir.path().join("test.db"))
+            .expect("Failed to create database path");
+        let db_config = DatabaseConfig::new(db_path);
+
+        // Initialize database connection - this should run migrations automatically
+        let db_connection = DatabaseConnection::initialize(db_config)
+            .await
+            .expect("Failed to initialize database connection");
+
+        // Verify conversations table exists via sqlite_master query
+        let conversations_table_query =
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='conversations'";
+        let conversations_result = sqlx::query(conversations_table_query)
+            .fetch_optional(db_connection.pool())
+            .await
+            .expect("Failed to query sqlite_master for conversations table");
+
+        assert!(
+            conversations_result.is_some(),
+            "conversations table should exist after database initialization via migrations"
+        );
+
+        // Verify conversation_participants table exists via sqlite_master query
+        let participants_table_query = "SELECT name FROM sqlite_master WHERE type='table' AND name='conversation_participants'";
+        let participants_result = sqlx::query(participants_table_query)
+            .fetch_optional(db_connection.pool())
+            .await
+            .expect("Failed to query sqlite_master for conversation_participants table");
+
+        assert!(
+            participants_result.is_some(),
+            "conversation_participants table should exist after database initialization via migrations"
+        );
+
+        // Verify foreign key constraint exists in conversation_participants table
+        let foreign_key_query =
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='conversation_participants'";
+        let schema_result = sqlx::query(foreign_key_query)
+            .fetch_optional(db_connection.pool())
+            .await
+            .expect("Failed to query table schema");
+
+        if let Some(row) = schema_result {
+            let schema_sql: String = row.try_get("sql").expect("Failed to get schema SQL");
+            assert!(
+                schema_sql.contains("FOREIGN KEY")
+                    && schema_sql.contains("REFERENCES conversations"),
+                "conversation_participants table should have proper foreign key constraint referencing conversations table"
+            );
+        }
+
+        // Create conversation storage and attempt conversation operations with migration-created schema
+        let conversation_storage = SqliteConversationStorage::new(db_connection);
+
+        // Create a realistic multi-participant conversation for testing
+        let agent1 = AgentId::generate();
+        let agent2 = AgentId::generate();
+        let agent3 = AgentId::generate();
+        let mut participants = HashSet::new();
+        participants.insert(agent1);
+        participants.insert(agent2);
+        participants.insert(agent3);
+
+        let protocol =
+            ProtocolName::try_new("contract-net").expect("Failed to create protocol name");
+
+        let conversation = Conversation {
+            id: ConversationId::generate(),
+            participants,
+            protocol: Some(protocol),
+            created_at: ConversationCreatedAt::now(),
+            last_activity: MessageTimestamp::now(),
+            message_count: MessageCount::new(7),
+        };
+
+        // Attempt to save conversation - this should now work because migration files exist
+        // The migration system has created the tables via 004_create_conversations.sql and 005_create_conversation_participants.sql
+        let save_result = conversation_storage.save_conversation(&conversation).await;
+        assert!(
+            save_result.is_ok(),
+            "save_conversation should succeed because migration system has created conversation schema via migrations"
+        );
     }
 }
