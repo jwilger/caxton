@@ -309,8 +309,50 @@ impl DatabaseConnection {
         pool: &Pool<Sqlite>,
         _config: &DatabaseConfig,
     ) -> DatabaseResult<()> {
-        // Apply any additional settings that can't be set via connection options
-        // For now, this is a placeholder for future enhancements
+        // Apply performance optimizations for sub-millisecond operations
+        // These settings trade some durability for maximum performance
+
+        // Synchronous = NORMAL instead of FULL for faster writes (still crash-safe)
+        sqlx::query("PRAGMA synchronous = NORMAL")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set synchronous mode: {e}"),
+                })
+            })?;
+
+        // Increase cache size to 64MB for better read performance
+        sqlx::query("PRAGMA cache_size = -65536")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set cache size: {e}"),
+                })
+            })?;
+
+        // Use memory for temporary storage (faster sorting/indexing)
+        sqlx::query("PRAGMA temp_store = MEMORY")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set temp store: {e}"),
+                })
+            })?;
+
+        // Set memory-mapped I/O for better read performance
+        sqlx::query("PRAGMA mmap_size = 268435456") // 256MB
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set mmap size: {e}"),
+                })
+            })?;
+
+        // Enable query planner optimizations
         sqlx::query("PRAGMA optimize")
             .execute(pool)
             .await
