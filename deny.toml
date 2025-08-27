@@ -188,12 +188,19 @@ workspace-default-features = "allow"
 # Note: May be restricted in future for minimal WASM runtime
 external-default-features = "allow"
 
-# No banned crates currently
-# Future considerations for banning:
-# - Crates with known security issues in WASM contexts
-# - Crates that conflict with sandboxing requirements
-# - Crates that add unnecessary bloat to agent runtime
-skip = []
+# Skip checking MySQL-related crates that appear in Cargo.lock due to SQLx weak features bug
+# These crates are NOT actually compiled (verified with `cargo tree | grep mysql` showing no output)
+# This is a known Cargo bug: https://github.com/launchbadge/sqlx/issues/3211
+# and https://github.com/rust-lang/cargo/issues/10801
+#
+# The SQLx `migrate` feature incorrectly causes mysql dependencies to appear in Cargo.lock
+# even when only using SQLite. This is a false positive that cannot be fixed without
+# removing the `migrate` feature, which we need for database migrations.
+skip = [
+    { name = "sqlx-mysql", version = "*" },  # False positive from SQLx weak features
+    { name = "mysql_common", version = "*" }, # Transitive dependency of sqlx-mysql
+    { name = "mysql-common-derive", version = "*" }, # Transitive dependency of sqlx-mysql
+]
 
 # No banned dependency trees currently
 # May be used to exclude entire ecosystems that conflict with

@@ -29,11 +29,11 @@ module_name_repetitions = "allow"
 
 [dev-dependencies]
 approx = "0.5"
-criterion = "0.5"
+criterion = "0.7"
 tempfile = "3.14"
 test-log = "0.2"
 proptest = "1.6"
-toml = "0.8"
+toml = "0.9"
 wat = "1.223"
 
 [[bin]]
@@ -65,12 +65,22 @@ rust_decimal = "1.37.2"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.142"
 # Security: default-features = false excludes MySQL/PostgreSQL drivers that include vulnerable RSA crate (RUSTSEC-2023-0071)
-sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio-rustls", "migrate", "macros"] }
+# SQLx with SQLite-only support
+# NOTE: The "migrate" feature causes MySQL dependencies to appear in Cargo.lock
+# due to a known Cargo bug with weak features (https://github.com/launchbadge/sqlx/issues/3211).
+# These MySQL dependencies are NOT actually compiled or used (verify with `cargo tree | grep mysql`).
+# We've configured cargo-deny to skip these false positives in deny.toml.
+sqlx = { version = "0.8", default-features = false, features = [
+  "sqlite",
+  "runtime-tokio-rustls",
+  "migrate",
+  "macros",
+] }
 thiserror = "2.0.12"
 tokio = { version = "1.47.1", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
-wasmtime = "35.0.0"
-wasmtime-wasi = "35.0.0"
+wasmtime = "36.0"
+wasmtime-wasi = "36.0"
 wat = "1.223"
