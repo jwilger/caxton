@@ -192,8 +192,8 @@ Use Task tool with `expert` agent:
 
 Use Task tool with `pr-manager` agent:
 
-- Create draft PR with comprehensive description
-- Link story acceptance criteria and implementation summary
+- Create draft PR with **concise** description (facts only, no fluff)
+- Brief summary of changes (3-5 bullets max)
 - Update `.claude/branch.info` with PR number
 - Never mark PR ready-for-review (human only)
 - Never modify PR back to draft once marked ready-for-review by human

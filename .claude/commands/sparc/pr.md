@@ -22,33 +22,20 @@ completed story.
 
 ## PR Description Template
 
-The PR manager should create descriptions following this format:
+**Keep descriptions concise. Focus on what changed and why.**
 
 ```markdown
-## Story Context
+{One-line story summary}
 
-{Story description and acceptance criteria}
+**Changes:**
+- {Brief list of main changes, 3-5 bullets max}
 
-## Implementation Summary
+**Testing:** {One line about test coverage}
 
-- {List of key changes}
-- {Files modified}
-- {New domain types introduced}
-
-## Testing
-
-- {Tests added/modified}
-- {How to verify the changes}
-
-## Notes
-
-{Any additional context for reviewers}
-
----
-
-_This PR was created by Claude Code as part of the SPARC workflow. All commits
-follow strict TDD discipline with Red→Green→Refactor cycles._
+{Optional: Any critical context for reviewers, 1-2 lines max}
 ```
+
+**NO self-congratulatory language. NO lengthy explanations. Facts only.**
 
 ## Delegation Notes
 
