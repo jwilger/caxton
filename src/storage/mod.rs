@@ -505,7 +505,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
             .bind(message_content_string)
             .bind(performative_str)
             .bind(created_at)
-            .bind(Some(created_at + 1)) // expires_at - default 1 second TTL for minimal implementation
+            .bind(Some(created_at + 2)) // expires_at - 2 second TTL for minimal implementation
             .execute(self._connection.pool())
             .await
             .map_err(|e| {

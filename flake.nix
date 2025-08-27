@@ -34,6 +34,7 @@
             uv
             git
             gh
+            jq
             pre-commit
             cargo-nextest
             cargo-watch
