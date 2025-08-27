@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Proactively research unknowns. Use WebSearch/WebFetch to gather facts, links, and quotes; return a concise brief with citations. Use BEFORE planning or coding.
-tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__github__get_pull_request, mcp__github__get_pull_request_status, mcp__github__list_pull_requests, mcp__github__get_workflow_run, mcp__github__get_job_logs, mcp__github__list_workflow_runs, mcp__github__list_workflow_jobs, mcp__github__get_pull_request_files, mcp__github__get_pull_request_comments, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: WebSearch, WebFetch, Read, Grep, Glob, Bash, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Researcher Agent
@@ -40,7 +40,7 @@ You research unknowns with a Rust bias:
 
 ## Repository Research Capabilities (NEW)
 
-You now have read-only access to Git and GitHub MCP tools for comprehensive
+You now have read-only access to Git tools and GitHub CLI for comprehensive
 repository research:
 
 ### Git Repository Analysis
@@ -50,17 +50,37 @@ repository research:
 - `mcp__git__git_diff` - Code changes between commits or branches
 - `mcp__git__git_show` - Detailed information about specific commits
 
-### GitHub PR and CI Research
+### GitHub PR and CI Research (via gh CLI)
 
-- `mcp__github__get_pull_request` - PR details, status, and metadata
-- `mcp__github__get_pull_request_status` - CI/CD pipeline status
-- `mcp__github__list_pull_requests` - Repository PR overview
-- `mcp__github__get_workflow_run` - CI workflow execution details
-- `mcp__github__get_job_logs` - Specific job failure logs and errors
-- `mcp__github__list_workflow_runs` - Workflow execution history
-- `mcp__github__list_workflow_jobs` - Individual job status and details
-- `mcp__github__get_pull_request_files` - Files changed in PRs
-- `mcp__github__get_pull_request_comments` - PR review comments
+**Use the Bash tool with `gh` CLI commands for read-only GitHub operations:**
+
+- `gh pr view {pr-number} --json ...` - PR details, status, and metadata
+- `gh pr checks {pr-number}` - CI/CD pipeline status
+- `gh pr list --json ...` - Repository PR overview
+- `gh run view {run-id} --json ...` - CI workflow execution details
+- `gh run view {run-id} --log` - Job logs and errors
+- `gh run list --json ...` - Workflow execution history
+- `gh pr view {pr-number} --json files` - Files changed in PRs
+- `gh pr view {pr-number} --json comments` - PR review comments
+
+**Example commands:**
+
+```bash
+# Get PR details
+gh pr view 123 --json state,title,body,author,reviews,statusCheckRollup
+
+# Check CI status
+gh pr checks 123
+
+# Get workflow runs for a branch
+gh run list --branch feature-branch --json status,conclusion,databaseId
+
+# View specific workflow run details
+gh run view 456789 --json status,conclusion,jobs
+
+# Get PR files changed
+gh pr view 123 --json files
+```
 
 ### Repository Research Workflow
 
@@ -68,11 +88,10 @@ When researching CI failures, build issues, or codebase problems:
 
 1. **Start with repository context**: Use `git_status` and `git_log` to
    understand current state
-2. **Examine PR details**: Use GitHub tools to get PR status, files changed, and
+2. **Examine PR details**: Use `gh pr view` to get PR status, files changed, and
    comments
-3. **Investigate CI failures**: Use `get_job_logs` with `failed_only=true` for
-   targeted failure analysis
-4. **Analyze code changes**: Use `git_diff` and `get_pull_request_files` to
+3. **Investigate CI failures**: Use `gh run view --log` for targeted failure analysis
+4. **Analyze code changes**: Use `git_diff` and `gh pr view --json files` to
    understand what changed
 5. **Store findings**: Always store repository insights and CI patterns in MCP
    memory
