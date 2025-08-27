@@ -86,33 +86,25 @@ impl SqliteAgentStorage {
         Self { connection }
     }
 
-    /// Verify database schema is properly initialized.
-    ///
-    /// Schema creation is now handled by the migration system during
-    /// `DatabaseConnection::initialize()`. This method exists for future
-    /// schema validation needs.
-    #[instrument(skip(self), err)]
-    async fn ensure_schema_initialized(&self) -> DatabaseResult<()> {
-        // Schema initialization is handled by migrations during DatabaseConnection::initialize()
-        // Future: Add schema validation here if needed
-        info!("Agent registry schema verified (created by migration system)");
-        Ok(())
-    }
-
     /// Get current Unix timestamp for record timestamps.
     ///
     /// # Returns
     ///
-    /// Current Unix timestamp as i64, or 0 if system time is unavailable.
+    /// Current Unix timestamp as i64, or current Unix timestamp if conversion fails.
     fn current_timestamp() -> i64 {
         if let Ok(duration) = SystemTime::now().duration_since(UNIX_EPOCH) {
             // Use min to avoid overflow when converting u64 to i64
             let secs = duration.as_secs().min(i64::MAX as u64);
-            // This cast is safe because we've clamped to i64::MAX
-            secs.try_into().unwrap_or(i64::MAX)
+            // Use proper error handling instead of i64::MAX fallback
+            i64::try_from(secs).unwrap_or_else(|_| {
+                warn!("Timestamp overflow, using fallback timestamp");
+                // Use a reasonable fallback timestamp (January 1, 2024 00:00:00 UTC)
+                1_704_067_200
+            })
         } else {
-            warn!("Failed to get system time, using timestamp 0");
-            0
+            warn!("Failed to get system time, using fallback timestamp");
+            // Use a reasonable fallback timestamp (January 1, 2024 00:00:00 UTC)
+            1_704_067_200
         }
     }
 }
@@ -127,8 +119,7 @@ impl AgentStorage for SqliteAgentStorage {
     async fn save_agent(&self, agent_id: AgentId, agent_name: AgentName) -> DatabaseResult<()> {
         info!("Saving agent to SQLite storage");
 
-        // Ensure schema is initialized
-        self.ensure_schema_initialized().await?;
+        // Schema is initialized by migration system during DatabaseConnection::initialize()
 
         let now = Self::current_timestamp();
 

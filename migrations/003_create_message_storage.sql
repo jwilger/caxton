@@ -17,7 +17,35 @@
 -- - message_content: FIPA message payload (stored as TEXT for flexibility)
 -- - performative: FIPA performative type (inform, request, agree, etc.)
 -- - created_at: Unix timestamp for message ordering and temporal queries
--- - expires_at: Optional message expiration (supports TTL message patterns)
+-- - expires_at: Optional message expiration (Unix timestamp) for TTL message cleanup
+--
+-- TTL (Time To Live) Message Patterns:
+-- The expires_at field enables automatic message cleanup for temporary communications:
+-- - NULL value: Message persists indefinitely (permanent storage)
+-- - Future timestamp: Message expires at specified time for automatic cleanup
+-- - Past timestamp: Message is eligible for immediate cleanup
+--
+-- Expected TTL Behavior:
+-- 1. Message Creation: expires_at set based on message type and retention policies
+-- 2. Message Retrieval: All messages returned regardless of expiration status
+-- 3. Cleanup Process: Separate background process removes expired messages
+-- 4. Query Filtering: Application logic may filter expired messages during retrieval
+--
+-- Cleanup Procedures for Expired Messages:
+-- MANUAL CLEANUP (for development and testing):
+--   DELETE FROM message_storage WHERE expires_at IS NOT NULL AND expires_at < strftime('%s', 'now');
+--
+-- AUTOMATED CLEANUP (recommended for production):
+-- - Background task runs periodically (e.g., every hour) to remove expired messages
+-- - Cleanup batch size should be limited (e.g., 1000 messages per run) to avoid blocking
+-- - Consider using VACUUM INCREMENTAL after large cleanup operations
+-- - Log cleanup statistics for monitoring: messages removed, storage reclaimed
+--
+-- Performance Considerations:
+-- - Index on expires_at field supports efficient cleanup queries
+-- - Batch cleanup operations to avoid long-running transactions
+-- - Consider message archival before deletion for compliance/audit requirements
+-- - Monitor database size growth and cleanup effectiveness
 
 CREATE TABLE IF NOT EXISTS message_storage (
     message_id TEXT PRIMARY KEY,
@@ -49,3 +77,8 @@ CREATE INDEX IF NOT EXISTS idx_message_storage_sender ON message_storage(sender_
 CREATE INDEX IF NOT EXISTS idx_message_storage_receiver ON message_storage(receiver_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_message_storage_conversation ON message_storage(conversation_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_message_storage_created_at ON message_storage(created_at DESC);
+
+-- TTL cleanup optimization index: Supports efficient queries for expired message removal
+-- This index enables fast identification of messages eligible for cleanup without
+-- scanning the entire table, critical for maintaining performance during batch cleanup operations
+CREATE INDEX IF NOT EXISTS idx_message_storage_expires_at ON message_storage(expires_at) WHERE expires_at IS NOT NULL;
