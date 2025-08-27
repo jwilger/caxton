@@ -461,6 +461,7 @@ _This comment was generated automatically..._
 ```
 
 PRs created in **draft status only** - humans control ready-for-review.
+**NEVER modify PR status back to draft once a human has marked it ready-for-review.**
 
 ### Commands & Agents
 

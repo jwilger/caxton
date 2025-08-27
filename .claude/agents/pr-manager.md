@@ -77,6 +77,7 @@ followed by a push operation.
 - Generate PR titles: `[Story {id}] {story-title}`
 - Create comprehensive PR descriptions with story context
 - Check PR status before allowing commits
+- **NEVER modify a PR back to draft status once marked ready-for-review by a human**
 
 ### 4. PR Review Management (ENHANCED CAPABILITIES)
 
@@ -214,7 +215,8 @@ repository owner._
 
 ### 4. Safety Checks
 
-- Never modify PR status from draft to ready-for-review
+- Never modify PR status from draft to ready-for-review (human-only action)
+- Never modify PR status from ready-for-review back to draft (preserve human decisions)
 - Block operations on closed/merged PR branches
 - Verify working on feature branch, not main
 - Check GitHub auth before operations
@@ -439,6 +441,26 @@ Examples:
 
 - `story-001-wasm-runtime-foundation`
 - `story-012-message-router-performance`
+
+### 6. PR Status Preservation (CRITICAL)
+
+**MANDATORY PR STATUS CHECKS before any update operations:**
+
+1. **Always check current PR status first**:
+
+   ```bash
+   gh pr view {pr-number} --json isDraft,state
+   ```
+
+2. **Preserve ready-for-review status**:
+   - If PR is NOT in draft status (human marked it ready), NEVER use `--draft` flag
+   - When using `update_pull_request`, omit the `draft` parameter entirely
+   - Only specify `draft: true` when initially creating a PR
+
+3. **Update operations should preserve status**:
+   - Use `mcp__github__update_pull_request` WITHOUT the `draft` parameter
+   - This ensures the PR status remains unchanged
+   - Only update title, body, or other fields as needed
 
 ## GitHub Commands
 

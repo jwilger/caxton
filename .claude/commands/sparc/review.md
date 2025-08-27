@@ -80,6 +80,8 @@ requirements:
 **For Subagents (via delegation):**
 
 - Never mark PR as ready-for-review (pr-manager responsibility)
+- Never modify PR back to draft once marked ready-for-review by human
+  (pr-manager responsibility)
 - Always attribute responses to Claude Code (pr-manager responsibility)
 - Make minimal, focused changes only (implementer responsibility)
 - Verify all tests pass before completion (implementer responsibility)

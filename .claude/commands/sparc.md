@@ -196,6 +196,7 @@ Use Task tool with `pr-manager` agent:
 - Link story acceptance criteria and implementation summary
 - Update `.claude/branch.info` with PR number
 - Never mark PR ready-for-review (human only)
+- Never modify PR back to draft once marked ready-for-review by human
 
 ### I) PR REVIEW LOOP (if feedback exists)
 
@@ -216,7 +217,7 @@ Use Task tool with `pr-manager` agent:
   included in the same PR)
 - Remove `.claude/plan.approved` file
 - Generate summary of files changed and commits made
-- Ensure PR remains in draft status for human review and merge
+- Leave PR in its current status (draft unless human has marked ready-for-review)
 
 ## Completion Summary
 
