@@ -1,0 +1,48 @@
+# Markdownlint configuration
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# Line length
+MD013:
+  line_length: 80
+  # Allow longer lines in code blocks and tables
+  code_blocks: false
+  tables: false
+  # Include headings in line length check
+  headings: true
+  # Allow longer lines in headings if needed
+  heading_line_length: 100
+
+# Allow inline HTML (useful for comments and special formatting)
+MD033: false
+
+# Allow bare URLs (sometimes needed in documentation)
+MD034: false
+
+# First line in file should be a top-level heading - disabled for agent docs
+MD041: false
+
+# No duplicate header - allow for better document structure
+MD024:
+  siblings_only: true
+
+# Allow multiple spaces after blockquote symbol for alignment
+MD027: false
+
+# Allow ordered list item prefixes to be "ordered" (1. 2. 3.) or "one" (1. 1. 1.)
+MD029:
+  style: "ordered"
+
+# Code block style
+MD046:
+  style: "fenced"
+
+# Emphasis style
+MD049:
+  style: "asterisk"
+
+# Strong style
+MD050:
+  style: "asterisk"
