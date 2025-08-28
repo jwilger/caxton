@@ -24,6 +24,12 @@ use sqlx::Row;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{info, instrument, warn};
 
+/// Fallback Unix timestamp for January 1, 2024 00:00:00 UTC.
+/// Used when system time cannot be determined or timestamp conversion overflows.
+/// This provides a reasonable recent timestamp that maintains data integrity
+/// while clearly indicating an error condition in logs.
+const FALLBACK_TIMESTAMP: i64 = 1_704_067_200;
+
 // SQL query constants for maintainability and performance
 // NOTE: Table creation handled by migration system (002_create_agent_registry.sql)
 
@@ -101,12 +107,12 @@ impl SqliteAgentStorage {
             i64::try_from(secs).unwrap_or_else(|_| {
                 warn!("Timestamp overflow, using fallback timestamp");
                 // Use a reasonable fallback timestamp (January 1, 2024 00:00:00 UTC)
-                1_704_067_200
+                FALLBACK_TIMESTAMP
             })
         } else {
             warn!("Failed to get system time, using fallback timestamp");
             // Use a reasonable fallback timestamp (January 1, 2024 00:00:00 UTC)
-            1_704_067_200
+            FALLBACK_TIMESTAMP
         }
     }
 }
