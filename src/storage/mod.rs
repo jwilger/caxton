@@ -378,7 +378,7 @@ impl SqliteMessageStorage {
     }
 
     /// Converts `MessageTimestamp` to Unix seconds.
-    fn timestamp_to_unix_secs(timestamp: &MessageTimestamp) -> Result<i64, RouterError> {
+    fn timestamp_to_unix_secs(timestamp: MessageTimestamp) -> Result<i64, RouterError> {
         i64::try_from(
             timestamp
                 .into_inner()
@@ -416,7 +416,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
     async fn store_message(&self, message: &FipaMessage) -> Result<(), RouterError> {
         let message_content_string = Self::serialize_message_content(message.content.as_bytes());
         let performative_str = Self::performative_to_str(message.performative);
-        let created_at = Self::timestamp_to_unix_secs(&message.created_at)?;
+        let created_at = Self::timestamp_to_unix_secs(message.created_at)?;
 
         sqlx::query(INSERT_MESSAGE)
             .bind(message.message_id.to_string())
