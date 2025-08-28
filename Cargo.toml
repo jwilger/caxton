@@ -20,12 +20,6 @@ rust_2018_idioms = "warn"
 [lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
-# Don't warn about dependency issues we can't control
-multiple_crate_versions = "allow"
-# These are too strict for a prototype
-must_use_candidate = "allow"
-missing_const_for_fn = "allow"
-module_name_repetitions = "allow"
 
 [dev-dependencies]
 approx = "0.5"
