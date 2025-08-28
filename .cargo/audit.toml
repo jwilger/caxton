@@ -1,0 +1,22 @@
+# Audit configuration for cargo-audit
+# See: https://github.com/RustSec/rustsec/blob/main/cargo-audit/audit.toml.example
+
+[advisories]
+# Ignore RUSTSEC-2023-0071 - False positive from SQLx phantom MySQL dependencies
+#
+# Context: This project uses SQLx 0.7 with `default-features = false` and only
+# enables SQLite features. However, due to a Cargo bug (rust-lang/cargo#10801),
+# sqlx-mysql appears in Cargo.lock as a phantom dependency even though it's not
+# actually compiled or linked into the binary.
+#
+# Evidence:
+# - Cargo.toml explicitly excludes MySQL with `default-features = false`
+# - Only SQLite features are enabled: ["sqlite", "runtime-tokio-rustls", "migrate", "macros"]
+# - cargo check output shows only sqlx-sqlite and sqlx-core dependencies
+# - The vulnerable RSA crate is not actually included in the compiled binary
+#
+# This ignore can be removed once Cargo bug #10801 is fixed or when upgrading
+# to SQLx versions that resolve the phantom dependency issue.
+ignore = [
+    "RUSTSEC-2023-0071"  # RSA timing sidechannel - phantom dependency only
+]

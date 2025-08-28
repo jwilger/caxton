@@ -31,6 +31,7 @@ pub struct DeploymentId(Uuid);
 
 impl DeploymentId {
     /// Creates a new random deployment ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -51,11 +52,13 @@ pub enum DeploymentStrategy {
 
 impl DeploymentStrategy {
     /// Check if strategy supports gradual rollout
+    #[must_use]
     pub fn supports_gradual_rollout(&self) -> bool {
         matches!(self, Self::Rolling | Self::Canary)
     }
 
     /// Check if strategy supports instant rollback
+    #[must_use]
     pub fn supports_instant_rollback(&self) -> bool {
         matches!(self, Self::BlueGreen | Self::Canary)
     }
@@ -85,6 +88,7 @@ pub struct BatchSize(u8);
 
 impl BatchSize {
     /// Gets the value as u8
+    #[must_use]
     pub fn as_u8(&self) -> u8 {
         self.into_inner()
     }
@@ -139,11 +143,13 @@ impl DeploymentTimeout {
     }
 
     /// Gets the value as milliseconds
+    #[must_use]
     pub fn as_millis(&self) -> u64 {
         self.into_inner()
     }
 
     /// Gets the value as Duration
+    #[must_use]
     pub fn as_duration(&self) -> Duration {
         Duration::from_millis(self.into_inner())
     }
@@ -182,11 +188,13 @@ impl DeploymentMemoryLimit {
     }
 
     /// Gets the value as bytes
+    #[must_use]
     pub fn as_bytes(&self) -> usize {
         self.into_inner()
     }
 
     /// Convert to `MemoryBytes` for compatibility
+    #[must_use]
     pub fn as_memory_bytes(&self) -> MemoryBytes {
         MemoryBytes::try_new(self.into_inner()).unwrap_or_default()
     }
@@ -216,11 +224,13 @@ pub struct DeploymentFuelLimit(u64);
 
 impl DeploymentFuelLimit {
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
 
     /// Convert to `CpuFuel` for compatibility
+    #[must_use]
     pub fn as_cpu_fuel(&self) -> CpuFuel {
         CpuFuel::try_new(self.into_inner()).unwrap_or_default()
     }
@@ -261,6 +271,7 @@ pub struct ResourceRequirements {
 
 impl ResourceRequirements {
     /// Creates new resource requirements
+    #[must_use]
     pub fn new(memory_limit: DeploymentMemoryLimit, fuel_limit: DeploymentFuelLimit) -> Self {
         Self {
             memory_limit,
@@ -275,6 +286,7 @@ impl ResourceRequirements {
     /// # Panics
     ///
     /// Panics if the hardcoded minimal values are invalid (should never happen).
+    #[must_use]
     pub fn minimal() -> Self {
         Self {
             memory_limit: DeploymentMemoryLimit::try_new(1_048_576).unwrap(), // 1MB
@@ -285,6 +297,7 @@ impl ResourceRequirements {
     }
 
     /// Check if requirements are compatible with system limits
+    #[must_use]
     pub fn is_compatible_with(&self, system_memory: usize, system_fuel: u64) -> bool {
         self.memory_limit.as_bytes() <= system_memory && self.fuel_limit.as_u64() <= system_fuel
     }
@@ -313,6 +326,7 @@ pub struct DeploymentConfig {
 
 impl DeploymentConfig {
     /// Creates a new deployment configuration
+    #[must_use]
     pub fn new(strategy: DeploymentStrategy) -> Self {
         Self {
             strategy,
@@ -326,11 +340,13 @@ impl DeploymentConfig {
     }
 
     /// Creates configuration for immediate deployment
+    #[must_use]
     pub fn immediate() -> Self {
         Self::new(DeploymentStrategy::Immediate)
     }
 
     /// Creates configuration for rolling deployment
+    #[must_use]
     pub fn rolling(batch_size: BatchSize) -> Self {
         let mut config = Self::new(DeploymentStrategy::Rolling);
         config.batch_size = batch_size;
@@ -342,6 +358,7 @@ impl DeploymentConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded batch size value is invalid (should never happen).
+    #[must_use]
     pub fn canary() -> Self {
         let mut config = Self::new(DeploymentStrategy::Canary);
         config.batch_size = BatchSize::try_new(1).unwrap(); // Start with 1 instance
@@ -372,6 +389,7 @@ pub struct DeploymentRequest {
 
 impl DeploymentRequest {
     /// Creates a new deployment request
+    #[must_use]
     pub fn new(
         agent_id: AgentId,
         agent_name: Option<AgentName>,
@@ -395,16 +413,19 @@ impl DeploymentRequest {
     }
 
     /// Check if this is an initial deployment (no previous version)
+    #[must_use]
     pub fn is_initial_deployment(&self) -> bool {
         self.from_version.is_none()
     }
 
     /// Check if this is an upgrade deployment
+    #[must_use]
     pub fn is_upgrade(&self) -> bool {
         self.from_version.is_some()
     }
 
     /// Get module size in bytes
+    #[must_use]
     pub fn module_size(&self) -> usize {
         self.wasm_module_bytes.len()
     }
@@ -456,6 +477,7 @@ pub enum DeploymentStatus {
 
 impl DeploymentStatus {
     /// Check if status is terminal (no further transitions expected)
+    #[must_use]
     pub fn is_terminal(&self) -> bool {
         matches!(
             self,
@@ -464,11 +486,13 @@ impl DeploymentStatus {
     }
 
     /// Check if status indicates success
+    #[must_use]
     pub fn is_success(&self) -> bool {
         matches!(self, Self::Completed)
     }
 
     /// Check if status indicates failure
+    #[must_use]
     pub fn is_failure(&self) -> bool {
         matches!(self, Self::Failed | Self::Cancelled | Self::RolledBack)
     }
@@ -511,16 +535,19 @@ impl DeploymentProgress {
     /// # Panics
     ///
     /// Panics if 100 is somehow invalid (should never happen).
+    #[must_use]
     pub fn completed() -> Self {
         Self::try_new(100).unwrap()
     }
 
     /// Gets the value as percentage
+    #[must_use]
     pub fn as_percentage(&self) -> u8 {
         self.into_inner()
     }
 
     /// Check if deployment is complete
+    #[must_use]
     pub fn is_complete(&self) -> bool {
         self.into_inner() == 100
     }
@@ -542,6 +569,7 @@ pub struct DeploymentResult {
 
 impl DeploymentResult {
     /// Creates a successful deployment result
+    #[must_use]
     pub fn success(
         deployment_id: DeploymentId,
         agent_id: AgentId,
@@ -563,6 +591,7 @@ impl DeploymentResult {
     }
 
     /// Creates a failed deployment result
+    #[must_use]
     pub fn failure(
         deployment_id: DeploymentId,
         agent_id: AgentId,
@@ -584,6 +613,7 @@ impl DeploymentResult {
     }
 
     /// Get deployment duration if available
+    #[must_use]
     pub fn duration(&self) -> Option<Duration> {
         match (self.started_at, self.completed_at) {
             (Some(start), Some(end)) => end.duration_since(start).ok(),
@@ -606,6 +636,7 @@ pub struct DeploymentMetrics {
 
 impl DeploymentMetrics {
     /// Calculate success rate as percentage
+    #[must_use]
     pub fn success_rate_percentage(&self) -> f32 {
         let total = self.instances_deployed + self.instances_failed;
         if total == 0 {
@@ -615,6 +646,7 @@ impl DeploymentMetrics {
     }
 
     /// Check if deployment meets success threshold
+    #[must_use]
     pub fn meets_success_threshold(&self, threshold_percentage: u8) -> bool {
         self.success_rate_percentage() >= f32::from(threshold_percentage)
     }

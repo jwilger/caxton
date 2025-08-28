@@ -1,14 +1,7 @@
 ---
 name: green-implementer
-description: Implement the MINIMAL code to make the failing test pass. No more,
-no less. Follow Kent Beck's "make it work" principle with the simplest possible
-solution.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput,
-mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy,
-mcp__git__git_status, mcp__git__git_diff, mcp__sparc-memory__create_entities,
-mcp__sparc-memory__create_relations, mcp__sparc-memory__add_observations,
-mcp__sparc-memory__search_nodes, mcp__sparc-memory__open_nodes,
-mcp__sparc-memory__read_graph
+description: Implement the MINIMAL code to make the failing test pass. No more, no less. Follow Kent Beck's "make it work" principle with the simplest possible solution.
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Green Implementer Agent
@@ -153,48 +146,25 @@ strategies after every GREEN phase.**
 **Implementation without stored knowledge wastes learning about effective
 minimal solutions.**
 
-### MCP Memory Operations (UUID-Based Protocol)
-
-**CRITICAL**: All memory operations MUST use UUIDs as the primary key, not
-descriptive names.
+### MCP Memory Operations
 
 #### Storing Implementation Patterns
 
 ```markdown
-1. Generate UUID: mcp**uuid**generateUuid
-2. Store in Qdrant: mcp**qdrant**qdrant-store
-   - Include minimal solution strategies, implementation patterns, decisions
-   - Add UUID tag at END: [UUID: {generated-uuid}]
-
-3. Create Graph Node: mcp**sparc-memory**create_entities
-   - name: The UUID string itself
-   - entityType: "implementation-pattern"
-   - observations: Details about the minimal implementation approach
+Store in Qdrant: mcp__qdrant__qdrant-store
+- Include minimal solution strategies, implementation patterns, decisions
+- Add clear context about implementation approach
+- Document why solution is minimal
 ```
 
 #### Retrieving Implementation Context
 
 ```markdown
-1. Semantic Search: mcp**qdrant**qdrant-find
-   - Search for similar minimal implementation patterns
-
-2. Extract UUIDs: Parse [UUID: xxx] tags from results
-3. Open Graph Nodes: mcp**sparc-memory**open_nodes
-   - Use names: ["uuid-string-here"] for each UUID
-   - NEVER search by descriptive names
-
-4. Follow Relations: Find connected test patterns and refactoring opportunities
-5. Secondary Search: Use related UUIDs in qdrant
+Semantic Search: mcp__qdrant__qdrant-find
+- Search for similar minimal implementation patterns
+- Retrieve previous solution strategies
+- Access domain implementation approaches
 ```
-
-### Knowledge Linking Strategy
-
-- **Entities**: Always use UUID as the name field
-- **Types**: Use entityType for classification
-
-  ("implementation-pattern", "minimal-solution", "fake-it-strategy")
-
-- **Relations**: Link UUID to UUID with descriptive relationType
 
 ### Cross-Agent Knowledge Sharing
 

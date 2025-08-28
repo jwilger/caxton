@@ -33,10 +33,12 @@ struct SandboxState {
 }
 
 impl SandboxState {
+    #[must_use]
     fn elapsed(&self) -> std::time::Duration {
         self.start_time.elapsed()
     }
 
+    #[must_use]
     fn limits(&self) -> &StoreLimits {
         &self.limits
     }
@@ -274,11 +276,13 @@ impl Sandbox {
     }
 
     /// Gets the current memory usage of the sandbox
+    #[must_use]
     pub fn get_memory_usage(&self) -> usize {
         self.memory_usage.load(Ordering::Relaxed)
     }
 
     /// Gets the list of exposed host functions
+    #[must_use]
     pub fn get_exposed_functions(&self) -> Vec<String> {
         self.exposed_functions
             .iter()

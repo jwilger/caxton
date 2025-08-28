@@ -35,6 +35,7 @@ impl AgentMemoryRequest {
 pub struct TotalMemoryAllocated(usize);
 
 impl TotalMemoryAllocated {
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -97,6 +98,7 @@ impl Default for BoundedMemoryPool {
 
 impl BoundedMemoryPool {
     /// Create a new bounded memory pool
+    #[must_use]
     pub fn new() -> Self {
         Self {
             allocations: HashMap::new(),
@@ -142,14 +144,17 @@ impl BoundedMemoryPool {
         Ok(allocation)
     }
 
+    #[must_use]
     pub fn get_allocation(&self, agent_id: &AgentId) -> Option<AgentMemoryRequest> {
         self.allocations.get(agent_id).copied()
     }
 
+    #[must_use]
     pub fn total_allocated(&self) -> TotalMemoryAllocated {
         self.total_allocated
     }
 
+    #[must_use]
     pub fn available_memory(&self) -> usize {
         TOTAL_MEMORY_LIMIT - self.total_allocated.into_inner()
     }
@@ -168,6 +173,7 @@ impl<const MAX_MEM: usize, const MAX_FUEL: u64> Default for ResourceLimits<MAX_M
 
 impl<const MAX_MEM: usize, const MAX_FUEL: u64> ResourceLimits<MAX_MEM, MAX_FUEL> {
     /// Create new resource limits with compile-time constants
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             max_memory_bytes: PhantomData,
@@ -175,10 +181,12 @@ impl<const MAX_MEM: usize, const MAX_FUEL: u64> ResourceLimits<MAX_MEM, MAX_FUEL
         }
     }
 
+    #[must_use]
     pub const fn max_memory() -> usize {
         MAX_MEM
     }
 
+    #[must_use]
     pub const fn max_fuel() -> u64 {
         MAX_FUEL
     }
@@ -203,16 +211,19 @@ impl<const MAX_MEM: usize, const MAX_FUEL: u64>
     WasmRuntimeConfig<ResourceLimits<MAX_MEM, MAX_FUEL>>
 {
     /// Create new WASM runtime configuration
+    #[must_use]
     pub fn new() -> Self {
         Self {
             resource_limits: ResourceLimits::new(),
         }
     }
 
+    #[must_use]
     pub fn max_memory(&self) -> usize {
         MAX_MEM
     }
 
+    #[must_use]
     pub fn max_fuel(&self) -> u64 {
         MAX_FUEL
     }

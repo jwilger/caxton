@@ -113,11 +113,13 @@ impl AgentMemoryRequest {
     }
 
     /// Consumes the request and returns the raw byte count
+    #[must_use]
     pub fn into_inner(self) -> usize {
         self.bytes.into_inner()
     }
 
     /// Gets the max memory as a domain type
+    #[must_use]
     pub fn as_max_memory(&self) -> MaxAgentMemory {
         self.bytes
     }
@@ -173,6 +175,7 @@ impl TotalMemoryAllocated {
     ///
     /// # Panics
     /// Panics if zero is not a valid value for `MaxTotalMemory` (should never happen)
+    #[must_use]
     pub fn zero() -> Self {
         Self {
             bytes: MaxTotalMemory::try_new(0)
@@ -189,11 +192,13 @@ impl TotalMemoryAllocated {
     }
 
     /// Consumes the allocation tracker and returns the raw byte count
+    #[must_use]
     pub fn into_inner(self) -> usize {
         self.bytes.into_inner()
     }
 
     /// Gets the max total memory as a domain type
+    #[must_use]
     pub fn as_max_total_memory(&self) -> MaxTotalMemory {
         self.bytes
     }
@@ -246,6 +251,7 @@ impl Default for BoundedMemoryPool {
 
 impl BoundedMemoryPool {
     /// Creates a new bounded memory pool
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -283,11 +289,13 @@ impl BoundedMemoryPool {
     }
 
     /// Gets the current memory allocation for an agent if it exists
+    #[must_use]
     pub fn get_allocation(&self, agent_id: &AgentId) -> Option<AgentMemoryRequest> {
         self.allocations.get(agent_id).copied()
     }
 
     /// Gets the total memory allocated across all agents
+    #[must_use]
     pub fn total_allocated(&self) -> TotalMemoryAllocated {
         self.total_allocated
     }
@@ -304,6 +312,7 @@ pub struct SimpleFuelTracker {
 
 impl SimpleFuelTracker {
     /// Creates a new fuel tracker with the given budget
+    #[must_use]
     pub fn new(budget: CpuFuelBudget) -> Self {
         Self {
             budget,
@@ -330,11 +339,13 @@ impl SimpleFuelTracker {
     }
 
     /// Returns the amount of fuel consumed so far
+    #[must_use]
     pub fn consumed(&self) -> CpuFuelConsumed {
         self.consumed
     }
 
     /// Returns the remaining fuel budget
+    #[must_use]
     pub fn remaining(&self) -> CpuFuelBudget {
         let budget = self.budget.into_inner();
         let consumed = self.consumed.into_inner();
@@ -360,6 +371,7 @@ struct AgentResourceUsage {
 
 impl ResourceManager {
     /// Creates a new resource manager with specified limits
+    #[must_use]
     pub fn new(limits: ResourceLimits) -> Self {
         Self {
             limits,
@@ -482,12 +494,14 @@ impl ResourceManager {
     }
 
     /// Gets the current memory usage for an agent from the bounded pool
+    #[must_use]
     pub fn get_agent_memory_usage(&self, agent_id: AgentId) -> Option<AgentMemoryRequest> {
         let pool = self.memory_pool.lock().ok()?;
         pool.get_allocation(&agent_id)
     }
 
     /// Gets the total fuel consumed by an agent using the `FuelTracker`
+    #[must_use]
     pub fn get_agent_fuel_usage(&self, agent_id: AgentId) -> CpuFuelConsumed {
         self.fuel_trackers
             .get(&agent_id)
@@ -495,6 +509,7 @@ impl ResourceManager {
     }
 
     /// Gets the total memory usage across all agents from the bounded pool
+    #[must_use]
     pub fn get_total_memory_usage(&self) -> TotalMemoryAllocated {
         self.memory_pool
             .lock()
@@ -502,6 +517,7 @@ impl ResourceManager {
     }
 
     /// Gets the total fuel consumed across all agents
+    #[must_use]
     pub fn get_total_fuel_usage(&self) -> CpuFuelConsumed {
         let total: u64 = self
             .fuel_trackers
@@ -538,6 +554,7 @@ impl ResourceManager {
     }
 
     /// Gets the configured resource limits
+    #[must_use]
     pub fn get_limits(&self) -> &ResourceLimits {
         &self.limits
     }
@@ -557,6 +574,7 @@ impl ResourceManager {
 }
 
 impl AgentResourceUsage {
+    #[must_use]
     fn new() -> Self {
         Self {
             memory_bytes: AtomicUsize::new(0),
@@ -572,10 +590,12 @@ impl AgentResourceUsage {
         // but that would require interior mutability for the Instant
     }
 
+    #[must_use]
     fn message_count(&self) -> usize {
         self.message_count.load(Ordering::SeqCst)
     }
 
+    #[must_use]
     fn time_since_update(&self) -> std::time::Duration {
         self.last_updated.elapsed()
     }

@@ -5,11 +5,11 @@ code in this repository.
 
 ## Memory System Usage (IMPORTANT)
 
-### Dual-Stage Memory Architecture
+### Qdrant Memory System
 
-**USE THROUGHOUT ALL CONVERSATIONS**: The dual-stage memory system (qdrant +
-sparc-memory) should be actively used in ALL interactions, not just during agent
-operations or SPARC workflows.
+**USE THROUGHOUT ALL CONVERSATIONS**: The qdrant memory system should be
+actively used in ALL interactions, not just during agent operations or SPARC
+workflows.
 
 #### When to Store Memories
 
@@ -25,44 +25,21 @@ Store knowledge whenever you:
 
 #### Memory Storage Protocol (For All Conversations)
 
-1. **Generate UUID**: Use `mcp__uuid__generateUuid` for unique identification
-2. **Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
-   including:
-   - Context of the discovery
-   - Technical details
-   - Relationships to other concepts
-   - Include UUID tag at the END: `[UUID: {generated-uuid}]`
-3. **Create Graph Node Using UUID**: Use `mcp__sparc-memory__create_entities`
-   with:
-   - **CRITICAL**: Set `name` field to the UUID string (e.g.,
-     "550e8400-e29b-41d4-a716-446655440000")
-   - Set `entityType` to describe the type (e.g., "research-finding",
-     "implementation-pattern")
-   - Add observations that describe what this memory represents
-4. **Link Relationships Between UUIDs**: Use
-   `mcp__sparc-memory__create_relations` with:
-   - `from`: Source UUID string
-   - `to`: Target UUID string
-   - `relationType`: Describes the relationship
+**Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
+including:
 
-#### Search Before Acting (CRITICAL UUID-Based Workflow)
+- Context of the discovery
+- Technical details
+- Relationships to other concepts
+- Clear, searchable descriptions
 
-Before diving into any task, follow this EXACT search pattern:
+#### Search Before Acting
 
-1. **Semantic Search First**: Use `mcp__qdrant__qdrant-find` to find relevant
-   memories
-2. **Extract UUIDs from Results**: Parse each returned memory for `[UUID: xxx]`
-   tags
-3. **Graph Node Lookup**: For EACH UUID found:
-   - Use `mcp__sparc-memory__open_nodes` with `names: ["uuid-string-here"]`
-   - **NEVER** search sparc-memory by semantic entity names
-4. **Traverse Relationships**: From opened nodes, follow relations to find
-   connected UUIDs
-5. **Secondary Qdrant Search**: Use the related UUIDs to search qdrant for
-   additional context
+Before diving into any task, search for relevant knowledge:
 
-**CRITICAL**: sparc-memory nodes are ALWAYS accessed by UUID, never by
-descriptive names
+**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find relevant memories
+by content, context, or topic. The tool returns the most relevant stored
+knowledge based on semantic similarity.
 
 #### Example Memory Storage Scenarios
 
@@ -134,8 +111,8 @@ RUST_BACKTRACE=1 cargo nextest run  # With backtrace on failure
 ```bash
 cargo build                          # Build the project
 cargo build --release              # Release build
-cargo check                         # Fast syntax/type checking (or use bacon check)
-cargo clippy                        # Linting (strict rules enabled) (or use bacon clippy)
+cargo check                         # Fast syntax/type checking (use bacon)
+cargo clippy                        # Linting (strict rules) (use bacon)
 cargo fmt                          # Format code
 ```
 
@@ -405,23 +382,17 @@ development practices:
 
 ### MANDATORY Memory Storage (CRITICAL)
 
-**Every SPARC phase MUST store knowledge using the dual-memory architecture:**
+**Every SPARC phase MUST store knowledge using the qdrant memory system:**
 
-#### Memory Storage Protocol (UUID-Based Linking)
+#### Memory Storage Protocol
 
-1. **Generate UUID**: Use `mcp__uuid__generateUuid` to create unique identifier
-2. **Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
-   - Include UUID tag at the END: `[UUID: {generated-uuid}]`
-3. **Create Graph Node**: Use `mcp__sparc-memory__create_entities` with:
-   - **name**: The UUID string itself (e.g.,
-     "550e8400-e29b-41d4-a716-446655440000")
-   - **entityType**: Descriptive type (e.g., "research-finding",
-     "implementation-pattern")
-   - **observations**: Array of descriptive strings about this memory
-4. **Link UUIDs**: Use `mcp__sparc-memory__create_relations` with:
-   - **from**: Source UUID string
-   - **to**: Target UUID string
-   - **relationType**: Relationship description
+**Store in Qdrant**: Use `mcp__qdrant__qdrant-store` with descriptive content
+that includes:
+
+- Clear description of the finding or pattern
+- Context and relevance
+- Technical details and implementation notes
+- Related concepts or dependencies
 
 #### Required Storage by Phase
 
@@ -435,14 +406,11 @@ development practices:
   architectural analysis
 - **PR Management**: MUST store workflow patterns, strategies, and outcomes
 
-#### Dual-System Search Strategy
+#### Search Strategy
 
-- **Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by
-  meaning
-- **Graph Traversal**: Use `mcp__sparc-memory__search_nodes` to find related
-  memories
-- **Combined Workflow**: Search qdrant → extract UUIDs → traverse graph for
-  context
+**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by
+meaning, context, or topic. The search returns relevant stored knowledge
+based on semantic similarity.
 
 **Knowledge not stored is knowledge lost. This is not optional and will be
 enforced by the SPARC orchestrator.**
@@ -464,8 +432,10 @@ enforced by the SPARC orchestrator.**
 **Example completion format**:
 
 ```diff
-- [ ] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected vulnerability
-+ [x] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected vulnerability ✅ (COMPLETED - All acceptance criteria met)
+- [ ] Story 052: Dependency Vulnerability Resolution - Address the
+  GitHub-detected vulnerability
++ [x] Story 052: Dependency Vulnerability Resolution - Address the
+  GitHub-detected vulnerability ✅ (COMPLETED - All acceptance criteria met)
 ```
 
 **Automation**: The SPARC workflow will automatically fail if PLANNING.md is not
@@ -480,17 +450,61 @@ updated during story completion.
 
 ### PR Safety & Attribution
 
-All GitHub comments from Claude Code include attribution:
+All GitHub comments from Claude Code include minimal attribution:
 
 ```markdown
 <!-- Generated by Claude Code -->
-
-**🤖 Claude Code**: [response content]
-
-_This comment was generated automatically..._
+[Direct, concise response]
 ```
 
 PRs created in **draft status only** - humans control ready-for-review.
+**NEVER modify PR status back to draft once a human has marked it ready-for-review.**
+
+**PR descriptions must be concise** - 5-7 lines maximum, facts only, no
+self-congratulatory language.
+
+### PR Review Response Rules (CRITICAL)
+
+**NEVER create top-level comments** - Claude Code responses must ONLY appear as
+threaded replies within review discussions.
+
+#### Mandatory Review Response Process
+
+1. **DELETE all existing top-level Claude comments first**
+   - Use `gh api` to find and delete ALL issue comments from Claude
+   - Only the PR description should remain at top level
+
+2. **FIX all issues BEFORE replying**
+   - NEVER reply saying "will fix" or "working on it"
+   - Complete ALL fixes, commit, and push FIRST
+   - Only reply to confirm what was already done
+
+3. **Use CORRECT GraphQL API for threaded replies**
+
+   ```graphql
+   mutation {
+     addPullRequestReviewThreadReply(input: {
+       pullRequestReviewThreadId: "THREAD_ID",
+       body: "<!-- Generated by Claude Code -->\\n**🤖 Claude Code**: ✅ Fixed in commit abc123\\n\\n_This comment was generated automatically by Claude Code on behalf of the repository maintainer._"
+     }) {
+       comment { id }
+     }
+   }
+   ```
+
+   - These are thread replies, NOT new review comments
+   - Find thread IDs with `reviewThreads` query first
+
+4. **Reply format requirements**
+   - State what was DONE, not what will be done
+   - Reference specific commits where fixes were made
+   - For suggestions you won't implement, explain why clearly
+   - Keep replies concise and factual
+
+5. **Copilot vs Human review prioritization**
+   - Human feedback MUST be addressed or explicitly declined with reasoning
+   - Copilot suggestions can be declined if not applicable
+   - Always fix issues from humans before responding
 
 ### Commands & Agents
 
@@ -584,14 +598,10 @@ The SPARC coordinator's ONLY responsibilities are:
 
 **Memory Usage Enforcement (MANDATORY):**
 
-- **All agents MUST search both systems** for relevant knowledge when receiving
-  control:
+- **All agents MUST search for relevant knowledge** when receiving control:
   - Use `mcp__qdrant__qdrant-find` for semantic search
-  - Use `mcp__sparc-memory__search_nodes` for entity relationships
-- **All agents MUST store patterns and insights** using dual-memory protocol:
-  - Generate UUID with `mcp__uuid__generateUuid`
-  - Store content in qdrant with UUID tag
-  - Create/update entity graph in sparc-memory
+- **All agents MUST store patterns and insights**:
+  - Store content in qdrant with clear, searchable descriptions
 - **Coordinator tracks compliance** - Agents failing memory requirements will be
   reprimanded
 

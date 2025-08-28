@@ -47,10 +47,12 @@ pub struct Stopped;
 pub struct MessageCount(u32);
 
 impl MessageCount {
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn decrement(&self) -> Option<Self> {
         let current = self.into_inner();
         if current > 0 {
@@ -69,6 +71,7 @@ pub struct Sandbox<S> {
 }
 
 impl Sandbox<Uninitialized> {
+    #[must_use]
     pub fn new(id: AgentId) -> Self {
         Self {
             id,
@@ -77,10 +80,12 @@ impl Sandbox<Uninitialized> {
         }
     }
 
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         MemoryBytes::zero()
     }
 
+    #[must_use]
     pub fn initialize(self, memory: MemoryBytes) -> Sandbox<Initialized> {
         Sandbox {
             id: self.id,
@@ -93,10 +98,12 @@ impl Sandbox<Uninitialized> {
 }
 
 impl Sandbox<Initialized> {
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         self.state.memory_allocated
     }
 
+    #[must_use]
     pub fn start(self, fuel_tracker: FuelTracker) -> Sandbox<Running> {
         Sandbox {
             id: self.id,
@@ -110,6 +117,7 @@ impl Sandbox<Initialized> {
 }
 
 impl Sandbox<Running> {
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         self.state.memory_allocated
     }
@@ -124,6 +132,7 @@ impl Sandbox<Running> {
         Ok(())
     }
 
+    #[must_use]
     pub fn start_draining(self, message_count: MessageCount) -> Sandbox<Draining> {
         Sandbox {
             id: self.id,
@@ -135,6 +144,7 @@ impl Sandbox<Running> {
         }
     }
 
+    #[must_use]
     pub fn stop(self) -> Sandbox<Stopped> {
         Sandbox {
             id: self.id,
@@ -145,20 +155,24 @@ impl Sandbox<Running> {
 }
 
 impl Sandbox<Draining> {
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         self.state.memory_allocated
     }
 
+    #[must_use]
     pub fn process_message(&mut self) -> Option<MessageCount> {
         self.state.messages_remaining.decrement().inspect(|&count| {
             self.state.messages_remaining = count;
         })
     }
 
+    #[must_use]
     pub fn is_drained(&self) -> bool {
         self.state.messages_remaining.into_inner() == 0
     }
 
+    #[must_use]
     pub fn stop(self) -> Sandbox<Stopped> {
         Sandbox {
             id: self.id,
@@ -169,10 +183,12 @@ impl Sandbox<Draining> {
 }
 
 impl Sandbox<Stopped> {
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         MemoryBytes::zero()
     }
 
+    #[must_use]
     pub fn get_id(&self) -> AgentId {
         self.id
     }
@@ -188,6 +204,7 @@ pub enum SandboxState {
 }
 
 impl SandboxState {
+    #[must_use]
     pub fn get_memory_usage(&self) -> MemoryBytes {
         match self {
             SandboxState::Uninitialized(s) => s.get_memory_usage(),

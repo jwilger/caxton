@@ -21,6 +21,8 @@ pub mod runtime;
 pub mod sandbox;
 /// Security policy configuration and enforcement
 pub mod security;
+/// Storage layer for persisting agent registry, routing tables, and conversation state
+pub mod storage;
 
 /// Core agent lifecycle management orchestration
 pub mod agent_lifecycle_manager;

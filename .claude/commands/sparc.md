@@ -73,7 +73,7 @@ NOT:**
 3. **Route information requests** between agents as needed
 4. **Track workflow state** and enforce correct SPARC phase ordering
 5. **Interface with human** for approvals and decisions
-6. **ENFORCE MEMORY STORAGE** - Verify each agent stored knowledge before
+6. **ENFORCE MEMORY STORAGE** - Verify each agent stored knowledge in qdrant before
    proceeding
 
 ## SPARC Workflow
@@ -192,10 +192,11 @@ Use Task tool with `expert` agent:
 
 Use Task tool with `pr-manager` agent:
 
-- Create draft PR with comprehensive description
-- Link story acceptance criteria and implementation summary
+- Create draft PR with **concise** description (facts only, no fluff)
+- Brief summary of changes (3-5 bullets max)
 - Update `.claude/branch.info` with PR number
 - Never mark PR ready-for-review (human only)
+- Never modify PR back to draft once marked ready-for-review by human
 
 ### I) PR REVIEW LOOP (if feedback exists)
 
@@ -216,31 +217,23 @@ Use Task tool with `pr-manager` agent:
   included in the same PR)
 - Remove `.claude/plan.approved` file
 - Generate summary of files changed and commits made
-- Ensure PR remains in draft status for human review and merge
+- Leave PR in its current status (draft unless human has marked ready-for-review)
 
 ## Completion Summary
 
 The coordinator presents the final summary to the user.
 
-### Memory Storage Verification (UUID-Based Protocol)
+### Memory Storage Verification
 
-**MANDATORY FINAL STEP**: Verify all agents used correct UUID-based memory
-protocol per `.claude/MEMORY_VERIFICATION_CHECKLIST.md`:
+**MANDATORY FINAL STEP**: Verify all agents stored knowledge in qdrant:
 
-1. **UUID Generation**: Confirm each storage operation started with
-   `mcp__uuid__generateUuid`
-2. **Qdrant Format**: Check all memories include `[UUID: xxx]` tag at END
-3. **Graph Nodes**: Verify sparc-memory entities use UUID as `name` field
-4. **Relations**: Confirm all relations link UUID to UUID, not descriptive names
-5. **Search Pattern**: Validate agents extracted UUIDs and used `open_nodes`,
-   not semantic search
+1. **Storage Verification**: Confirm each agent used `mcp__qdrant__qdrant-store`
+2. **Content Quality**: Check memories include clear context and descriptions
+3. **Search Capability**: Verify memories are searchable via semantic search
+4. **Knowledge Categories**: Ensure proper categorization of patterns
+5. **Cross-Agent Value**: Validate stored knowledge is useful for other agents
 
-**REFERENCE**: See `.claude/MEMORY_VERIFICATION_CHECKLIST.md` for detailed
-validation criteria and examples
-
-**ENFORCEMENT**: Agents violating UUID protocol must redo their memory
-operations correctly 6. Verify expert analysis was preserved 7. Ensure PR
-workflow patterns were captured
+**ENFORCEMENT**: Agents failing to store knowledge must complete storage before proceeding.
 
 **If any agent failed to store knowledge, request immediate remediation before
 marking story complete.**

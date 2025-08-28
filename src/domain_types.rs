@@ -27,6 +27,7 @@ pub struct AgentId(Uuid);
 
 impl AgentId {
     /// Creates a new random agent ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -78,6 +79,7 @@ pub struct MemoryBytes(usize);
 
 impl MemoryBytes {
     /// Returns zero memory bytes
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -92,6 +94,7 @@ impl MemoryBytes {
     }
 
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -128,6 +131,7 @@ impl MemoryBytes {
     ///
     /// This version works without the wasmtime feature flag and returns
     /// the byte count that should be applied to external systems.
+    #[must_use]
     pub fn get_wasmtime_limit(&self) -> usize {
         self.as_usize()
     }
@@ -143,6 +147,7 @@ pub struct CpuFuel(u64);
 
 impl CpuFuel {
     /// Returns zero fuel
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -217,6 +222,7 @@ impl CpuFuel {
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -264,6 +270,7 @@ pub struct MaxAgents(usize);
 
 impl MaxAgents {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -315,6 +322,7 @@ pub struct MaxExports(usize);
 
 impl MaxExports {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -343,6 +351,7 @@ pub struct MessageCount(usize);
 
 impl MessageCount {
     /// Returns zero message count
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -354,6 +363,7 @@ impl MessageCount {
     }
 
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -365,16 +375,19 @@ pub struct ExecutionTime(Duration);
 
 impl ExecutionTime {
     /// Creates a new execution time from seconds
+    #[must_use]
     pub fn from_secs(secs: u64) -> Self {
         Self(Duration::from_secs(secs))
     }
 
     /// Creates a new execution time from a Duration
+    #[must_use]
     pub fn from_duration(duration: Duration) -> Self {
         Self(duration)
     }
 
     /// Gets the inner Duration
+    #[must_use]
     pub fn as_duration(&self) -> Duration {
         self.0
     }
@@ -402,6 +415,7 @@ pub struct MaxAgentMemory(usize);
 
 impl MaxAgentMemory {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -417,6 +431,7 @@ pub struct MaxTotalMemory(usize);
 
 impl MaxTotalMemory {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -446,6 +461,7 @@ pub struct MaxTableEntries(usize);
 
 impl MaxTableEntries {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -528,6 +544,7 @@ pub struct ConnectionPoolSize(usize);
 
 impl ConnectionPoolSize {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -557,11 +574,13 @@ pub struct StorageCleanupIntervalMs(u64);
 
 impl StorageCleanupIntervalMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> Duration {
         Duration::from_millis(self.into_inner())
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -591,6 +610,7 @@ pub struct RateLimitPerSecond(usize);
 
 impl RateLimitPerSecond {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -620,11 +640,13 @@ pub struct CpuFuelConsumed(u64);
 
 impl CpuFuelConsumed {
     /// Returns zero consumed fuel
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -668,16 +690,19 @@ pub struct CpuFuelAmount(u64);
 
 impl CpuFuelAmount {
     /// Returns zero fuel amount
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
 
     /// Creates fuel amount from a primitive u64
+    #[must_use]
     pub fn from_u64(value: u64) -> Self {
         // CpuFuelAmount has no validation so we can use new directly
         Self::try_new(value).unwrap_or_default()
@@ -707,6 +732,7 @@ pub struct WorkerId(usize);
 
 impl WorkerId {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -745,11 +771,13 @@ pub struct QueueDepth(usize);
 
 impl QueueDepth {
     /// Returns zero queue depth
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
 
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -789,6 +817,7 @@ pub struct RetryAttempt(u8);
 
 impl RetryAttempt {
     /// Gets the value as u8
+    #[must_use]
     pub fn as_u8(&self) -> u8 {
         self.into_inner()
     }
@@ -797,6 +826,7 @@ impl RetryAttempt {
     /// # Panics
     ///
     /// Panics if 1 is not a valid retry attempt (should never happen)
+    #[must_use]
     pub fn first() -> Self {
         Self::try_new(1).expect("First attempt should always be valid")
     }
@@ -811,6 +841,7 @@ impl RetryAttempt {
     }
 
     /// Checks if this is the final allowed attempt
+    #[must_use]
     pub fn is_final(&self) -> bool {
         self.into_inner() == 24
     }
@@ -841,11 +872,13 @@ pub struct TestAgentId(u32);
 
 impl TestAgentId {
     /// Gets the value as u32
+    #[must_use]
     pub fn as_u32(&self) -> u32 {
         self.into_inner()
     }
 
     /// Creates `TestAgentId` from a usize, clamping to `u32::MAX`
+    #[must_use]
     pub fn from_usize(value: usize) -> Self {
         let max_as_usize = usize::try_from(u32::MAX).unwrap_or(usize::MAX);
         let clamped = value.min(max_as_usize);
@@ -878,6 +911,7 @@ pub struct TestSequence(u32);
 
 impl TestSequence {
     /// Gets the value as u32
+    #[must_use]
     pub fn as_u32(&self) -> u32 {
         self.into_inner()
     }
@@ -889,6 +923,7 @@ impl TestSequence {
     }
 
     /// Returns zero sequence
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }

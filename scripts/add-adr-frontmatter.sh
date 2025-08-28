@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 for file in /workspaces/caxton/website/_adr/*.md; do
   filename=$(basename "$file" .md)

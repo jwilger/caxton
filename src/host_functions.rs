@@ -34,6 +34,7 @@ impl HostFunctions {
     ///
     /// # Panics
     /// Panics if any of the hardcoded function names are invalid for domain types
+    #[must_use]
     pub fn new() -> Self {
         let mut functions = HashMap::new();
 
@@ -102,11 +103,13 @@ impl HostFunctions {
     }
 
     /// Returns a list of all available host function names
+    #[must_use]
     pub fn get_available_functions(&self) -> Vec<HostFunctionName> {
         self.registered_functions.keys().cloned().collect()
     }
 
     /// Checks if a function name is considered safe for execution
+    #[must_use]
     pub fn is_function_safe(&self, function_name: &str) -> bool {
         !matches!(
             function_name,
@@ -115,11 +118,13 @@ impl HostFunctions {
     }
 
     /// Retrieves metadata for a specific function
+    #[must_use]
     pub fn get_function_metadata(&self, name: &HostFunctionName) -> Option<&FunctionMetadata> {
         self.registered_functions.get(name)
     }
 
     /// Retrieves metadata for a specific function by string name
+    #[must_use]
     pub fn get_function_metadata_by_name(&self, name: &str) -> Option<&FunctionMetadata> {
         let function_name = HostFunctionName::try_new(name.to_string()).ok()?;
         self.registered_functions.get(&function_name)

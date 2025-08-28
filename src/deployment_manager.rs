@@ -66,6 +66,7 @@ pub trait ResourceAllocator {
     async fn deallocate_resources(&self, agent_id: AgentId) -> Result<(), DeploymentError>;
 
     /// Check resource availability
+    #[must_use]
     async fn check_resource_availability(
         &self,
         requirements: &ResourceRequirements,
@@ -76,6 +77,7 @@ pub trait ResourceAllocator {
 #[async_trait::async_trait]
 pub trait InstanceManager {
     /// Deploy a single agent instance
+    #[must_use]
     async fn deploy_instance(
         &self,
         agent_id: AgentId,
@@ -84,12 +86,14 @@ pub trait InstanceManager {
     ) -> Result<InstanceDeploymentResult, DeploymentError>;
 
     /// Perform health check on instance
+    #[must_use]
     async fn health_check(&self, agent_id: AgentId) -> Result<HealthCheckResult, DeploymentError>;
 
     /// Stop an agent instance
     async fn stop_instance(&self, agent_id: AgentId) -> Result<(), DeploymentError>;
 
     /// Get instance metrics
+    #[must_use]
     async fn get_instance_metrics(
         &self,
         agent_id: AgentId,
@@ -113,6 +117,7 @@ pub struct CaxtonDeploymentManager {
 
 impl CaxtonDeploymentManager {
     /// Creates a new deployment manager
+    #[must_use]
     pub fn new(
         resource_allocator: Arc<dyn ResourceAllocator + Send + Sync>,
         instance_manager: Arc<dyn InstanceManager + Send + Sync>,
@@ -127,6 +132,7 @@ impl CaxtonDeploymentManager {
     }
 
     /// Creates deployment manager with custom settings
+    #[must_use]
     pub fn with_limits(
         resource_allocator: Arc<dyn ResourceAllocator + Send + Sync>,
         instance_manager: Arc<dyn InstanceManager + Send + Sync>,
@@ -345,6 +351,7 @@ mod tests {
         }
     }
 
+    #[must_use]
     fn create_test_deployment_manager() -> CaxtonDeploymentManager {
         let resource_allocator = Arc::new(MockResourceAllocator {
             should_succeed: Arc::new(AtomicBool::new(true)),

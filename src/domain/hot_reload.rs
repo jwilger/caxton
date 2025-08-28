@@ -33,6 +33,7 @@ pub struct HotReloadId(Uuid);
 
 impl HotReloadId {
     /// Creates a new random hot reload ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -53,16 +54,19 @@ pub enum HotReloadStrategy {
 
 impl HotReloadStrategy {
     /// Check if strategy requires draining existing requests
+    #[must_use]
     pub fn requires_draining(&self) -> bool {
         matches!(self, Self::Graceful)
     }
 
     /// Check if strategy allows rollback without downtime
+    #[must_use]
     pub fn supports_zero_downtime_rollback(&self) -> bool {
         matches!(self, Self::Parallel | Self::TrafficSplitting)
     }
 
     /// Check if strategy can run multiple versions simultaneously
+    #[must_use]
     pub fn supports_multiple_versions(&self) -> bool {
         matches!(self, Self::Parallel | Self::TrafficSplitting)
     }
@@ -92,6 +96,7 @@ pub struct TrafficSplitPercentage(u8);
 
 impl TrafficSplitPercentage {
     /// Gets the value as percentage (0-100)
+    #[must_use]
     pub fn as_percentage(&self) -> u8 {
         self.into_inner()
     }
@@ -101,6 +106,7 @@ impl TrafficSplitPercentage {
     /// # Panics
     ///
     /// Panics if 50 is somehow invalid (should never happen).
+    #[must_use]
     pub fn half() -> Self {
         Self::try_new(50).unwrap()
     }
@@ -110,6 +116,7 @@ impl TrafficSplitPercentage {
     /// # Panics
     ///
     /// Panics if 100 is somehow invalid (should never happen).
+    #[must_use]
     pub fn full() -> Self {
         Self::try_new(100).unwrap()
     }
@@ -119,6 +126,7 @@ impl TrafficSplitPercentage {
     /// # Panics
     ///
     /// Panics if 5 is somehow invalid (should never happen).
+    #[must_use]
     pub fn canary() -> Self {
         Self::try_new(5).unwrap()
     }
@@ -134,6 +142,7 @@ impl TrafficSplitPercentage {
     }
 
     /// Get remaining traffic percentage for old version
+    #[must_use]
     pub fn remaining_percentage(&self) -> u8 {
         100 - self.into_inner()
     }
@@ -155,6 +164,7 @@ impl RollbackCapability {
     /// # Panics
     ///
     /// Panics if the hardcoded timeout value is invalid (should never happen).
+    #[must_use]
     pub fn new() -> Self {
         Self {
             enabled: true,
@@ -174,6 +184,7 @@ impl RollbackCapability {
     /// # Panics
     ///
     /// Panics if the hardcoded timeout value is invalid (should never happen).
+    #[must_use]
     pub fn manual_only() -> Self {
         Self {
             enabled: true,
@@ -189,6 +200,7 @@ impl RollbackCapability {
     /// # Panics
     ///
     /// Panics if the hardcoded timeout value is invalid (should never happen).
+    #[must_use]
     pub fn disabled() -> Self {
         Self {
             enabled: false,
@@ -200,6 +212,7 @@ impl RollbackCapability {
     }
 
     /// Check if automatic rollback should trigger based on metrics
+    #[must_use]
     pub fn should_trigger_rollback(&self, metrics: &ReloadMetrics) -> bool {
         if !self.enabled {
             return false;
@@ -234,6 +247,7 @@ pub enum RollbackTrigger {
 
 impl RollbackTrigger {
     /// Check if trigger condition is met based on metrics
+    #[must_use]
     pub fn should_trigger(&self, metrics: &ReloadMetrics) -> bool {
         match self {
             Self::HealthCheckFailure => {
@@ -275,6 +289,7 @@ impl HotReloadConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded drain timeout value is invalid (should never happen).
+    #[must_use]
     pub fn new(strategy: HotReloadStrategy) -> Self {
         Self {
             strategy,
@@ -293,6 +308,7 @@ impl HotReloadConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded drain timeout value is invalid (should never happen).
+    #[must_use]
     pub fn graceful() -> Self {
         let mut config = Self::new(HotReloadStrategy::Graceful);
         config.drain_timeout = DeploymentTimeout::try_new(120_000).unwrap(); // 2 minutes
@@ -304,6 +320,7 @@ impl HotReloadConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded drain timeout value is invalid (should never happen).
+    #[must_use]
     pub fn immediate() -> Self {
         let mut config = Self::new(HotReloadStrategy::Immediate);
         config.drain_timeout = DeploymentTimeout::try_new(30_000).unwrap(); // 30 seconds (minimum allowed)
@@ -312,6 +329,7 @@ impl HotReloadConfig {
     }
 
     /// Creates configuration for traffic splitting
+    #[must_use]
     pub fn traffic_splitting(split_percentage: TrafficSplitPercentage) -> Self {
         let mut config = Self::new(HotReloadStrategy::TrafficSplitting);
         config.traffic_split = split_percentage;
@@ -320,6 +338,7 @@ impl HotReloadConfig {
     }
 
     /// Creates configuration for parallel deployment
+    #[must_use]
     pub fn parallel() -> Self {
         let mut config = Self::new(HotReloadStrategy::Parallel);
         config.resource_requirements.memory_limit = config
@@ -357,6 +376,7 @@ pub struct HotReloadRequest {
 
 impl HotReloadRequest {
     /// Creates a new hot reload request
+    #[must_use]
     pub fn new(
         agent_id: AgentId,
         agent_name: Option<AgentName>,
@@ -389,6 +409,7 @@ impl HotReloadRequest {
     }
 
     /// Get WASM module size
+    #[must_use]
     pub fn module_size(&self) -> usize {
         self.new_wasm_module.len()
     }
@@ -450,6 +471,7 @@ pub enum HotReloadStatus {
 
 impl HotReloadStatus {
     /// Check if status is terminal
+    #[must_use]
     pub fn is_terminal(&self) -> bool {
         matches!(
             self,
@@ -458,11 +480,13 @@ impl HotReloadStatus {
     }
 
     /// Check if status indicates success
+    #[must_use]
     pub fn is_success(&self) -> bool {
         matches!(self, Self::Completed)
     }
 
     /// Check if rollback is possible
+    #[must_use]
     pub fn can_rollback(&self) -> bool {
         matches!(self, Self::InProgress | Self::Completed | Self::Failed)
     }
@@ -485,6 +509,7 @@ pub struct ReloadMetrics {
 
 impl ReloadMetrics {
     /// Creates new metrics instance
+    #[must_use]
     pub fn new() -> Self {
         Self {
             requests_processed: 0,
@@ -501,6 +526,7 @@ impl ReloadMetrics {
     }
 
     /// Calculate success rate
+    #[must_use]
     pub fn success_rate(&self) -> f32 {
         if self.requests_processed == 0 {
             return 100.0;
@@ -510,6 +536,7 @@ impl ReloadMetrics {
     }
 
     /// Check if metrics indicate healthy operation
+    #[must_use]
     pub fn is_healthy(&self) -> bool {
         self.error_rate_percentage < 5.0
             && self.health_check_success_rate > 90.0
@@ -591,6 +618,7 @@ pub struct HotReloadResult {
 
 impl HotReloadResult {
     /// Creates successful hot reload result
+    #[must_use]
     pub fn success(
         reload_id: HotReloadId,
         agent_id: AgentId,
@@ -616,6 +644,7 @@ impl HotReloadResult {
     }
 
     /// Creates failed hot reload result
+    #[must_use]
     pub fn failure(
         reload_id: HotReloadId,
         agent_id: AgentId,
@@ -640,6 +669,7 @@ impl HotReloadResult {
     }
 
     /// Creates rolled back hot reload result
+    #[must_use]
     pub fn rollback(
         reload_id: HotReloadId,
         agent_id: AgentId,
@@ -665,6 +695,7 @@ impl HotReloadResult {
     }
 
     /// Get hot reload duration
+    #[must_use]
     pub fn duration(&self) -> Option<Duration> {
         match (self.started_at, self.completed_at) {
             (Some(start), Some(end)) => end.duration_since(start).ok(),

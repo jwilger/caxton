@@ -56,6 +56,7 @@ pub struct ValidationConfig {
 
 impl ValidationConfig {
     /// Creates a strict validation configuration
+    #[must_use]
     pub fn strict() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::strict(),
@@ -68,6 +69,7 @@ impl ValidationConfig {
     }
 
     /// Creates a permissive validation configuration
+    #[must_use]
     pub fn permissive() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::permissive(),
@@ -80,6 +82,7 @@ impl ValidationConfig {
     }
 
     /// Creates a testing validation configuration
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             security_policy: WasmSecurityPolicy::testing(),
@@ -150,6 +153,7 @@ impl Default for ValidationStatistics {
 
 impl ValidationStatistics {
     /// Create new validation statistics
+    #[must_use]
     pub fn new() -> Self {
         Self {
             modules_validated: 0,
@@ -185,6 +189,7 @@ impl ValidationStatistics {
     }
 
     /// Calculate success rate percentage
+    #[must_use]
     pub fn success_rate(&self) -> f64 {
         if self.modules_validated == 0 {
             return 0.0;
@@ -207,6 +212,7 @@ pub struct CaxtonWasmModuleValidator {
 
 impl CaxtonWasmModuleValidator {
     /// Creates a new WASM module validator
+    #[must_use]
     pub fn new(config: ValidationConfig) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
@@ -216,16 +222,19 @@ impl CaxtonWasmModuleValidator {
     }
 
     /// Creates validator with default strict configuration
+    #[must_use]
     pub fn strict() -> Self {
         Self::new(ValidationConfig::strict())
     }
 
     /// Creates validator with permissive configuration
+    #[must_use]
     pub fn permissive() -> Self {
         Self::new(ValidationConfig::permissive())
     }
 
     /// Creates validator with testing configuration
+    #[must_use]
     pub fn testing() -> Self {
         Self::new(ValidationConfig::testing())
     }

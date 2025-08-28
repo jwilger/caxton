@@ -62,16 +62,19 @@ pub enum FuelState {
 }
 
 impl FuelState {
+    #[must_use]
     pub fn from_remaining(remaining: u64) -> Self {
         NonZeroCpuFuel::try_new(remaining)
             .map(|fuel| FuelState::Available { remaining: fuel })
             .unwrap_or(FuelState::Exhausted)
     }
 
+    #[must_use]
     pub fn is_available(&self) -> bool {
         matches!(self, FuelState::Available { .. })
     }
 
+    #[must_use]
     pub fn is_exhausted(&self) -> bool {
         matches!(self, FuelState::Exhausted)
     }
@@ -93,6 +96,7 @@ pub enum FuelError {
 }
 
 impl FuelTracker {
+    #[must_use]
     pub fn new(budget: CpuFuelBudget) -> Self {
         let remaining = CpuFuelRemaining::try_new(budget.into_inner()).unwrap_or_default();
         Self { budget, remaining }
@@ -121,18 +125,22 @@ impl FuelTracker {
         Ok(self.remaining)
     }
 
+    #[must_use]
     pub fn consumed(&self) -> u64 {
         self.budget.into_inner() - self.remaining.into_inner()
     }
 
+    #[must_use]
     pub fn remaining(&self) -> CpuFuelRemaining {
         self.remaining
     }
 
+    #[must_use]
     pub fn budget(&self) -> CpuFuelBudget {
         self.budget
     }
 
+    #[must_use]
     pub fn state(&self) -> FuelState {
         FuelState::from_remaining(self.remaining.into_inner())
     }
@@ -143,6 +151,7 @@ pub struct ExecutionContext<F> {
 }
 
 impl ExecutionContext<FuelState> {
+    #[must_use]
     pub fn new(fuel: u64) -> Self {
         Self {
             fuel_state: FuelState::from_remaining(fuel),

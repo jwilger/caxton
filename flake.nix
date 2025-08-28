@@ -34,6 +34,7 @@
             uv
             git
             gh
+            jq
             pre-commit
             cargo-nextest
             cargo-watch
@@ -63,20 +64,10 @@
             pkgs.lapack
           ];
 
-
           # Configure development environment
           shellHook = ''
-            # Validate required environment variables
-            if [ -z "$GITHUB_MCP_TOKEN" ]; then
-              echo "❌ ERROR: GITHUB_MCP_TOKEN environment variable is required"
-              echo "   Please set your GitHub Personal Access Token:"
-              echo "   export GITHUB_MCP_TOKEN=your_github_token_here"
-              echo ""
-              echo "   Token requirements:"
-              echo "   - GitHub Personal Access Token with repo permissions"
-              echo "   - Used for GitHub API access via MCP server"
-              exit 1
-            fi
+            # Note: GitHub operations now use gh CLI directly
+            # The gh CLI will use existing authentication from 'gh auth login'
 
             # Create local dependency directories
             mkdir -p .dependencies/nodejs
@@ -125,29 +116,22 @@
             pre-commit install-hooks
 
             # Add MCP servers with proper configuration
-
-            npm install -g uuid-mcp
-            claude mcp add sparc-memory npx @modelcontextprotocol/server-memory
             claude mcp add cargo cargo-mcp serve
-            claude mcp add --transport=http --header="Authorization: Bearer $GITHUB_MCP_TOKEN" github https://api.githubcopilot.com/mcp/
+            # GitHub operations now use gh CLI directly via Bash tool
             claude mcp add git npx @cyanheads/git-mcp-server
 
             # Install and configure MCP servers
             uv tool install mcp-server-qdrant  # Creates executable in ~/.local/bin
             claude mcp add qdrant mcp-server-qdrant
 
-            claude mcp add uuid node .dependencies/nodejs/lib/node_modules/uuid-mcp/build/index.js
-
             echo "✅ MCP servers configured successfully"
             echo ""
 
             echo "🧠 MCP servers configured:"
-            echo "   - sparc-memory: SPARC workflow knowledge storage (graph)"
-            echo "   - qdrant: Semantic memory storage (dual-memory system)"
-            echo "   - uuid: UUID generation for memory tracking"
+            echo "   - qdrant: Semantic memory storage"
             echo "   - cargo: Rust/Cargo integration"
-            echo "   - github: GitHub API with Bearer token auth"
             echo "   - git: Enhanced git operations"
+            echo "   - GitHub: Now uses gh CLI directly (no MCP server)"
             echo "   - Check status: claude mcp list"
             echo ""
 

@@ -27,6 +27,7 @@ pub struct WasmFeatures {
 
 impl WasmFeatures {
     /// Strict security: all advanced features disabled
+    #[must_use]
     pub fn strict() -> Self {
         Self {
             simd: FeatureState::Disabled,
@@ -37,6 +38,7 @@ impl WasmFeatures {
     }
 
     /// Relaxed security: all features enabled
+    #[must_use]
     pub fn relaxed() -> Self {
         Self {
             simd: FeatureState::Enabled,
@@ -47,6 +49,7 @@ impl WasmFeatures {
     }
 
     /// Development: enable common features but keep threads disabled
+    #[must_use]
     pub fn development() -> Self {
         Self {
             simd: FeatureState::Enabled,
@@ -74,6 +77,7 @@ pub struct AccessPermissions {
 
 impl AccessPermissions {
     /// No external access permitted
+    #[must_use]
     pub fn none() -> Self {
         Self {
             network: false,
@@ -82,6 +86,7 @@ impl AccessPermissions {
     }
 
     /// Network access only
+    #[must_use]
     pub fn network_only() -> Self {
         Self {
             network: true,
@@ -90,6 +95,7 @@ impl AccessPermissions {
     }
 
     /// Full system access
+    #[must_use]
     pub fn full() -> Self {
         Self {
             network: true,
@@ -121,31 +127,37 @@ pub struct SecurityPolicy {
 
 impl SecurityPolicy {
     /// Backward compatibility: check if SIMD is disabled
+    #[must_use]
     pub fn disable_simd(&self) -> bool {
         self.wasm_features.simd == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if reference types are disabled
+    #[must_use]
     pub fn disable_reference_types(&self) -> bool {
         self.wasm_features.reference_types == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if bulk memory is disabled
+    #[must_use]
     pub fn disable_bulk_memory(&self) -> bool {
         self.wasm_features.bulk_memory == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if threads are disabled
+    #[must_use]
     pub fn disable_threads(&self) -> bool {
         self.wasm_features.threads == FeatureState::Disabled
     }
 
     /// Backward compatibility: check if network access is allowed
+    #[must_use]
     pub fn allow_network_access(&self) -> bool {
         self.access_permissions.network
     }
 
     /// Backward compatibility: check if filesystem access is allowed
+    #[must_use]
     pub fn allow_filesystem_access(&self) -> bool {
         self.access_permissions.filesystem
     }
@@ -174,6 +186,7 @@ impl SecurityPolicy {
     /// # Panics
     ///
     /// Panics if the domain type validation fails (should not happen with hardcoded values)
+    #[must_use]
     pub fn strict() -> Self {
         Self {
             wasm_features: WasmFeatures::strict(),
@@ -192,6 +205,7 @@ impl SecurityPolicy {
     /// # Panics
     ///
     /// Panics if the domain type validation fails (should not happen with hardcoded values)
+    #[must_use]
     pub fn relaxed() -> Self {
         Self {
             wasm_features: WasmFeatures::relaxed(),
@@ -210,6 +224,7 @@ impl SecurityPolicy {
     }
 
     /// Checks if a host function is allowed by this policy
+    #[must_use]
     pub fn is_function_allowed(&self, function_name: &str) -> bool {
         let name = HostFunctionName::try_new(function_name.to_string());
         if let Ok(name) = name {

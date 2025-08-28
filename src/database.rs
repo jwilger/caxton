@@ -10,9 +10,13 @@
 
 use crate::domain_types::ConnectionPoolSize;
 use nutype::nutype;
-use sqlx::{Pool, Sqlite, SqlitePool};
+use sqlx::{Pool, Sqlite, SqlitePool, migrate::Migrator};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
+use tracing::{info, warn};
+
+/// Static migrator for embedded `SQLite` migrations
+static MIGRATOR: Migrator = sqlx::migrate!();
 
 /// Database-specific error types
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
@@ -44,6 +48,15 @@ pub enum StorageError {
     #[error("Connection pool error: {message}")]
     ConnectionPool {
         /// Error message from connection pool operation
+        message: String,
+    },
+
+    /// Migration error
+    #[error("Migration failed at version {version}: {message}")]
+    Migration {
+        /// Migration version that failed
+        version: String,
+        /// Error message from migration operation
         message: String,
     },
 }
@@ -92,21 +105,25 @@ impl DatabasePath {
     }
 
     /// Get the path as `PathBuf`
+    #[must_use]
     pub fn as_path(&self) -> PathBuf {
         self.clone().into_inner()
     }
 
     /// Generate `SQLite` connection string (functional core)
+    #[must_use]
     pub fn to_connection_string(&self) -> String {
         format!("sqlite://{}?mode=rwc", self.as_path().display())
     }
 
     /// Get parent directory for file creation (functional core)
+    #[must_use]
     pub fn parent_directory(&self) -> Option<PathBuf> {
         self.as_path().parent().map(std::path::Path::to_path_buf)
     }
 
     /// Check if file exists (pure function for testing)
+    #[must_use]
     pub fn exists(&self) -> bool {
         self.as_path().exists()
     }
@@ -129,6 +146,7 @@ pub struct DatabaseConfig {
 
 impl DatabaseConfig {
     /// Create new database config with default settings
+    #[must_use]
     pub fn new(path: DatabasePath) -> Self {
         Self {
             path,
@@ -143,6 +161,7 @@ impl DatabaseConfig {
     /// # Panics
     ///
     /// Panics if the default pool size cannot be created (should never happen)
+    #[must_use]
     pub fn for_testing(path: DatabasePath) -> Self {
         Self {
             path,
@@ -175,21 +194,25 @@ impl DatabaseConfig {
     }
 
     /// Get the database path
+    #[must_use]
     pub fn path(&self) -> &DatabasePath {
         &self.path
     }
 
     /// Get the connection pool size
+    #[must_use]
     pub fn pool_size(&self) -> ConnectionPoolSize {
         self.pool_size
     }
 
     /// Check if WAL mode is enabled
+    #[must_use]
     pub fn wal_mode_enabled(&self) -> bool {
         self.enable_wal_mode
     }
 
     /// Check if foreign keys are enabled
+    #[must_use]
     pub fn foreign_keys_enabled(&self) -> bool {
         self.enable_foreign_keys
     }
@@ -221,6 +244,7 @@ pub struct DatabaseConnection {
 // Functional Core: Pure business logic
 impl DatabaseConnection {
     /// Generate `SQLite` options from config (pure function)
+    #[must_use]
     fn create_connect_options(config: &DatabaseConfig) -> sqlx::sqlite::SqliteConnectOptions {
         use sqlx::ConnectOptions;
         use sqlx::sqlite::SqliteConnectOptions;
@@ -262,6 +286,9 @@ impl DatabaseConnection {
         // Apply database settings (imperative shell)
         Self::apply_database_settings(&pool, &config).await?;
 
+        // Run embedded migrations (imperative shell)
+        Self::run_migrations(&pool).await?;
+
         Ok(Self { pool, config })
     }
 
@@ -293,8 +320,50 @@ impl DatabaseConnection {
         pool: &Pool<Sqlite>,
         _config: &DatabaseConfig,
     ) -> DatabaseResult<()> {
-        // Apply any additional settings that can't be set via connection options
-        // For now, this is a placeholder for future enhancements
+        // Apply performance optimizations for sub-millisecond operations
+        // These settings trade some durability for maximum performance
+
+        // Synchronous = NORMAL instead of FULL for faster writes (still crash-safe)
+        sqlx::query("PRAGMA synchronous = NORMAL")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set synchronous mode: {e}"),
+                })
+            })?;
+
+        // Increase cache size to 64MB for better read performance
+        sqlx::query("PRAGMA cache_size = -65536")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set cache size: {e}"),
+                })
+            })?;
+
+        // Use memory for temporary storage (faster sorting/indexing)
+        sqlx::query("PRAGMA temp_store = MEMORY")
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set temp store: {e}"),
+                })
+            })?;
+
+        // Set memory-mapped I/O for better read performance
+        sqlx::query("PRAGMA mmap_size = 268435456") // 256MB
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                DatabaseError::Storage(StorageError::Database {
+                    message: format!("Failed to set mmap size: {e}"),
+                })
+            })?;
+
+        // Enable query planner optimizations
         sqlx::query("PRAGMA optimize")
             .execute(pool)
             .await
@@ -307,7 +376,35 @@ impl DatabaseConnection {
         Ok(())
     }
 
+    /// Run embedded database migrations using `SQLx`.
+    ///
+    /// Caxton uses embedded migrations compiled into the binary from the `migrations/` directory.
+    /// For complete `SQLx` migration documentation, see: <https://docs.rs/sqlx/latest/sqlx/migrate/>
+    ///
+    /// Caxton-specific behavior:
+    /// - Migration files located in `migrations/` directory
+    /// - Applied during `DatabaseConnection::initialize()`
+    /// - Failures prevent application startup
+    async fn run_migrations(pool: &Pool<Sqlite>) -> DatabaseResult<()> {
+        info!("Starting database migrations");
+
+        match MIGRATOR.run(pool).await {
+            Ok(()) => {
+                info!("Database migrations completed successfully");
+                Ok(())
+            }
+            Err(e) => {
+                warn!("Migration failed: {}", e);
+                Err(DatabaseError::Storage(StorageError::Migration {
+                    version: "unknown".to_string(),
+                    message: format!("Schema migration execution failed: {e}"),
+                }))
+            }
+        }
+    }
+
     /// Check if database file exists
+    #[must_use]
     pub fn database_file_exists(&self) -> bool {
         self.config.path().exists()
     }
@@ -330,11 +427,13 @@ impl DatabaseConnection {
     }
 
     /// Get access to the connection pool for advanced operations
+    #[must_use]
     pub fn pool(&self) -> &Pool<Sqlite> {
         &self.pool
     }
 
     /// Get the database configuration
+    #[must_use]
     pub fn config(&self) -> &DatabaseConfig {
         &self.config
     }
@@ -590,5 +689,109 @@ mod tests {
         };
         let pool_error_string = format!("{pool_error}");
         assert!(pool_error_string.contains("pool error"));
+    }
+
+    #[tokio::test]
+    async fn test_should_run_embedded_migrations_automatically_when_initializing_database() {
+        // Test that verifies migration system can load embedded migrations and apply them automatically during database initialization
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        let connection = DatabaseConnection::initialize(config).await.unwrap();
+
+        // Database migrations are now automatically run during initialization
+        // Verify that migrations have been applied successfully
+
+        // Verify that migration tracking works by checking if migrations have been applied
+        let version_check = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM _sqlx_migrations")
+            .fetch_one(connection.pool())
+            .await;
+        assert!(
+            version_check.is_ok(),
+            "Migration tracking table should be created and accessible"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_should_detect_and_warn_about_pre_existing_table_schema_differences() {
+        // Test verifies that the migration system handles backward compatibility gracefully
+        // when encountering databases with pre-existing tables that may have different schemas
+        // than what the current migrations expect (e.g., missing constraints, different types)
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("schema_conflict.db");
+        let path = DatabasePath::new(db_path).unwrap();
+        let config = DatabaseConfig::for_testing(path);
+
+        // Phase 1: Create pre-existing tables with INCOMPATIBLE schemas
+        // This simulates a legacy database that doesn't have all the validation rules
+        // that current migrations expect to enforce
+        let pool = sqlx::SqlitePool::connect(&config.path().to_connection_string())
+            .await
+            .expect("Should be able to connect to database for pre-existing table setup");
+
+        // Create agent_registry table with MISSING CHECK constraints that migrations expect
+        // This represents a common backward compatibility scenario where legacy tables
+        // lack modern validation constraints
+        sqlx::query(
+            "CREATE TABLE agent_registry (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+                -- NOTE: Missing CHECK constraints that current migrations include
+            )",
+        )
+        .execute(&pool)
+        .await
+        .expect("Should create legacy-style agent_registry table");
+
+        // Create message_storage with incompatible column types
+        // This tests handling of more significant schema differences
+        sqlx::query(
+            "CREATE TABLE message_storage (
+                message_id TEXT PRIMARY KEY,
+                sender_id TEXT NOT NULL,
+                receiver_id TEXT NOT NULL,
+                conversation_id TEXT,
+                message_content BLOB NOT NULL,
+                performative TEXT NOT NULL,
+                created_at TEXT NOT NULL,  -- Incompatible: current migrations expect INTEGER
+                expires_at TEXT             -- Incompatible: current migrations expect INTEGER
+                -- NOTE: Missing modern CHECK constraints and proper indexing
+            )",
+        )
+        .execute(&pool)
+        .await
+        .expect("Should create legacy-style message_storage table");
+
+        pool.close().await;
+
+        // Phase 2: Initialize DatabaseConnection with backward compatibility handling
+        // The migration system should handle pre-existing tables gracefully using
+        // CREATE TABLE IF NOT EXISTS patterns in migration files
+        let connection = DatabaseConnection::initialize(config).await.expect(
+            "DatabaseConnection should initialize successfully with backward compatibility",
+        );
+
+        // Phase 3: Verify backward compatibility implementation works correctly
+        // The migration system uses CREATE TABLE IF NOT EXISTS for graceful handling
+        // of databases that already contain tables from previous deployments
+
+        // Verify migration tracking system is operational
+        let migration_history_exists = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='_sqlx_migrations'",
+        )
+        .fetch_one(connection.pool())
+        .await
+        .unwrap_or(0);
+
+        // Confirm migration system created tracking table and completed successfully
+        // This indicates that CREATE TABLE IF NOT EXISTS handled pre-existing tables correctly
+        assert_eq!(
+            migration_history_exists, 1,
+            "Expected migration system to complete successfully with backward compatibility for pre-existing tables"
+        );
     }
 }

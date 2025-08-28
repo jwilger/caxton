@@ -11,10 +11,12 @@ use std::collections::HashSet;
 pub struct SafeFunctionName(String);
 
 impl SafeFunctionName {
+    #[must_use]
     pub fn is_messaging_function(&self) -> bool {
         self.to_string().starts_with("agent_message_")
     }
 
+    #[must_use]
     pub fn is_standard_function(&self) -> bool {
         const STANDARD_FUNCTIONS: &[&str] = &[
             "agent_get_id",
@@ -34,10 +36,12 @@ impl SafeFunctionName {
 pub struct UnsafeFunctionName(String);
 
 impl UnsafeFunctionName {
+    #[must_use]
     pub fn is_memory_function(&self) -> bool {
         self.to_string().starts_with("memory_")
     }
 
+    #[must_use]
     pub fn is_system_function(&self) -> bool {
         self.to_string().starts_with("system_") || self.to_string().starts_with("process_")
     }
@@ -55,6 +59,7 @@ impl FunctionName {
     /// # Panics
     ///
     /// Panics if the function name cannot be created (should never happen for valid strings).
+    #[must_use]
     pub fn categorize_function(name: &str) -> Self {
         const UNSAFE_FUNCTIONS: &[&str] = &[
             "memory_grow",
@@ -79,10 +84,12 @@ impl FunctionName {
         }
     }
 
+    #[must_use]
     pub fn is_safe(&self) -> bool {
         matches!(self, FunctionName::Safe(_))
     }
 
+    #[must_use]
     pub fn as_str(&self) -> String {
         match self {
             FunctionName::Safe(name) => name.to_string(),
@@ -104,6 +111,7 @@ impl StrictSecurityPolicy {
     /// # Panics
     ///
     /// Panics if the hardcoded function names are invalid (should never happen).
+    #[must_use]
     pub fn new(max_import_functions: MaxImportFunctions, max_exports: MaxExports) -> Self {
         let allowed_functions = vec![
             SafeFunctionName::try_new("agent_get_id".to_string()).unwrap(),
@@ -118,18 +126,22 @@ impl StrictSecurityPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_networking(&self) -> bool {
         false
     }
 
+    #[must_use]
     pub fn enable_threads(&self) -> bool {
         false
     }
 
+    #[must_use]
     pub fn enable_fuel_metering(&self) -> bool {
         true
     }
 
+    #[must_use]
     pub fn is_function_allowed(&self, function: &FunctionName) -> bool {
         match function {
             FunctionName::Safe(name) => self.allowed_functions.contains(name),
@@ -153,6 +165,7 @@ impl RelaxedSecurityPolicy {
     /// # Panics
     ///
     /// Panics if the hardcoded function names are invalid (should never happen).
+    #[must_use]
     pub fn new(
         max_import_functions: MaxImportFunctions,
         max_exports: MaxExports,
@@ -198,10 +211,12 @@ impl RelaxedSecurityPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_fuel_metering(&self) -> bool {
         !self.enable_threads
     }
 
+    #[must_use]
     pub fn is_function_allowed(&self, function: &FunctionName) -> bool {
         self.allowed_functions.contains(function)
     }
@@ -214,6 +229,7 @@ pub enum SecurityLevel {
 }
 
 impl SecurityLevel {
+    #[must_use]
     pub fn validate(&self) -> bool {
         match self {
             SecurityLevel::Strict(policy) => {
@@ -227,6 +243,7 @@ impl SecurityLevel {
         }
     }
 
+    #[must_use]
     pub fn is_function_allowed(&self, function: &FunctionName) -> bool {
         match self {
             SecurityLevel::Strict(policy) => policy.is_function_allowed(function),
@@ -240,6 +257,7 @@ pub struct ValidatedSecurityPolicy {
 }
 
 impl ValidatedSecurityPolicy {
+    #[must_use]
     pub fn new(level: SecurityLevel) -> Option<Self> {
         if level.validate() {
             Some(Self { level })
@@ -248,6 +266,7 @@ impl ValidatedSecurityPolicy {
         }
     }
 
+    #[must_use]
     pub fn level(&self) -> &SecurityLevel {
         &self.level
     }
