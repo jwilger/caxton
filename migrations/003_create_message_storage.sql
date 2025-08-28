@@ -5,10 +5,6 @@
 -- This table supports high-throughput message routing with optimized indexing
 -- for temporal queries and agent-specific message retrieval.
 --
--- BACKWARD COMPATIBILITY: Uses CREATE TABLE IF NOT EXISTS to gracefully
--- handle databases with pre-existing message_storage tables that may have
--- been created by legacy code or have different constraint definitions.
--- This migration will not conflict with existing data.
 --
 -- Schema Design:
 -- - message_id: UUID primary key (exactly 36 characters with validation)
@@ -69,9 +65,6 @@ CREATE TABLE IF NOT EXISTS message_storage (
 -- - Conversation tracking: Access conversation messages in temporal order
 -- - System-wide temporal queries: Support time-based message cleanup and analytics
 --
--- BACKWARD COMPATIBILITY: Uses CREATE INDEX IF NOT EXISTS to avoid
--- conflicts with existing indexes while ensuring optimal performance
--- for all message routing operations.
 
 CREATE INDEX IF NOT EXISTS idx_message_storage_sender ON message_storage(sender_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_message_storage_receiver ON message_storage(receiver_id, created_at DESC);

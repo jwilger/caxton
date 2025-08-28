@@ -5,10 +5,6 @@
 -- FIPA-compliant conversation tracking with protocol awareness and archival
 -- capabilities for long-term conversation management.
 --
--- BACKWARD COMPATIBILITY: Uses CREATE TABLE IF NOT EXISTS to ensure
--- graceful migration behavior when this table may already exist from
--- previous deployments or legacy CREATE TABLE patterns. Existing data
--- will be preserved during migration.
 --
 -- Schema Design:
 -- - conversation_id: UUID primary key for unique conversation identification
@@ -37,8 +33,6 @@ CREATE TABLE IF NOT EXISTS conversations (
 -- - Temporal activity queries: Find conversations by recent activity
 -- - Protocol-based grouping: Analyze conversations by FIPA protocol type
 --
--- BACKWARD COMPATIBILITY: Uses CREATE INDEX IF NOT EXISTS to avoid
--- conflicts with existing indexes while ensuring optimal query performance.
 
 CREATE INDEX IF NOT EXISTS idx_conversations_archived ON conversations(is_archived);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_activity ON conversations(last_activity DESC);

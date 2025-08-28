@@ -5,10 +5,6 @@
 -- efficient tracking of which agents are involved in each conversation within
 -- the Caxton multi-agent orchestration system.
 --
--- BACKWARD COMPATIBILITY: Uses CREATE TABLE IF NOT EXISTS to handle
--- databases where this table may already exist from previous deployments.
--- Foreign key relationships are preserved and existing participant data
--- remains intact during migration.
 --
 -- Schema Design:
 -- - conversation_id: References conversations table (36-character UUID validation)
@@ -38,9 +34,6 @@ CREATE TABLE IF NOT EXISTS conversation_participants (
 -- - Conversation membership: Find all participants in a specific conversation
 -- - Agent participation: Find all conversations for a specific agent
 --
--- BACKWARD COMPATIBILITY: Uses CREATE INDEX IF NOT EXISTS to ensure
--- no conflicts with existing indexes while providing optimal performance
--- for participant lookup operations.
 
 CREATE INDEX IF NOT EXISTS idx_participants_conversation ON conversation_participants(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_participants_participant ON conversation_participants(participant_id);
