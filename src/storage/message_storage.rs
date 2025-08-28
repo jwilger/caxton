@@ -54,6 +54,16 @@ INSERT OR REPLACE INTO message_storage (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 ";
 
+/// Default query limit when usize conversion fails.
+/// Set to 1000 to provide reasonable protection against excessive memory usage
+/// while still allowing for large result sets in normal operation.
+const DEFAULT_QUERY_LIMIT: i64 = 1000;
+
+/// TTL duration in seconds for message expiration.
+/// Set to 2 seconds for testing purposes to allow verification of expiration behavior
+/// in test scenarios without excessive wait times.
+const MESSAGE_TTL_SECONDS: i64 = 2;
+
 const SELECT_MESSAGE_BY_ID: &str = r"
 SELECT message_id, sender_id, receiver_id, conversation_id, message_content, performative, created_at, expires_at
 FROM message_storage
@@ -379,7 +389,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
             .bind(message_content_string)
             .bind(performative_str)
             .bind(created_at)
-            .bind(Some(created_at + 2)) // 2 second TTL
+            .bind(Some(created_at + MESSAGE_TTL_SECONDS)) // Message TTL for testing purposes
             .execute(self.connection.pool())
             .await
             .map_err(|e| {
@@ -463,7 +473,7 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
         // Choose appropriate query based on limit parameter to avoid dynamic SQL construction
         let rows = if let Some(limit_value) = limit {
             // Use safe conversion with reasonable maximum limit to prevent memory issues
-            let limit_i64 = i64::try_from(limit_value).unwrap_or(1000);
+            let limit_i64 = i64::try_from(limit_value).unwrap_or(DEFAULT_QUERY_LIMIT);
 
             sqlx::query(SELECT_MESSAGES_FOR_AGENT_LIMITED)
                 .bind(agent_id.to_string())
