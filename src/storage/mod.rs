@@ -183,97 +183,20 @@ impl SqliteMessageStorage {
 
     /// Parses a database row into a `FipaMessage`.
     ///
-    /// This helper method extracts the common logic for reconstructing `FipaMessage`
-    /// instances from `SQLite` row data, eliminating duplication between `get_message`
-    /// and `list_agent_messages` operations.
-    ///
-    /// # Arguments
-    ///
-    /// * `row` - `SQLite` row containing message data
-    ///
-    /// # Returns
-    ///
-    /// A fully reconstructed `FipaMessage` or a `RouterError` if parsing fails.
-    fn parse_message_from_row(
-        row: &sqlx::sqlite::SqliteRow,
-    ) -> Result<
-        crate::message_router::domain_types::FipaMessage,
-        crate::message_router::traits::RouterError,
-    > {
-        // Parse UUID fields with contextual error information
+    /// This helper method reconstructs `FipaMessage` instances from `SQLite` row data,
+    /// eliminating duplication between `get_message` and `list_agent_messages` operations.
+    fn parse_message_from_row(row: &sqlx::sqlite::SqliteRow) -> Result<FipaMessage, RouterError> {
         let message_id_str: String = row.get("message_id");
-        let sender_str: String = row.get("sender_id");
-        let receiver_str: String = row.get("receiver_id");
-        let conversation_id_str: Option<String> = row.get("conversation_id");
+        let (message_id, sender, receiver) = Self::parse_message_identifiers(row, &message_id_str)?;
+        let conversation_id = Self::parse_conversation_id(row)?;
+        let message_content = Self::parse_message_content_from_row(row, &message_id_str)?;
+        let performative = Self::parse_performative_from_row(row)?;
+        let created_at = Self::parse_timestamp_from_row(row, &message_id_str)?;
 
-        let parsed_message_id = uuid::Uuid::parse_str(&message_id_str).map_err(|e| {
-            crate::message_router::traits::RouterError::StorageError {
-                source: Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Invalid message ID UUID '{message_id_str}': {e}"),
-                )),
-            }
-        })?;
-
-        let parsed_sender = uuid::Uuid::parse_str(&sender_str).map_err(|e| {
-            crate::message_router::traits::RouterError::StorageError {
-                source: Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Invalid sender UUID '{sender_str}': {e}"),
-                )),
-            }
-        })?;
-
-        let parsed_receiver = uuid::Uuid::parse_str(&receiver_str).map_err(|e| {
-            crate::message_router::traits::RouterError::StorageError {
-                source: Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Invalid receiver UUID '{receiver_str}': {e}"),
-                )),
-            }
-        })?;
-
-        // Parse optional conversation ID with contextual error information
-        let conversation_id = if let Some(conv_str) = conversation_id_str {
-            Some(crate::message_router::domain_types::ConversationId::new(
-                uuid::Uuid::parse_str(&conv_str).map_err(|e| {
-                    crate::message_router::traits::RouterError::StorageError {
-                        source: Box::new(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            format!("Invalid conversation UUID '{conv_str}': {e}"),
-                        )),
-                    }
-                })?,
-            ))
-        } else {
-            None
-        };
-
-        // Parse message content using optimized length-prefixed format
-        let content_string: String = row.get("message_content");
-        let content_bytes = Self::parse_message_content(&content_string, &message_id_str)?;
-        let message_content = MessageContent::try_new(content_bytes.into_owned()).map_err(|e| {
-            RouterError::StorageError {
-                source: Box::new(IoError::new(
-                    ErrorKind::InvalidData,
-                    format!("Invalid message content for message '{message_id_str}': {e}"),
-                )),
-            }
-        })?;
-
-        // Parse performative with comprehensive error information
-        let performative_str: String = row.get("performative");
-        let performative = Self::parse_performative(&performative_str)?;
-
-        // Parse timestamp with overflow protection
-        let created_at_secs: i64 = row.get("created_at");
-        let created_at = Self::parse_timestamp(created_at_secs, &message_id_str)?;
-
-        // Reconstruct complete FipaMessage
-        Ok(crate::message_router::domain_types::FipaMessage {
+        Ok(FipaMessage {
             performative,
-            sender: AgentId::new(parsed_sender),
-            receiver: AgentId::new(parsed_receiver),
+            sender,
+            receiver,
             content: message_content,
             language: None, // Not stored in current schema
             ontology: None, // Not stored in current schema
@@ -281,11 +204,101 @@ impl SqliteMessageStorage {
             conversation_id,
             reply_with: None,  // Not stored in current schema
             in_reply_to: None, // Not stored in current schema
-            message_id: MessageId::new(parsed_message_id),
+            message_id,
             created_at,
             trace_context: None, // Not stored in current schema
-            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(), // Not stored in current schema
+            delivery_options: crate::message_router::domain_types::DeliveryOptions::default(),
         })
+    }
+
+    /// Parses message identifiers (`message_id`, `sender_id`, `receiver_id`) from database row.
+    fn parse_message_identifiers(
+        row: &sqlx::sqlite::SqliteRow,
+        message_id_str: &str,
+    ) -> Result<(MessageId, AgentId, AgentId), RouterError> {
+        let sender_str: String = row.get("sender_id");
+        let receiver_str: String = row.get("receiver_id");
+
+        let parsed_message_id =
+            uuid::Uuid::parse_str(message_id_str).map_err(|e| RouterError::StorageError {
+                source: Box::new(IoError::new(
+                    ErrorKind::InvalidData,
+                    format!("Invalid message ID UUID '{message_id_str}': {e}"),
+                )),
+            })?;
+
+        let parsed_sender =
+            uuid::Uuid::parse_str(&sender_str).map_err(|e| RouterError::StorageError {
+                source: Box::new(IoError::new(
+                    ErrorKind::InvalidData,
+                    format!("Invalid sender UUID '{sender_str}': {e}"),
+                )),
+            })?;
+
+        let parsed_receiver =
+            uuid::Uuid::parse_str(&receiver_str).map_err(|e| RouterError::StorageError {
+                source: Box::new(IoError::new(
+                    ErrorKind::InvalidData,
+                    format!("Invalid receiver UUID '{receiver_str}': {e}"),
+                )),
+            })?;
+
+        Ok((
+            MessageId::new(parsed_message_id),
+            AgentId::new(parsed_sender),
+            AgentId::new(parsed_receiver),
+        ))
+    }
+
+    /// Parses optional conversation ID from database row.
+    fn parse_conversation_id(
+        row: &sqlx::sqlite::SqliteRow,
+    ) -> Result<Option<ConversationId>, RouterError> {
+        let conversation_id_str: Option<String> = row.get("conversation_id");
+        if let Some(conv_str) = conversation_id_str {
+            let parsed_uuid =
+                uuid::Uuid::parse_str(&conv_str).map_err(|e| RouterError::StorageError {
+                    source: Box::new(IoError::new(
+                        ErrorKind::InvalidData,
+                        format!("Invalid conversation UUID '{conv_str}': {e}"),
+                    )),
+                })?;
+            Ok(Some(ConversationId::new(parsed_uuid)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Parses message content from database row.
+    fn parse_message_content_from_row(
+        row: &sqlx::sqlite::SqliteRow,
+        message_id_str: &str,
+    ) -> Result<MessageContent, RouterError> {
+        let content_string: String = row.get("message_content");
+        let content_bytes = Self::parse_message_content(&content_string, message_id_str)?;
+        MessageContent::try_new(content_bytes.into_owned()).map_err(|e| RouterError::StorageError {
+            source: Box::new(IoError::new(
+                ErrorKind::InvalidData,
+                format!("Invalid message content for message '{message_id_str}': {e}"),
+            )),
+        })
+    }
+
+    /// Parses performative from database row.
+    fn parse_performative_from_row(
+        row: &sqlx::sqlite::SqliteRow,
+    ) -> Result<Performative, RouterError> {
+        let performative_str: String = row.get("performative");
+        Self::parse_performative(&performative_str)
+    }
+
+    /// Parses timestamp from database row.
+    fn parse_timestamp_from_row(
+        row: &sqlx::sqlite::SqliteRow,
+        message_id_str: &str,
+    ) -> Result<MessageTimestamp, RouterError> {
+        let created_at_secs: i64 = row.get("created_at");
+        Self::parse_timestamp(created_at_secs, message_id_str)
     }
 
     /// Parses length-prefixed message content in format: `{length}::{content}`
@@ -377,21 +390,18 @@ impl SqliteMessageStorage {
         }
     }
 
-    /// Converts `MessageTimestamp` to Unix seconds.
+    /// Converts `MessageTimestamp` to Unix seconds using standard library.
     fn timestamp_to_unix_secs(timestamp: MessageTimestamp) -> Result<i64, RouterError> {
-        i64::try_from(
-            timestamp
-                .into_inner()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
-        )
-        .map_err(|e| RouterError::StorageError {
+        let duration = timestamp
+            .into_inner()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default();
+        i64::try_from(duration.as_secs()).map_err(|e| RouterError::StorageError {
             source: Box::new(e),
         })
     }
 
-    /// Parses Unix timestamp with overflow protection.
+    /// Parses Unix timestamp using standard library duration arithmetic.
     fn parse_timestamp(
         created_at_secs: i64,
         message_id: &str,
@@ -682,14 +692,10 @@ impl SqliteConversationStorage {
         Self { connection }
     }
 
-    /// Converts `SystemTime` to Unix seconds.
+    /// Converts `SystemTime` to Unix seconds using standard library.
     fn system_time_to_unix_secs(time: SystemTime) -> Result<i64, ConversationError> {
-        i64::try_from(
-            time.duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
-        )
-        .map_err(|e| ConversationError::StorageError {
+        let duration = time.duration_since(UNIX_EPOCH).unwrap_or_default();
+        i64::try_from(duration.as_secs()).map_err(|e| ConversationError::StorageError {
             source: Box::new(e),
         })
     }

@@ -365,103 +365,25 @@ impl DatabaseConnection {
         Ok(())
     }
 
-    /// Run embedded database migrations (imperative shell)
+    /// Run embedded database migrations using `SQLx`.
     ///
-    /// # Migration System Architecture
+    /// Caxton uses embedded migrations compiled into the binary from the `migrations/` directory.
+    /// For complete `SQLx` migration documentation, see: <https://docs.rs/sqlx/latest/sqlx/migrate/>
     ///
-    /// Caxton uses `SQLx` embedded migrations to manage database schema evolution with
-    /// professional version tracking and backward compatibility guarantees. The migration
-    /// system provides:
-    ///
-    /// - **Version Control**: `SQLx` automatically tracks applied migrations in `_sqlx_migrations`
-    /// - **Embedded Migrations**: Migration files are compiled into the binary, eliminating
-    ///   deployment complexity and ensuring consistency across environments
-    /// - **Atomic Application**: Migrations are applied within transactions for data safety
-    /// - **Idempotent Operations**: Migrations can be run multiple times safely
-    ///
-    /// # Backward Compatibility Strategy
-    ///
-    /// The migration system handles compatibility with existing deployments through:
-    ///
-    /// ## CREATE TABLE IF NOT EXISTS Pattern
-    /// - Migration files use `CREATE TABLE IF NOT EXISTS` to handle pre-existing tables
-    /// - This approach allows graceful upgrades from legacy code that created tables manually
-    /// - Schema differences are handled by continuing with existing table structures
-    /// - New deployments receive complete validated schemas with all constraints
-    ///
-    /// ## Compatibility Guarantees
-    /// - **Existing Data**: No data loss during migration application
-    /// - **Schema Evolution**: New constraints apply only to new installations
-    /// - **Deployment Safety**: Migrations never fail due to existing table conflicts
-    /// - **Operational Continuity**: Database remains accessible throughout migration process
-    ///
-    /// ## Compatibility Limitations
-    /// - **Constraint Enforcement**: Existing tables may lack modern validation rules
-    /// - **Index Optimization**: Legacy tables may miss performance indexes
-    /// - **Schema Consistency**: Different installations may have slight schema variations
-    /// - **Validation Gaps**: Pre-existing data may not meet current domain constraints
-    ///
-    /// # Schema Evolution Handling
-    ///
-    /// The migration system manages schema changes through:
-    ///
-    /// ## Additive Changes (Safe)
-    /// - New tables: Added via `CREATE TABLE IF NOT EXISTS`
-    /// - New columns: Added with `ALTER TABLE` in subsequent migrations
-    /// - New indexes: Added with `CREATE INDEX IF NOT EXISTS`
-    /// - New constraints: Applied only to new data via triggers or validation
-    ///
-    /// ## Breaking Changes (Controlled)
-    /// - Column type changes: Require data migration strategies
-    /// - Constraint additions: May need data cleanup before application
-    /// - Table restructuring: Handled through multi-step migration processes
-    /// - Foreign key additions: Applied carefully with existing data validation
-    ///
-    /// ## Migration File Organization
-    /// - Files named: `001_description.sql`, `002_description.sql`, etc.
-    /// - Sequential numbering ensures predictable application order
-    /// - Descriptive names indicate migration purpose and affected tables
-    /// - Self-documenting SQL with comprehensive comments explaining changes
-    ///
-    /// # Operational Excellence
-    ///
-    /// ## Performance Characteristics
-    /// - Migration application typically completes in < 100ms for schema-only changes
-    /// - Index creation may take longer on large datasets but runs only once
-    /// - Memory usage remains minimal during migration execution
-    /// - No significant impact on application startup time
-    ///
-    /// ## Error Handling
-    /// - Migration failures are logged with detailed error context
-    /// - Failed migrations prevent application startup to ensure data integrity
-    /// - Rollback capabilities available through down migrations (when implemented)
-    /// - Clear error messages guide troubleshooting and remediation
-    ///
-    /// ## Monitoring and Visibility
-    /// - Migration application logged at INFO level for operational visibility
-    /// - Success/failure status clearly indicated in application logs
-    /// - Migration tracking table provides audit trail of applied changes
-    /// - Schema validation warnings preserved for database administration
-    ///
-    /// This migration system ensures professional database management with strong
-    /// backward compatibility while enabling safe schema evolution and operational excellence.
+    /// Caxton-specific behavior:
+    /// - Migration files located in `migrations/` directory
+    /// - Applied during `DatabaseConnection::initialize()`
+    /// - Failures prevent application startup
     async fn run_migrations(pool: &Pool<Sqlite>) -> DatabaseResult<()> {
-        info!(
-            "Starting database migration process - checking for schema changes and backward compatibility"
-        );
+        info!("Starting database migrations");
 
         match MIGRATOR.run(pool).await {
             Ok(()) => {
-                info!(
-                    "Database migrations completed successfully - all schemas current, backward compatibility maintained"
-                );
+                info!("Database migrations completed successfully");
                 Ok(())
             }
             Err(e) => {
-                warn!(
-                    "Migration failed during schema update - backward compatibility issue: {}",
-                    e
-                );
+                warn!("Migration failed: {}", e);
                 Err(DatabaseError::Storage(StorageError::Migration {
                     version: "unknown".to_string(),
                     message: format!("Schema migration execution failed: {e}"),
