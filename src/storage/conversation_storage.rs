@@ -8,7 +8,7 @@
 //!
 //! This implementation follows the functional core/imperative shell pattern:
 //! - Pure domain validation and transformation logic in helper functions
-//! - I/O operations isolated to trait implementation methods  
+//! - I/O operations isolated to trait implementation methods
 //! - Proper error handling with domain-specific error types
 //!
 //! ## Migration System Integration
@@ -112,6 +112,7 @@ impl SqliteConversationStorage {
     /// # Returns
     ///
     /// A new conversation storage instance ready for FIPA conversation persistence operations.
+    #[must_use]
     pub fn new(connection: DatabaseConnection) -> Self {
         Self { connection }
     }

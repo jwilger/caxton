@@ -12,9 +12,9 @@
 //!
 //! # Submodules
 //!
-//! - [`agent_storage`](agent_storage) - SQLite implementation for agent registry persistence
-//! - [`message_storage`](message_storage) - SQLite implementation for FIPA message persistence
-//! - [`conversation_storage`](conversation_storage) - SQLite implementation for conversation state persistence
+//! - `agent_storage` - SQLite implementation for agent registry persistence
+//! - `message_storage` - SQLite implementation for FIPA message persistence
+//! - `conversation_storage` - SQLite implementation for conversation state persistence
 //!
 //! # Usage
 //!
@@ -207,12 +207,21 @@ mod tests {
 
         // Store the message - this should now work because we have full implementation
         let store_result = message_storage.store_message(&message).await;
-        assert!(store_result.is_ok(), "Message should be stored successfully");
+        assert!(
+            store_result.is_ok(),
+            "Message should be stored successfully"
+        );
 
         // Retrieve the message by ID - this should also work
         let retrieve_result = message_storage.get_message(message.message_id).await;
-        assert!(retrieve_result.is_ok(), "Message should be retrieved successfully");
-        assert!(retrieve_result.unwrap().is_some(), "Stored message should be found");
+        assert!(
+            retrieve_result.is_ok(),
+            "Message should be retrieved successfully"
+        );
+        assert!(
+            retrieve_result.unwrap().is_some(),
+            "Stored message should be found"
+        );
     }
 
     #[tokio::test]
@@ -266,16 +275,25 @@ mod tests {
 
         // Store the message first
         let store_result = message_storage.store_message(&message).await;
-        assert!(store_result.is_ok(), "Message should be stored successfully");
+        assert!(
+            store_result.is_ok(),
+            "Message should be stored successfully"
+        );
 
         // Delete the message - this should now work
         let delete_result = message_storage.remove_message(message_id).await;
-        assert!(delete_result.is_ok(), "Message should be deleted successfully");
+        assert!(
+            delete_result.is_ok(),
+            "Message should be deleted successfully"
+        );
 
         // Verify message is gone
         let retrieve_result = message_storage.get_message(message_id).await;
         assert!(retrieve_result.is_ok(), "Retrieval should not error");
-        assert!(retrieve_result.unwrap().is_none(), "Deleted message should not be found");
+        assert!(
+            retrieve_result.unwrap().is_none(),
+            "Deleted message should not be found"
+        );
     }
 
     #[tokio::test]

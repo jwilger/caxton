@@ -1327,6 +1327,7 @@ pub struct NodeInfo {
 }
 
 impl NodeInfo {
+    #[must_use]
     pub fn new(id: NodeId, name: String, address: String) -> Self {
         Self {
             id,

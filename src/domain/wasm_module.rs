@@ -53,6 +53,7 @@ impl ModuleHash {
     /// # Panics
     ///
     /// Panics if the generated hash string is invalid (should never happen).
+    #[must_use]
     pub fn sha256(data: &[u8]) -> Self {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -66,6 +67,7 @@ impl ModuleHash {
     }
 
     /// Get hash algorithm type based on length
+    #[must_use]
     pub fn algorithm(&self) -> HashAlgorithm {
         match self.clone().into_inner().len() {
             64 => HashAlgorithm::Sha256,
@@ -125,16 +127,19 @@ impl ModuleSize {
     }
 
     /// Gets size in bytes
+    #[must_use]
     pub fn as_bytes(&self) -> usize {
         self.into_inner()
     }
 
     /// Gets size in kilobytes (rounded up)
+    #[must_use]
     pub fn as_kb(&self) -> usize {
         self.into_inner().div_ceil(1024)
     }
 
     /// Gets size in megabytes (rounded up)
+    #[must_use]
     pub fn as_mb(&self) -> usize {
         self.into_inner().div_ceil(1_048_576)
     }
@@ -218,6 +223,7 @@ pub struct MaxWasmFunctions(u16);
 
 impl MaxWasmFunctions {
     /// Gets the value as u16
+    #[must_use]
     pub fn as_u16(&self) -> u16 {
         self.into_inner()
     }
@@ -234,6 +240,7 @@ pub struct WasmFunctionSignature {
 
 impl WasmFunctionSignature {
     /// Creates new function signature
+    #[must_use]
     pub fn new(
         name: String,
         parameters: Vec<WasmValueType>,
@@ -249,16 +256,19 @@ impl WasmFunctionSignature {
     }
 
     /// Check if function has parameters
+    #[must_use]
     pub fn has_parameters(&self) -> bool {
         !self.parameters.is_empty()
     }
 
     /// Check if function returns values
+    #[must_use]
     pub fn has_results(&self) -> bool {
         !self.results.is_empty()
     }
 
     /// Get function arity (parameter count)
+    #[must_use]
     pub fn arity(&self) -> usize {
         self.parameters.len()
     }
@@ -278,16 +288,19 @@ pub enum WasmValueType {
 
 impl WasmValueType {
     /// Check if type is numeric
+    #[must_use]
     pub fn is_numeric(&self) -> bool {
         matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
     /// Check if type is reference
+    #[must_use]
     pub fn is_reference(&self) -> bool {
         matches!(self, Self::FuncRef | Self::ExternRef)
     }
 
     /// Get type size in bytes (approximation)
+    #[must_use]
     pub fn size_bytes(&self) -> usize {
         match self {
             Self::I32 | Self::F32 => 4,
@@ -308,16 +321,19 @@ pub enum ValidationResult {
 
 impl ValidationResult {
     /// Check if validation passed
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         matches!(self, Self::Valid | Self::Warning { .. })
     }
 
     /// Check if there are warnings
+    #[must_use]
     pub fn has_warnings(&self) -> bool {
         matches!(self, Self::Warning { .. })
     }
 
     /// Get all error messages
+    #[must_use]
     pub fn error_messages(&self) -> Vec<String> {
         match self {
             Self::Invalid { reasons } => reasons
@@ -329,6 +345,7 @@ impl ValidationResult {
     }
 
     /// Get all warning messages
+    #[must_use]
     pub fn warning_messages(&self) -> Vec<String> {
         match self {
             Self::Warning { warnings } => warnings
@@ -487,6 +504,7 @@ impl WasmSecurityPolicy {
     /// # Panics
     ///
     /// Panics if hardcoded export names are invalid (should never happen).
+    #[must_use]
     pub fn strict() -> Self {
         Self {
             name: "strict".to_string(),
@@ -513,6 +531,7 @@ impl WasmSecurityPolicy {
     }
 
     /// Creates a permissive security policy
+    #[must_use]
     pub fn permissive() -> Self {
         Self {
             name: "permissive".to_string(),
@@ -530,6 +549,7 @@ impl WasmSecurityPolicy {
     }
 
     /// Creates policy for testing environments
+    #[must_use]
     pub fn testing() -> Self {
         let mut policy = Self::permissive();
         policy.name = "testing".to_string();
@@ -539,6 +559,7 @@ impl WasmSecurityPolicy {
     }
 
     /// Check if import is allowed
+    #[must_use]
     pub fn is_import_allowed(&self, import_name: &str) -> bool {
         if self.allowed_imports.is_empty() {
             return true; // Allow all if no restrictions
@@ -552,6 +573,7 @@ impl WasmSecurityPolicy {
     }
 
     /// Check if export is required
+    #[must_use]
     pub fn is_export_required(&self, export_name: &str) -> bool {
         if let Ok(export) = WasmExportName::try_new(export_name.to_string()) {
             self.required_exports.contains(&export)
@@ -561,6 +583,7 @@ impl WasmSecurityPolicy {
     }
 
     /// Validate module against this policy
+    #[must_use]
     pub fn validate_module(&self, module: &WasmModule) -> ValidationResult {
         let mut failures = vec![];
         let mut warnings = vec![];
@@ -727,26 +750,31 @@ impl WasmModule {
     }
 
     /// Validate module integrity
+    #[must_use]
     pub fn validate(&self) -> ValidationResult {
         self.security_policy.validate_module(self)
     }
 
     /// Check if module is valid
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         self.validation_result.is_valid()
     }
 
     /// Get total function count
+    #[must_use]
     pub fn total_function_count(&self) -> usize {
         self.functions.len() + self.imports.len()
     }
 
     /// Get memory usage estimate in bytes
+    #[must_use]
     pub fn estimated_memory_usage(&self) -> usize {
         (self.memory_pages as usize) * 65536 // 64KB per page
     }
 
     /// Check if module uses specific WASM feature
+    #[must_use]
     pub fn uses_feature(&self, feature: WasmFeature) -> bool {
         self.features_used.contains(&feature)
     }
@@ -792,6 +820,7 @@ pub enum WasmFeature {
 
 impl WasmFeature {
     /// Check if feature is considered stable
+    #[must_use]
     pub fn is_stable(&self) -> bool {
         matches!(
             self,
@@ -804,11 +833,13 @@ impl WasmFeature {
     }
 
     /// Check if feature is experimental
+    #[must_use]
     pub fn is_experimental(&self) -> bool {
         !self.is_stable()
     }
 
     /// Get feature name as string
+    #[must_use]
     pub fn name(&self) -> &'static str {
         match self {
             Self::BulkMemory => "bulk-memory",

@@ -83,6 +83,7 @@ pub trait RuntimeManager {
     ) -> Result<(), HotReloadError>;
 
     /// Get instance metrics
+    #[must_use]
     async fn get_instance_metrics(
         &self,
         agent_id: AgentId,
@@ -90,6 +91,7 @@ pub trait RuntimeManager {
     ) -> Result<(usize, u64, u64), HotReloadError>; // (memory, fuel, requests)
 
     /// Preserve agent state
+    #[must_use]
     async fn preserve_state(
         &self,
         agent_id: AgentId,
@@ -105,6 +107,7 @@ pub trait RuntimeManager {
     ) -> Result<(), HotReloadError>;
 
     /// Check if instance is healthy
+    #[must_use]
     async fn health_check(
         &self,
         agent_id: AgentId,
@@ -125,6 +128,7 @@ pub trait TrafficRouter {
     ) -> Result<(), HotReloadError>;
 
     /// Get current traffic distribution
+    #[must_use]
     async fn get_traffic_split(
         &self,
         agent_id: AgentId,
@@ -160,6 +164,7 @@ pub struct CaxtonHotReloadManager {
 
 impl CaxtonHotReloadManager {
     /// Creates a new hot reload manager
+    #[must_use]
     pub fn new(
         runtime_manager: Arc<dyn RuntimeManager + Send + Sync>,
         traffic_router: Arc<dyn TrafficRouter + Send + Sync>,
@@ -168,6 +173,7 @@ impl CaxtonHotReloadManager {
     }
 
     /// Creates a new hot reload manager with custom time provider
+    #[must_use]
     pub fn with_time_provider(
         runtime_manager: Arc<dyn RuntimeManager + Send + Sync>,
         traffic_router: Arc<dyn TrafficRouter + Send + Sync>,
@@ -186,6 +192,7 @@ impl CaxtonHotReloadManager {
     }
 
     /// Creates hot reload manager with custom settings
+    #[must_use]
     pub fn with_limits(
         runtime_manager: Arc<dyn RuntimeManager + Send + Sync>,
         traffic_router: Arc<dyn TrafficRouter + Send + Sync>,
@@ -202,6 +209,7 @@ impl CaxtonHotReloadManager {
     }
 
     /// Creates hot reload manager with custom settings and time provider
+    #[must_use]
     pub fn with_limits_and_time_provider(
         runtime_manager: Arc<dyn RuntimeManager + Send + Sync>,
         traffic_router: Arc<dyn TrafficRouter + Send + Sync>,
@@ -1105,6 +1113,7 @@ mod tests {
         }
     }
 
+    #[must_use]
     fn create_test_hot_reload_manager() -> CaxtonHotReloadManager {
         let runtime_manager = Arc::new(MockRuntimeManager {
             should_succeed: Arc::new(AtomicBool::new(true)),

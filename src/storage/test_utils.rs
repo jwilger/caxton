@@ -31,6 +31,7 @@ pub struct MockAgentStorage;
 
 impl MockAgentStorage {
     /// Creates a new mock storage instance.
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
@@ -67,6 +68,7 @@ impl AgentStorage for MockAgentStorage {
 ///
 /// Panics if `AgentName::try_new("test_agent")` fails, which should never happen
 /// with the hardcoded valid agent name `"test_agent"`.
+#[must_use]
 pub fn create_test_agent_data() -> (AgentId, AgentName) {
     let agent_id = AgentId::generate();
     let agent_name = AgentName::try_new("test_agent").expect("Failed to create test AgentName");

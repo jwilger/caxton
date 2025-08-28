@@ -25,6 +25,7 @@ pub struct ExecutionResult {
 
 impl ExecutionResult {
     /// Creates a successful execution result
+    #[must_use]
     pub fn success(fuel_consumed: CpuFuel, output: Option<Vec<u8>>) -> Self {
         Self {
             fuel_consumed,
@@ -34,6 +35,7 @@ impl ExecutionResult {
     }
 
     /// Creates a failed execution result
+    #[must_use]
     pub fn failure(fuel_consumed: CpuFuel) -> Self {
         Self {
             fuel_consumed,
@@ -116,10 +118,12 @@ impl Default for ResourceUsage {
 }
 
 impl Agent {
+    #[must_use]
     fn id(&self) -> AgentId {
         self.id
     }
 
+    #[must_use]
     fn name(&self) -> String {
         self.name.to_string()
     }
@@ -177,16 +181,19 @@ impl WasmRuntime {
     }
 
     /// Checks if the runtime is initialized
+    #[must_use]
     pub fn is_initialized(&self) -> bool {
         self.initialized
     }
 
     /// Returns the number of active agents
+    #[must_use]
     pub fn active_agent_count(&self) -> usize {
         self.active_count.load(Ordering::SeqCst)
     }
 
     /// Gets the resource manager for monitoring
+    #[must_use]
     pub fn resource_manager(&self) -> &ResourceManager {
         &self.resource_manager
     }
@@ -392,6 +399,7 @@ impl WasmRuntime {
     }
 
     /// Gets the runtime's security policy
+    #[must_use]
     pub fn get_security_policy(&self) -> &SecurityPolicy {
         &self.config.security_policy
     }

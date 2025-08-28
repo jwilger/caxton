@@ -101,6 +101,7 @@ pub struct OperationResult {
 
 impl OperationResult {
     /// Creates a successful operation result
+    #[must_use]
     pub fn success(started_at: SystemTime) -> Self {
         let completed_at = SystemTime::now();
         Self {
@@ -113,6 +114,7 @@ impl OperationResult {
     }
 
     /// Creates a failed operation result
+    #[must_use]
     pub fn failure(started_at: SystemTime, error: String) -> Self {
         let completed_at = SystemTime::now();
         Self {
@@ -158,6 +160,7 @@ pub trait DeploymentManager {
     ) -> std::result::Result<DeploymentResult, DeploymentError>;
 
     /// Get deployment status
+    #[must_use]
     async fn get_deployment_status(
         &self,
         deployment_id: DeploymentId,
@@ -190,6 +193,7 @@ pub trait HotReloadManager {
     ) -> std::result::Result<HotReloadResult, HotReloadError>;
 
     /// Get hot reload status
+    #[must_use]
     async fn get_hot_reload_status(
         &self,
         reload_id: HotReloadId,
@@ -213,6 +217,7 @@ pub trait HotReloadManager {
 #[async_trait::async_trait]
 pub trait WasmModuleValidator {
     /// Validate WASM module before deployment
+    #[must_use]
     async fn validate_module(
         &self,
         wasm_bytes: &[u8],
@@ -220,12 +225,14 @@ pub trait WasmModuleValidator {
     ) -> std::result::Result<WasmModule, crate::domain::WasmValidationError>;
 
     /// Perform security validation
+    #[must_use]
     async fn validate_security(
         &self,
         module: &WasmModule,
     ) -> std::result::Result<ValidationResult, crate::domain::WasmValidationError>;
 
     /// Extract module metadata
+    #[must_use]
     async fn extract_metadata(
         &self,
         wasm_bytes: &[u8],
@@ -234,6 +241,7 @@ pub trait WasmModuleValidator {
 
 impl AgentLifecycleManager {
     /// Creates a new Agent Lifecycle Manager
+    #[must_use]
     pub fn new(
         deployment_manager: Arc<dyn DeploymentManager + Send + Sync>,
         hot_reload_manager: Arc<dyn HotReloadManager + Send + Sync>,
@@ -252,6 +260,7 @@ impl AgentLifecycleManager {
     }
 
     /// Creates a new Agent Lifecycle Manager with custom timeout
+    #[must_use]
     pub fn with_timeout(
         deployment_manager: Arc<dyn DeploymentManager + Send + Sync>,
         hot_reload_manager: Arc<dyn HotReloadManager + Send + Sync>,
@@ -831,6 +840,7 @@ impl AgentLifecycleManager {
     }
 
     /// List all agents with their current status
+    #[must_use]
     pub async fn list_agents(&self) -> HashMap<AgentId, AgentStatus> {
         self.agent_status.read().await.clone()
     }
@@ -1094,6 +1104,7 @@ mod tests {
         }
     }
 
+    #[must_use]
     fn create_test_manager() -> AgentLifecycleManager {
         let deployment_manager = Arc::new(MockDeploymentManager {
             should_succeed: Arc::new(AtomicBool::new(true)),

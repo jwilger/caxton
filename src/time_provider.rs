@@ -18,12 +18,15 @@ pub trait TimeProvider: Send + Sync + std::fmt::Debug {
     async fn sleep(&self, duration: Duration);
 
     /// Get the current system time
+    #[must_use]
     fn now(&self) -> SystemTime;
 
     /// Get the current instant for measuring elapsed time
+    #[must_use]
     fn instant(&self) -> Instant;
 
     /// Check if we should skip delays (for testing)
+    #[must_use]
     fn should_skip_delays(&self) -> bool {
         false
     }
@@ -35,6 +38,7 @@ pub struct RealTimeProvider;
 
 impl RealTimeProvider {
     /// Creates a new real time provider
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
@@ -66,11 +70,13 @@ pub struct MockTimeProvider {
 
 impl MockTimeProvider {
     /// Creates a new mock time provider that skips delays
+    #[must_use]
     pub fn new() -> Self {
         Self { skip_delays: true }
     }
 
     /// Creates a mock time provider that uses real delays (for integration tests)
+    #[must_use]
     pub fn with_real_delays() -> Self {
         Self { skip_delays: false }
     }
@@ -105,16 +111,19 @@ impl TimeProvider for MockTimeProvider {
 pub type SharedTimeProvider = Arc<dyn TimeProvider>;
 
 /// Create a production time provider
+#[must_use]
 pub fn production_time_provider() -> SharedTimeProvider {
     Arc::new(RealTimeProvider::new())
 }
 
 /// Create a test time provider that skips delays
+#[must_use]
 pub fn test_time_provider() -> SharedTimeProvider {
     Arc::new(MockTimeProvider::new())
 }
 
 /// Create a test time provider with real delays (for integration tests)
+#[must_use]
 pub fn integration_test_time_provider() -> SharedTimeProvider {
     Arc::new(MockTimeProvider::with_real_delays())
 }

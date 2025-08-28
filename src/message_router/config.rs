@@ -49,6 +49,7 @@ impl ObservabilityConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
+    #[must_use]
     pub fn development() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(1.0).unwrap(),
@@ -62,6 +63,7 @@ impl ObservabilityConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
+    #[must_use]
     pub fn production() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(0.01).unwrap(),
@@ -75,6 +77,7 @@ impl ObservabilityConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             trace_sampling_ratio: TraceSamplingRatio::try_new(0.0).unwrap(),
@@ -105,6 +108,7 @@ pub struct PerformanceConfig {
 
 impl PerformanceConfig {
     /// Development performance settings
+    #[must_use]
     pub fn development() -> Self {
         Self {
             enable_batching: true,
@@ -115,6 +119,7 @@ impl PerformanceConfig {
     }
 
     /// Production performance settings
+    #[must_use]
     pub fn production() -> Self {
         Self {
             enable_batching: true,
@@ -125,6 +130,7 @@ impl PerformanceConfig {
     }
 
     /// Testing performance settings
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             enable_batching: false,
@@ -156,6 +162,7 @@ pub struct SecurityConfig {
 
 impl SecurityConfig {
     /// Development security settings (relaxed)
+    #[must_use]
     pub fn development() -> Self {
         Self {
             enable_message_validation: true,
@@ -166,6 +173,7 @@ impl SecurityConfig {
     }
 
     /// Production security settings (strict)
+    #[must_use]
     pub fn production() -> Self {
         Self {
             enable_message_validation: true,
@@ -176,6 +184,7 @@ impl SecurityConfig {
     }
 
     /// Testing security settings
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             enable_message_validation: true,
@@ -205,6 +214,7 @@ pub struct StorageConfig {
 
 impl StorageConfig {
     /// Development storage settings (in-memory)
+    #[must_use]
     pub fn development() -> Self {
         Self {
             storage_path: None,
@@ -214,6 +224,7 @@ impl StorageConfig {
     }
 
     /// Production storage settings (persistent)
+    #[must_use]
     pub fn production() -> Self {
         Self {
             storage_path: Some(PathBuf::from("./data/message_router")),
@@ -223,6 +234,7 @@ impl StorageConfig {
     }
 
     /// Testing storage settings
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             storage_path: None,
@@ -300,71 +312,85 @@ impl RouterConfig {
     // Backward compatibility methods for deprecated fields
 
     /// Backward compatibility: get trace sampling ratio
+    #[must_use]
     pub fn trace_sampling_ratio(&self) -> TraceSamplingRatio {
         self.observability.trace_sampling_ratio
     }
 
     /// Backward compatibility: check if metrics are enabled
+    #[must_use]
     pub fn enable_metrics(&self) -> bool {
         self.observability.enable_metrics
     }
 
     /// Backward compatibility: check if detailed logs are enabled
+    #[must_use]
     pub fn enable_detailed_logs(&self) -> bool {
         self.observability.enable_detailed_logs
     }
 
     /// Backward compatibility: get storage path
+    #[must_use]
     pub fn storage_path(&self) -> Option<&PathBuf> {
         self.storage.storage_path.as_ref()
     }
 
     /// Backward compatibility: check if persistence is enabled
+    #[must_use]
     pub fn enable_persistence(&self) -> bool {
         self.storage.enable_persistence
     }
 
     /// Backward compatibility: get storage cleanup interval
+    #[must_use]
     pub fn storage_cleanup_interval_ms(&self) -> u64 {
         self.storage.storage_cleanup_interval_ms
     }
 
     /// Backward compatibility: check if batching is enabled
+    #[must_use]
     pub fn enable_batching(&self) -> bool {
         self.performance.enable_batching
     }
 
     /// Backward compatibility: check if connection pooling is enabled
+    #[must_use]
     pub fn enable_connection_pooling(&self) -> bool {
         self.performance.enable_connection_pooling
     }
 
     /// Backward compatibility: get connection pool size
+    #[must_use]
     pub fn connection_pool_size(&self) -> usize {
         self.performance.connection_pool_size
     }
 
     /// Backward compatibility: check if compression is enabled
+    #[must_use]
     pub fn enable_compression(&self) -> bool {
         self.performance.enable_compression
     }
 
     /// Backward compatibility: check if message validation is enabled
+    #[must_use]
     pub fn enable_message_validation(&self) -> bool {
         self.security.enable_message_validation
     }
 
     /// Backward compatibility: get max message size
+    #[must_use]
     pub fn max_message_size_bytes(&self) -> usize {
         self.security.max_message_size_bytes
     }
 
     /// Backward compatibility: check if rate limiting is enabled
+    #[must_use]
     pub fn enable_rate_limiting(&self) -> bool {
         self.security.enable_rate_limiting
     }
 
     /// Backward compatibility: get rate limit
+    #[must_use]
     pub fn rate_limit_messages_per_second(&self) -> usize {
         self.security.rate_limit_messages_per_second
     }
@@ -381,6 +407,7 @@ impl RouterConfig {
     ///
     /// # Panics
     /// Panics if any of the hardcoded values are out of range for their domain types
+    #[must_use]
     pub fn development() -> Self {
         Self {
             // Core routing - smaller queues for dev
@@ -429,6 +456,7 @@ impl RouterConfig {
     ///
     /// # Panics
     /// Panics if any of the hardcoded values are out of range for their domain types
+    #[must_use]
     pub fn production() -> Self {
         Self {
             // Core routing - optimized for throughput
@@ -464,6 +492,7 @@ impl RouterConfig {
     }
 
     /// Creates a configuration builder for custom settings
+    #[must_use]
     pub fn builder() -> RouterConfigBuilder {
         RouterConfigBuilder::new()
     }
@@ -584,6 +613,7 @@ impl RouterConfig {
     /// # Panics
     ///
     /// Panics if the hardcoded configuration values are invalid (should never happen in practice)
+    #[must_use]
     pub fn testing() -> Self {
         Self {
             inbound_queue_size: ChannelCapacity::try_new(10000).unwrap(),
@@ -627,6 +657,7 @@ pub struct RouterConfigBuilder {
 
 impl RouterConfigBuilder {
     /// Creates a new builder starting with development defaults
+    #[must_use]
     pub fn new() -> Self {
         Self {
             config: RouterConfig::development(),

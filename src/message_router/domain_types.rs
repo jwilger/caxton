@@ -30,6 +30,7 @@ pub struct MessageId(Uuid);
 
 impl MessageId {
     /// Creates a new random message ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -53,6 +54,7 @@ pub struct ConversationId(Uuid);
 
 impl ConversationId {
     /// Creates a new random conversation ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -76,6 +78,7 @@ pub struct NodeId(Uuid);
 
 impl NodeId {
     /// Creates a new random node ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -105,6 +108,7 @@ pub struct ChannelCapacity(usize);
 
 impl ChannelCapacity {
     /// Gets the value as usize for use with tokio channels
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -134,6 +138,7 @@ pub struct MaxRetries(u8);
 
 impl MaxRetries {
     /// Gets the value as u8
+    #[must_use]
     pub fn as_u8(&self) -> u8 {
         self.into_inner()
     }
@@ -163,11 +168,13 @@ pub struct RetryDelayMs(u64);
 
 impl RetryDelayMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -219,6 +226,7 @@ pub struct DeadLetterQueueSize(usize);
 
 impl DeadLetterQueueSize {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -234,11 +242,13 @@ pub struct ConversationTimeoutMs(u64);
 
 impl ConversationTimeoutMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -282,11 +292,13 @@ pub struct ConversationCreatedAt(SystemTime);
 
 impl ConversationCreatedAt {
     /// Creates timestamp for current time
+    #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
     /// Gets the inner `SystemTime`
+    #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
     }
@@ -348,6 +360,7 @@ pub struct TraceSamplingRatio(f64);
 
 impl TraceSamplingRatio {
     /// Gets the value as f64
+    #[must_use]
     pub fn as_f64(&self) -> f64 {
         self.into_inner()
     }
@@ -412,6 +425,7 @@ pub struct HealthCheckIntervalMs(u64);
 
 impl HealthCheckIntervalMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
@@ -433,11 +447,13 @@ pub struct MessageTimestamp(SystemTime);
 
 impl MessageTimestamp {
     /// Creates timestamp for current time
+    #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
     /// Gets the inner `SystemTime`
+    #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
     }
@@ -518,11 +534,13 @@ pub struct MessageTimeoutMs(u64);
 
 impl MessageTimeoutMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -537,16 +555,19 @@ pub struct MessageContent(Vec<u8>);
 
 impl MessageContent {
     /// Gets the length of the content
+    #[must_use]
     pub fn len(&self) -> usize {
         self.as_ref().len()
     }
 
     /// Checks if content is empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.as_ref().is_empty()
     }
 
     /// Gets the content as bytes
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         self.as_ref()
     }
@@ -576,6 +597,7 @@ pub struct AgentQueueSize(usize);
 
 impl AgentQueueSize {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -605,6 +627,7 @@ pub struct WorkerThreadCount(usize);
 
 impl WorkerThreadCount {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -634,6 +657,7 @@ pub struct MessageBatchSize(usize);
 
 impl MessageBatchSize {
     /// Gets the value as usize
+    #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
     }
@@ -661,6 +685,7 @@ pub struct RetryBackoffFactor(f64);
 
 impl RetryBackoffFactor {
     /// Gets the value as f64
+    #[must_use]
     pub fn as_f64(&self) -> f64 {
         self.into_inner()
     }
@@ -690,11 +715,13 @@ pub struct CircuitBreakerTimeoutMs(u64);
 
 impl CircuitBreakerTimeoutMs {
     /// Converts to Duration
+    #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -811,6 +838,7 @@ pub struct LocalAgent {
 
 impl LocalAgent {
     /// Creates a new local agent
+    #[must_use]
     pub fn new(
         id: AgentId,
         name: AgentName,
@@ -830,6 +858,7 @@ impl LocalAgent {
     }
 
     /// Checks if agent is available for message delivery
+    #[must_use]
     pub fn is_available(&self) -> bool {
         matches!(self.state, AgentState::Running)
     }
@@ -848,6 +877,7 @@ pub struct Conversation {
 
 impl Conversation {
     /// Creates a new conversation
+    #[must_use]
     pub fn new(
         id: ConversationId,
         participants: HashSet<AgentId>,
@@ -945,11 +975,13 @@ pub struct Timestamp(SystemTime);
 
 impl Timestamp {
     /// Creates timestamp for current time
+    #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
     /// Gets the inner `SystemTime`
+    #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
     }
@@ -957,6 +989,7 @@ impl Timestamp {
 
 impl RouteInfo {
     /// Creates new route information
+    #[must_use]
     pub fn new(node_id: NodeId, hops: RouteHops, updated_at: MessageTimestamp) -> Self {
         let ttl_duration = std::time::Duration::from_secs(300); // 5 minutes default TTL
         let expires_at = MessageTimestamp::new(updated_at.as_system_time() + ttl_duration);
@@ -970,6 +1003,7 @@ impl RouteInfo {
     }
 
     /// Checks if route is still fresh within TTL
+    #[must_use]
     pub fn is_fresh(&self, ttl: std::time::Duration) -> bool {
         match self.updated_at.as_system_time().elapsed() {
             Ok(elapsed) => elapsed < ttl,

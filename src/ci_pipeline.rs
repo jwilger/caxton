@@ -172,11 +172,13 @@ pub struct CiPipelineValidator;
 
 impl CiPipelineValidator {
     /// Create a new validator instance
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
 
     /// Validate matrix configuration using functional core validation
+    #[must_use]
     pub fn validate_matrix_configuration(
         &self,
         config: &MatrixConfiguration,

@@ -21,6 +21,7 @@ use std::time::Duration;
 pub struct FuelConsumed(u64);
 
 impl FuelConsumed {
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -39,6 +40,7 @@ impl FuelConsumed {
 pub struct ExecutionOutput(Vec<u8>);
 
 impl ExecutionOutput {
+    #[must_use]
     pub fn empty() -> Self {
         Self::try_new(Vec::new()).unwrap_or_default()
     }
@@ -76,6 +78,7 @@ pub struct FailureReason(String);
 pub struct ElapsedTime(u64);
 
 impl ElapsedTime {
+    #[must_use]
     pub fn from_duration(duration: Duration) -> Self {
         let millis = duration.as_millis();
         // Safe conversion: as_millis() returns u128, we need u64
@@ -84,6 +87,7 @@ impl ElapsedTime {
         Self::try_new(millis_u64).unwrap_or_default()
     }
 
+    #[must_use]
     pub fn meets_minimum(&self, minimum_ms: u64) -> bool {
         self.into_inner() >= minimum_ms
     }
@@ -97,6 +101,7 @@ pub struct ExecutionResult {
 }
 
 impl ExecutionResult {
+    #[must_use]
     pub fn success(fuel_consumed: FuelConsumed, output: Option<ExecutionOutput>) -> Self {
         Self {
             status: ExecutionStatus::Success,
@@ -105,6 +110,7 @@ impl ExecutionResult {
         }
     }
 
+    #[must_use]
     pub fn failure(reason: FailureReason, fuel_consumed: FuelConsumed) -> Self {
         Self {
             status: ExecutionStatus::Failure { reason },
@@ -113,6 +119,7 @@ impl ExecutionResult {
         }
     }
 
+    #[must_use]
     pub fn timeout(elapsed: ElapsedTime, fuel_consumed: FuelConsumed) -> Self {
         Self {
             status: ExecutionStatus::Timeout { elapsed },

@@ -10,6 +10,7 @@ use rust_decimal::prelude::*;
 ///
 /// Uses Decimal arithmetic internally to maintain precision, converting to f32
 /// only for the final display value.
+#[must_use]
 pub fn calculate_percentage_f32(numerator: u64, denominator: u64) -> f32 {
     if denominator == 0 {
         return 0.0;
@@ -30,6 +31,7 @@ pub fn calculate_percentage_f32(numerator: u64, denominator: u64) -> f32 {
 /// Convert timing values from u128 milliseconds to f64, handling very large values.
 ///
 /// Uses Decimal for large value handling, converting to f64 only for display.
+#[must_use]
 pub fn millis_to_f64_for_stats(millis: u128) -> f64 {
     // Try to create a Decimal from u128
     // For extremely large values that don't fit, use f64::MAX as a sentinel
@@ -41,6 +43,7 @@ pub fn millis_to_f64_for_stats(millis: u128) -> f64 {
 /// Convert u64 to f64 for statistical calculations.
 ///
 /// Uses Decimal as intermediate to maintain precision as long as possible.
+#[must_use]
 pub fn u64_to_f64_for_stats(value: u64) -> f64 {
     Decimal::from(value).to_f64().unwrap_or(0.0)
 }

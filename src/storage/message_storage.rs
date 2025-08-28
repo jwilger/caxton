@@ -42,9 +42,7 @@ use crate::{
     database::DatabaseConnection,
     domain_types::AgentId,
     message_router::{
-        domain_types::{
-            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
-        },
+        domain_types::{FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative},
         traits::RouterError,
     },
 };
@@ -110,6 +108,7 @@ impl SqliteMessageStorage {
     /// # Returns
     ///
     /// A new message storage instance ready for FIPA message persistence operations.
+    #[must_use]
     pub fn new(connection: DatabaseConnection) -> Self {
         Self { connection }
     }
@@ -196,7 +195,9 @@ impl SqliteMessageStorage {
                         format!("Invalid conversation UUID '{conv_str}': {e}"),
                     )),
                 })?;
-            Ok(Some(crate::message_router::domain_types::ConversationId::new(parsed_uuid)))
+            Ok(Some(
+                crate::message_router::domain_types::ConversationId::new(parsed_uuid),
+            ))
         } else {
             Ok(None)
         }
@@ -281,9 +282,10 @@ impl SqliteMessageStorage {
     }
 
     /// Serializes message content to length-prefixed format.
+    #[must_use]
     fn serialize_message_content(content_bytes: &[u8]) -> String {
         use std::fmt::Write;
-        
+
         let content_len = content_bytes.len();
         let mut length_digits = 1;
         let mut temp = content_len;
@@ -307,6 +309,7 @@ impl SqliteMessageStorage {
     }
 
     /// Converts performative to string representation.
+    #[must_use]
     fn performative_to_str(performative: Performative) -> &'static str {
         match performative {
             Performative::Request => "Request",

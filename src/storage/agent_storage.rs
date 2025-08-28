@@ -82,6 +82,7 @@ impl SqliteAgentStorage {
     /// ```rust,ignore
     /// let storage = SqliteAgentStorage::new(connection);
     /// ```
+    #[must_use]
     pub fn new(connection: DatabaseConnection) -> Self {
         Self { connection }
     }
@@ -91,6 +92,7 @@ impl SqliteAgentStorage {
     /// # Returns
     ///
     /// Current Unix timestamp as i64, or current Unix timestamp if conversion fails.
+    #[must_use]
     fn current_timestamp() -> i64 {
         if let Ok(duration) = SystemTime::now().duration_since(UNIX_EPOCH) {
             // Use min to avoid overflow when converting u64 to i64

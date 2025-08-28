@@ -29,6 +29,7 @@ pub struct AgentVersion(Uuid);
 
 impl AgentVersion {
     /// Creates a new random agent version ID
+    #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
     }
@@ -70,6 +71,7 @@ impl VersionNumber {
     /// # Panics
     ///
     /// This function panics if version 1 is not valid, which should never happen.
+    #[must_use]
     pub fn first() -> Self {
         Self::try_new(1).expect("Version 1 should always be valid")
     }
@@ -84,6 +86,7 @@ impl VersionNumber {
     }
 
     /// Gets the value as u64
+    #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
     }
@@ -110,31 +113,37 @@ pub enum AgentLifecycleState {
 
 impl AgentLifecycleState {
     /// Checks if the state allows starting execution
+    #[must_use]
     pub fn can_start(&self) -> bool {
         matches!(self, Self::Ready)
     }
 
     /// Checks if the state allows draining
+    #[must_use]
     pub fn can_drain(&self) -> bool {
         matches!(self, Self::Running)
     }
 
     /// Checks if the state allows stopping
+    #[must_use]
     pub fn can_stop(&self) -> bool {
         matches!(self, Self::Running | Self::Draining | Self::Ready)
     }
 
     /// Checks if the state is terminal (cannot transition further)
+    #[must_use]
     pub fn is_terminal(&self) -> bool {
         matches!(self, Self::Stopped | Self::Failed)
     }
 
     /// Checks if the state is active (consuming resources)
+    #[must_use]
     pub fn is_active(&self) -> bool {
         matches!(self, Self::Running | Self::Draining)
     }
 
     /// Gets all valid next states from current state
+    #[must_use]
     pub fn valid_transitions(&self) -> Vec<Self> {
         match self {
             Self::Unloaded => vec![Self::Loaded, Self::Failed],
@@ -147,6 +156,7 @@ impl AgentLifecycleState {
     }
 
     /// Validates if transition to new state is allowed
+    #[must_use]
     pub fn can_transition_to(&self, next: Self) -> bool {
         self.valid_transitions().contains(&next)
     }
@@ -200,11 +210,13 @@ impl TransitionTimeout {
     }
 
     /// Gets the value as milliseconds
+    #[must_use]
     pub fn as_millis(&self) -> u64 {
         self.into_inner()
     }
 
     /// Gets the value as seconds
+    #[must_use]
     pub fn as_secs(&self) -> u64 {
         self.into_inner() / 1000
     }
@@ -243,11 +255,13 @@ impl DrainTimeout {
     }
 
     /// Gets the value as milliseconds
+    #[must_use]
     pub fn as_millis(&self) -> u64 {
         self.into_inner()
     }
 
     /// Gets the value as seconds
+    #[must_use]
     pub fn as_secs(&self) -> u64 {
         self.into_inner() / 1000
     }
@@ -277,6 +291,7 @@ pub struct PendingRequestCount(u32);
 
 impl PendingRequestCount {
     /// Zero pending requests
+    #[must_use]
     pub fn zero() -> Self {
         Self::default()
     }
@@ -302,11 +317,13 @@ impl PendingRequestCount {
     }
 
     /// Gets the value as u32
+    #[must_use]
     pub fn as_u32(&self) -> u32 {
         self.into_inner()
     }
 
     /// Check if there are pending requests
+    #[must_use]
     pub fn has_pending(&self) -> bool {
         self.into_inner() > 0
     }
@@ -367,6 +384,7 @@ pub struct AgentLifecycle {
 
 impl AgentLifecycle {
     /// Creates a new agent lifecycle in unloaded state
+    #[must_use]
     pub fn new(
         agent_id: AgentId,
         agent_name: Option<AgentName>,
@@ -467,11 +485,13 @@ impl AgentLifecycle {
     }
 
     /// Checks if agent is ready to be fully stopped (no pending requests)
+    #[must_use]
     pub fn is_ready_to_stop(&self) -> bool {
         self.current_state == AgentLifecycleState::Draining && !self.pending_requests.has_pending()
     }
 
     /// Gets time-based constraints for current state
+    #[must_use]
     pub fn get_timeout_for_state(&self) -> u64 {
         match self.current_state {
             AgentLifecycleState::Draining => self.drain_timeout.as_millis(),
@@ -513,6 +533,7 @@ pub struct LifecycleOperationResult {
 
 impl LifecycleOperationResult {
     /// Creates a successful operation result
+    #[must_use]
     pub fn success(
         previous_state: Option<AgentLifecycleState>,
         current_state: AgentLifecycleState,
@@ -526,6 +547,7 @@ impl LifecycleOperationResult {
     }
 
     /// Creates a failed operation result
+    #[must_use]
     pub fn failure(
         previous_state: Option<AgentLifecycleState>,
         current_state: AgentLifecycleState,

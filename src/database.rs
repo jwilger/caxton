@@ -105,21 +105,25 @@ impl DatabasePath {
     }
 
     /// Get the path as `PathBuf`
+    #[must_use]
     pub fn as_path(&self) -> PathBuf {
         self.clone().into_inner()
     }
 
     /// Generate `SQLite` connection string (functional core)
+    #[must_use]
     pub fn to_connection_string(&self) -> String {
         format!("sqlite://{}?mode=rwc", self.as_path().display())
     }
 
     /// Get parent directory for file creation (functional core)
+    #[must_use]
     pub fn parent_directory(&self) -> Option<PathBuf> {
         self.as_path().parent().map(std::path::Path::to_path_buf)
     }
 
     /// Check if file exists (pure function for testing)
+    #[must_use]
     pub fn exists(&self) -> bool {
         self.as_path().exists()
     }
@@ -142,6 +146,7 @@ pub struct DatabaseConfig {
 
 impl DatabaseConfig {
     /// Create new database config with default settings
+    #[must_use]
     pub fn new(path: DatabasePath) -> Self {
         Self {
             path,
@@ -156,6 +161,7 @@ impl DatabaseConfig {
     /// # Panics
     ///
     /// Panics if the default pool size cannot be created (should never happen)
+    #[must_use]
     pub fn for_testing(path: DatabasePath) -> Self {
         Self {
             path,
@@ -188,21 +194,25 @@ impl DatabaseConfig {
     }
 
     /// Get the database path
+    #[must_use]
     pub fn path(&self) -> &DatabasePath {
         &self.path
     }
 
     /// Get the connection pool size
+    #[must_use]
     pub fn pool_size(&self) -> ConnectionPoolSize {
         self.pool_size
     }
 
     /// Check if WAL mode is enabled
+    #[must_use]
     pub fn wal_mode_enabled(&self) -> bool {
         self.enable_wal_mode
     }
 
     /// Check if foreign keys are enabled
+    #[must_use]
     pub fn foreign_keys_enabled(&self) -> bool {
         self.enable_foreign_keys
     }
@@ -234,6 +244,7 @@ pub struct DatabaseConnection {
 // Functional Core: Pure business logic
 impl DatabaseConnection {
     /// Generate `SQLite` options from config (pure function)
+    #[must_use]
     fn create_connect_options(config: &DatabaseConfig) -> sqlx::sqlite::SqliteConnectOptions {
         use sqlx::ConnectOptions;
         use sqlx::sqlite::SqliteConnectOptions;
@@ -393,6 +404,7 @@ impl DatabaseConnection {
     }
 
     /// Check if database file exists
+    #[must_use]
     pub fn database_file_exists(&self) -> bool {
         self.config.path().exists()
     }
@@ -415,11 +427,13 @@ impl DatabaseConnection {
     }
 
     /// Get access to the connection pool for advanced operations
+    #[must_use]
     pub fn pool(&self) -> &Pool<Sqlite> {
         &self.pool
     }
 
     /// Get the database configuration
+    #[must_use]
     pub fn config(&self) -> &DatabaseConfig {
         &self.config
     }
