@@ -26,6 +26,50 @@ use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
 
+// ============================================================================
+// Pure functions for FIPA message validation (functional core)
+// ============================================================================
+
+// Validates that sender and receiver are different agents (FIPA requirement)
+fn validate_sender_receiver_different(message: &FipaMessage) -> Result<(), RouterError> {
+    if message.sender == message.receiver {
+        return Err(RouterError::ValidationError {
+            field: "sender/receiver".to_string(),
+            reason: "sender cannot equal receiver".to_string(),
+        });
+    }
+    Ok(())
+}
+
+// Validates message content is not empty (FIPA requirement)
+fn validate_content_not_empty(message: &FipaMessage) -> Result<(), RouterError> {
+    if message.content.is_empty() {
+        return Err(RouterError::ValidationError {
+            field: "content".to_string(),
+            reason: "content cannot be empty".to_string(),
+        });
+    }
+    Ok(())
+}
+
+// Validates FIPA message requirements
+// Performs comprehensive FIPA-ACL message validation by checking:
+// - Sender and receiver must be different agents
+// - Message content must not be empty
+// - Future: Additional FIPA compliance validations
+fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
+    // Apply all FIPA validation rules
+    validate_sender_receiver_different(message)?;
+    validate_content_not_empty(message)?;
+
+    // Future validation rules can be added here:
+    // validate_performative_requirements(message)?;
+    // validate_conversation_threading(message)?;
+    // validate_protocol_compliance(message)?;
+
+    Ok(())
+}
+
 /// Main message router implementation
 ///
 /// Coordinates message routing using dependency injection for all major components:
@@ -700,6 +744,9 @@ impl MessageRouter for MessageRouterImpl {
                 max_size: self.config.max_message_size_bytes(),
             });
         }
+
+        // FIPA validation
+        validate_fipa_message(&message)?;
 
         // Create routing task
         let task = RoutingTask {
@@ -1594,5 +1641,97 @@ impl MetricsCollector for MetricsCollectorImpl {
 
     fn record_agent_deregistered(&self, _agent_id: AgentId) {
         // Placeholder implementation
+    }
+}
+
+#[cfg(test)]
+#[allow(unreachable_code, unused_variables)]
+mod tests {
+    use super::*;
+    use crate::message_router::config::RouterConfig;
+
+    // Test that verifies FIPA message field validation rejects invalid sender/receiver combination
+    #[tokio::test]
+    async fn test_should_reject_message_when_sender_equals_receiver() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create an invalid FIPA message with sender == receiver (FIPA violation)
+        let same_agent = AgentId::generate();
+
+        // Use unimplemented!() to force compilation but make test fail at runtime
+        // This will fail with "not yet implemented" until MessageContent is added
+        let invalid_message = FipaMessage {
+            performative: Performative::Request,
+            sender: same_agent,
+            receiver: same_agent, // FIPA violation: sender cannot equal receiver
+            content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the invalid message - should fail with ValidationError
+        let result = router.route_message(invalid_message).await;
+
+        // Expect validation error for sender == receiver FIPA violation
+        match result {
+            Err(RouterError::ValidationError { field, reason }) => {
+                assert_eq!(field, "sender/receiver");
+                assert!(reason.contains("sender cannot equal receiver"));
+            }
+            _ => panic!("Expected ValidationError for sender == receiver, got: {result:?}"),
+        }
+    }
+
+    // Test that verifies FIPA message field validation rejects empty content
+    #[tokio::test]
+    async fn test_should_reject_message_when_content_is_empty() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create a FIPA message with empty content (FIPA violation)
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        let invalid_message = FipaMessage {
+            performative: Performative::Inform,
+            sender,
+            receiver,
+            content: MessageContent::try_new(Vec::new()).unwrap(), // Empty content - FIPA violation
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the invalid message - should fail with ValidationError
+        let result = router.route_message(invalid_message).await;
+
+        // Expect validation error for empty content FIPA violation
+        match result {
+            Err(RouterError::ValidationError { field, reason }) => {
+                assert_eq!(field, "content");
+                assert!(reason.contains("content cannot be empty"));
+            }
+            _ => panic!("Expected ValidationError for empty content, got: {result:?}"),
+        }
     }
 }
