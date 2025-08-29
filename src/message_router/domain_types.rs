@@ -974,23 +974,38 @@ impl FipaMessage {
     /// # Example
     ///
     /// ```rust
+    /// use caxton::message_router::{FipaMessage, FipaMessageParams, Performative, MessageContent, MessageId, MessageTimestamp, DeliveryOptions};
+    /// use caxton::domain_types::AgentId;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    ///
+    /// // Create required parameters
+    /// let sender_id = AgentId::generate();
+    /// let receiver_id = AgentId::generate();
+    /// let content = MessageContent::try_new("Hello, world!".as_bytes().to_vec())?;
+    /// let message_id = MessageId::generate();
+    /// let created_at = MessageTimestamp::now();
+    /// let delivery_options = DeliveryOptions::default();
+    ///
     /// let params = FipaMessageParams {
     ///     performative: Performative::Request,
     ///     sender: sender_id,
     ///     receiver: receiver_id,
     ///     content,
-    ///     language,
-    ///     ontology,
-    ///     protocol,
-    ///     conversation_id,
-    ///     reply_with,
-    ///     in_reply_to,
+    ///     language: None,
+    ///     ontology: None,
+    ///     protocol: None,
+    ///     conversation_id: None,
+    ///     reply_with: None,
+    ///     in_reply_to: None,
     ///     message_id,
     ///     created_at,
-    ///     trace_context,
+    ///     trace_context: None,
     ///     delivery_options,
     /// };
     /// let message = FipaMessage::try_new_validated(params)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn try_new_validated(
         params: FipaMessageParams,
