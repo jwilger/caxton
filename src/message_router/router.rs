@@ -248,14 +248,67 @@ fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterEr
 /// # FIPA Compliance
 /// This validation ensures compatibility with FIPA-ACL specification requirements
 /// for proper multi-agent communication protocols.
+/// Standard FIPA-ACL performatives defined by the FIPA specification
+///
+/// These performatives are allowed in strict FIPA compliance mode.
+/// Reference: FIPA-ACL Specification for communicative acts.
+const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
+    Performative::Request,
+    Performative::Inform,
+    Performative::QueryIf,
+    Performative::QueryRef,
+    Performative::Propose,
+    Performative::AcceptProposal,
+    Performative::RejectProposal,
+    Performative::Agree,
+    Performative::Refuse,
+    Performative::Failure,
+    Performative::NotUnderstood,
+];
+
+/// Validates performative is a standard FIPA-ACL performative (not Caxton extension)
+///
+/// FIPA-ACL specification defines standard performatives for inter-agent communication.
+/// This validation ensures strict FIPA compliance by rejecting Caxton extension performatives.
+///
+/// # Arguments
+/// * `message` - The FIPA message to validate performative
+///
+/// # Returns
+/// * `Ok(())` - If performative is a standard FIPA performative
+/// * `Err(RouterError::ValidationError)` - If performative is a Caxton extension
+///
+/// # Implementation Notes
+/// Uses a constant array for efficient lookup and maintainable performative management.
+/// Error messages include the specific performative name for better debugging.
+fn validate_performative_fipa_compliance(message: &FipaMessage) -> Result<(), RouterError> {
+    // FIPA validation: performative must be in standard FIPA-ACL performatives set
+    if STANDARD_FIPA_PERFORMATIVES.contains(&message.performative) {
+        Ok(())
+    } else {
+        // Generate descriptive error for non-FIPA performatives
+        let performative_name = match message.performative {
+            Performative::Heartbeat => "Heartbeat",
+            Performative::Capability => "Capability",
+            // Note: This match is exhaustive due to STANDARD_FIPA_PERFORMATIVES check above
+            _ => "Unknown",
+        };
+
+        Err(RouterError::ValidationError {
+            field: "performative".to_string(),
+            reason: format!("{performative_name} is not a standard FIPA performative"),
+        })
+    }
+}
+
 fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
     // Apply all FIPA validation rules in logical order
     validate_sender_receiver_different(message)?;
     validate_content_not_empty(message)?;
     validate_conversation_threading(message)?;
+    validate_performative_fipa_compliance(message)?;
 
     // Future FIPA validation extensions will be added here:
-    // validate_performative_requirements(message)?; // Performative-specific rules
     // validate_protocol_compliance(message)?;       // Protocol-specific validation
     // validate_ontology_constraints(message)?;      // Ontology compatibility
     // validate_message_size_limits(message)?;       // Size constraint checking
@@ -2379,6 +2432,58 @@ mod tests {
             Err(error) => panic!(
                 "Expected NOT_UNDERSTOOD response with conversation context, got error: {error:?}"
             ),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_reject_caxton_extension_performatives_in_strict_fipa_mode() {
+        // Test that verifies enhanced FIPA performative validation rejects Caxton extension performatives
+        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        router.start().await.unwrap();
+
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        // Create a message using Caxton extension performative (not in FIPA-ACL standard)
+        let message_with_extension_performative = FipaMessage {
+            performative: Performative::Heartbeat, // Non-FIPA performative
+            sender,
+            receiver,
+            content: MessageContent::try_new(b"Heartbeat signal".to_vec()).unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(ConversationId::generate()),
+            reply_with: Some(MessageId::generate()),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the message - should be rejected due to non-FIPA performative
+        let result = router
+            .route_message(message_with_extension_performative)
+            .await;
+
+        // Should fail validation for non-FIPA performative
+        match result {
+            Err(RouterError::ValidationError { field, reason }) => {
+                assert_eq!(field, "performative");
+                assert!(reason.contains("not a standard FIPA performative"));
+                assert!(reason.contains("Heartbeat"));
+            }
+            Ok(_message_id) => {
+                panic!(
+                    "Expected validation error for non-FIPA performative, but message was routed successfully"
+                )
+            }
+            Err(other_error) => {
+                panic!(
+                    "Expected ValidationError for performative, got different error: {other_error:?}"
+                )
+            }
         }
     }
 }
