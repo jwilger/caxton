@@ -142,7 +142,7 @@ fn get_conversation_tracker() -> &'static ConversationThreadingTracker {
 }
 
 // ============================================================================
-// Pure functions for FIPA message validation (functional core)
+// Pure functions for FIPA message validation and response generation (functional core)
 // ============================================================================
 
 /// Validates that sender and receiver are different agents (FIPA requirement)
@@ -261,6 +261,104 @@ fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
     // validate_message_size_limits(message)?;       // Size constraint checking
 
     Ok(())
+}
+
+/// Generates FIPA-compliant `NOT_UNDERSTOOD` error content from original message
+///
+/// Creates a structured error description following FIPA-ACL conventions for
+/// `NOT_UNDERSTOOD` responses. This pure function generates deterministic error
+/// content based on the original message content.
+///
+/// # Arguments
+/// * `original_content` - The message content that could not be understood
+///
+/// # Returns
+/// A formatted error description suitable for `NOT_UNDERSTOOD` responses
+///
+/// # FIPA Compliance
+/// Error content follows FIPA-ACL patterns for communicative act failure reporting
+#[cfg(test)]
+fn generate_not_understood_error_content(original_content: &MessageContent) -> String {
+    const MAX_CONTENT_PREVIEW: usize = 100;
+    // Create structured error description with original content for debugging
+    // Uses lossy conversion to handle potentially invalid UTF-8 content gracefully
+    let content_preview = String::from_utf8_lossy(original_content.as_bytes());
+
+    // Truncate long content to prevent excessively large error messages
+
+    let truncated_content = if content_preview.len() > MAX_CONTENT_PREVIEW {
+        format!(
+            "{}... (truncated from {} bytes)",
+            &content_preview[..MAX_CONTENT_PREVIEW],
+            original_content.len()
+        )
+    } else {
+        content_preview.to_string()
+    };
+
+    format!("Message content could not be understood or processed: {truncated_content}")
+}
+
+/// Creates FIPA-compliant `NOT_UNDERSTOOD` response message structure
+///
+/// Constructs a properly formatted `NOT_UNDERSTOOD` response following FIPA-ACL
+/// specifications for communicative act failure responses. This pure function
+/// handles all the message field mappings and FIPA protocol requirements.
+///
+/// # Arguments
+/// * `original_message` - The message that could not be processed
+/// * `error_content` - The error description content
+///
+/// # Returns
+/// Result containing the `NOT_UNDERSTOOD` response message or content creation error
+///
+/// # FIPA Protocol Requirements
+/// - Performative: Set to `NotUnderstood`
+/// - Sender/Receiver: Swapped from original (response routing)
+/// - Conversation: Preserved for threading context
+/// - Reply threading: Proper `in_reply_to` and `reply_with` handling
+/// - Timestamp: Set to current time for response tracking
+#[cfg(test)]
+fn create_not_understood_response(
+    original_message: &FipaMessage,
+    error_content: String,
+) -> Result<FipaMessage, RouterError> {
+    // Convert error content to MessageContent with proper validation
+    let message_content = MessageContent::try_new(error_content.into_bytes()).map_err(|_| {
+        RouterError::ValidationError {
+            field: "error_content".to_string(),
+            reason: "generated error content exceeds maximum message size".to_string(),
+        }
+    })?;
+
+    // Construct FIPA-compliant NOT_UNDERSTOOD response
+    Ok(FipaMessage {
+        // FIPA requirement: `NOT_UNDERSTOOD` performative for processing failures
+        performative: Performative::NotUnderstood,
+
+        // FIPA protocol: sender/receiver swap for proper response routing
+        sender: original_message.receiver, // Original receiver becomes sender
+        receiver: original_message.sender, // Original sender becomes receiver
+
+        // Error description content with validation
+        content: message_content,
+
+        // Optional FIPA fields: preserve original context where available
+        language: original_message.language.clone(),
+        ontology: original_message.ontology.clone(),
+        protocol: original_message.protocol.clone(),
+
+        // FIPA conversation threading: maintain conversation context
+        conversation_id: original_message.conversation_id,
+        reply_with: Some(MessageId::generate()), // Generate new ID for potential replies
+        in_reply_to: original_message.reply_with, // Reference original message
+
+        // Response metadata
+        message_id: MessageId::generate(), // Unique ID for this response
+        created_at: MessageTimestamp::now(), // Current timestamp
+        trace_context: original_message.trace_context.clone(), // Preserve tracing context
+        delivery_options: DeliveryOptions::default(), // Standard delivery options
+    })
 }
 
 /// Main message router implementation
@@ -1204,6 +1302,46 @@ impl MessageRouterImpl {
     pub fn agent_registry(&self) -> &Arc<dyn AgentRegistry> {
         &self.agent_registry
     }
+
+    /// Generates a FIPA-compliant `NOT_UNDERSTOOD` response for message processing failures
+    ///
+    /// Creates properly formatted `NOT_UNDERSTOOD` responses following FIPA-ACL specifications
+    /// for communicative act failures. This method applies functional core principles by
+    /// delegating to pure functions for error content generation and response construction.
+    ///
+    /// # Arguments
+    /// * `original_message` - The message that couldn't be understood or processed
+    ///
+    /// # Returns
+    /// * `Ok(FipaMessage)` - FIPA-compliant `NOT_UNDERSTOOD` response message
+    /// * `Err(RouterError)` - If response generation fails (e.g., content too large)
+    ///
+    /// # Errors
+    ///
+    /// Returns `RouterError::ValidationError` if the generated error content exceeds maximum message size limits.
+    ///
+    /// # FIPA Protocol Compliance
+    /// The generated response follows FIPA-ACL standards:
+    /// - **Performative**: Set to `NotUnderstood` as required for processing failures
+    /// - **Routing**: Sender/receiver swapped for proper response delivery
+    /// - **Threading**: Maintains conversation context and reply references
+    /// - **Content**: Structured error description with original content preview
+    /// - **Metadata**: Preserves tracing context and protocol information
+    ///
+    /// # Architecture Pattern
+    /// Follows functional core/imperative shell pattern:
+    /// - **Functional Core**: Pure functions handle error content and message structure
+    /// - **Imperative Shell**: This method coordinates the pure functions
+    pub fn generate_not_understood_response(
+        &self,
+        original_message: &FipaMessage,
+    ) -> Result<FipaMessage, RouterError> {
+        // Functional core: Generate structured error content (pure function)
+        let error_content = generate_not_understood_error_content(&original_message.content);
+
+        // Functional core: Create FIPA-compliant response structure (pure function)
+        create_not_understood_response(original_message, error_content)
+    }
 }
 
 // Placeholder implementations for components that will be implemented next
@@ -2121,6 +2259,126 @@ mod tests {
             );
         } else {
             panic!("Expected ValidationError for cross-conversation threading, got: {result:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_generate_not_understood_response_when_message_processing_fails() {
+        // Test that verifies NOT_UNDERSTOOD response generation for unprocessable messages
+        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        // Create a message that will cause processing failure (simulating unsupported performative handling)
+        let problematic_message = FipaMessage {
+            performative: Performative::Request,
+            sender,
+            receiver,
+            content: MessageContent::try_new(
+                b"UNSUPPORTED_OPERATION: complex_unsupported_request".to_vec(),
+            )
+            .unwrap(),
+            language: None,
+            ontology: None, // Keeping it simple for the test
+            protocol: None, // Keeping it simple for the test
+            conversation_id: Some(ConversationId::generate()),
+            reply_with: Some(MessageId::generate()),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the message - should generate NOT_UNDERSTOOD response
+        let result = router.generate_not_understood_response(&problematic_message);
+
+        // Expect NOT_UNDERSTOOD response with appropriate error details
+        match result {
+            Ok(not_understood_message) => {
+                assert_eq!(
+                    not_understood_message.performative,
+                    Performative::NotUnderstood
+                );
+                assert_eq!(not_understood_message.sender, receiver); // Receiver becomes sender
+                assert_eq!(not_understood_message.receiver, sender); // Sender becomes receiver
+                assert!(!not_understood_message.content.is_empty());
+                // Should reference original message in some way
+                assert!(not_understood_message.in_reply_to.is_some());
+            }
+            Err(error) => {
+                panic!("Expected NOT_UNDERSTOOD response generation, got error: {error:?}")
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_preserve_conversation_context_in_not_understood_response() {
+        // Test that verifies NOT_UNDERSTOOD responses maintain proper FIPA-ACL conversation threading
+        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+        let original_reply_with = MessageId::generate();
+
+        // Create original message with specific conversation context
+        let original_message = FipaMessage {
+            performative: Performative::QueryRef,
+            sender,
+            receiver,
+            content: MessageContent::try_new(
+                b"Invalid query syntax - should trigger NOT_UNDERSTOOD".to_vec(),
+            )
+            .unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_id),
+            reply_with: Some(original_reply_with),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Generate NOT_UNDERSTOOD response
+        let result = router.generate_not_understood_response(&original_message);
+
+        // Verify conversation threading compliance
+        match result {
+            Ok(not_understood_response) => {
+                // Should preserve conversation context
+                assert_eq!(
+                    not_understood_response.conversation_id,
+                    Some(conversation_id),
+                    "NOT_UNDERSTOOD response must preserve original conversation_id"
+                );
+
+                // Should reference original message via in_reply_to
+                assert_eq!(
+                    not_understood_response.in_reply_to,
+                    Some(original_reply_with),
+                    "NOT_UNDERSTOOD response must reference original reply_with in in_reply_to field"
+                );
+
+                // Should generate new reply_with for potential responses to this NOT_UNDERSTOOD
+                assert!(
+                    not_understood_response.reply_with.is_some(),
+                    "NOT_UNDERSTOOD response should generate new reply_with"
+                );
+
+                // Basic FIPA-ACL response structure
+                assert_eq!(
+                    not_understood_response.performative,
+                    Performative::NotUnderstood
+                );
+                assert_eq!(not_understood_response.sender, receiver); // Role reversal
+                assert_eq!(not_understood_response.receiver, sender); // Role reversal
+            }
+            Err(error) => panic!(
+                "Expected NOT_UNDERSTOOD response with conversation context, got error: {error:?}"
+            ),
         }
     }
 }
