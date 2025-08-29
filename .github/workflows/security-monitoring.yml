@@ -114,6 +114,14 @@ jobs:
           set +e  # Don't exit on error immediately to allow proper error handling
 
           # Run audit and capture exit code
+          # Ensure audit configuration is read from .cargo/audit.toml
+          # Verify configuration file exists
+          if [ -f ".cargo/audit.toml" ]; then
+            echo "Found audit configuration at .cargo/audit.toml"
+          else
+            echo "::warning::No audit configuration found at .cargo/audit.toml"
+          fi
+
           cargo audit --json > audit-report.json
           AUDIT_EXIT_CODE=$?
 
