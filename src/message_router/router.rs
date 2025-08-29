@@ -301,12 +301,57 @@ fn validate_performative_fipa_compliance(message: &FipaMessage) -> Result<(), Ro
     }
 }
 
+/// JSON content language identifier for validation
+///
+/// Used to check if `ContentLanguage` specifies JSON format requiring validation.
+/// Case-insensitive matching allows "json", "JSON", "application/json", etc.
+const JSON_CONTENT_LANGUAGE: &str = "json";
+
+/// Validates JSON content format when `ContentLanguage` specifies JSON
+///
+/// FIPA-ACL allows specifying content language to indicate content format.
+/// When language contains "json" (case-insensitive), the content must be valid JSON syntax.
+/// Uses `serde_json` for comprehensive JSON syntax validation following RFC 7159.
+///
+/// # Arguments
+/// * `message` - The FIPA message to validate JSON content format
+///
+/// # Returns
+/// * `Ok(())` - If content is valid JSON or language doesn't specify JSON
+/// * `Err(RouterError::ValidationError)` - If content has invalid JSON format with detailed reason
+///
+/// # Implementation Notes
+/// * Only validates when `ContentLanguage` contains "json" (case-insensitive)
+/// * Uses `serde_json::from_slice` for efficient JSON parsing validation
+/// * Preserves exact behavior while improving maintainability through constants
+fn validate_json_content_format(message: &FipaMessage) -> Result<(), RouterError> {
+    // Only validate JSON when `ContentLanguage` contains JSON identifier
+    if let Some(language) = &message.language {
+        let language_str = language.to_string();
+        if language_str.to_lowercase().contains(JSON_CONTENT_LANGUAGE) {
+            // Validate JSON syntax using serde_json with detailed error context
+            match serde_json::from_slice::<serde_json::Value>(message.content.as_slice()) {
+                Ok(_) => Ok(()),
+                Err(json_error) => Err(RouterError::ValidationError {
+                    field: "content".to_string(),
+                    reason: format!("invalid JSON format: {json_error}"),
+                }),
+            }
+        } else {
+            Ok(()) // Language doesn't specify JSON, no validation needed
+        }
+    } else {
+        Ok(()) // No language specified, no JSON validation needed
+    }
+}
+
 fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
     // Apply all FIPA validation rules in logical order
     validate_sender_receiver_different(message)?;
     validate_content_not_empty(message)?;
     validate_conversation_threading(message)?;
     validate_performative_fipa_compliance(message)?;
+    validate_json_content_format(message)?;
 
     // Future FIPA validation extensions will be added here:
     // validate_protocol_compliance(message)?;       // Protocol-specific validation
@@ -2032,6 +2077,7 @@ impl MetricsCollector for MetricsCollectorImpl {
 #[allow(unreachable_code, unused_variables)]
 mod tests {
     use super::*;
+    use crate::message_router::ContentLanguage;
     use crate::message_router::config::RouterConfig;
 
     // Test that verifies FIPA message field validation rejects invalid sender/receiver combination
@@ -2482,6 +2528,56 @@ mod tests {
             Err(other_error) => {
                 panic!(
                     "Expected ValidationError for performative, got different error: {other_error:?}"
+                )
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_validate_json_content_format_when_content_language_is_json() {
+        // Test that verifies JSON content format validation for messages with ContentLanguage::json
+        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        router.start().await.unwrap();
+
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        // Create a message with malformed JSON content but JSON language
+        let malformed_json_content = b"{incomplete_json: missing_quotes, no_closing_brace";
+        let message_with_malformed_json = FipaMessage {
+            performative: Performative::Request,
+            sender,
+            receiver,
+            content: MessageContent::try_new(malformed_json_content.to_vec()).unwrap(),
+            language: Some(ContentLanguage::try_new("json".to_string()).unwrap()),
+            ontology: None,
+            protocol: None,
+            message_id: MessageId::generate(),
+            conversation_id: Some(ConversationId::generate()),
+            reply_with: Some(MessageId::generate()),
+            in_reply_to: None,
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the message - should fail with JSON validation error
+        let result = router.route_message(message_with_malformed_json).await;
+
+        match result {
+            Err(RouterError::ValidationError { field, reason }) => {
+                assert_eq!(field, "content");
+                assert!(
+                    reason.contains("invalid JSON format"),
+                    "Expected JSON validation error, got: {reason}"
+                );
+            }
+            Ok(_) => panic!(
+                "Expected ValidationError for malformed JSON content, but message was routed successfully"
+            ),
+            Err(other_error) => {
+                panic!(
+                    "Expected ValidationError for JSON content, got different error: {other_error:?}"
                 )
             }
         }
