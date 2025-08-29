@@ -18,8 +18,13 @@ missing_docs = "warn"
 rust_2018_idioms = "warn"
 
 [lints.clippy]
-all = { level = "forbid", priority = -1 }
-pedantic = { level = "forbid", priority = -1 }
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# Note: Changed from forbid to deny to allow proc macro generated allows
+# Zero-tolerance for manual allows enforced via:
+# 1. Pre-commit hooks with pattern detection
+# 2. CI checks for clippy allow attributes
+# 3. --no-deps flag ensures only local code is linted
 
 [dev-dependencies]
 approx = "0.5"

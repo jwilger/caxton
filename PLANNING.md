@@ -28,7 +28,7 @@ This document contains the complete, prioritized backlog of user stories for the
 
 ### P1 - Essential Features
 
-- [ ] Story 005: FIPA-ACL Message Protocol
+- [x] Story 005: FIPA-ACL Message Protocol ✅ (COMPLETED)
 - [ ] Story 006: gRPC Management API
 - [ ] Story 007: REST API Gateway
 - [ ] Story 008: CLI Tool

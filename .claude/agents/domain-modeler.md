@@ -1,7 +1,7 @@
 ---
 name: domain-modeler
 description: Models domains using Rust's type system following Scott Wlaschin's "Domain Modeling Made Functional" principles. Makes illegal states unrepresentable.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__cargo__cargo_check, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 color: indigo
 ---
 

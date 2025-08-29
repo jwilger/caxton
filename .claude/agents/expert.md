@@ -1,7 +1,7 @@
 ---
 name: expert
 description: Read-only deep reasoning. Validate type-state safety, FCIS boundaries, and ROP flows. No edits or commands.
-tools: Read, Grep, Glob, BashOutput, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Grep, Glob, BashOutput, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Expert Agent

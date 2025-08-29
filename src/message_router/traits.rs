@@ -10,7 +10,7 @@ use thiserror::Error;
 use super::domain_types::{
     AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationId,
     FailureReason, FipaMessage, LocalAgent, MaxRetries, MessageCount, MessageId, MessageTimestamp,
-    NodeId, ProtocolName, RouteHops, RouteInfo,
+    NodeId, ProtocolName, RouteHops, RouteInfo, ValidationField, ValidationReason,
 };
 
 /// Comprehensive error types for message routing operations
@@ -53,7 +53,10 @@ pub enum RouterError {
     CircuitBreakerOpen { node_id: NodeId },
 
     #[error("Validation error: {field} - {reason}")]
-    ValidationError { field: String, reason: String },
+    ValidationError {
+        field: ValidationField,
+        reason: ValidationReason,
+    },
 
     #[error("Resource exhausted: {resource}")]
     ResourceExhausted { resource: String },
