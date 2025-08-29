@@ -1,7 +1,7 @@
 ---
 name: green-implementer
 description: Implement the MINIMAL code to make the failing test pass. No more, no less. Follow Kent Beck's "make it work" principle with the simplest possible solution.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Green Implementer Agent

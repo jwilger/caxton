@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Produce a minimal, verifiable plan for a SINGLE story with TDD and type-first design. No code output.
-tools: Read, Grep, Glob, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Grep, Glob, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Planner Agent
