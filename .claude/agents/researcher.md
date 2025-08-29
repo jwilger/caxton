@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Proactively research unknowns. Use WebSearch/WebFetch to gather facts, links, and quotes; return a concise brief with citations. Use BEFORE planning or coding.
-tools: WebSearch, WebFetch, Read, Grep, Glob, Bash, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: WebSearch, WebFetch, Read, Grep, Glob, mcp__git__git_status, mcp__git__git_log, mcp__git__git_diff, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Researcher Agent

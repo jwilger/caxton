@@ -4,7 +4,7 @@ description:
   Makes illegal states unrepresentable without implementing logic.
 argument-hint: domain-requirements-or-story
 model: claude-opus-4-1-20250805
-allowed-tools: Task, Bash, BashOutput
+allowed-tools: Task, Bash, BashOutput, mcp__git__git_status, mcp__git__git_branch
 ---
 
 # Domain Modeling Command
@@ -18,8 +18,9 @@ principles.
 ## Context
 
 - User input: **$ARGUMENTS**
-- Git status: !`git status --porcelain`
-- Current branch: !`git branch --show-current`
+- Git status: Use mcp__git__git_status to check repository status
+- Current branch: Use mcp__git__git_branch with mode="show-current" to get
+  current branch
 
 ## Pre-Workflow Setup
 
