@@ -90,8 +90,8 @@ jobs:
   dependency-audit:
     name: Daily Dependency Audit
     runs-on: ubuntu-latest
-    # Execute for full scans, dependency-only scans, or scheduled runs
-    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event_name == 'schedule'
+    # Execute for full scans, dependency-only scans, scheduled runs, or security-related file changes
+    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'dependencies' || github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -280,8 +280,8 @@ jobs:
   code-security-scan:
     name: Code Security Scan
     runs-on: ubuntu-latest
-    # Execute for full scans, code-only scans, or scheduled runs
-    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule'
+    # Execute for full scans, code-only scans, scheduled runs, or security-related file changes
+    if: github.event.inputs.scan_type == 'full' || github.event.inputs.scan_type == 'code' || github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'pull_request'
 
     # Specific permissions for code security analysis
     permissions:
@@ -344,8 +344,8 @@ jobs:
   security-baseline:
     name: Security Baseline Check
     runs-on: ubuntu-latest
-    # Execute baseline checks only during scheduled daily runs
-    if: github.event_name == 'schedule'
+    # Execute baseline checks during scheduled runs and security-related file changes
+    if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -463,8 +463,8 @@ jobs:
     runs-on: ubuntu-latest
     # Wait for all security scanning jobs to complete
     needs: [dependency-audit, code-security-scan, security-baseline]
-    # Always execute notification for scheduled scans (regardless of job outcomes)
-    if: always() && github.event_name == 'schedule'
+    # Execute notification for scheduled scans and when security checks fail on main branch
+    if: always() && (github.event_name == 'schedule' || (contains(needs.*.result, 'failure') && (github.event_name == 'push' && github.ref == 'refs/heads/main')))
 
     # Permissions for security notifications and issue management
     permissions:
