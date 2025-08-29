@@ -46,9 +46,6 @@ jobs:
     - name: Build project
       run: cargo build --verbose
 
-    - name: Run code quality audit tests
-      run: cargo nextest run test_no_clippy_allow_attributes --nocapture
-
     - name: Run all tests
       run: cargo nextest run --nocapture
 

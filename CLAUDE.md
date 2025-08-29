@@ -338,8 +338,8 @@ without team approval.
 
 **Automated Enforcement:**
 
+- Cargo.toml uses `forbid` level for clippy lints - prevents allow overrides
 - CI workflow automatically fails on any new allow attributes
-- Code quality test (`test_no_clippy_allow_attributes`) enforces zero-tolerance
 - Pre-commit hooks prevent allow attribute commits via pattern detection
 - `RUSTFLAGS="-D warnings"` treats all clippy warnings as build failures
 

@@ -18,8 +18,8 @@ missing_docs = "warn"
 rust_2018_idioms = "warn"
 
 [lints.clippy]
-all = { level = "deny", priority = -1 }
-pedantic = { level = "deny", priority = -1 }
+all = { level = "forbid", priority = -1 }
+pedantic = { level = "forbid", priority = -1 }
 
 [dev-dependencies]
 approx = "0.5"
