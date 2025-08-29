@@ -126,7 +126,7 @@ jobs:
           fi
 
           # Run cargo audit from repository root to ensure configuration is read
-          cargo audit --json > audit-report.json
+          cargo audit --config .cargo/audit.toml --json > audit-report.json
           AUDIT_EXIT_CODE=$?
 
           # Ensure valid JSON output even on error
