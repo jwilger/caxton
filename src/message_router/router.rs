@@ -22,50 +22,243 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
 
 // ============================================================================
+// Conversation Threading Tracker - Extracted for better organization
+// ============================================================================
+
+/// Manages conversation threading state with proper encapsulation
+///
+/// This tracker ensures FIPA-ACL conversation threading compliance by:
+/// - Isolating `reply_with/in_reply_to` tracking per conversation
+/// - Providing thread-safe access to conversation state
+/// - Supporting future cleanup and expiration mechanisms
+#[derive(Debug)]
+struct ConversationThreadingTracker {
+    /// Maps conversation IDs to sets of valid `reply_with` message IDs
+    /// This ensures conversation isolation - messages can only reply to
+    /// messages within their own conversation context
+    conversations: Mutex<HashMap<ConversationId, HashSet<MessageId>>>,
+}
+
+impl ConversationThreadingTracker {
+    /// Creates a new conversation threading tracker
+    fn new() -> Self {
+        Self {
+            conversations: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Validates that `in_reply_to` has a corresponding `reply_with` in the same conversation
+    ///
+    /// This method ensures FIPA conversation isolation by only allowing replies to
+    /// messages within the same conversation context. This prevents cross-conversation
+    /// threading attacks and maintains proper FIPA-ACL conversation boundaries.
+    ///
+    /// # Arguments
+    /// * `conversation_id` - The conversation context for validation
+    /// * `in_reply_to` - The message ID this message claims to reply to
+    ///
+    /// # Returns
+    /// * `Ok(())` - If the `reply_with` exists in the same conversation
+    /// * `Err(RouterError::ValidationError)` - If no corresponding `reply_with` found
+    ///
+    /// # Thread Safety
+    /// Uses internal mutex for thread-safe access to conversation state.
+    /// Short critical section ensures minimal lock contention.
+    fn validate_reply_reference(
+        &self,
+        conversation_id: &ConversationId,
+        in_reply_to: &MessageId,
+    ) -> Result<(), RouterError> {
+        let conversations = self
+            .conversations
+            .lock()
+            .expect("Conversation tracker mutex should not be poisoned");
+
+        match conversations.get(conversation_id) {
+            Some(reply_with_set) if reply_with_set.contains(in_reply_to) => Ok(()),
+            _ => Err(RouterError::ValidationError {
+                field: "in_reply_to".to_string(),
+                reason: "no corresponding reply_with found".to_string(),
+            }),
+        }
+    }
+
+    /// Records a `reply_with` ID for future validation within the conversation
+    ///
+    /// This method maintains the imperative shell responsibility of managing
+    /// conversation state while keeping the functional core pure. It ensures
+    /// that `reply_with` values are properly indexed for future validation.
+    ///
+    /// # Arguments
+    /// * `conversation_id` - The conversation context
+    /// * `reply_with` - The message ID that can be referenced in future replies
+    ///
+    /// # Thread Safety
+    /// Uses internal mutex for thread-safe access to conversation state.
+    /// Atomic operation ensures consistency during concurrent access.
+    fn record_reply_with(&self, conversation_id: &ConversationId, reply_with: &MessageId) {
+        let mut conversations = self
+            .conversations
+            .lock()
+            .expect("Conversation tracker mutex should not be poisoned");
+
+        conversations
+            .entry(*conversation_id)
+            .or_default()
+            .insert(*reply_with);
+    }
+
+    /// Gets the number of active conversations (for metrics/debugging)
+    #[allow(dead_code)]
+    fn active_conversation_count(&self) -> usize {
+        self.conversations.lock().unwrap().len()
+    }
+
+    /// Cleans up expired conversations (placeholder for future implementation)
+    /// This would be integrated with conversation manager cleanup in production
+    #[allow(dead_code)]
+    fn cleanup_expired_conversations(&self, _expired_conversations: &[ConversationId]) {
+        let mut conversations = self.conversations.lock().unwrap();
+        // Future implementation: remove conversation entries for expired conversations
+        // For now, conversations accumulate until restart
+        // TODO: Integrate with ConversationManager cleanup cycle
+        conversations.retain(|_id, _messages| true);
+    }
+}
+
+/// Global conversation threading tracker instance
+/// TODO: Replace with proper conversation manager integration in refactor phase
+static CONVERSATION_TRACKER: OnceLock<ConversationThreadingTracker> = OnceLock::new();
+
+/// Gets the global conversation threading tracker instance
+fn get_conversation_tracker() -> &'static ConversationThreadingTracker {
+    CONVERSATION_TRACKER.get_or_init(ConversationThreadingTracker::new)
+}
+
+// ============================================================================
 // Pure functions for FIPA message validation (functional core)
 // ============================================================================
 
-// Validates that sender and receiver are different agents (FIPA requirement)
+/// Validates that sender and receiver are different agents (FIPA requirement)
+///
+/// FIPA-ACL specification requires that agents cannot send messages to themselves
+/// to ensure proper multi-agent communication patterns.
+///
+/// # Arguments
+/// * `message` - The FIPA message to validate
+///
+/// # Returns
+/// * `Ok(())` - If sender and receiver are different
+/// * `Err(RouterError::ValidationError)` - If sender equals receiver
 fn validate_sender_receiver_different(message: &FipaMessage) -> Result<(), RouterError> {
     if message.sender == message.receiver {
-        return Err(RouterError::ValidationError {
+        Err(RouterError::ValidationError {
             field: "sender/receiver".to_string(),
             reason: "sender cannot equal receiver".to_string(),
-        });
+        })
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
-// Validates message content is not empty (FIPA requirement)
+/// Validates message content is not empty (FIPA requirement)
+///
+/// FIPA-ACL specification requires that messages contain meaningful content
+/// for proper agent communication and protocol compliance.
+///
+/// # Arguments
+/// * `message` - The FIPA message to validate
+///
+/// # Returns
+/// * `Ok(())` - If content is not empty
+/// * `Err(RouterError::ValidationError)` - If content is empty
 fn validate_content_not_empty(message: &FipaMessage) -> Result<(), RouterError> {
     if message.content.is_empty() {
-        return Err(RouterError::ValidationError {
+        Err(RouterError::ValidationError {
             field: "content".to_string(),
             reason: "content cannot be empty".to_string(),
-        });
+        })
+    } else {
+        Ok(())
     }
+}
+
+/// Validates FIPA conversation threading requirements
+///
+/// Ensures that:
+/// 1. Messages with `in_reply_to` reference valid `reply_with` values
+/// 2. Conversation isolation - replies only work within the same conversation
+/// 3. Reply threading maintains proper FIPA-ACL conversation flow
+///
+/// This is a pure function that delegates to the conversation tracker for
+/// stateful operations, maintaining functional core principles.
+fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterError> {
+    let tracker = get_conversation_tracker();
+
+    // FIPA validation: in_reply_to must have corresponding reply_with in same conversation
+    if let Some(in_reply_to) = &message.in_reply_to {
+        // Require conversation_id for proper threading context
+        let conversation_id =
+            message
+                .conversation_id
+                .as_ref()
+                .ok_or_else(|| RouterError::ValidationError {
+                    field: "in_reply_to".to_string(),
+                    reason: "no corresponding reply_with found".to_string(),
+                })?;
+
+        // Validate reply reference within conversation context
+        tracker.validate_reply_reference(conversation_id, in_reply_to)?;
+    }
+
+    // Record reply_with for future threading validation (imperative shell operation)
+    if let (Some(reply_with), Some(conversation_id)) =
+        (&message.reply_with, &message.conversation_id)
+    {
+        tracker.record_reply_with(conversation_id, reply_with);
+    }
+
     Ok(())
 }
 
-// Validates FIPA message requirements
-// Performs comprehensive FIPA-ACL message validation by checking:
-// - Sender and receiver must be different agents
-// - Message content must not be empty
-// - Future: Additional FIPA compliance validations
+/// Validates FIPA message requirements with comprehensive rule checking
+///
+/// Performs complete FIPA-ACL message validation by applying all required rules:
+/// 1. **Agent Identity**: Sender and receiver must be different agents
+/// 2. **Content Requirement**: Message content must not be empty
+/// 3. **Conversation Threading**: `in_reply_to` must have corresponding `reply_with`
+/// 4. **Future Extensions**: Additional FIPA compliance validations
+///
+/// This function follows the functional core pattern - it's pure, deterministic,
+/// and delegates stateful operations to specialized validation functions.
+///
+/// # Arguments
+/// * `message` - The FIPA message to validate against all rules
+///
+/// # Returns
+/// * `Ok(())` - If all FIPA validation rules pass
+/// * `Err(RouterError::ValidationError)` - If any validation rule fails
+///
+/// # FIPA Compliance
+/// This validation ensures compatibility with FIPA-ACL specification requirements
+/// for proper multi-agent communication protocols.
 fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
-    // Apply all FIPA validation rules
+    // Apply all FIPA validation rules in logical order
     validate_sender_receiver_different(message)?;
     validate_content_not_empty(message)?;
+    validate_conversation_threading(message)?;
 
-    // Future validation rules can be added here:
-    // validate_performative_requirements(message)?;
-    // validate_conversation_threading(message)?;
-    // validate_protocol_compliance(message)?;
+    // Future FIPA validation extensions will be added here:
+    // validate_performative_requirements(message)?; // Performative-specific rules
+    // validate_protocol_compliance(message)?;       // Protocol-specific validation
+    // validate_ontology_constraints(message)?;      // Ontology compatibility
+    // validate_message_size_limits(message)?;       // Size constraint checking
 
     Ok(())
 }
@@ -1732,6 +1925,202 @@ mod tests {
                 assert!(reason.contains("content cannot be empty"));
             }
             _ => panic!("Expected ValidationError for empty content, got: {result:?}"),
+        }
+    }
+
+    // Test that verifies FIPA conversation threading validation requires corresponding reply_with/in_reply_to pairs
+    #[tokio::test]
+    async fn test_should_reject_message_when_in_reply_to_has_no_corresponding_reply_with() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents for conversation threading
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+
+        // Create a message that claims to reply to a non-existent message
+        let orphaned_reply_id = MessageId::generate();
+
+        let invalid_message = FipaMessage {
+            performative: Performative::Inform,
+            sender,
+            receiver,
+            content: MessageContent::try_new(
+                b"This message claims to reply to something that doesn't exist".to_vec(),
+            )
+            .unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_id),
+            reply_with: None,
+            in_reply_to: Some(orphaned_reply_id), // FIPA violation: no corresponding reply_with found
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the invalid message - should fail with ValidationError
+        let result = router.route_message(invalid_message).await;
+
+        // Expect validation error for orphaned in_reply_to FIPA violation
+        match result {
+            Err(RouterError::ValidationError { field, reason }) => {
+                assert_eq!(field, "in_reply_to");
+                assert!(reason.contains("no corresponding reply_with found"));
+            }
+            _ => panic!("Expected ValidationError for orphaned in_reply_to, got: {result:?}"),
+        }
+    }
+
+    // Test that verifies FIPA conversation threading accepts valid reply_with/in_reply_to pairs
+    #[tokio::test]
+    async fn test_should_accept_message_when_in_reply_to_has_corresponding_reply_with() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents for conversation threading
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+
+        // First message: establishes reply_with for future responses
+        let reply_with_id = MessageId::generate();
+        let original_message = FipaMessage {
+            performative: Performative::Request,
+            sender,
+            receiver,
+            content: MessageContent::try_new(b"Original request expecting a reply".to_vec())
+                .unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_id),
+            reply_with: Some(reply_with_id), // Establishes threading expectation
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route the original message first (should succeed)
+        let original_result = router.route_message(original_message).await;
+        assert!(
+            original_result.is_ok(),
+            "Original message should be accepted"
+        );
+
+        // Reply message: valid in_reply_to that corresponds to original reply_with
+        let reply_message = FipaMessage {
+            performative: Performative::Inform,
+            sender: receiver,
+            receiver: sender,
+            content: MessageContent::try_new(b"Reply to the original request".to_vec()).unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_id),
+            reply_with: None,
+            in_reply_to: Some(reply_with_id), // FIPA compliance: matches original reply_with
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route the reply message - should succeed because it's valid threading
+        let reply_result = router.route_message(reply_message).await;
+
+        // Expect successful routing for valid conversation threading
+        match reply_result {
+            Ok(_message_id) => {
+                // Success - valid conversation threading was accepted
+            }
+            Err(error) => panic!("Expected successful routing for valid threading, got: {error:?}"),
+        }
+    }
+
+    // Test that verifies conversation threading validation isolates conversations properly
+    #[tokio::test]
+    async fn test_should_isolate_conversation_threading_across_different_conversations() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents
+        let agent_a = AgentId::generate();
+        let agent_b = AgentId::generate();
+        let agent_c = AgentId::generate();
+
+        // Create two separate conversations
+        let conversation_1 = ConversationId::generate();
+        let conversation_2 = ConversationId::generate();
+
+        // Conversation 1: Agent A requests something from Agent B
+        let reply_with_conv1 = MessageId::generate();
+        let request_conv1 = FipaMessage {
+            performative: Performative::Request,
+            sender: agent_a,
+            receiver: agent_b,
+            content: MessageContent::try_new(b"Request in conversation 1".to_vec()).unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_1),
+            reply_with: Some(reply_with_conv1),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route conversation 1 request (establishes reply_with in tracker)
+        router.route_message(request_conv1).await.unwrap();
+
+        // Conversation 2: Agent C tries to reply using reply_with from conversation 1
+        // This should be REJECTED because conversations should be isolated
+        let cross_conversation_reply = FipaMessage {
+            performative: Performative::Inform,
+            sender: agent_c,
+            receiver: agent_a,
+            content: MessageContent::try_new(b"Cross-conversation reply attempt".to_vec()).unwrap(),
+            language: None,
+            ontology: None,
+            protocol: None,
+            conversation_id: Some(conversation_2), // Different conversation!
+            reply_with: None,
+            in_reply_to: Some(reply_with_conv1), // Trying to use reply_with from conversation 1
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // This should fail - current implementation incorrectly allows cross-conversation threading
+        let result = router.route_message(cross_conversation_reply).await;
+
+        assert!(
+            result.is_err(),
+            "Should reject cross-conversation threading attempt"
+        );
+        if let Err(RouterError::ValidationError { field, reason }) = result {
+            assert_eq!(field, "in_reply_to");
+            assert!(
+                reason.contains("no corresponding reply_with found")
+                    || reason.contains("conversation"),
+                "Error should mention conversation isolation or missing reply_with: {reason}"
+            );
+        } else {
+            panic!("Expected ValidationError for cross-conversation threading, got: {result:?}");
         }
     }
 }
