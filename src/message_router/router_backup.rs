@@ -2706,46 +2706,64 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_fipa_message_smart_constructor_creates_valid_messages() {
-        let valid_sender = AgentId::generate();
-        let valid_receiver = AgentId::generate();
-        let valid_content = MessageContent::try_new(b"valid request content".to_vec()).unwrap();
+    async fn test_fipa_message_should_have_smart_constructor_that_centralizes_all_validation() {
+        // Test that verifies FipaMessage has a smart constructor that centralizes
+        // all FIPA validation logic, making it impossible to create invalid instances
 
+        // Test 1: Valid message should be created successfully
+        let valid_performative = Performative::Request;
+        let valid_sender = AgentId::generate();
+        let valid_receiver = AgentId::generate(); // Different from sender
+        let valid_content = MessageContent::try_new(b"valid request content".to_vec()).unwrap();
+        let valid_language = Some(ContentLanguage::try_new("en".to_string()).unwrap());
+        let valid_ontology = Some(OntologyName::try_new("test-ontology".to_string()).unwrap());
+        let valid_protocol = Some(ProtocolName::try_new("test-protocol".to_string()).unwrap());
+        let valid_conversation_id = Some(ConversationId::generate());
+        let valid_reply_with = Some(MessageId::generate());
+        let valid_in_reply_to = Some(MessageId::generate());
+        let valid_message_id = MessageId::generate();
+        let valid_created_at = MessageTimestamp::now();
+        let valid_trace_context = None;
+        let valid_delivery_options = DeliveryOptions::default();
+
+        // Smart constructor should accept all FipaMessage fields and validate them
         let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
+            performative: valid_performative,
             sender: valid_sender,
             receiver: valid_receiver,
             content: valid_content,
-            language: Some(ContentLanguage::try_new("en".to_string()).unwrap()),
-            ontology: Some(OntologyName::try_new("test-ontology".to_string()).unwrap()),
-            protocol: Some(ProtocolName::try_new("test-protocol".to_string()).unwrap()),
-            conversation_id: Some(ConversationId::generate()),
-            reply_with: Some(MessageId::generate()),
-            in_reply_to: Some(MessageId::generate()),
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
+            language: valid_language,
+            ontology: valid_ontology,
+            protocol: valid_protocol,
+            conversation_id: valid_conversation_id,
+            reply_with: valid_reply_with,
+            in_reply_to: valid_in_reply_to,
+            message_id: valid_message_id,
+            created_at: valid_created_at,
+            trace_context: valid_trace_context,
+            delivery_options: valid_delivery_options,
         };
-
         let result = FipaMessage::try_new_validated(params);
+
         match result {
             Ok(message) => {
+                // Valid message should be created successfully
                 assert_eq!(message.performative, Performative::Request);
                 assert_eq!(message.sender, valid_sender);
                 assert_eq!(message.receiver, valid_receiver);
             }
-            Err(e) => panic!("Expected valid message to be created, but got error: {e:?}"),
+            Err(e) => panic!(
+                "Expected valid message to be created, but got error: {:?}",
+                e
+            ),
         }
-    }
 
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_same_sender_receiver() {
+        // Test 2: Same sender/receiver should be rejected
         let same_agent = AgentId::generate();
         let params = crate::message_router::domain_types::FipaMessageParams {
             performative: Performative::Request,
             sender: same_agent,
-            receiver: same_agent,
+            receiver: same_agent, // Same as sender - should be rejected
             content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
             language: None,
             ontology: None,
@@ -2758,24 +2776,25 @@ mod tests {
             trace_context: None,
             delivery_options: DeliveryOptions::default(),
         };
-
         let result = FipaMessage::try_new_validated(params);
+
         match result {
             Err(RouterError::ValidationError { field, reason }) => {
                 assert_eq!(field.as_ref(), "sender/receiver");
                 assert_eq!(reason.as_ref(), "sender cannot equal receiver");
             }
-            _ => panic!("Expected ValidationError for same sender/receiver, got: {result:?}"),
+            _ => panic!(
+                "Expected ValidationError for same sender/receiver, got: {:?}",
+                result
+            ),
         }
-    }
 
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_empty_content() {
+        // Test 3: Empty content should be rejected
         let params = crate::message_router::domain_types::FipaMessageParams {
             performative: Performative::Request,
             sender: AgentId::generate(),
             receiver: AgentId::generate(),
-            content: MessageContent::try_new(b"".to_vec()).unwrap(),
+            content: MessageContent::try_new(b"".to_vec()).unwrap(), // Empty content
             language: None,
             ontology: None,
             protocol: None,
@@ -2787,20 +2806,22 @@ mod tests {
             trace_context: None,
             delivery_options: DeliveryOptions::default(),
         };
+        let result = FipaMessage::try_new_validated(params);
 
-        match FipaMessage::try_new_validated(params) {
+        match result {
             Err(RouterError::ValidationError { field, reason }) => {
                 assert_eq!(field.as_ref(), "content");
                 assert_eq!(reason.as_ref(), "content cannot be empty");
             }
-            _ => panic!("Expected ValidationError for empty content"),
+            _ => panic!(
+                "Expected ValidationError for empty content, got: {:?}",
+                result
+            ),
         }
-    }
 
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_non_fipa_performatives() {
+        // Test 4: Non-FIPA performative should be rejected
         let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Heartbeat,
+            performative: Performative::Heartbeat, // Caxton extension, not FIPA standard
             sender: AgentId::generate(),
             receiver: AgentId::generate(),
             content: MessageContent::try_new(b"heartbeat content".to_vec()).unwrap(),
@@ -2815,24 +2836,26 @@ mod tests {
             trace_context: None,
             delivery_options: DeliveryOptions::default(),
         };
+        let result = FipaMessage::try_new_validated(params);
 
-        match FipaMessage::try_new_validated(params) {
+        match result {
             Err(RouterError::ValidationError { field, reason }) => {
                 assert_eq!(field.as_ref(), "performative");
                 assert!(reason.as_ref().contains("not a standard FIPA performative"));
             }
-            _ => panic!("Expected ValidationError for non-FIPA performative"),
+            _ => panic!(
+                "Expected ValidationError for non-FIPA performative, got: {:?}",
+                result
+            ),
         }
-    }
 
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_invalid_json() {
+        // Test 5: Invalid JSON content should be rejected when language indicates JSON
         let params = crate::message_router::domain_types::FipaMessageParams {
             performative: Performative::Request,
             sender: AgentId::generate(),
             receiver: AgentId::generate(),
-            content: MessageContent::try_new(b"{ invalid json".to_vec()).unwrap(),
-            language: Some(ContentLanguage::try_new("json".to_string()).unwrap()),
+            content: MessageContent::try_new(b"{ invalid json".to_vec()).unwrap(), // Malformed JSON
+            language: Some(ContentLanguage::try_new("json".to_string()).unwrap()), // Language indicates JSON
             ontology: None,
             protocol: None,
             conversation_id: None,
@@ -2843,13 +2866,21 @@ mod tests {
             trace_context: None,
             delivery_options: DeliveryOptions::default(),
         };
+        let result = FipaMessage::try_new_validated(params);
 
-        match FipaMessage::try_new_validated(params) {
+        match result {
             Err(RouterError::ValidationError { field, reason }) => {
                 assert_eq!(field.as_ref(), "content");
                 assert!(reason.as_ref().contains("invalid JSON format"));
             }
-            _ => panic!("Expected ValidationError for invalid JSON content"),
+            _ => panic!(
+                "Expected ValidationError for invalid JSON content, got: {:?}",
+                result
+            ),
         }
+
+        // Smart constructor has been successfully implemented!
+        // All FIPA validation is now centralized in FipaMessage::try_new_validated()
+        // Tests above verify comprehensive validation functionality.
     }
 }

@@ -930,6 +930,224 @@ pub struct FipaMessage {
     pub delivery_options: DeliveryOptions,
 }
 
+impl FipaMessage {
+    /// Creates a validated FIPA message with centralized validation.
+    ///
+    /// This smart constructor centralizes all FIPA-ACL validation logic,
+    /// ensuring that only valid messages can be created. It performs
+    /// comprehensive validation including:
+    /// - Sender and receiver must be different agents (FIPA requirement)
+    /// - Message content must not be empty (FIPA requirement)
+    /// - Performative must be a standard FIPA performative
+    /// - JSON content format validation when language indicates JSON
+    ///
+    /// # Arguments
+    ///
+    /// All required fields for a FIPA message:
+    /// - `performative`: The FIPA performative indicating message intent
+    /// - `sender`: The agent sending the message
+    /// - `receiver`: The agent receiving the message
+    /// - `content`: The message content
+    /// - `language`: Optional content language specification
+    /// - `ontology`: Optional ontology name for message semantics
+    /// - `protocol`: Optional protocol name for interaction pattern
+    /// - `conversation_id`: Optional conversation identifier for message threading
+    /// - `reply_with`: Optional identifier for expecting replies
+    /// - `in_reply_to`: Optional identifier referencing previous message
+    /// - `message_id`: Unique message identifier
+    /// - `created_at`: Timestamp when message was created
+    /// - `trace_context`: Optional OpenTelemetry trace context
+    /// - `delivery_options`: Message delivery configuration
+    ///
+    /// # Returns
+    ///
+    /// `Result<FipaMessage, RouterError>` - Returns the validated message or validation error
+    ///
+    /// # Errors
+    ///
+    /// Returns `RouterError::ValidationError` if:
+    /// - Sender equals receiver (field: "sender/receiver", reason: "sender cannot equal receiver")
+    /// - Content is empty (field: "content", reason: "content cannot be empty")
+    /// - Performative is not a standard FIPA performative (field: "performative", reason: "not a standard FIPA performative")
+    /// - Content is invalid JSON when language indicates JSON (field: "content", reason: "invalid JSON format")
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let params = FipaMessageParams {
+    ///     performative: Performative::Request,
+    ///     sender: sender_id,
+    ///     receiver: receiver_id,
+    ///     content,
+    ///     language,
+    ///     ontology,
+    ///     protocol,
+    ///     conversation_id,
+    ///     reply_with,
+    ///     in_reply_to,
+    ///     message_id,
+    ///     created_at,
+    ///     trace_context,
+    ///     delivery_options,
+    /// };
+    /// let message = FipaMessage::try_new_validated(params)?;
+    /// ```
+    pub fn try_new_validated(
+        params: FipaMessageParams,
+    ) -> Result<Self, crate::message_router::traits::RouterError> {
+        // Create message instance first
+        let message = Self {
+            performative: params.performative,
+            sender: params.sender,
+            receiver: params.receiver,
+            content: params.content,
+            language: params.language,
+            ontology: params.ontology,
+            protocol: params.protocol,
+            conversation_id: params.conversation_id,
+            reply_with: params.reply_with,
+            in_reply_to: params.in_reply_to,
+            message_id: params.message_id,
+            created_at: params.created_at,
+            trace_context: params.trace_context,
+            delivery_options: params.delivery_options,
+        };
+
+        // Apply all FIPA validation rules
+        validate_sender_receiver_different(&message)?;
+        validate_content_not_empty(&message)?;
+        validate_performative_fipa_compliance(&message)?;
+        validate_json_content_format(&message)?;
+
+        Ok(message)
+    }
+}
+
+// ============================================================================
+// FIPA Message Validation Functions - Centralized for Smart Constructor
+// ============================================================================
+
+/// Field name constants for validation errors
+const FIELD_CONTENT: &str = "content";
+const FIELD_PERFORMATIVE: &str = "performative";
+const FIELD_SENDER_RECEIVER: &str = "sender/receiver";
+
+/// Validation reason constants
+const REASON_CONTENT_EMPTY: &str = "content cannot be empty";
+const REASON_SENDER_EQUALS_RECEIVER: &str = "sender cannot equal receiver";
+
+/// Standard FIPA-ACL performatives as defined in FIPA specification
+const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
+    Performative::Request,
+    Performative::Inform,
+    Performative::QueryIf,
+    Performative::QueryRef,
+    Performative::Propose,
+    Performative::AcceptProposal,
+    Performative::RejectProposal,
+    Performative::Agree,
+    Performative::Refuse,
+    Performative::Failure,
+    Performative::NotUnderstood,
+];
+
+/// JSON content language identifier
+const JSON_CONTENT_LANGUAGE: &str = "json";
+
+/// Creates a validation error with proper domain types
+fn create_validation_error(
+    field: &str,
+    reason: &str,
+) -> crate::message_router::traits::RouterError {
+    crate::message_router::traits::RouterError::ValidationError {
+        field: ValidationField::try_new(field.to_string())
+            .expect("Field name should meet validation requirements"),
+        reason: ValidationReason::try_new(reason.to_string())
+            .expect("Reason should meet validation requirements"),
+    }
+}
+
+/// Validates sender and receiver are different agents (FIPA requirement)
+fn validate_sender_receiver_different(
+    message: &FipaMessage,
+) -> Result<(), crate::message_router::traits::RouterError> {
+    if message.sender == message.receiver {
+        Err(create_validation_error(
+            FIELD_SENDER_RECEIVER,
+            REASON_SENDER_EQUALS_RECEIVER,
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates message content is not empty (FIPA requirement)
+fn validate_content_not_empty(
+    message: &FipaMessage,
+) -> Result<(), crate::message_router::traits::RouterError> {
+    if message.content.is_empty() {
+        Err(create_validation_error(FIELD_CONTENT, REASON_CONTENT_EMPTY))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates performative is a standard FIPA performative
+fn validate_performative_fipa_compliance(
+    message: &FipaMessage,
+) -> Result<(), crate::message_router::traits::RouterError> {
+    if STANDARD_FIPA_PERFORMATIVES.contains(&message.performative) {
+        Ok(())
+    } else {
+        Err(create_validation_error(
+            FIELD_PERFORMATIVE,
+            "not a standard FIPA performative",
+        ))
+    }
+}
+
+/// Validates JSON content format when `ContentLanguage` indicates JSON
+fn validate_json_content_format(
+    message: &FipaMessage,
+) -> Result<(), crate::message_router::traits::RouterError> {
+    // Only validate JSON when ContentLanguage contains JSON identifier
+    if let Some(language) = &message.language {
+        let language_str = language.to_string();
+        if language_str.to_lowercase().contains(JSON_CONTENT_LANGUAGE) {
+            // Validate JSON syntax using serde_json
+            if serde_json::from_slice::<serde_json::Value>(message.content.as_ref()).is_err() {
+                return Err(create_validation_error(
+                    FIELD_CONTENT,
+                    "invalid JSON format",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Parameters for creating and validating a FIPA message
+///
+/// This struct consolidates all the parameters needed for `FipaMessage::try_new_validated()`
+/// to avoid `clippy::too_many_arguments` warnings while maintaining type safety.
+#[derive(Debug, Clone)]
+pub struct FipaMessageParams {
+    pub performative: Performative,
+    pub sender: AgentId,
+    pub receiver: AgentId,
+    pub content: MessageContent,
+    pub language: Option<ContentLanguage>,
+    pub ontology: Option<OntologyName>,
+    pub protocol: Option<ProtocolName>,
+    pub conversation_id: Option<ConversationId>,
+    pub reply_with: Option<MessageId>,
+    pub in_reply_to: Option<MessageId>,
+    pub message_id: MessageId,
+    pub created_at: MessageTimestamp,
+    pub trace_context: Option<TraceContext>,
+    pub delivery_options: DeliveryOptions,
+}
+
 /// OpenTelemetry trace context
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraceContext {
@@ -986,6 +1204,22 @@ impl Timestamp {
         self.into_inner()
     }
 }
+
+/// Validation field names with length constraints (1-50 characters)
+#[nutype(
+    sanitize(trim),
+    validate(len_char_min = 1, len_char_max = 50),
+    derive(Clone, Debug, Eq, PartialEq, Display, AsRef)
+)]
+pub struct ValidationField(String);
+
+/// Validation reason messages with length constraints (1-200 characters)
+#[nutype(
+    sanitize(trim),
+    validate(len_char_min = 1, len_char_max = 200),
+    derive(Clone, Debug, Eq, PartialEq, Display, AsRef)
+)]
+pub struct ValidationReason(String);
 
 impl RouteInfo {
     /// Creates new route information
