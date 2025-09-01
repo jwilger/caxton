@@ -4,7 +4,7 @@ description:
   specified one) using strict Rust TDD + type-driven design.
 argument-hint: [optional-instructions or explicit story]
 model: claude-opus-4-1-20250805
-allowed-tools: Task, Bash, BashOutput, mcp__git__git_status, mcp__git__git_branch
+allowed-tools: Task, Bash, BashOutput, KillBash, mcp__git__git_status, mcp__git__git_branch, mcp__cargo__set_working_directory
 ---
 
 <!-- cSpell:ignore nextest clippy proptest nutype thiserror wasmtime newtypes nocapture -->
@@ -27,17 +27,28 @@ phase.
 ## Pre-Workflow Setup
 
 **CRITICAL FIRST STEP**: Before delegating to any agents, the SPARC coordinator
-MUST:
+MUST handle these setup tasks DIRECTLY:
 
 1. **Set Cargo Working Directory**: Call `mcp__cargo__set_working_directory`
    with the absolute path to the project root (where Cargo.toml exists)
-2. **Start Bacon Continuous Testing**: Launch `bacon --headless` in background
-   for real-time test monitoring
-3. **Verify Setup**: Ensure the working directory is set correctly and bacon is
-   running for all subsequent operations
 
-This ensures all agents have proper access to cargo commands and continuous test
-feedback without manual test execution.
+2. **Start Bacon Continuous Testing**:
+   - Use Bash tool to run `bacon --headless` with `run_in_background: true`
+   - The system will auto-assign an ID like `bash_1`, `bash_2`, etc.
+   - **CRITICAL**: Capture this ID in a variable (e.g., `bacon_id`)
+   - This ID MUST be passed to EVERY agent invocation throughout the workflow
+
+3. **Pass bacon_id to All Agents**: Every Task tool invocation MUST include:
+
+   ```text
+   Include in agent prompt: "bacon_id: [the captured ID from step 2]"
+   ```
+
+   Agents will use BashOutput with this ID to monitor test results
+
+The coordinator handles startup directly because subagents operate in isolated
+contexts and cannot manage persistent background processes. The bacon_id must
+be explicitly passed to ensure agents can access the correct bacon instance.
 
 ### Bacon Integration Throughout Workflow
 
@@ -90,6 +101,12 @@ Use Task tool with `planner` agent:
    (`- [ ]`)
 3. Return chosen story text and ID for coordinator to present to user
 
+**Example agent invocation with bacon_id:**
+
+```text
+Task tool with prompt including: "bacon_id: bash_1 (use BashOutput with this ID to monitor tests)"
+```
+
 ### A.5) BRANCH SETUP
 
 Use Task tool with `pr-manager` agent:
@@ -133,38 +150,40 @@ Use Task tool with `planner` agent:
 
 - Write exactly ONE failing test that captures the next behavior
 - Use `unimplemented!()` to force clear failure
-- **Monitor bacon output** to verify test fails for the right reason (use
-  BashOutput tool)
+- **Monitor bacon output** to verify test fails for the right reason (coordinator
+  uses BashOutput tool with the bacon_id captured at startup)
 - Create `.claude/tdd.red` state file
 - Store test patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY test code, no
   implementation
-- **BACON VERIFICATION**: Confirm bacon shows the expected test failure
+- **BACON VERIFICATION**: Coordinator uses BashOutput with the bacon_id to
+  confirm the expected test failure
 
 **GREEN Phase** - Use Task tool with `green-implementer` agent:
 
 - Implement minimal code to make the failing test pass
 - Use simplest possible solution (fake it 'til you make it)
 - **Monitor bacon output** to verify test passes and no existing tests break
-  (use BashOutput tool)
+  (coordinator uses BashOutput tool with the bacon_id captured at startup)
 - Create `.claude/tdd.green` state file
 - Store minimal implementation patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY implementation code,
   no tests
-- **BACON VERIFICATION**: Confirm bacon shows all tests passing
+- **BACON VERIFICATION**: Coordinator uses BashOutput with the bacon_id to
+  confirm all tests passing
 
 **REFACTOR Phase** - Use Task tool with `refactor-implementer` agent:
 
 - Remove duplication and improve code structure
 - Extract pure functions (functional core / imperative shell)
 - **Monitor bacon output** to ensure all tests stay green throughout refactoring
-  (use BashOutput tool)
+  (coordinator uses BashOutput tool with the bacon_id captured at startup)
 - Use cargo MCP server for `cargo_clippy` and `cargo_fmt_check`
 - Store refactoring patterns in MCP memory
 - **COORDINATOR VALIDATION**: Verify response contains ONLY implementation
   improvements, no test changes
-- **BACON VERIFICATION**: Confirm bacon shows no test regressions during
-  refactoring
+- **BACON VERIFICATION**: Coordinator uses BashOutput with the bacon_id to
+  confirm no test regressions during refactoring
 - **COMMIT**: Create descriptive commit with Claude Code attribution
 
 **TYPE PASS**: Use Task tool with `type-architect` to replace primitives with
@@ -178,7 +197,7 @@ Use Task tool with `test-hardener` agent:
   impossible at compile time
 - If safe, implement type changes with small diffs
 - Update call sites and **monitor bacon output** to verify no test regressions
-  (use BashOutput tool)
+  (coordinator uses BashOutput tool with the bacon_id captured at startup)
 - Use cargo MCP server for `cargo_clippy` only - bacon handles continuous test
   monitoring
 

@@ -14,6 +14,22 @@ receiving control from coordinator.
 **HANDOFF PROTOCOL**: Upon completion, MUST store type design patterns and
 domain modeling insights in MCP memory before returning control to coordinator.
 
+## Bacon ID Requirement (CRITICAL)
+
+**MANDATORY**: The coordinator MUST provide you with a `bacon_id` (e.g., `bash_1`)
+when invoking you. This is the ID of the background bacon process that monitors
+tests continuously.
+
+**If bacon_id is not provided**: IMMEDIATELY respond with:
+
+```text
+ERROR: bacon_id not provided. I require the bacon process ID to monitor compilation.
+Please provide bacon_id in format: "bacon_id: bash_X"
+```
+
+**Using bacon_id**: Throughout your work, use `BashOutput` tool with the provided
+bacon_id to monitor that your type changes compile and all tests remain passing.
+
 ## Responsibilities
 
 - Identify primitive obsession and replace with domain types.

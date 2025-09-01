@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "/home/jwilger/.config/claude-code/hooks/pre-tool-use.sh",
+            "command": ".claude/hooks/pre-tool-use.sh",
             "type": "command"
           }
         ],
@@ -13,8 +13,6 @@
     ]
   },
   "permissions": {
-    "deny": [
-      "Bash"
-    ]
+    "deny": []
   }
 }
