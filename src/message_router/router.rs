@@ -2120,7 +2120,6 @@ impl MetricsCollector for MetricsCollectorImpl {
 }
 
 #[cfg(test)]
-#[allow(unreachable_code, unused_variables)]
 mod tests {
     use super::*;
     use crate::message_router::config::RouterConfig;

@@ -60,17 +60,6 @@ impl MockDeploymentManager {
     fn get_call_count(&self) -> u64 {
         self.call_count.load(Ordering::SeqCst)
     }
-
-    // Helper method for accessing deployment results - not currently used in tests
-    // Kept for potential future test expansion
-    #[allow(dead_code)]
-    async fn get_deployment_result(&self, deployment_id: DeploymentId) -> Option<DeploymentResult> {
-        self.deployment_results
-            .read()
-            .await
-            .get(&deployment_id)
-            .cloned()
-    }
 }
 
 #[async_trait::async_trait]
@@ -269,13 +258,6 @@ impl MockWasmModuleValidator {
 
     fn set_should_succeed(&self, succeed: bool) {
         self.should_succeed.store(succeed, Ordering::SeqCst);
-    }
-
-    // Helper method for controlling validation timing in tests - not currently used
-    // Kept for potential performance testing scenarios
-    #[allow(dead_code)]
-    async fn set_validation_delay(&self, delay: Duration) {
-        *self.validation_delay.lock().await = delay;
     }
 
     fn get_call_count(&self) -> u64 {

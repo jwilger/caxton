@@ -1130,10 +1130,10 @@ fn validate_json_content_format(
         let language_str = language.to_string();
         if language_str.to_lowercase().contains(JSON_CONTENT_LANGUAGE) {
             // Validate JSON syntax using serde_json
-            if serde_json::from_slice::<serde_json::Value>(message.content.as_ref()).is_err() {
+            if let Err(e) = serde_json::from_slice::<serde_json::Value>(message.content.as_ref()) {
                 return Err(create_validation_error(
                     FIELD_CONTENT,
-                    "invalid JSON format",
+                    &format!("invalid JSON format: {e}"),
                 ));
             }
         }

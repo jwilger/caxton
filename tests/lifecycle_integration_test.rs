@@ -17,7 +17,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use test_log::test;
 use tokio::sync::Mutex;
 
@@ -60,16 +60,10 @@ struct IntegratedMockSystem {
 
 #[derive(Clone, Debug)]
 struct DeployedAgentState {
-    // Fields for comprehensive agent state tracking - some not currently used
-    #[allow(dead_code)]
-    agent_id: AgentId,
-    #[allow(dead_code)]
-    agent_name: Option<AgentName>,
+    // Fields for comprehensive agent state tracking
     current_version: AgentVersion,
     wasm_module: Vec<u8>,
     resources: ResourceRequirements,
-    #[allow(dead_code)]
-    deployed_at: SystemTime,
     is_healthy: bool,
 }
 
@@ -135,13 +129,6 @@ impl IntegratedMockSystem {
 
     async fn is_agent_deployed(&self, agent_id: AgentId) -> bool {
         self.deployed_agents.lock().await.contains_key(&agent_id)
-    }
-
-    // Helper method for retrieving agent version - not currently used
-    // Kept for potential version tracking tests
-    #[allow(dead_code)]
-    async fn get_agent_version(&self, agent_id: AgentId) -> Option<AgentVersion> {
-        self.active_versions.lock().await.get(&agent_id).cloned()
     }
 
     async fn get_deployed_agent_count(&self) -> usize {
@@ -217,12 +204,9 @@ impl InstanceManager for IntegratedMockInstanceManager {
 
         // Simulate successful deployment
         let deployed_state = DeployedAgentState {
-            agent_id,
-            agent_name: None, // Will be set by the deployment request
             current_version: AgentVersion::generate(),
             wasm_module: wasm_bytes.to_vec(),
             resources: resources.clone(),
-            deployed_at: SystemTime::now(),
             is_healthy: true,
         };
 
