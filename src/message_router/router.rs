@@ -8,8 +8,8 @@ use crate::message_router::{
     domain_types::{
         AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationCreatedAt,
         ConversationId, DeliveryOptions, FailureReason, FipaMessage, LocalAgent, MessageContent,
-        MessageCount, MessageId, MessageTimestamp, NodeId, Performative, ProtocolName, RouteHops,
-        ValidationField, ValidationReason,
+        MessageCount, MessageId, MessageParticipants, MessageTimestamp, NodeId, Performative,
+        RouteHops, ValidationField, ValidationReason,
     },
     traits::{
         AgentRegistry, ConversationError, ConversationManager, ConversationStats, DeadLetterStats,
@@ -29,16 +29,12 @@ use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
 
 // Constants for validation field names
-const FIELD_CONTENT: &str = "content";
 const FIELD_PERFORMATIVE: &str = "performative";
-const FIELD_SENDER_RECEIVER: &str = "sender/receiver";
 const FIELD_IN_REPLY_TO: &str = "in_reply_to";
 #[cfg(test)]
 const FIELD_ERROR_CONTENT: &str = "error_content";
 
 // Constants for common validation reasons
-const REASON_CONTENT_EMPTY: &str = "content cannot be empty";
-const REASON_SENDER_EQUALS_RECEIVER: &str = "sender cannot equal receiver";
 const REASON_NO_REPLY_WITH: &str = "no corresponding reply_with found";
 #[cfg(test)]
 const REASON_ERROR_CONTENT_TOO_LARGE: &str = "generated error content exceeds maximum message size";
@@ -201,47 +197,6 @@ fn get_conversation_tracker() -> &'static ConversationThreadingTracker {
 // Pure functions for FIPA message validation and response generation (functional core)
 // ============================================================================
 
-/// Validates that sender and receiver are different agents (FIPA requirement)
-///
-/// FIPA-ACL specification requires that agents cannot send messages to themselves
-/// to ensure proper multi-agent communication patterns.
-///
-/// # Arguments
-/// * `message` - The FIPA message to validate
-///
-/// # Returns
-/// * `Ok(())` - If sender and receiver are different
-/// * `Err(RouterError::ValidationError)` - If sender equals receiver
-fn validate_sender_receiver_different(message: &FipaMessage) -> Result<(), RouterError> {
-    if message.sender == message.receiver {
-        Err(create_validation_error(
-            FIELD_SENDER_RECEIVER,
-            REASON_SENDER_EQUALS_RECEIVER,
-        ))
-    } else {
-        Ok(())
-    }
-}
-
-/// Validates message content is not empty (FIPA requirement)
-///
-/// FIPA-ACL specification requires that messages contain meaningful content
-/// for proper agent communication and protocol compliance.
-///
-/// # Arguments
-/// * `message` - The FIPA message to validate
-///
-/// # Returns
-/// * `Ok(())` - If content is not empty
-/// * `Err(RouterError::ValidationError)` - If content is empty
-fn validate_content_not_empty(message: &FipaMessage) -> Result<(), RouterError> {
-    if message.content.is_empty() {
-        Err(create_validation_error(FIELD_CONTENT, REASON_CONTENT_EMPTY))
-    } else {
-        Ok(())
-    }
-}
-
 /// Validates FIPA conversation threading requirements
 ///
 /// Ensures that:
@@ -351,11 +306,6 @@ fn validate_performative_fipa_compliance(message: &FipaMessage) -> Result<(), Ro
 }
 
 /// JSON content language identifier for validation
-///
-/// Used to check if `ContentLanguage` specifies JSON format requiring validation.
-/// Case-insensitive matching allows "json", "JSON", "application/json", etc.
-const JSON_CONTENT_LANGUAGE: &str = "json";
-
 /// Validates JSON content format when `ContentLanguage` specifies JSON
 ///
 /// FIPA-ACL allows specifying content language to indicate content format.
@@ -374,30 +324,35 @@ const JSON_CONTENT_LANGUAGE: &str = "json";
 /// * Uses `serde_json::from_slice` for efficient JSON parsing validation
 /// * Preserves exact behavior while improving maintainability through constants
 fn validate_json_content_format(message: &FipaMessage) -> Result<(), RouterError> {
-    // Only validate JSON when `ContentLanguage` contains JSON identifier
-    if let Some(language) = &message.language {
-        let language_str = language.to_string();
-        if language_str.to_lowercase().contains(JSON_CONTENT_LANGUAGE) {
-            // Validate JSON syntax using serde_json with detailed error context
-            match serde_json::from_slice::<serde_json::Value>(message.content.as_slice()) {
-                Ok(_) => Ok(()),
-                Err(json_error) => Err(create_validation_error_with_format(
-                    FIELD_CONTENT,
-                    &format!("invalid JSON format: {json_error}"),
-                )),
-            }
-        } else {
-            Ok(()) // Language doesn't specify JSON, no validation needed
+    // Simplified JSON validation for backward compatibility
+    // Attempts to parse content as JSON and validates format if it appears to be JSON
+
+    // Basic heuristic: if content starts with '{' or '[', treat it as JSON and validate
+    let content_bytes = message.content.as_slice();
+    if content_bytes.is_empty() {
+        return Ok(());
+    }
+
+    // Check if content looks like JSON (starts with JSON indicators)
+    let first_char = content_bytes[0];
+    if first_char == b'{' || first_char == b'[' {
+        // Looks like JSON, so validate it
+        match serde_json::from_slice::<serde_json::Value>(content_bytes) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(create_validation_error(
+                "content",
+                "invalid JSON format in message content",
+            )),
         }
     } else {
-        Ok(()) // No language specified, no JSON validation needed
+        // Not JSON-like content, skip validation
+        Ok(())
     }
 }
 
 fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
-    // Apply all FIPA validation rules in logical order
-    validate_sender_receiver_different(message)?;
-    validate_content_not_empty(message)?;
+    // Apply remaining FIPA validation rules
+    // Note: Type-level validation in MessageParticipants and MessageContent already prevents illegal states
     validate_conversation_threading(message)?;
     validate_performative_fipa_compliance(message)?;
     validate_json_content_format(message)?;
@@ -481,16 +436,16 @@ fn create_not_understood_response(
         performative: Performative::NotUnderstood,
 
         // FIPA protocol: sender/receiver swap for proper response routing
-        sender: original_message.receiver, // Original receiver becomes sender
-        receiver: original_message.sender, // Original sender becomes receiver
+        participants: MessageParticipants::try_new(
+            *original_message.receiver(),
+            *original_message.sender(),
+        )
+        .expect("Valid participants for response"),
 
         // Error description content with validation
         content: message_content,
 
-        // Optional FIPA fields: preserve original context where available
-        language: original_message.language.clone(),
-        ontology: original_message.ontology.clone(),
-        protocol: original_message.protocol.clone(),
+        // Optional FIPA fields: removed - language, ontology, protocol fields no longer supported
 
         // FIPA conversation threading: maintain conversation context
         conversation_id: original_message.conversation_id,
@@ -968,16 +923,16 @@ impl MessageRouterImpl {
                                 collector.record_message_routed(
                                     &FipaMessage {
                                         performative: Performative::Inform,
-                                        sender: AgentId::generate(),
-                                        receiver: AgentId::generate(),
+                                        participants: MessageParticipants::try_new(
+                                            AgentId::generate(),
+                                            AgentId::generate(),
+                                        )
+                                        .expect("Valid participants"),
                                         content: MessageContent::try_new(vec![]).unwrap(),
                                         message_id,
                                         conversation_id: None,
                                         reply_with: None,
                                         in_reply_to: None,
-                                        protocol: None,
-                                        language: None,
-                                        ontology: None,
                                         created_at: MessageTimestamp::now(),
                                         trace_context: None,
                                         delivery_options: DeliveryOptions::default(),
@@ -1035,7 +990,7 @@ impl MessageRouterImpl {
 
         // Look up the destination agent
         let agent_location = agent_registry
-            .lookup(&task.message.receiver)
+            .lookup(task.message.receiver())
             .await
             .map_err(|e| map_registry_error_to_router_error(&e))?;
 
@@ -1056,9 +1011,9 @@ impl MessageRouterImpl {
                     .map_err(map_delivery_error_to_router_error)
             }
             AgentLocation::Unknown => {
-                warn!("Agent location unknown for: {}", task.message.receiver);
+                warn!("Agent location unknown for: {}", task.message.receiver());
                 Err(RouterError::AgentNotFound {
-                    agent_id: task.message.receiver,
+                    agent_id: *task.message.receiver(),
                 })
             }
         }
@@ -1154,8 +1109,8 @@ impl MessageRouter for MessageRouterImpl {
     async fn route_message(&self, message: FipaMessage) -> Result<MessageId, RouterError> {
         let span = span!(Level::DEBUG, "route_message",
                          message_id = %message.message_id,
-                         sender = %message.sender,
-                         receiver = %message.receiver);
+                         sender = %message.sender(),
+                         receiver = %message.receiver());
         let _enter = span.enter();
 
         if !self.is_running.load(Ordering::SeqCst) {
@@ -1696,7 +1651,6 @@ impl ConversationManager for ConversationManagerImpl {
         &self,
         conversation_id: ConversationId,
         participants: std::collections::HashSet<AgentId>,
-        protocol: Option<ProtocolName>,
     ) -> Result<Conversation, ConversationError> {
         // Check if conversation already exists
         if let Some(conversation) = self.conversations.get(&conversation_id) {
@@ -1712,12 +1666,8 @@ impl ConversationManager for ConversationManagerImpl {
         }
 
         // Create new conversation
-        let conversation = Conversation::new(
-            conversation_id,
-            participants,
-            protocol,
-            ConversationCreatedAt::now(),
-        );
+        let conversation =
+            Conversation::new(conversation_id, participants, ConversationCreatedAt::now());
 
         // Store the conversation
         self.conversations
@@ -1739,11 +1689,11 @@ impl ConversationManager for ConversationManagerImpl {
         } else {
             // Conversation not found - create it if the message has participants
             let mut participants = HashSet::new();
-            participants.insert(message.sender);
-            participants.insert(message.receiver);
+            participants.insert(*message.sender());
+            participants.insert(*message.receiver());
 
             let mut conversation = self
-                .get_or_create_conversation(conversation_id, participants, message.protocol.clone())
+                .get_or_create_conversation(conversation_id, participants)
                 .await?;
 
             conversation.add_message(message);
@@ -2123,7 +2073,6 @@ impl MetricsCollector for MetricsCollectorImpl {
 mod tests {
     use super::*;
     use crate::message_router::config::RouterConfig;
-    use crate::message_router::{ContentLanguage, OntologyName};
 
     // Test that verifies FIPA message field validation rejects invalid sender/receiver combination
     #[tokio::test]
@@ -2133,19 +2082,14 @@ mod tests {
         let router = MessageRouterImpl::new(config).unwrap();
         router.start().await.unwrap();
 
-        // Create an invalid FIPA message with sender == receiver (FIPA violation)
+        // Test validation using FipaMessage::try_new_validated which should catch the error
         let same_agent = AgentId::generate();
 
-        // Use unimplemented!() to force compilation but make test fail at runtime
-        // This will fail with "not yet implemented" until MessageContent is added
-        let invalid_message = FipaMessage {
+        let params = crate::message_router::domain_types::FipaMessageParams {
             performative: Performative::Request,
             sender: same_agent,
-            receiver: same_agent, // FIPA violation: sender cannot equal receiver
+            receiver: same_agent, // Same as sender - should trigger validation error
             content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,
@@ -2155,8 +2099,8 @@ mod tests {
             delivery_options: DeliveryOptions::default(),
         };
 
-        // Attempt to route the invalid message - should fail with ValidationError
-        let result = router.route_message(invalid_message).await;
+        // Attempt to create message with validation - should fail with ValidationError
+        let result = FipaMessage::try_new_validated(params);
 
         // Expect validation error for sender == receiver FIPA violation
         match result {
@@ -2168,47 +2112,9 @@ mod tests {
         }
     }
 
-    // Test that verifies FIPA message field validation rejects empty content
-    #[tokio::test]
-    async fn test_should_reject_message_when_content_is_empty() {
-        // Create router with test configuration
-        let config = RouterConfig::testing();
-        let router = MessageRouterImpl::new(config).unwrap();
-        router.start().await.unwrap();
-
-        // Create a FIPA message with empty content (FIPA violation)
-        let sender = AgentId::generate();
-        let receiver = AgentId::generate();
-
-        let invalid_message = FipaMessage {
-            performative: Performative::Inform,
-            sender,
-            receiver,
-            content: MessageContent::try_new(Vec::new()).unwrap(), // Empty content - FIPA violation
-            language: None,
-            ontology: None,
-            protocol: None,
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        // Attempt to route the invalid message - should fail with ValidationError
-        let result = router.route_message(invalid_message).await;
-
-        // Expect validation error for empty content FIPA violation
-        match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "content");
-                assert!(reason.as_ref().contains("content cannot be empty"));
-            }
-            _ => panic!("Expected ValidationError for empty content, got: {result:?}"),
-        }
-    }
+    // NOTE: Empty content validation now happens at domain type level (MessageContent)
+    // This makes illegal states unrepresentable, which is superior to runtime validation.
+    // See test_message_content_should_reject_empty_content in domain_types.rs
 
     // Test that verifies FIPA conversation threading validation requires corresponding reply_with/in_reply_to pairs
     #[tokio::test]
@@ -2228,15 +2134,12 @@ mod tests {
 
         let invalid_message = FipaMessage {
             performative: Performative::Inform,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(
                 b"This message claims to reply to something that doesn't exist".to_vec(),
             )
             .unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_id),
             reply_with: None,
             in_reply_to: Some(orphaned_reply_id), // FIPA violation: no corresponding reply_with found
@@ -2280,13 +2183,10 @@ mod tests {
         let reply_with_id = MessageId::generate();
         let original_message = FipaMessage {
             performative: Performative::Request,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(b"Original request expecting a reply".to_vec())
                 .unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_id),
             reply_with: Some(reply_with_id), // Establishes threading expectation
             in_reply_to: None,
@@ -2306,12 +2206,9 @@ mod tests {
         // Reply message: valid in_reply_to that corresponds to original reply_with
         let reply_message = FipaMessage {
             performative: Performative::Inform,
-            sender: receiver,
-            receiver: sender,
+            participants: MessageParticipants::try_new(receiver, sender)
+                .expect("Valid participants"),
             content: MessageContent::try_new(b"Reply to the original request".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_id),
             reply_with: None,
             in_reply_to: Some(reply_with_id), // FIPA compliance: matches original reply_with
@@ -2354,12 +2251,9 @@ mod tests {
         let reply_with_conv1 = MessageId::generate();
         let request_conv1 = FipaMessage {
             performative: Performative::Request,
-            sender: agent_a,
-            receiver: agent_b,
+            participants: MessageParticipants::try_new(agent_a, agent_b)
+                .expect("Valid participants"),
             content: MessageContent::try_new(b"Request in conversation 1".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_1),
             reply_with: Some(reply_with_conv1),
             in_reply_to: None,
@@ -2375,13 +2269,10 @@ mod tests {
         // Conversation 2: Agent C tries to reply using reply_with from conversation 1
         // This should be REJECTED because conversations should be isolated
         let cross_conversation_reply = FipaMessage {
-            performative: Performative::Inform,
-            sender: agent_c,
-            receiver: agent_a,
+            performative: Performative::Request,
+            participants: MessageParticipants::try_new(agent_c, agent_a)
+                .expect("Valid participants"),
             content: MessageContent::try_new(b"Cross-conversation reply attempt".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_2), // Different conversation!
             reply_with: None,
             in_reply_to: Some(reply_with_conv1), // Trying to use reply_with from conversation 1
@@ -2422,15 +2313,12 @@ mod tests {
         // Create a message that will cause processing failure (simulating unsupported performative handling)
         let problematic_message = FipaMessage {
             performative: Performative::Request,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(
                 b"UNSUPPORTED_OPERATION: complex_unsupported_request".to_vec(),
             )
             .unwrap(),
-            language: None,
-            ontology: None, // Keeping it simple for the test
-            protocol: None, // Keeping it simple for the test
             conversation_id: Some(ConversationId::generate()),
             reply_with: Some(MessageId::generate()),
             in_reply_to: None,
@@ -2450,8 +2338,8 @@ mod tests {
                     not_understood_message.performative,
                     Performative::NotUnderstood
                 );
-                assert_eq!(not_understood_message.sender, receiver); // Receiver becomes sender
-                assert_eq!(not_understood_message.receiver, sender); // Sender becomes receiver
+                assert_eq!(not_understood_message.sender(), &receiver); // Receiver becomes sender
+                assert_eq!(not_understood_message.receiver(), &sender); // Sender becomes receiver
                 assert!(!not_understood_message.content.is_empty());
                 // Should reference original message in some way
                 assert!(not_understood_message.in_reply_to.is_some());
@@ -2474,15 +2362,12 @@ mod tests {
         // Create original message with specific conversation context
         let original_message = FipaMessage {
             performative: Performative::QueryRef,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(
                 b"Invalid query syntax - should trigger NOT_UNDERSTOOD".to_vec(),
             )
             .unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(conversation_id),
             reply_with: Some(original_reply_with),
             in_reply_to: None,
@@ -2523,8 +2408,8 @@ mod tests {
                     not_understood_response.performative,
                     Performative::NotUnderstood
                 );
-                assert_eq!(not_understood_response.sender, receiver); // Role reversal
-                assert_eq!(not_understood_response.receiver, sender); // Role reversal
+                assert_eq!(not_understood_response.sender(), &receiver); // Role reversal
+                assert_eq!(not_understood_response.receiver(), &sender); // Role reversal
             }
             Err(error) => panic!(
                 "Expected NOT_UNDERSTOOD response with conversation context, got error: {error:?}"
@@ -2544,12 +2429,9 @@ mod tests {
         // Create a message using Caxton extension performative (not in FIPA-ACL standard)
         let message_with_extension_performative = FipaMessage {
             performative: Performative::Heartbeat, // Non-FIPA performative
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(b"Heartbeat signal".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: Some(ConversationId::generate()),
             reply_with: Some(MessageId::generate()),
             in_reply_to: None,
@@ -2597,12 +2479,9 @@ mod tests {
         let malformed_json_content = b"{incomplete_json: missing_quotes, no_closing_brace";
         let message_with_malformed_json = FipaMessage {
             performative: Performative::Request,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
             content: MessageContent::try_new(malformed_json_content.to_vec()).unwrap(),
-            language: Some(ContentLanguage::try_new("json".to_string()).unwrap()),
-            ontology: None,
-            protocol: None,
             message_id: MessageId::generate(),
             conversation_id: Some(ConversationId::generate()),
             reply_with: Some(MessageId::generate()),
@@ -2715,9 +2594,6 @@ mod tests {
             sender: valid_sender,
             receiver: valid_receiver,
             content: valid_content,
-            language: Some(ContentLanguage::try_new("en".to_string()).unwrap()),
-            ontology: Some(OntologyName::try_new("test-ontology".to_string()).unwrap()),
-            protocol: Some(ProtocolName::try_new("test-protocol".to_string()).unwrap()),
             conversation_id: Some(ConversationId::generate()),
             reply_with: Some(MessageId::generate()),
             in_reply_to: Some(MessageId::generate()),
@@ -2731,8 +2607,8 @@ mod tests {
         match result {
             Ok(message) => {
                 assert_eq!(message.performative, Performative::Request);
-                assert_eq!(message.sender, valid_sender);
-                assert_eq!(message.receiver, valid_receiver);
+                assert_eq!(message.sender(), &valid_sender);
+                assert_eq!(message.receiver(), &valid_receiver);
             }
             Err(e) => panic!("Expected valid message to be created, but got error: {e:?}"),
         }
@@ -2746,9 +2622,6 @@ mod tests {
             sender: same_agent,
             receiver: same_agent,
             content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,
@@ -2768,33 +2641,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_empty_content() {
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
-            sender: AgentId::generate(),
-            receiver: AgentId::generate(),
-            content: MessageContent::try_new(b"".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        match FipaMessage::try_new_validated(params) {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "content");
-                assert_eq!(reason.as_ref(), "content cannot be empty");
-            }
-            _ => panic!("Expected ValidationError for empty content"),
-        }
-    }
+    // NOTE: Empty content validation now happens at domain type level (MessageContent)
+    // See test_message_content_should_reject_empty_content in domain_types.rs
 
     #[tokio::test]
     async fn test_fipa_message_smart_constructor_rejects_non_fipa_performatives() {
@@ -2803,9 +2651,6 @@ mod tests {
             sender: AgentId::generate(),
             receiver: AgentId::generate(),
             content: MessageContent::try_new(b"heartbeat content".to_vec()).unwrap(),
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,
@@ -2831,9 +2676,6 @@ mod tests {
             sender: AgentId::generate(),
             receiver: AgentId::generate(),
             content: MessageContent::try_new(b"{ invalid json".to_vec()).unwrap(),
-            language: Some(ContentLanguage::try_new("json".to_string()).unwrap()),
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,

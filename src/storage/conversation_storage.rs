@@ -43,7 +43,6 @@ use crate::{
     message_router::{
         domain_types::{
             Conversation, ConversationCreatedAt, ConversationId, MessageCount, MessageTimestamp,
-            ProtocolName,
         },
         traits::ConversationError,
     },
@@ -152,10 +151,6 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
             })?;
 
         // Insert conversation record
-        let protocol_name = conversation
-            .protocol
-            .as_ref()
-            .map(std::string::ToString::to_string);
         let created_at = Self::system_time_to_unix_secs(conversation.created_at.into_inner())
             .map_err(|e| {
                 warn!(
@@ -185,7 +180,6 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
 
         sqlx::query(INSERT_CONVERSATION)
             .bind(conversation.id.to_string())
-            .bind(protocol_name)
             .bind(created_at)
             .bind(last_activity)
             .bind(message_count)
@@ -280,16 +274,6 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
         }
 
         // Parse conversation fields
-        let protocol_name_str: Option<String> = conversation_row.get("protocol_name");
-        let protocol = if let Some(name) = protocol_name_str {
-            Some(
-                ProtocolName::try_new(name).map_err(|e| ConversationError::StorageError {
-                    source: Box::new(e),
-                })?,
-            )
-        } else {
-            None
-        };
 
         let created_at_secs: i64 = conversation_row.get("created_at");
         let created_at = ConversationCreatedAt::new(
@@ -325,7 +309,6 @@ impl crate::message_router::traits::ConversationStorage for SqliteConversationSt
         let conversation = Conversation {
             id: conversation_id,
             participants,
-            protocol,
             created_at,
             last_activity,
             message_count,

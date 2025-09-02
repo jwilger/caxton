@@ -8,8 +8,8 @@
 
 use caxton::message_router::{
     AgentId, AgentName, AgentQueueSize, AgentState, ConversationId, DeliveryOptions, FipaMessage,
-    LocalAgent, MessageContent, MessageId, MessageRouter, MessageRouterImpl, MessageTimestamp,
-    Performative, RouterConfig, RouterError,
+    LocalAgent, MessageContent, MessageId, MessageParticipants, MessageRouter, MessageRouterImpl,
+    MessageTimestamp, Performative, RouterConfig, RouterError,
 };
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -20,16 +20,12 @@ use tokio::sync::mpsc;
 fn create_test_message(sender: AgentId, receiver: AgentId) -> FipaMessage {
     FipaMessage {
         performative: Performative::Inform,
-        sender,
-        receiver,
+        participants: MessageParticipants::try_new(sender, receiver).expect("Valid participants"),
         content: MessageContent::try_new("Test message content".as_bytes().to_vec()).unwrap(),
         message_id: MessageId::generate(),
         conversation_id: Some(ConversationId::generate()),
         reply_with: None,
         in_reply_to: None,
-        protocol: None,
-        language: None,
-        ontology: None,
         created_at: MessageTimestamp::now(),
         trace_context: None,
         delivery_options: DeliveryOptions::default(),

@@ -109,12 +109,8 @@ async fn test_message_creation_and_validation() {
 
     let message = FipaMessage {
         performative: Performative::Request,
-        sender,
-        receiver,
+        participants: MessageParticipants::try_new(sender, receiver).expect("Valid participants"),
         content,
-        language: Some(ContentLanguage::try_new("en".to_string()).unwrap()),
-        ontology: Some(OntologyName::try_new("test-ontology".to_string()).unwrap()),
-        protocol: Some(ProtocolName::try_new("FIPA-REQUEST".to_string()).unwrap()),
         conversation_id: Some(conversation_id),
         reply_with: Some(MessageId::generate()),
         in_reply_to: None,
@@ -126,8 +122,8 @@ async fn test_message_creation_and_validation() {
 
     // Message should be valid
     assert_ne!(message.message_id.into_inner(), uuid::Uuid::nil());
-    assert_ne!(message.sender.into_inner(), uuid::Uuid::nil());
-    assert_ne!(message.receiver.into_inner(), uuid::Uuid::nil());
+    assert_ne!(message.sender().into_inner(), uuid::Uuid::nil());
+    assert_ne!(message.receiver().into_inner(), uuid::Uuid::nil());
     assert!(!message.content.is_empty());
     assert_eq!(message.delivery_options.priority, MessagePriority::Normal);
     assert_eq!(message.delivery_options.max_retries.as_u8(), 3);
@@ -166,19 +162,12 @@ async fn test_conversation_creation() {
     participants.insert(AgentId::generate());
     participants.insert(AgentId::generate());
 
-    let protocol = Some(ProtocolName::try_new("FIPA-REQUEST".to_string()).unwrap());
     let created_at = ConversationCreatedAt::now();
 
-    let conversation = Conversation::new(
-        conversation_id,
-        participants.clone(),
-        protocol.clone(),
-        created_at,
-    );
+    let conversation = Conversation::new(conversation_id, participants.clone(), created_at);
 
     assert_eq!(conversation.id, conversation_id);
     assert_eq!(conversation.participants, participants);
-    assert_eq!(conversation.protocol, protocol);
     assert_eq!(conversation.message_count.as_usize(), 0);
 }
 

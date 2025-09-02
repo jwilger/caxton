@@ -5,6 +5,7 @@
 
 use nutype::nutype;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::collections::HashSet;
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -459,57 +460,6 @@ impl MessageTimestamp {
     }
 }
 
-/// Content language identifier
-#[nutype(
-    validate(len_char_min = 1, len_char_max = 50),
-    derive(
-        Debug,
-        Clone,
-        PartialEq,
-        Eq,
-        Serialize,
-        Deserialize,
-        Display,
-        TryFrom,
-        Into
-    )
-)]
-pub struct ContentLanguage(String);
-
-/// Ontology name
-#[nutype(
-    validate(len_char_min = 1, len_char_max = 100),
-    derive(
-        Debug,
-        Clone,
-        PartialEq,
-        Eq,
-        Serialize,
-        Deserialize,
-        Display,
-        TryFrom,
-        Into
-    )
-)]
-pub struct OntologyName(String);
-
-/// Protocol name for conversation protocols
-#[nutype(
-    validate(len_char_min = 1, len_char_max = 100),
-    derive(
-        Debug,
-        Clone,
-        PartialEq,
-        Eq,
-        Serialize,
-        Deserialize,
-        Display,
-        TryFrom,
-        Into
-    )
-)]
-pub struct ProtocolName(String);
-
 /// Message timeout in milliseconds
 #[nutype(
     validate(greater_or_equal = 1000, less_or_equal = 300_000),
@@ -546,27 +496,47 @@ impl MessageTimeoutMs {
     }
 }
 
+/// Maximum allowed size for message content (10MB)
+const MAX_MESSAGE_CONTENT_BYTES: usize = 10_485_760;
+
 /// Message content as validated bytes
+///
+/// Enforces two key constraints:
+/// 1. Content must not be empty (at least 1 byte)
+/// 2. Content must not exceed 10MB (10,485,760 bytes)
+///
+/// These constraints ensure messages are meaningful while preventing resource exhaustion.
 #[nutype(
-    validate(predicate = |content| content.len() <= 10_485_760), // 10MB max
+    validate(predicate = |content| {
+        !content.is_empty() && content.len() <= MAX_MESSAGE_CONTENT_BYTES
+    }),
     derive(Debug, Clone, Serialize, Deserialize, AsRef, Deref)
 )]
 pub struct MessageContent(Vec<u8>);
 
 impl MessageContent {
-    /// Gets the length of the content
+    /// Gets the length of the content in bytes
+    ///
+    /// Returns a value between 1 and [`MAX_MESSAGE_CONTENT_BYTES`] (10MB).
+    /// Empty content cannot be represented by this type.
     #[must_use]
     pub fn len(&self) -> usize {
         self.as_ref().len()
     }
 
     /// Checks if content is empty
+    ///
+    /// Always returns `false` since [`MessageContent`] guarantees non-empty content.
+    /// This method exists for compatibility with standard collection APIs.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.as_ref().is_empty()
     }
 
     /// Gets the content as bytes
+    ///
+    /// Returns the underlying byte slice containing the validated message content.
+    /// The returned slice is guaranteed to be non-empty and within size limits.
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         self.as_ref()
@@ -869,7 +839,6 @@ impl LocalAgent {
 pub struct Conversation {
     pub id: ConversationId,
     pub participants: HashSet<AgentId>,
-    pub protocol: Option<ProtocolName>,
     pub created_at: ConversationCreatedAt,
     pub last_activity: MessageTimestamp,
     pub message_count: MessageCount,
@@ -881,13 +850,11 @@ impl Conversation {
     pub fn new(
         id: ConversationId,
         participants: HashSet<AgentId>,
-        protocol: Option<ProtocolName>,
         created_at: ConversationCreatedAt,
     ) -> Self {
         Self {
             id,
             participants,
-            protocol,
             created_at,
             last_activity: MessageTimestamp::now(),
             message_count: MessageCount::zero(),
@@ -911,12 +878,8 @@ impl Conversation {
 pub struct FipaMessage {
     // Standard FIPA fields
     pub performative: Performative,
-    pub sender: AgentId,
-    pub receiver: AgentId,
+    pub participants: MessageParticipants,
     pub content: MessageContent,
-    pub language: Option<ContentLanguage>,
-    pub ontology: Option<OntologyName>,
-    pub protocol: Option<ProtocolName>,
 
     // Conversation management
     pub conversation_id: Option<ConversationId>,
@@ -1013,12 +976,8 @@ impl FipaMessage {
         // Create message instance first
         let message = Self {
             performative: params.performative,
-            sender: params.sender,
-            receiver: params.receiver,
+            participants: MessageParticipants::try_new(params.sender, params.receiver)?,
             content: params.content,
-            language: params.language,
-            ontology: params.ontology,
-            protocol: params.protocol,
             conversation_id: params.conversation_id,
             reply_with: params.reply_with,
             in_reply_to: params.in_reply_to,
@@ -1028,13 +987,31 @@ impl FipaMessage {
             delivery_options: params.delivery_options,
         };
 
-        // Apply all FIPA validation rules
-        validate_sender_receiver_different(&message)?;
-        validate_content_not_empty(&message)?;
+        // Apply remaining FIPA validation rules
+        // validate_sender_receiver_different removed - MessageParticipants handles this
+        // validate_content_not_empty removed - MessageContent type ensures non-empty
         validate_performative_fipa_compliance(&message)?;
         validate_json_content_format(&message)?;
 
         Ok(message)
+    }
+
+    /// Returns a reference to the sender `AgentId`
+    ///
+    /// Provides backward compatibility access to the sender through the participants field.
+    /// This method maintains API compatibility while using the new `MessageParticipants` type.
+    #[must_use]
+    pub fn sender(&self) -> &AgentId {
+        self.participants.sender()
+    }
+
+    /// Returns a reference to the receiver `AgentId`
+    ///
+    /// Provides backward compatibility access to the receiver through the participants field.
+    /// This method maintains API compatibility while using the new `MessageParticipants` type.
+    #[must_use]
+    pub fn receiver(&self) -> &AgentId {
+        self.participants.receiver()
     }
 }
 
@@ -1043,14 +1020,10 @@ impl FipaMessage {
 // ============================================================================
 
 /// Field name constants for validation errors
-const FIELD_CONTENT: &str = "content";
 const FIELD_PERFORMATIVE: &str = "performative";
-const FIELD_SENDER_RECEIVER: &str = "sender/receiver";
+const FIELD_CONTENT: &str = "content";
 
 /// Validation reason constants
-const REASON_CONTENT_EMPTY: &str = "content cannot be empty";
-const REASON_SENDER_EQUALS_RECEIVER: &str = "sender cannot equal receiver";
-
 /// Standard FIPA-ACL performatives as defined in FIPA specification
 const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
     Performative::Request,
@@ -1066,9 +1039,6 @@ const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
     Performative::NotUnderstood,
 ];
 
-/// JSON content language identifier
-const JSON_CONTENT_LANGUAGE: &str = "json";
-
 /// Creates a validation error with proper domain types
 fn create_validation_error(
     field: &str,
@@ -1082,30 +1052,8 @@ fn create_validation_error(
     }
 }
 
-/// Validates sender and receiver are different agents (FIPA requirement)
-fn validate_sender_receiver_different(
-    message: &FipaMessage,
-) -> Result<(), crate::message_router::traits::RouterError> {
-    if message.sender == message.receiver {
-        Err(create_validation_error(
-            FIELD_SENDER_RECEIVER,
-            REASON_SENDER_EQUALS_RECEIVER,
-        ))
-    } else {
-        Ok(())
-    }
-}
-
-/// Validates message content is not empty (FIPA requirement)
-fn validate_content_not_empty(
-    message: &FipaMessage,
-) -> Result<(), crate::message_router::traits::RouterError> {
-    if message.content.is_empty() {
-        Err(create_validation_error(FIELD_CONTENT, REASON_CONTENT_EMPTY))
-    } else {
-        Ok(())
-    }
-}
+// validate_sender_receiver_different removed - MessageParticipants handles this validation
+// validate_content_not_empty removed - MessageContent type ensures non-empty at construction
 
 /// Validates performative is a standard FIPA performative
 fn validate_performative_fipa_compliance(
@@ -1121,24 +1069,49 @@ fn validate_performative_fipa_compliance(
     }
 }
 
-/// Validates JSON content format when `ContentLanguage` indicates JSON
+/// Validates JSON content format when content appears to be JSON
+///
+/// This function provides a heuristic-based JSON validation approach for backward
+/// compatibility. It checks if content looks like JSON (starts with '{' or '[')
+/// and validates the JSON syntax using `serde_json` parsing.
+///
+/// # Arguments
+///
+/// * `message` - The FIPA message to validate
+///
+/// # Returns
+///
+/// * `Ok(())` - If content is valid JSON or doesn't appear to be JSON
+/// * `Err(RouterError::ValidationError)` - If content appears to be JSON but is malformed
+///
+/// # Implementation Notes
+///
+/// This validation is applied during smart constructor validation to ensure
+/// JSON content meets basic syntax requirements before message processing.
 fn validate_json_content_format(
     message: &FipaMessage,
 ) -> Result<(), crate::message_router::traits::RouterError> {
-    // Only validate JSON when ContentLanguage contains JSON identifier
-    if let Some(language) = &message.language {
-        let language_str = language.to_string();
-        if language_str.to_lowercase().contains(JSON_CONTENT_LANGUAGE) {
-            // Validate JSON syntax using serde_json
-            if let Err(e) = serde_json::from_slice::<serde_json::Value>(message.content.as_ref()) {
-                return Err(create_validation_error(
-                    FIELD_CONTENT,
-                    &format!("invalid JSON format: {e}"),
-                ));
-            }
-        }
+    // Basic heuristic: if content starts with '{' or '[', treat it as JSON and validate
+    let content_bytes = message.content.as_slice();
+    if content_bytes.is_empty() {
+        return Ok(());
     }
-    Ok(())
+
+    // Check if content looks like JSON (starts with JSON indicators)
+    let first_char = content_bytes[0];
+    if first_char == b'{' || first_char == b'[' {
+        // Looks like JSON, so validate it
+        match serde_json::from_slice::<serde_json::Value>(content_bytes) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(create_validation_error(
+                FIELD_CONTENT,
+                "invalid JSON format",
+            )),
+        }
+    } else {
+        // Not JSON-like content, skip validation
+        Ok(())
+    }
 }
 
 /// Parameters for creating and validating a FIPA message
@@ -1151,9 +1124,6 @@ pub struct FipaMessageParams {
     pub sender: AgentId,
     pub receiver: AgentId,
     pub content: MessageContent,
-    pub language: Option<ContentLanguage>,
-    pub ontology: Option<OntologyName>,
-    pub protocol: Option<ProtocolName>,
     pub conversation_id: Option<ConversationId>,
     pub reply_with: Option<MessageId>,
     pub in_reply_to: Option<MessageId>,
@@ -1258,5 +1228,244 @@ impl RouteInfo {
             Ok(elapsed) => elapsed < ttl,
             Err(_) => false, // Clock moved backwards, consider stale
         }
+    }
+}
+
+/// Message participants with sender and receiver validation
+///
+/// Ensures that sender and receiver are different agents at the type level,
+/// making self-messaging unrepresentable. This type follows Scott Wlaschin's
+/// "make illegal states unrepresentable" principle by preventing the creation
+/// of `MessageParticipants` where sender equals receiver.
+///
+/// Provides methods for accessing participants in a safe and controlled manner.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct MessageParticipants {
+    sender: AgentId,
+    receiver: AgentId,
+}
+
+impl MessageParticipants {
+    /// Creates new `MessageParticipants` with validation
+    ///
+    /// This smart constructor ensures FIPA-ACL compliance by preventing
+    /// self-messaging scenarios where an agent would send a message to itself.
+    /// This validation is performed at the type level to make illegal states
+    /// unrepresentable.
+    ///
+    /// # Arguments
+    ///
+    /// * `sender` - The agent sending the message
+    /// * `receiver` - The agent receiving the message
+    ///
+    /// # Returns
+    ///
+    /// `Result<MessageParticipants, RouterError>` - Returns the validated participants
+    /// or a validation error if sender equals receiver
+    ///
+    /// # Errors
+    ///
+    /// Returns `RouterError::ValidationError` if sender equals receiver, with:
+    /// - field: "sender/receiver"
+    /// - reason: "sender cannot equal receiver"
+    pub fn try_new(
+        sender: AgentId,
+        receiver: AgentId,
+    ) -> Result<Self, crate::message_router::traits::RouterError> {
+        if sender == receiver {
+            return Err(create_validation_error(
+                "sender/receiver",
+                "sender cannot equal receiver",
+            ));
+        }
+
+        Ok(Self { sender, receiver })
+    }
+
+    /// Returns a reference to the sender `AgentId`
+    ///
+    /// Gets the agent identifier of the message sender. This accessor
+    /// provides safe access to the validated sender field.
+    #[must_use]
+    pub fn sender(&self) -> &AgentId {
+        &self.sender
+    }
+
+    /// Returns a reference to the receiver `AgentId`
+    ///
+    /// Gets the agent identifier of the message receiver. This accessor
+    /// provides safe access to the validated receiver field.
+    #[must_use]
+    pub fn receiver(&self) -> &AgentId {
+        &self.receiver
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_message_participants_should_reject_equal_sender_and_receiver() {
+        // Test that verifies MessageParticipants validation rejects same agent for both sender and receiver
+        let agent_id = AgentId::generate();
+
+        // This should fail because sender equals receiver
+        let result = MessageParticipants::try_new(agent_id, agent_id);
+
+        assert!(
+            result.is_err(),
+            "MessageParticipants should reject equal sender and receiver"
+        );
+    }
+
+    #[test]
+    fn test_message_participants_should_accept_different_sender_and_receiver() {
+        // Test that verifies MessageParticipants creation succeeds with different agents and provides access to fields
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        // This should succeed because sender != receiver
+        let result = MessageParticipants::try_new(sender, receiver);
+
+        assert!(
+            result.is_ok(),
+            "MessageParticipants should accept different sender and receiver"
+        );
+
+        let participants = result.unwrap();
+
+        // Test that we can access the sender and receiver fields
+        assert_eq!(
+            participants.sender(),
+            &sender,
+            "Should be able to access sender field"
+        );
+        assert_eq!(
+            participants.receiver(),
+            &receiver,
+            "Should be able to access receiver field"
+        );
+    }
+
+    #[test]
+    fn test_message_content_should_reject_empty_content() {
+        // Test that verifies MessageContent validation rejects empty Vec<u8>
+        let empty_content = vec![];
+
+        // This should fail because content cannot be empty
+        let result = MessageContent::try_new(empty_content);
+
+        assert!(
+            result.is_err(),
+            "MessageContent should reject empty content"
+        );
+
+        // Verify the error message indicates validation failure
+        if let Err(error) = result {
+            let error_message = format!("{error}");
+            assert!(
+                error_message.contains("predicate test") || error_message.contains("failed"),
+                "Error message should indicate validation failure, got: {error_message}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_fipa_message_should_work_without_adr_violating_fields() {
+        // Test that verifies FipaMessage can be created without ContentLanguage, OntologyName, and ProtocolName
+        // per ADR-0012 pragmatic FIPA subset which explicitly rejects these fields
+        let sender_id = AgentId::generate();
+        let receiver_id = AgentId::generate();
+        let content = MessageContent::try_new("Hello, world!".as_bytes().to_vec())
+            .expect("Valid content should be accepted");
+        let message_id = MessageId::generate();
+        let created_at = MessageTimestamp::now();
+        let delivery_options = DeliveryOptions::default();
+
+        let params = FipaMessageParams {
+            performative: Performative::Request,
+            sender: sender_id,
+            receiver: receiver_id,
+            content,
+            // language, ontology, protocol removed per ADR-0012
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id,
+            created_at,
+            trace_context: None,
+            delivery_options,
+        };
+
+        // This should succeed - proving FipaMessage works without ADR-violating fields
+        let result = FipaMessage::try_new_validated(params);
+
+        assert!(
+            result.is_ok(),
+            "FipaMessage should work without language, ontology, and protocol fields per ADR-0012"
+        );
+
+        let message = result.unwrap();
+
+        // Verify ADR-violating fields have been completely removed (ADR-0012 compliance)
+        // No language, ontology, or protocol fields should exist in the struct
+
+        // Verify core FIPA fields are preserved (what ADR-0012 keeps)
+        assert_eq!(message.performative, Performative::Request);
+        assert_eq!(message.sender(), &sender_id);
+        assert_eq!(message.receiver(), &receiver_id);
+    }
+
+    #[test]
+    fn test_fipa_message_should_use_message_participants_internally() {
+        // Test that verifies FipaMessage uses MessageParticipants field instead of separate sender/receiver fields
+        let sender_id = AgentId::generate();
+        let receiver_id = AgentId::generate();
+        let content = MessageContent::try_new("Test message".as_bytes().to_vec())
+            .expect("Valid content should be accepted");
+        let message_id = MessageId::generate();
+        let created_at = MessageTimestamp::now();
+        let delivery_options = DeliveryOptions::default();
+
+        let params = FipaMessageParams {
+            performative: Performative::Request,
+            sender: sender_id,
+            receiver: receiver_id,
+            content,
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+            message_id,
+            created_at,
+            trace_context: None,
+            delivery_options,
+        };
+
+        // Create FipaMessage through existing API
+        let result = FipaMessage::try_new_validated(params);
+        assert!(result.is_ok(), "FipaMessage creation should succeed");
+
+        let message = result.unwrap();
+
+        // This should fail because we haven't implemented MessageParticipants integration yet
+        // The test verifies that FipaMessage has a participants field of type MessageParticipants
+        assert!(
+            std::any::type_name_of_val(&message.participants)
+                == "caxton::message_router::domain_types::MessageParticipants",
+            "FipaMessage should have a participants field of type MessageParticipants"
+        );
+
+        // Verify the participants contain the correct sender and receiver
+        assert_eq!(
+            message.participants.sender(),
+            &sender_id,
+            "Participants should contain correct sender"
+        );
+        assert_eq!(
+            message.participants.receiver(),
+            &receiver_id,
+            "Participants should contain correct receiver"
+        );
     }
 }

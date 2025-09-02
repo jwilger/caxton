@@ -10,7 +10,7 @@ use thiserror::Error;
 use super::domain_types::{
     AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationId,
     FailureReason, FipaMessage, LocalAgent, MaxRetries, MessageCount, MessageId, MessageTimestamp,
-    NodeId, ProtocolName, RouteHops, RouteInfo, ValidationField, ValidationReason,
+    NodeId, RouteHops, RouteInfo, ValidationField, ValidationReason,
 };
 
 /// Comprehensive error types for message routing operations
@@ -279,7 +279,6 @@ pub trait ConversationManager: Send + Sync {
         &self,
         conversation_id: ConversationId,
         participants: std::collections::HashSet<AgentId>,
-        protocol: Option<ProtocolName>,
     ) -> Result<Conversation, ConversationError>;
 
     /// Updates conversation state with a new message
