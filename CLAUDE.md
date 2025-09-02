@@ -79,19 +79,21 @@ bacon check                         # Run cargo check continuously
 
 #### Bacon Integration Workflow (NON-NEGOTIABLE)
 
-1. **MANDATORY STARTUP**: ALWAYS check if bacon is running, start with
-   `bacon --headless` if not
-   - Use: `ps aux | grep "bacon --headless" | grep -v grep` to check
+1. **MANDATORY STARTUP**: The SPARC coordinator MUST start bacon at workflow beginning
    - Start with: `bacon --headless` using `run_in_background: true`
+   - Capture the auto-assigned ID (e.g., `bash_1`)
    - **CRITICAL**: TDD cycle CANNOT function without bacon running
-2. **Monitor bacon output**: Use BashOutput tool to check test results and
-   compilation feedback
-3. **React to failures immediately**: Address compilation errors and test
+2. **Pass bacon_id to ALL agents**: Every agent invocation MUST include the bacon_id
+   - Include in prompt: `bacon_id: bash_X` where X is the captured ID
+   - Agents will error if bacon_id is not provided
+3. **Monitor bacon output**: Use BashOutput tool with bacon_id to check test results
+   and compilation feedback
+4. **React to failures immediately**: Address compilation errors and test
    failures as they occur
-4. **Look for expected failures**: During TDD, expect to see specific test
+5. **Look for expected failures**: During TDD, expect to see specific test
    failures in bacon output
-5. **Verify success**: Confirm all tests pass before committing changes
-6. **NEVER use manual test commands**: No `cargo test`, `cargo nextest run`,
+6. **Verify success**: Confirm all tests pass before committing changes
+7. **NEVER use manual test commands**: No `cargo test`, `cargo nextest run`,
    etc. - bacon only!
 
 #### Manual Testing (Only When Bacon Unavailable)
@@ -539,17 +541,21 @@ The SPARC coordinator is STRICTLY an orchestrator and MUST NOT:
 
 The SPARC coordinator's ONLY responsibilities are:
 
-1. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents
+1. **Start and manage bacon** - Launch `bacon --headless` with
+   `run_in_background: true` at workflow start and capture the assigned ID
+   (e.g., `bash_1`)
+2. **Pass bacon_id to ALL agents** - Include `bacon_id: bash_X` in every agent prompt
+3. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents
    for each phase
-2. **Relay information** - Pass outputs from one subagent to another as needed
-3. **Interface with human** - Present subagent results to the user and collect
+4. **Relay information** - Pass outputs from one subagent to another as needed
+5. **Interface with human** - Present subagent results to the user and collect
    approvals
-4. **Track workflow state** - Know which SPARC phase is active and what comes
+6. **Track workflow state** - Know which SPARC phase is active and what comes
    next
-5. **Enforce process** - Ensure all SPARC phases execute in the correct order
-6. **Enforce TDD discipline** - Ensure proper Red→Green→Refactor cycles with
+7. **Enforce process** - Ensure all SPARC phases execute in the correct order
+8. **Enforce TDD discipline** - Ensure proper Red→Green→Refactor cycles with
    agent authority
-7. **Verify memory usage** - Ensure all agents search and store knowledge
+9. **Verify memory usage** - Ensure all agents search and store knowledge
    appropriately
 
 #### Domain Modeling Integration (CRITICAL)

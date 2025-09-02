@@ -1,7 +1,7 @@
 ---
 name: documentation-writer
 description: Specialized documentation writer focusing on user guides, API documentation, and operational procedures. ONLY writes documentation.
-tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Write, Edit, MultiEdit, Grep, Glob, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Documentation Writer Agent

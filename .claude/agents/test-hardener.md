@@ -1,7 +1,7 @@
 ---
 name: test-hardener
 description: Convert "example tests" into stronger guarantees. Propose types that make entire classes of tests impossible to fail.
-tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
+tools: Read, Edit, MultiEdit, Write, Grep, Glob, BashOutput, mcp__cargo__cargo_test, mcp__cargo__cargo_check, mcp__cargo__cargo_clippy, mcp__git__git_status, mcp__git__git_diff, mcp__git__git_log, mcp__git__git_show, mcp__qdrant__qdrant-store, mcp__qdrant__qdrant-find
 ---
 
 # Test Hardener Agent
@@ -13,6 +13,22 @@ receiving control from coordinator.
 
 **HANDOFF PROTOCOL**: Upon completion, MUST store test hardening patterns and
 type improvement insights in MCP memory before returning control to coordinator.
+
+## Bacon ID Requirement (CRITICAL)
+
+**MANDATORY**: The coordinator MUST provide you with a `bacon_id` (e.g., `bash_1`)
+when invoking you. This is the ID of the background bacon process that monitors
+tests continuously.
+
+**If bacon_id is not provided**: IMMEDIATELY respond with:
+
+```text
+ERROR: bacon_id not provided. I require the bacon process ID to monitor test results.
+Please provide bacon_id in format: "bacon_id: bash_X"
+```
+
+**Using bacon_id**: Throughout your work, use `BashOutput` tool with the provided
+bacon_id to monitor that tests remain passing while strengthening them.
 
 ## Process
 
