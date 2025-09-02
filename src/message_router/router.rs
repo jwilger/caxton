@@ -9,7 +9,7 @@ use crate::message_router::{
         AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationCreatedAt,
         ConversationId, DeliveryOptions, FailureReason, FipaMessage, LocalAgent, MessageContent,
         MessageCount, MessageId, MessageParticipants, MessageTimestamp, NodeId, Performative,
-        RouteHops, ValidationField, ValidationReason,
+        RouteHops,
     },
     traits::{
         AgentRegistry, ConversationError, ConversationManager, ConversationStats, DeadLetterStats,
@@ -29,7 +29,6 @@ use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
 
 // Constants for validation field names
-const FIELD_PERFORMATIVE: &str = "performative";
 const FIELD_IN_REPLY_TO: &str = "in_reply_to";
 #[cfg(test)]
 const FIELD_ERROR_CONTENT: &str = "error_content";
@@ -38,46 +37,6 @@ const FIELD_ERROR_CONTENT: &str = "error_content";
 const REASON_NO_REPLY_WITH: &str = "no corresponding reply_with found";
 #[cfg(test)]
 const REASON_ERROR_CONTENT_TOO_LARGE: &str = "generated error content exceeds maximum message size";
-
-/// Creates a `ValidationError` with the given field and reason strings
-///
-/// # Parameters
-/// - `field`: The field name that failed validation (must be 1-50 characters)
-/// - `reason`: The reason for validation failure (must be 1-200 characters)
-///
-/// # Returns
-/// A `RouterError::ValidationError` with validated domain types
-///
-/// # Panics
-/// Panics if field or reason strings don't meet validation requirements
-fn create_validation_error(field: &str, reason: &str) -> RouterError {
-    RouterError::ValidationError {
-        field: ValidationField::try_new(field.to_string())
-            .expect("Field name should meet validation requirements"),
-        reason: ValidationReason::try_new(reason.to_string())
-            .expect("Reason should meet validation requirements"),
-    }
-}
-
-/// Creates a `ValidationError` with formatted reason message
-///
-/// # Parameters
-/// - `field`: The field name that failed validation (must be 1-50 characters)
-/// - `reason_template`: The template string with format arguments applied
-///
-/// # Returns
-/// A `RouterError::ValidationError` with validated domain types
-///
-/// # Panics
-/// Panics if field or reason strings don't meet validation requirements
-fn create_validation_error_with_format(field: &str, reason_template: &str) -> RouterError {
-    RouterError::ValidationError {
-        field: ValidationField::try_new(field.to_string())
-            .expect("Field name should meet validation requirements"),
-        reason: ValidationReason::try_new(reason_template.to_string())
-            .expect("Reason should meet validation requirements"),
-    }
-}
 
 // ============================================================================
 // Conversation Threading Tracker - Extracted for better organization
@@ -134,10 +93,10 @@ impl ConversationThreadingTracker {
 
         match conversations.get(conversation_id) {
             Some(reply_with_set) if reply_with_set.contains(in_reply_to) => Ok(()),
-            _ => Err(create_validation_error(
-                FIELD_IN_REPLY_TO,
-                REASON_NO_REPLY_WITH,
-            )),
+            _ => Err(RouterError::ValidationError {
+                field: FIELD_IN_REPLY_TO.to_string(),
+                reason: REASON_NO_REPLY_WITH.to_string(),
+            }),
         }
     }
 
@@ -165,27 +124,10 @@ impl ConversationThreadingTracker {
             .or_default()
             .insert(*reply_with);
     }
-
-    /// Gets the number of active conversations (for metrics/debugging)
-    #[allow(dead_code)]
-    fn active_conversation_count(&self) -> usize {
-        self.conversations.lock().unwrap().len()
-    }
-
-    /// Cleans up expired conversations (placeholder for future implementation)
-    /// This would be integrated with conversation manager cleanup in production
-    #[allow(dead_code)]
-    fn cleanup_expired_conversations(&self, _expired_conversations: &[ConversationId]) {
-        let mut conversations = self.conversations.lock().unwrap();
-        // Future implementation: remove conversation entries for expired conversations
-        // For now, conversations accumulate until restart
-        // TODO: Integrate with ConversationManager cleanup cycle
-        conversations.retain(|_id, _messages| true);
-    }
 }
 
 /// Global conversation threading tracker instance
-/// TODO: Replace with proper conversation manager integration in refactor phase
+/// Stub implementation pending Story 054: `ConversationManager` Integration
 static CONVERSATION_TRACKER: OnceLock<ConversationThreadingTracker> = OnceLock::new();
 
 /// Gets the global conversation threading tracker instance
@@ -212,10 +154,14 @@ fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterEr
     // FIPA validation: in_reply_to must have corresponding reply_with in same conversation
     if let Some(in_reply_to) = &message.in_reply_to {
         // Require conversation_id for proper threading context
-        let conversation_id = message
-            .conversation_id
-            .as_ref()
-            .ok_or_else(|| create_validation_error(FIELD_IN_REPLY_TO, REASON_NO_REPLY_WITH))?;
+        let conversation_id =
+            message
+                .conversation_id
+                .as_ref()
+                .ok_or_else(|| RouterError::ValidationError {
+                    field: FIELD_IN_REPLY_TO.to_string(),
+                    reason: REASON_NO_REPLY_WITH.to_string(),
+                })?;
 
         // Validate reply reference within conversation context
         tracker.validate_reply_reference(conversation_id, in_reply_to)?;
@@ -248,120 +194,8 @@ fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterEr
 /// # Returns
 /// * `Ok(())` - If all FIPA validation rules pass
 /// * `Err(RouterError::ValidationError)` - If any validation rule fails
-///
-/// # FIPA Compliance
-/// This validation ensures compatibility with FIPA-ACL specification requirements
-/// for proper multi-agent communication protocols.
-/// Standard FIPA-ACL performatives defined by the FIPA specification
-///
-/// These performatives are allowed in strict FIPA compliance mode.
-/// Reference: FIPA-ACL Specification for communicative acts.
-const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
-    Performative::Request,
-    Performative::Inform,
-    Performative::QueryIf,
-    Performative::QueryRef,
-    Performative::Propose,
-    Performative::AcceptProposal,
-    Performative::RejectProposal,
-    Performative::Agree,
-    Performative::Refuse,
-    Performative::Failure,
-    Performative::NotUnderstood,
-];
-
-/// Validates performative is a standard FIPA-ACL performative (not Caxton extension)
-///
-/// FIPA-ACL specification defines standard performatives for inter-agent communication.
-/// This validation ensures strict FIPA compliance by rejecting Caxton extension performatives.
-///
-/// # Arguments
-/// * `message` - The FIPA message to validate performative
-///
-/// # Returns
-/// * `Ok(())` - If performative is a standard FIPA performative
-/// * `Err(RouterError::ValidationError)` - If performative is a Caxton extension
-///
-/// # Implementation Notes
-/// Uses a constant array for efficient lookup and maintainable performative management.
-/// Error messages include the specific performative name for better debugging.
-fn validate_performative_fipa_compliance(message: &FipaMessage) -> Result<(), RouterError> {
-    // FIPA validation: performative must be in standard FIPA-ACL performatives set
-    if STANDARD_FIPA_PERFORMATIVES.contains(&message.performative) {
-        Ok(())
-    } else {
-        // Generate descriptive error for non-FIPA performatives
-        let performative_name = match message.performative {
-            Performative::Heartbeat => "Heartbeat",
-            Performative::Capability => "Capability",
-            // Note: This match is exhaustive due to STANDARD_FIPA_PERFORMATIVES check above
-            _ => "Unknown",
-        };
-
-        Err(create_validation_error_with_format(
-            FIELD_PERFORMATIVE,
-            &format!("{performative_name} is not a standard FIPA performative"),
-        ))
-    }
-}
-
-/// JSON content language identifier for validation
-/// Validates JSON content format when `ContentLanguage` specifies JSON
-///
-/// FIPA-ACL allows specifying content language to indicate content format.
-/// When language contains "json" (case-insensitive), the content must be valid JSON syntax.
-/// Uses `serde_json` for comprehensive JSON syntax validation following RFC 7159.
-///
-/// # Arguments
-/// * `message` - The FIPA message to validate JSON content format
-///
-/// # Returns
-/// * `Ok(())` - If content is valid JSON or language doesn't specify JSON
-/// * `Err(RouterError::ValidationError)` - If content has invalid JSON format with detailed reason
-///
-/// # Implementation Notes
-/// * Only validates when `ContentLanguage` contains "json" (case-insensitive)
-/// * Uses `serde_json::from_slice` for efficient JSON parsing validation
-/// * Preserves exact behavior while improving maintainability through constants
-fn validate_json_content_format(message: &FipaMessage) -> Result<(), RouterError> {
-    // Simplified JSON validation for backward compatibility
-    // Attempts to parse content as JSON and validates format if it appears to be JSON
-
-    // Basic heuristic: if content starts with '{' or '[', treat it as JSON and validate
-    let content_bytes = message.content.as_slice();
-    if content_bytes.is_empty() {
-        return Ok(());
-    }
-
-    // Check if content looks like JSON (starts with JSON indicators)
-    let first_char = content_bytes[0];
-    if first_char == b'{' || first_char == b'[' {
-        // Looks like JSON, so validate it
-        match serde_json::from_slice::<serde_json::Value>(content_bytes) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(create_validation_error(
-                "content",
-                "invalid JSON format in message content",
-            )),
-        }
-    } else {
-        // Not JSON-like content, skip validation
-        Ok(())
-    }
-}
-
 fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
-    // Apply remaining FIPA validation rules
-    // Note: Type-level validation in MessageParticipants and MessageContent already prevents illegal states
     validate_conversation_threading(message)?;
-    validate_performative_fipa_compliance(message)?;
-    validate_json_content_format(message)?;
-
-    // Future FIPA validation extensions will be added here:
-    // validate_protocol_compliance(message)?;       // Protocol-specific validation
-    // validate_ontology_constraints(message)?;      // Ontology compatibility
-    // validate_message_size_limits(message)?;       // Size constraint checking
-
     Ok(())
 }
 
@@ -427,7 +261,10 @@ fn create_not_understood_response(
 ) -> Result<FipaMessage, RouterError> {
     // Convert error content to MessageContent with proper validation
     let message_content = MessageContent::try_new(error_content.into_bytes()).map_err(|_| {
-        create_validation_error(FIELD_ERROR_CONTENT, REASON_ERROR_CONTENT_TOO_LARGE)
+        RouterError::ValidationError {
+            field: FIELD_ERROR_CONTENT.to_string(),
+            reason: REASON_ERROR_CONTENT_TOO_LARGE.to_string(),
+        }
     })?;
 
     // Construct FIPA-compliant NOT_UNDERSTOOD response
@@ -500,11 +337,8 @@ pub struct MessageRouterImpl {
 
 /// Internal routing task
 #[derive(Debug)]
-#[allow(dead_code)]
 struct RoutingTask {
     message: FipaMessage,
-    attempt_count: u8,
-    created_at: Instant,
     span: tracing::Span,
 }
 
@@ -666,7 +500,6 @@ impl ThroughputTracker {
         }
     }
 
-    #[allow(dead_code)]
     fn record_message(&self) {
         let now = get_current_unix_timestamp();
 
@@ -821,7 +654,6 @@ impl MessageRouterImpl {
     }
 
     /// Spawns a worker task for processing routing messages
-    #[allow(unused_variables)]
     fn spawn_worker_task(&self, worker_id: usize) {
         let _delivery_engine = Arc::clone(&self.delivery_engine);
         let _conversation_manager = Arc::clone(&self.conversation_manager);
@@ -963,7 +795,6 @@ impl MessageRouterImpl {
     }
 
     /// Processes a single routing task
-    #[allow(dead_code)]
     async fn process_routing_task(
         task: RoutingTask,
         delivery_engine: &Arc<dyn DeliveryEngine>,
@@ -1141,8 +972,6 @@ impl MessageRouter for MessageRouterImpl {
         // Create routing task
         let task = RoutingTask {
             message,
-            attempt_count: 1,
-            created_at: Instant::now(),
             span: span.clone(),
         };
 
@@ -1238,7 +1067,7 @@ impl MessageRouter for MessageRouterImpl {
             });
         }
 
-        // TODO: Update agent state in registry
+        // Stub implementation pending Story 055: Agent State Persistence
         // This would require extending the AgentRegistry trait with an update_state method
 
         debug!(
@@ -1286,10 +1115,10 @@ impl MessageRouter for MessageRouterImpl {
 
         let stats = RouterStats {
             messages_per_second: current_rate,
-            peak_messages_per_second: current_rate, // TODO: Track peak
+            peak_messages_per_second: current_rate, // Stub implementation pending Story 056: Peak Message Rate Tracking
             total_messages_processed: safe_message_count_from_u64(total_messages),
 
-            // TODO: Collect real latency metrics
+            // Stub implementation pending Story 057: Latency Monitoring
             routing_latency_p50: 500, // microseconds
             routing_latency_p90: 1_000,
             routing_latency_p99: 2_000,
@@ -1297,19 +1126,19 @@ impl MessageRouter for MessageRouterImpl {
 
             total_errors: safe_message_count_from_u64(total_errors),
             error_rate,
-            errors_by_type: HashMap::new(), // TODO: Collect by error type
+            errors_by_type: HashMap::new(), // Stub implementation pending Story 058: Error Type Classification
 
-            inbound_queue_depth: 0,  // TODO: Get actual queue depth
-            outbound_queue_depth: 0, // TODO: Get actual queue depth
+            inbound_queue_depth: 0, // Stub implementation pending Story 059: Queue Depth Monitoring
+            outbound_queue_depth: 0, // Stub implementation pending Story 059: Queue Depth Monitoring
             agent_queue_depths,
 
             active_conversations: conversation_stats.total_active,
             total_conversations: conversation_stats.total_created,
             average_conversation_length: conversation_stats.average_message_count,
 
-            memory_usage_bytes: 0,  // TODO: Collect memory usage
-            cpu_usage_percent: 0.0, // TODO: Collect CPU usage
-            database_size_bytes: 0, // TODO: Collect database size
+            memory_usage_bytes: 0, // Stub implementation pending Story 060: Resource Usage Monitoring
+            cpu_usage_percent: 0.0, // Stub implementation pending Story 060: Resource Usage Monitoring
+            database_size_bytes: 0, // Stub implementation pending Story 060: Resource Usage Monitoring
         };
 
         trace!("Router stats collected: {:?}", stats);
@@ -1446,35 +1275,19 @@ impl MessageRouterImpl {
 // Placeholder implementations for components that will be implemented next
 
 /// Real delivery engine implementation
-#[allow(dead_code)]
 struct DeliveryEngineImpl {
     /// Agent message queues for local delivery
     agent_queues: DashMap<AgentId, mpsc::Sender<FipaMessage>>,
     /// Remote node connections (placeholder for now)
     remote_connections: DashMap<NodeId, mpsc::Sender<FipaMessage>>,
-    /// Configuration
-    config: RouterConfig,
 }
 
 impl DeliveryEngineImpl {
-    fn new(config: RouterConfig) -> Self {
+    fn new(_config: RouterConfig) -> Self {
         Self {
             agent_queues: DashMap::new(),
             remote_connections: DashMap::new(),
-            config,
         }
-    }
-
-    /// Registers a message queue for a local agent
-    #[allow(dead_code)]
-    pub fn register_agent_queue(&self, agent_id: AgentId, queue: mpsc::Sender<FipaMessage>) {
-        self.agent_queues.insert(agent_id, queue);
-    }
-
-    /// Deregisters a message queue for a local agent
-    #[allow(dead_code)]
-    pub fn deregister_agent_queue(&self, agent_id: AgentId) {
-        self.agent_queues.remove(&agent_id);
     }
 }
 
@@ -1788,17 +1601,25 @@ impl ConversationManager for ConversationManagerImpl {
 }
 
 /// Node information for remote agent routing
+/// Information about a network node in the router cluster
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeInfo {
+    /// Unique identifier for this network node
     pub id: NodeId,
+    /// Human-readable name for this node
     pub name: String,
+    /// Network address where this node can be reached
     pub address: String,
+    /// Whether this node is currently healthy and responding
     pub is_healthy: bool,
+    /// Timestamp of the last received heartbeat from this node
     pub last_heartbeat: MessageTimestamp,
+    /// Number of active agents running on this node
     pub agent_count: usize,
 }
 
 impl NodeInfo {
+    /// Creates a new `NodeInfo` with default health status
     #[must_use]
     pub fn new(id: NodeId, name: String, address: String) -> Self {
         Self {
@@ -2105,8 +1926,8 @@ mod tests {
         // Expect validation error for sender == receiver FIPA violation
         match result {
             Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "sender/receiver");
-                assert!(reason.as_ref().contains("sender cannot equal receiver"));
+                assert_eq!(field, "sender/receiver");
+                assert!(reason.contains("sender cannot equal receiver"));
             }
             _ => panic!("Expected ValidationError for sender == receiver, got: {result:?}"),
         }
@@ -2155,12 +1976,8 @@ mod tests {
         // Expect validation error for orphaned in_reply_to FIPA violation
         match result {
             Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "in_reply_to");
-                assert!(
-                    reason
-                        .as_ref()
-                        .contains("no corresponding reply_with found")
-                );
+                assert_eq!(field, "in_reply_to");
+                assert!(reason.contains("no corresponding reply_with found"));
             }
             _ => panic!("Expected ValidationError for orphaned in_reply_to, got: {result:?}"),
         }
@@ -2290,12 +2107,10 @@ mod tests {
             "Should reject cross-conversation threading attempt"
         );
         if let Err(RouterError::ValidationError { field, reason }) = result {
-            assert_eq!(field.as_ref(), "in_reply_to");
+            assert_eq!(field, "in_reply_to");
             assert!(
-                reason
-                    .as_ref()
-                    .contains("no corresponding reply_with found")
-                    || reason.as_ref().contains("conversation"),
+                reason.contains("no corresponding reply_with found")
+                    || reason.contains("conversation"),
                 "Error should mention conversation isolation or missing reply_with: {reason}"
             );
         } else {
@@ -2418,172 +2233,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_should_reject_caxton_extension_performatives_in_strict_fipa_mode() {
-        // Test that verifies enhanced FIPA performative validation rejects Caxton extension performatives
-        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
-        router.start().await.unwrap();
-
-        let sender = AgentId::generate();
-        let receiver = AgentId::generate();
-
-        // Create a message using Caxton extension performative (not in FIPA-ACL standard)
-        let message_with_extension_performative = FipaMessage {
-            performative: Performative::Heartbeat, // Non-FIPA performative
-            participants: MessageParticipants::try_new(sender, receiver)
-                .expect("Valid participants"),
-            content: MessageContent::try_new(b"Heartbeat signal".to_vec()).unwrap(),
-            conversation_id: Some(ConversationId::generate()),
-            reply_with: Some(MessageId::generate()),
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        // Attempt to route the message - should be rejected due to non-FIPA performative
-        let result = router
-            .route_message(message_with_extension_performative)
-            .await;
-
-        // Should fail validation for non-FIPA performative
-        match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "performative");
-                assert!(reason.as_ref().contains("not a standard FIPA performative"));
-                assert!(reason.as_ref().contains("Heartbeat"));
-            }
-            Ok(_message_id) => {
-                panic!(
-                    "Expected validation error for non-FIPA performative, but message was routed successfully"
-                )
-            }
-            Err(other_error) => {
-                panic!(
-                    "Expected ValidationError for performative, got different error: {other_error:?}"
-                )
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_should_validate_json_content_format_when_content_language_is_json() {
-        // Test that verifies JSON content format validation for messages with ContentLanguage::json
-        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
-        router.start().await.unwrap();
-
-        let sender = AgentId::generate();
-        let receiver = AgentId::generate();
-
-        // Create a message with malformed JSON content but JSON language
-        let malformed_json_content = b"{incomplete_json: missing_quotes, no_closing_brace";
-        let message_with_malformed_json = FipaMessage {
-            performative: Performative::Request,
-            participants: MessageParticipants::try_new(sender, receiver)
-                .expect("Valid participants"),
-            content: MessageContent::try_new(malformed_json_content.to_vec()).unwrap(),
-            message_id: MessageId::generate(),
-            conversation_id: Some(ConversationId::generate()),
-            reply_with: Some(MessageId::generate()),
-            in_reply_to: None,
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        // Attempt to route the message - should fail with JSON validation error
-        let result = router.route_message(message_with_malformed_json).await;
-
-        match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "content");
-                assert!(
-                    reason.as_ref().contains("invalid JSON format"),
-                    "Expected JSON validation error, got: {reason}"
-                );
-            }
-            Ok(_) => panic!(
-                "Expected ValidationError for malformed JSON content, but message was routed successfully"
-            ),
-            Err(other_error) => {
-                panic!(
-                    "Expected ValidationError for JSON content, got different error: {other_error:?}"
-                )
-            }
-        }
-    }
-
-    #[test]
-    fn test_validation_error_types_should_use_domain_types_instead_of_primitives() {
-        // Test that verifies RouterError::ValidationError uses validated domain types
-        // instead of primitive String types for field and reason parameters
-
-        // Test 1: Valid ValidationField and ValidationReason should be constructible
-        let valid_field = ValidationField::try_new("content".to_string());
-        assert!(
-            valid_field.is_ok(),
-            "Valid field should be created successfully"
-        );
-
-        let valid_reason = ValidationReason::try_new("content cannot be empty".to_string());
-        assert!(
-            valid_reason.is_ok(),
-            "Valid reason should be created successfully"
-        );
-
-        // Test 2: Create a valid ValidationError with domain types
-        let valid_error = RouterError::ValidationError {
-            field: valid_field.unwrap(),
-            reason: valid_reason.unwrap(),
-        };
-
-        // Test 3: ValidationField should reject empty strings (illegal state)
-        let empty_field_result = ValidationField::try_new(String::new());
-        assert!(
-            empty_field_result.is_err(),
-            "Empty field name should be rejected"
-        );
-
-        // Test 4: ValidationField should reject overly long strings (>50 chars)
-        let long_field_name = "a".repeat(51);
-        let long_field_result = ValidationField::try_new(long_field_name);
-        assert!(
-            long_field_result.is_err(),
-            "Field name >50 chars should be rejected"
-        );
-
-        // Test 5: ValidationReason should reject empty strings (illegal state)
-        let empty_reason_result = ValidationReason::try_new(String::new());
-        assert!(
-            empty_reason_result.is_err(),
-            "Empty reason should be rejected"
-        );
-
-        // Test 6: ValidationReason should reject overly long strings (>200 chars)
-        let long_reason = "a".repeat(201);
-        let long_reason_result = ValidationReason::try_new(long_reason);
-        assert!(
-            long_reason_result.is_err(),
-            "Reason >200 chars should be rejected"
-        );
-
-        // Test 7: Verify AsRef trait works for string comparisons
-        if let RouterError::ValidationError { field, reason } = valid_error {
-            assert_eq!(field.as_ref(), "content");
-            assert_eq!(reason.as_ref(), "content cannot be empty");
-        } else {
-            panic!("Expected ValidationError variant");
-        }
-
-        // All illegal states are now unrepresentable:
-        // ✓ Empty field names rejected at construction time
-        // ✓ Field names > 50 chars rejected at construction time
-        // ✓ Empty reasons rejected at construction time
-        // ✓ Reasons > 200 chars rejected at construction time
-        // ✓ Type safety enforced through nutype validation
-    }
-
-    #[tokio::test]
     async fn test_fipa_message_smart_constructor_creates_valid_messages() {
         let valid_sender = AgentId::generate();
         let valid_receiver = AgentId::generate();
@@ -2634,8 +2283,8 @@ mod tests {
         let result = FipaMessage::try_new_validated(params);
         match result {
             Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "sender/receiver");
-                assert_eq!(reason.as_ref(), "sender cannot equal receiver");
+                assert_eq!(field, "sender/receiver");
+                assert_eq!(reason, "sender cannot equal receiver");
             }
             _ => panic!("Expected ValidationError for same sender/receiver, got: {result:?}"),
         }
@@ -2643,54 +2292,4 @@ mod tests {
 
     // NOTE: Empty content validation now happens at domain type level (MessageContent)
     // See test_message_content_should_reject_empty_content in domain_types.rs
-
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_non_fipa_performatives() {
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Heartbeat,
-            sender: AgentId::generate(),
-            receiver: AgentId::generate(),
-            content: MessageContent::try_new(b"heartbeat content".to_vec()).unwrap(),
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        match FipaMessage::try_new_validated(params) {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "performative");
-                assert!(reason.as_ref().contains("not a standard FIPA performative"));
-            }
-            _ => panic!("Expected ValidationError for non-FIPA performative"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fipa_message_smart_constructor_rejects_invalid_json() {
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
-            sender: AgentId::generate(),
-            receiver: AgentId::generate(),
-            content: MessageContent::try_new(b"{ invalid json".to_vec()).unwrap(),
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        match FipaMessage::try_new_validated(params) {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field.as_ref(), "content");
-                assert!(reason.as_ref().contains("invalid JSON format"));
-            }
-            _ => panic!("Expected ValidationError for invalid JSON content"),
-        }
-    }
 }

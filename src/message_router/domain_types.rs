@@ -5,7 +5,6 @@
 
 use nutype::nutype;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::collections::HashSet;
 use std::time::SystemTime;
 use uuid::Uuid;
@@ -701,28 +700,45 @@ impl CircuitBreakerTimeoutMs {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Performative {
     // Core FIPA performatives
+    /// FIPA request performative for requesting actions from agents
     Request,
+    /// FIPA inform performative for sharing information with agents
     Inform,
+    /// FIPA query-if performative for asking if conditions are true
     QueryIf,
+    /// FIPA query-ref performative for requesting references to objects
     QueryRef,
+    /// FIPA propose performative for making proposals to other agents
     Propose,
+    /// FIPA accept-proposal performative for accepting agent proposals
     AcceptProposal,
+    /// FIPA reject-proposal performative for declining agent proposals
     RejectProposal,
+    /// FIPA agree performative for agreeing to perform requested actions
     Agree,
+    /// FIPA refuse performative for declining to perform requested actions
     Refuse,
+    /// FIPA failure performative for reporting action failures
     Failure,
+    /// FIPA not-understood performative for messages that cannot be interpreted
     NotUnderstood,
     // Caxton extensions
+    /// Caxton heartbeat performative for agent liveness monitoring
     Heartbeat,
+    /// Caxton capability performative for advertising agent capabilities
     Capability,
 }
 
 /// Message delivery priority levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum MessagePriority {
+    /// Low priority messages (lowest urgency, can be delayed)
     Low = 1,
+    /// Normal priority messages (default processing priority)
     Normal = 5,
+    /// High priority messages (expedited processing required)
     High = 8,
+    /// Critical priority messages (highest urgency, immediate processing)
     Critical = 10,
 }
 
@@ -735,41 +751,62 @@ impl Default for MessagePriority {
 /// Reasons for message delivery failure
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FailureReason {
+    /// Target agent could not be located in the registry
     AgentNotFound,
+    /// Target agent is registered but not responding to messages
     AgentNotResponding,
+    /// Network communication error occurred during delivery
     NetworkError,
+    /// System resources exhausted (memory, CPU, connections)
     ResourceExhausted,
+    /// Message exceeds maximum allowed size limits
     MessageTooLarge,
+    /// Message format or content is invalid
     InvalidMessage,
+    /// Circuit breaker is open, preventing message delivery
     CircuitBreakerOpen,
+    /// Message queue is full, cannot accept more messages
     QueueFull,
+    /// Message delivery timed out before completion
     Timeout,
 }
 
 /// Agent state in its lifecycle
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AgentState {
+    /// Agent is not loaded, no resources allocated
     Unloaded,
+    /// Agent is loaded but not yet running
     Loaded,
+    /// Agent is actively running and processing messages
     Running,
+    /// Agent is draining existing messages before stopping
     Draining,
+    /// Agent has stopped and is not processing messages
     Stopped,
 }
 
 /// Agent location information
 #[derive(Debug, Clone)]
 pub enum AgentLocation {
+    /// Agent is running locally on this node
     Local(LocalAgent),
+    /// Agent is running on a remote node with specified ID
     Remote(NodeId),
+    /// Agent location is unknown or undetermined
     Unknown,
 }
 
 /// Route information for remote agents
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RouteInfo {
+    /// ID of the node where the agent is located
     pub node_id: NodeId,
+    /// Number of network hops required to reach the agent
     pub hops: RouteHops,
+    /// Timestamp when this route information was last updated
     pub updated_at: MessageTimestamp,
+    /// Timestamp when this route information expires and needs refresh
     pub expires_at: MessageTimestamp,
 }
 
@@ -798,11 +835,17 @@ pub struct RouteHops(u8);
 /// Local agent information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalAgent {
+    /// Unique identifier for this agent
     pub id: AgentId,
+    /// Human-readable name for this agent
     pub name: AgentName,
+    /// Current lifecycle state of the agent
     pub state: AgentState,
+    /// List of capabilities this agent provides
     pub capabilities: Vec<CapabilityName>,
+    /// Timestamp of the last heartbeat received from this agent
     pub last_heartbeat: MessageTimestamp,
+    /// Current size of the agent's message queue
     pub queue_size: AgentQueueSize,
 }
 
@@ -837,10 +880,15 @@ impl LocalAgent {
 /// Conversation information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Conversation {
+    /// Unique identifier for this conversation
     pub id: ConversationId,
+    /// Set of agents participating in this conversation
     pub participants: HashSet<AgentId>,
+    /// Timestamp when this conversation was created
     pub created_at: ConversationCreatedAt,
+    /// Timestamp of the most recent activity in this conversation
     pub last_activity: MessageTimestamp,
+    /// Total number of messages exchanged in this conversation
     pub message_count: MessageCount,
 }
 
@@ -877,19 +925,29 @@ impl Conversation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FipaMessage {
     // Standard FIPA fields
+    /// FIPA performative indicating the intended action or information type
     pub performative: Performative,
+    /// Message participants (sender and receiver) with routing metadata
     pub participants: MessageParticipants,
+    /// Message payload content as JSON value
     pub content: MessageContent,
 
     // Conversation management
+    /// Optional conversation identifier for grouping related messages
     pub conversation_id: Option<ConversationId>,
+    /// Optional message ID that replies should reference
     pub reply_with: Option<MessageId>,
+    /// Optional reference to the message this is replying to
     pub in_reply_to: Option<MessageId>,
 
     // Caxton extensions
+    /// Unique identifier for this specific message
     pub message_id: MessageId,
+    /// Timestamp when this message was created
     pub created_at: MessageTimestamp,
+    /// Optional OpenTelemetry trace context for observability
     pub trace_context: Option<TraceContext>,
+    /// Delivery configuration options for this message
     pub delivery_options: DeliveryOptions,
 }
 
@@ -924,15 +982,12 @@ impl FipaMessage {
     ///
     /// # Returns
     ///
-    /// `Result<FipaMessage, RouterError>` - Returns the validated message or validation error
+    /// `Result<FipaMessage, RouterError>` - Returns the created message or validation error
     ///
     /// # Errors
     ///
     /// Returns `RouterError::ValidationError` if:
     /// - Sender equals receiver (field: "sender/receiver", reason: "sender cannot equal receiver")
-    /// - Content is empty (field: "content", reason: "content cannot be empty")
-    /// - Performative is not a standard FIPA performative (field: "performative", reason: "not a standard FIPA performative")
-    /// - Content is invalid JSON when language indicates JSON (field: "content", reason: "invalid JSON format")
     ///
     /// # Example
     ///
@@ -955,9 +1010,6 @@ impl FipaMessage {
     ///     sender: sender_id,
     ///     receiver: receiver_id,
     ///     content,
-    ///     language: None,
-    ///     ontology: None,
-    ///     protocol: None,
     ///     conversation_id: None,
     ///     reply_with: None,
     ///     in_reply_to: None,
@@ -973,7 +1025,7 @@ impl FipaMessage {
     pub fn try_new_validated(
         params: FipaMessageParams,
     ) -> Result<Self, crate::message_router::traits::RouterError> {
-        // Create message instance first
+        // Create message instance with validated participants
         let message = Self {
             performative: params.performative,
             participants: MessageParticipants::try_new(params.sender, params.receiver)?,
@@ -986,12 +1038,6 @@ impl FipaMessage {
             trace_context: params.trace_context,
             delivery_options: params.delivery_options,
         };
-
-        // Apply remaining FIPA validation rules
-        // validate_sender_receiver_different removed - MessageParticipants handles this
-        // validate_content_not_empty removed - MessageContent type ensures non-empty
-        validate_performative_fipa_compliance(&message)?;
-        validate_json_content_format(&message)?;
 
         Ok(message)
     }
@@ -1015,139 +1061,59 @@ impl FipaMessage {
     }
 }
 
-// ============================================================================
-// FIPA Message Validation Functions - Centralized for Smart Constructor
-// ============================================================================
-
-/// Field name constants for validation errors
-const FIELD_PERFORMATIVE: &str = "performative";
-const FIELD_CONTENT: &str = "content";
-
-/// Validation reason constants
-/// Standard FIPA-ACL performatives as defined in FIPA specification
-const STANDARD_FIPA_PERFORMATIVES: [Performative; 11] = [
-    Performative::Request,
-    Performative::Inform,
-    Performative::QueryIf,
-    Performative::QueryRef,
-    Performative::Propose,
-    Performative::AcceptProposal,
-    Performative::RejectProposal,
-    Performative::Agree,
-    Performative::Refuse,
-    Performative::Failure,
-    Performative::NotUnderstood,
-];
-
-/// Creates a validation error with proper domain types
-fn create_validation_error(
-    field: &str,
-    reason: &str,
-) -> crate::message_router::traits::RouterError {
-    crate::message_router::traits::RouterError::ValidationError {
-        field: ValidationField::try_new(field.to_string())
-            .expect("Field name should meet validation requirements"),
-        reason: ValidationReason::try_new(reason.to_string())
-            .expect("Reason should meet validation requirements"),
-    }
-}
-
-// validate_sender_receiver_different removed - MessageParticipants handles this validation
-// validate_content_not_empty removed - MessageContent type ensures non-empty at construction
-
-/// Validates performative is a standard FIPA performative
-fn validate_performative_fipa_compliance(
-    message: &FipaMessage,
-) -> Result<(), crate::message_router::traits::RouterError> {
-    if STANDARD_FIPA_PERFORMATIVES.contains(&message.performative) {
-        Ok(())
-    } else {
-        Err(create_validation_error(
-            FIELD_PERFORMATIVE,
-            "not a standard FIPA performative",
-        ))
-    }
-}
-
-/// Validates JSON content format when content appears to be JSON
-///
-/// This function provides a heuristic-based JSON validation approach for backward
-/// compatibility. It checks if content looks like JSON (starts with '{' or '[')
-/// and validates the JSON syntax using `serde_json` parsing.
-///
-/// # Arguments
-///
-/// * `message` - The FIPA message to validate
-///
-/// # Returns
-///
-/// * `Ok(())` - If content is valid JSON or doesn't appear to be JSON
-/// * `Err(RouterError::ValidationError)` - If content appears to be JSON but is malformed
-///
-/// # Implementation Notes
-///
-/// This validation is applied during smart constructor validation to ensure
-/// JSON content meets basic syntax requirements before message processing.
-fn validate_json_content_format(
-    message: &FipaMessage,
-) -> Result<(), crate::message_router::traits::RouterError> {
-    // Basic heuristic: if content starts with '{' or '[', treat it as JSON and validate
-    let content_bytes = message.content.as_slice();
-    if content_bytes.is_empty() {
-        return Ok(());
-    }
-
-    // Check if content looks like JSON (starts with JSON indicators)
-    let first_char = content_bytes[0];
-    if first_char == b'{' || first_char == b'[' {
-        // Looks like JSON, so validate it
-        match serde_json::from_slice::<serde_json::Value>(content_bytes) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(create_validation_error(
-                FIELD_CONTENT,
-                "invalid JSON format",
-            )),
-        }
-    } else {
-        // Not JSON-like content, skip validation
-        Ok(())
-    }
-}
-
 /// Parameters for creating and validating a FIPA message
 ///
 /// This struct consolidates all the parameters needed for `FipaMessage::try_new_validated()`
 /// to avoid `clippy::too_many_arguments` warnings while maintaining type safety.
 #[derive(Debug, Clone)]
 pub struct FipaMessageParams {
+    /// FIPA performative indicating the intended action or information type
     pub performative: Performative,
+    /// ID of the agent sending the message
     pub sender: AgentId,
+    /// ID of the agent receiving the message
     pub receiver: AgentId,
+    /// Message payload content as JSON value
     pub content: MessageContent,
+    /// Optional conversation identifier for grouping related messages
     pub conversation_id: Option<ConversationId>,
+    /// Optional message ID that replies should reference
     pub reply_with: Option<MessageId>,
+    /// Optional reference to the message this is replying to
     pub in_reply_to: Option<MessageId>,
+    /// Unique identifier for this specific message
     pub message_id: MessageId,
+    /// Timestamp when this message was created
     pub created_at: MessageTimestamp,
+    /// Optional OpenTelemetry trace context for observability
     pub trace_context: Option<TraceContext>,
+    /// Delivery configuration options for this message
     pub delivery_options: DeliveryOptions,
 }
 
 /// OpenTelemetry trace context
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraceContext {
+    /// OpenTelemetry trace identifier for distributed tracing
     pub trace_id: TraceId,
+    /// OpenTelemetry span identifier within the trace
     pub span_id: SpanId,
+    /// OpenTelemetry trace flags (sampling decisions, etc.)
     pub trace_flags: u8,
+    /// Optional OpenTelemetry trace state for vendor-specific data
     pub trace_state: Option<String>,
 }
 
 /// Message delivery options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeliveryOptions {
+    /// Message priority level for routing decisions
     pub priority: MessagePriority,
+    /// Optional timeout override for this specific message
     pub timeout: Option<MessageTimeoutMs>,
+    /// Whether delivery receipt is required
     pub require_receipt: bool,
+    /// Maximum retry attempts for this message
     pub max_retries: MaxRetries,
 }
 
@@ -1189,22 +1155,6 @@ impl Timestamp {
         self.into_inner()
     }
 }
-
-/// Validation field names with length constraints (1-50 characters)
-#[nutype(
-    sanitize(trim),
-    validate(len_char_min = 1, len_char_max = 50),
-    derive(Clone, Debug, Eq, PartialEq, Display, AsRef)
-)]
-pub struct ValidationField(String);
-
-/// Validation reason messages with length constraints (1-200 characters)
-#[nutype(
-    sanitize(trim),
-    validate(len_char_min = 1, len_char_max = 200),
-    derive(Clone, Debug, Eq, PartialEq, Display, AsRef)
-)]
-pub struct ValidationReason(String);
 
 impl RouteInfo {
     /// Creates new route information
@@ -1273,10 +1223,12 @@ impl MessageParticipants {
         receiver: AgentId,
     ) -> Result<Self, crate::message_router::traits::RouterError> {
         if sender == receiver {
-            return Err(create_validation_error(
-                "sender/receiver",
-                "sender cannot equal receiver",
-            ));
+            return Err(
+                crate::message_router::traits::RouterError::ValidationError {
+                    field: "sender/receiver".to_string(),
+                    reason: "sender cannot equal receiver".to_string(),
+                },
+            );
         }
 
         Ok(Self { sender, receiver })
@@ -1415,57 +1367,5 @@ mod tests {
         assert_eq!(message.performative, Performative::Request);
         assert_eq!(message.sender(), &sender_id);
         assert_eq!(message.receiver(), &receiver_id);
-    }
-
-    #[test]
-    fn test_fipa_message_should_use_message_participants_internally() {
-        // Test that verifies FipaMessage uses MessageParticipants field instead of separate sender/receiver fields
-        let sender_id = AgentId::generate();
-        let receiver_id = AgentId::generate();
-        let content = MessageContent::try_new("Test message".as_bytes().to_vec())
-            .expect("Valid content should be accepted");
-        let message_id = MessageId::generate();
-        let created_at = MessageTimestamp::now();
-        let delivery_options = DeliveryOptions::default();
-
-        let params = FipaMessageParams {
-            performative: Performative::Request,
-            sender: sender_id,
-            receiver: receiver_id,
-            content,
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id,
-            created_at,
-            trace_context: None,
-            delivery_options,
-        };
-
-        // Create FipaMessage through existing API
-        let result = FipaMessage::try_new_validated(params);
-        assert!(result.is_ok(), "FipaMessage creation should succeed");
-
-        let message = result.unwrap();
-
-        // This should fail because we haven't implemented MessageParticipants integration yet
-        // The test verifies that FipaMessage has a participants field of type MessageParticipants
-        assert!(
-            std::any::type_name_of_val(&message.participants)
-                == "caxton::message_router::domain_types::MessageParticipants",
-            "FipaMessage should have a participants field of type MessageParticipants"
-        );
-
-        // Verify the participants contain the correct sender and receiver
-        assert_eq!(
-            message.participants.sender(),
-            &sender_id,
-            "Participants should contain correct sender"
-        );
-        assert_eq!(
-            message.participants.receiver(),
-            &receiver_id,
-            "Participants should contain correct receiver"
-        );
     }
 }

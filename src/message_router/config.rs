@@ -17,16 +17,26 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ConfigError {
     #[error("Invalid configuration: {field} - {reason}")]
-    ValidationError { field: String, reason: String },
+    /// Configuration validation failed for specific field
+    ValidationError {
+        /// Name of the configuration field that failed validation
+        field: String,
+        /// Reason for validation failure
+        reason: String,
+    },
 
     #[error("I/O error: {source}")]
+    /// I/O error during configuration operations
     IoError {
+        /// Underlying I/O error source
         #[from]
         source: std::io::Error,
     },
 
     #[error("Serialization error: {source}")]
+    /// JSON serialization/deserialization error
     SerializationError {
+        /// Underlying serde JSON error source
         #[from]
         source: serde_json::Error,
     },
@@ -254,33 +264,51 @@ impl Default for StorageConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RouterConfig {
     // Core routing settings
+    /// Maximum size of inbound message queue for each worker thread
     pub inbound_queue_size: ChannelCapacity,
+    /// Maximum size of outbound message queue for delivery engine
     pub outbound_queue_size: ChannelCapacity,
+    /// Default timeout for message delivery operations in milliseconds
     pub message_timeout_ms: MessageTimeoutMs,
+    /// Number of messages to process in a single batch for efficiency
     pub message_batch_size: MessageBatchSize,
+    /// Number of worker threads for concurrent message processing
     pub worker_thread_count: WorkerThreadCount,
 
     // Retry and failure handling
+    /// Maximum number of retry attempts for failed message deliveries
     pub max_retries: MaxRetries,
+    /// Initial delay between retry attempts in milliseconds
     pub retry_delay_ms: RetryDelayMs,
+    /// Exponential backoff multiplier for retry delay calculation
     pub retry_backoff_factor: RetryBackoffFactor,
+    /// Maximum size of dead letter queue for permanently failed messages
     pub dead_letter_queue_size: DeadLetterQueueSize,
 
     // Circuit breaker settings
+    /// Failure threshold before circuit breaker opens to protect system
     pub circuit_breaker_threshold: CircuitBreakerThreshold,
+    /// Time to wait before attempting to close circuit breaker in milliseconds
     pub circuit_breaker_timeout_ms: CircuitBreakerTimeoutMs,
 
     // Conversation management
+    /// Timeout for conversation inactivity before cleanup in milliseconds
     pub conversation_timeout_ms: ConversationTimeoutMs,
+    /// Maximum number of agents allowed in a single conversation
     pub max_conversation_participants: MaxConversationParticipants,
 
     // Health monitoring
+    /// Interval between health checks for agents and system components
     pub health_check_interval_ms: HealthCheckIntervalMs,
 
     // Grouped configuration settings
+    /// Observability settings for metrics, tracing, and logging
     pub observability: ObservabilityConfig,
+    /// Storage configuration for message persistence and state management
     pub storage: StorageConfig,
+    /// Performance tuning settings for optimization and resource limits
     pub performance: PerformanceConfig,
+    /// Security configuration for authentication and authorization
     pub security: SecurityConfig,
 }
 
