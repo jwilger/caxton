@@ -497,7 +497,7 @@ impl MessageTimeoutMs {
 }
 
 /// Maximum allowed size for message content (10MB)
-const MAX_MESSAGE_CONTENT_BYTES: usize = 10_485_760;
+pub const MAX_MESSAGE_CONTENT_BYTES: usize = 10_485_760;
 
 /// Message content as validated bytes
 ///
