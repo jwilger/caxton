@@ -47,7 +47,6 @@ struct ConversationThreadingTracker {
 }
 
 impl ConversationThreadingTracker {
-    /// Creates a new conversation threading tracker
     fn new() -> Self {
         Self {
             conversations: Mutex::new(HashMap::new()),
@@ -119,7 +118,6 @@ impl ConversationThreadingTracker {
 /// Stub implementation pending Story 054: `ConversationManager` Integration
 static CONVERSATION_TRACKER: OnceLock<ConversationThreadingTracker> = OnceLock::new();
 
-/// Gets the global conversation threading tracker instance
 fn get_conversation_tracker() -> &'static ConversationThreadingTracker {
     CONVERSATION_TRACKER.get_or_init(ConversationThreadingTracker::new)
 }
@@ -493,13 +491,12 @@ impl ThroughputTracker {
 }
 
 impl MessageRouterImpl {
-    /// Creates a new message router with the given configuration
-    ///
-    /// This will create and wire up all necessary components based on the config.
+    /// Create new message router with configuration
     ///
     /// # Errors
     ///
-    /// Returns a `RouterError` if configuration validation fails or component creation fails.
+    /// Returns `RouterError::ConfigurationError` if the provided configuration fails validation,
+    /// or `RouterError::InitializationError` if router components fail to initialize.
     pub fn try_new(config: RouterConfig) -> Result<Self, RouterError> {
         let span = span!(Level::INFO, "router_creation");
         let _enter = span.enter();
@@ -900,7 +897,6 @@ impl Clone for MessageRouterImpl {
 
 #[async_trait]
 impl MessageRouter for MessageRouterImpl {
-    /// Routes a message to its destination agent
     async fn route_message(&self, message: FipaMessage) -> Result<MessageId, RouterError> {
         let span = span!(Level::DEBUG, "route_message",
                          message_id = %message.message_id,
@@ -956,7 +952,6 @@ impl MessageRouter for MessageRouterImpl {
         Ok(message_id)
     }
 
-    /// Registers a new local agent with the router
     async fn register_agent(
         &self,
         agent: LocalAgent,
@@ -983,7 +978,6 @@ impl MessageRouter for MessageRouterImpl {
         Ok(())
     }
 
-    /// Deregisters an agent from the router
     async fn deregister_agent(&self, agent_id: AgentId) -> Result<(), RouterError> {
         let span = span!(Level::INFO, "deregister_agent", agent_id = %agent_id);
         let _enter = span.enter();
@@ -1583,7 +1577,7 @@ pub struct NodeInfo {
 }
 
 impl NodeInfo {
-    /// Creates a new `NodeInfo` with default health status
+    /// Create new node info
     #[must_use]
     pub fn new(id: NodeId, name: String, address: String) -> Self {
         Self {
@@ -1646,7 +1640,6 @@ impl AgentRegistry for AgentRegistryImpl {
         })
     }
 
-    /// Registers a local agent with capabilities indexing
     async fn register_local_agent(
         &self,
         agent: LocalAgent,
@@ -1857,7 +1850,7 @@ impl MetricsCollector for MetricsCollectorImpl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message_router::config::RouterConfig;
+    use crate::message_router::{ConversationContext, MessageMetadata, config::RouterConfig};
 
     // Test that verifies FIPA message field validation rejects invalid sender/receiver combination
     #[tokio::test]
@@ -1867,34 +1860,34 @@ mod tests {
         let router = MessageRouterImpl::try_new(config).unwrap();
         router.start().await.unwrap();
 
-        // Test validation using FipaMessage::try_new_validated which should catch the error
+        // Test validation using FipaMessage::try_new which should catch the error
         let same_agent = AgentId::generate();
 
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
-            sender: same_agent,
-            receiver: same_agent, // Same as sender - should trigger validation error
-            content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        // Attempt to create message with validation - should fail with ConversationThreadingError
-        let result = FipaMessage::try_new_validated(params);
+        // Attempt to create message with validation - should fail with MessageValidationError
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            same_agent,
+            same_agent, // Same as sender - should trigger validation error
+            MessageContent::try_new(b"test content".to_vec()).unwrap(),
+            ConversationContext {
+                conversation_id: None,
+                reply_with: None,
+                in_reply_to: None,
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
 
         // Expect validation error for sender == receiver FIPA violation
         match result {
-            Err(RouterError::ConversationThreadingError { message }) => {
+            Err(RouterError::MessageValidationError { message }) => {
                 assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
             }
-            _ => panic!(
-                "Expected ConversationThreadingError for sender == receiver, got: {result:?}"
-            ),
+            _ => panic!("Expected MessageValidationError for sender == receiver, got: {result:?}"),
         }
     }
 
@@ -2205,21 +2198,23 @@ mod tests {
         let valid_receiver = AgentId::generate();
         let valid_content = MessageContent::try_new(b"valid request content".to_vec()).unwrap();
 
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
-            sender: valid_sender,
-            receiver: valid_receiver,
-            content: valid_content,
-            conversation_id: Some(ConversationId::generate()),
-            reply_with: Some(MessageId::generate()),
-            in_reply_to: Some(MessageId::generate()),
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        let result = FipaMessage::try_new_validated(params);
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            valid_sender,
+            valid_receiver,
+            valid_content,
+            ConversationContext {
+                conversation_id: Some(ConversationId::generate()),
+                reply_with: Some(MessageId::generate()),
+                in_reply_to: Some(MessageId::generate()),
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
         match result {
             Ok(message) => {
                 assert_eq!(message.performative, Performative::Request);
@@ -2233,28 +2228,30 @@ mod tests {
     #[tokio::test]
     async fn test_fipa_message_smart_constructor_rejects_same_sender_receiver() {
         let same_agent = AgentId::generate();
-        let params = crate::message_router::domain_types::FipaMessageParams {
-            performative: Performative::Request,
-            sender: same_agent,
-            receiver: same_agent,
-            content: MessageContent::try_new(b"test content".to_vec()).unwrap(),
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id: MessageId::generate(),
-            created_at: MessageTimestamp::now(),
-            trace_context: None,
-            delivery_options: DeliveryOptions::default(),
-        };
-
-        let result = FipaMessage::try_new_validated(params);
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            same_agent,
+            same_agent,
+            MessageContent::try_new(b"test content".to_vec()).unwrap(),
+            ConversationContext {
+                conversation_id: None,
+                reply_with: None,
+                in_reply_to: None,
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
         match result {
-            Err(RouterError::ConversationThreadingError { message }) => {
+            Err(RouterError::MessageValidationError { message }) => {
                 assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
             }
-            _ => panic!(
-                "Expected ConversationThreadingError for same sender/receiver, got: {result:?}"
-            ),
+            _ => {
+                panic!("Expected MessageValidationError for same sender/receiver, got: {result:?}")
+            }
         }
     }
 

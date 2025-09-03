@@ -84,6 +84,13 @@ pub enum RouterError {
         node_id: NodeId,
     },
 
+    #[error("Message validation error: {message}")]
+    /// General FIPA message validation failed
+    MessageValidationError {
+        /// Description of the validation failure
+        message: String,
+    },
+
     #[error("Conversation threading error: {message}")]
     /// FIPA conversation threading validation failed
     ConversationThreadingError {

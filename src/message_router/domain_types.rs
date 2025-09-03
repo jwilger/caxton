@@ -29,7 +29,7 @@ pub use crate::domain_types::{AgentId, AgentName, MessageCount, MessageSize};
 pub struct MessageId(Uuid);
 
 impl MessageId {
-    /// Creates a new random message ID
+    /// Generate a new unique message ID
     #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
@@ -53,7 +53,7 @@ impl MessageId {
 pub struct ConversationId(Uuid);
 
 impl ConversationId {
-    /// Creates a new random conversation ID
+    /// Generate a new unique conversation ID
     #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
@@ -77,7 +77,7 @@ impl ConversationId {
 pub struct NodeId(Uuid);
 
 impl NodeId {
-    /// Creates a new random node ID
+    /// Generate a new unique node ID
     #[must_use]
     pub fn generate() -> Self {
         Self::new(Uuid::new_v4())
@@ -107,7 +107,7 @@ impl NodeId {
 pub struct ChannelCapacity(usize);
 
 impl ChannelCapacity {
-    /// Gets the value as usize for use with tokio channels
+    /// Convert to usize representation
     #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
@@ -137,7 +137,7 @@ impl ChannelCapacity {
 pub struct MaxRetries(u8);
 
 impl MaxRetries {
-    /// Gets the value as u8
+    /// Convert to u8 representation
     #[must_use]
     pub fn as_u8(&self) -> u8 {
         self.into_inner()
@@ -167,13 +167,13 @@ impl MaxRetries {
 pub struct RetryDelayMs(u64);
 
 impl RetryDelayMs {
-    /// Converts to Duration
+    /// Convert to Duration representation
     #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
-    /// Gets the value as u64
+    /// Convert to u64 representation
     #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
@@ -225,7 +225,7 @@ pub struct CircuitBreakerThreshold(u32);
 pub struct DeadLetterQueueSize(usize);
 
 impl DeadLetterQueueSize {
-    /// Gets the value as usize
+    /// Convert to usize representation
     #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
@@ -241,13 +241,13 @@ impl DeadLetterQueueSize {
 pub struct ConversationTimeoutMs(u64);
 
 impl ConversationTimeoutMs {
-    /// Converts to Duration
+    /// Convert to Duration representation
     #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
-    /// Gets the value as u64
+    /// Convert to u64 representation
     #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
@@ -291,13 +291,13 @@ pub struct MaxConversationParticipants(u8);
 pub struct ConversationCreatedAt(SystemTime);
 
 impl ConversationCreatedAt {
-    /// Creates timestamp for current time
+    /// Create timestamp for current system time
     #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
-    /// Gets the inner `SystemTime`
+    /// Convert to `SystemTime` representation
     #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
@@ -359,7 +359,7 @@ pub struct SpanId(String);
 pub struct TraceSamplingRatio(f64);
 
 impl TraceSamplingRatio {
-    /// Gets the value as f64
+    /// Convert to f64 representation
     #[must_use]
     pub fn as_f64(&self) -> f64 {
         self.into_inner()
@@ -424,7 +424,7 @@ pub struct CapabilityDescription(String);
 pub struct HealthCheckIntervalMs(u64);
 
 impl HealthCheckIntervalMs {
-    /// Converts to Duration
+    /// Convert to Duration representation
     #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
@@ -446,13 +446,13 @@ impl HealthCheckIntervalMs {
 pub struct MessageTimestamp(SystemTime);
 
 impl MessageTimestamp {
-    /// Creates timestamp for current time
+    /// Create timestamp for current system time
     #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
-    /// Gets the inner `SystemTime`
+    /// Convert to `SystemTime` representation
     #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
@@ -482,13 +482,13 @@ impl MessageTimestamp {
 pub struct MessageTimeoutMs(u64);
 
 impl MessageTimeoutMs {
-    /// Converts to Duration
+    /// Convert to Duration representation
     #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
-    /// Gets the value as u64
+    /// Convert to u64 representation
     #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
@@ -514,28 +514,19 @@ pub const MAX_MESSAGE_CONTENT_BYTES: usize = 10_485_760;
 pub struct MessageContent(Vec<u8>);
 
 impl MessageContent {
-    /// Gets the length of the content in bytes
-    ///
-    /// Returns a value between 1 and [`MAX_MESSAGE_CONTENT_BYTES`] (10MB).
-    /// Empty content cannot be represented by this type.
+    /// Get message content length in bytes
     #[must_use]
     pub fn len(&self) -> usize {
         self.as_ref().len()
     }
 
-    /// Checks if content is empty
-    ///
-    /// Always returns `false` since [`MessageContent`] guarantees non-empty content.
-    /// This method exists for compatibility with standard collection APIs.
+    /// Check if message content is empty
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.as_ref().is_empty()
     }
 
-    /// Gets the content as bytes
-    ///
-    /// Returns the underlying byte slice containing the validated message content.
-    /// The returned slice is guaranteed to be non-empty and within size limits.
+    /// Get message content as byte slice
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         self.as_ref()
@@ -565,7 +556,7 @@ impl MessageContent {
 pub struct AgentQueueSize(usize);
 
 impl AgentQueueSize {
-    /// Gets the value as usize
+    /// Convert to usize representation
     #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
@@ -595,7 +586,7 @@ impl AgentQueueSize {
 pub struct WorkerThreadCount(usize);
 
 impl WorkerThreadCount {
-    /// Gets the value as usize
+    /// Convert to usize representation
     #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
@@ -625,7 +616,7 @@ impl WorkerThreadCount {
 pub struct MessageBatchSize(usize);
 
 impl MessageBatchSize {
-    /// Gets the value as usize
+    /// Convert to usize representation
     #[must_use]
     pub fn as_usize(&self) -> usize {
         self.into_inner()
@@ -653,7 +644,7 @@ impl MessageBatchSize {
 pub struct RetryBackoffFactor(f64);
 
 impl RetryBackoffFactor {
-    /// Gets the value as f64
+    /// Convert to f64 representation
     #[must_use]
     pub fn as_f64(&self) -> f64 {
         self.into_inner()
@@ -683,13 +674,13 @@ impl RetryBackoffFactor {
 pub struct CircuitBreakerTimeoutMs(u64);
 
 impl CircuitBreakerTimeoutMs {
-    /// Converts to Duration
+    /// Convert to Duration representation
     #[must_use]
     pub fn as_duration(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.into_inner())
     }
 
-    /// Gets the value as u64
+    /// Convert to u64 representation
     #[must_use]
     pub fn as_u64(&self) -> u64 {
         self.into_inner()
@@ -850,7 +841,7 @@ pub struct LocalAgent {
 }
 
 impl LocalAgent {
-    /// Creates a new local agent
+    /// Create new local agent
     #[must_use]
     pub fn new(
         id: AgentId,
@@ -893,7 +884,7 @@ pub struct Conversation {
 }
 
 impl Conversation {
-    /// Creates a new conversation
+    /// Create new conversation
     #[must_use]
     pub fn new(
         id: ConversationId,
@@ -909,13 +900,13 @@ impl Conversation {
         }
     }
 
-    /// Updates conversation with new message activity
+    /// Add message to conversation
     pub fn add_message(&mut self, _message: &FipaMessage) {
         self.message_count = self.message_count.increment();
         self.last_activity = MessageTimestamp::now();
     }
 
-    /// Updates the last activity timestamp
+    /// Update last activity timestamp
     pub fn update_last_activity(&mut self, timestamp: MessageTimestamp) {
         self.last_activity = timestamp;
     }
@@ -951,131 +942,9 @@ pub struct FipaMessage {
     pub delivery_options: DeliveryOptions,
 }
 
-impl FipaMessage {
-    /// Creates a FIPA message with type-safe construction.
-    ///
-    /// This constructor follows Scott Wlaschin's "make illegal states unrepresentable"
-    /// principle by delegating all validation to the type system:
-    /// - `MessageParticipants::try_new()` ensures sender ≠ receiver at compile time
-    /// - `MessageContent` guarantees non-empty content through nutype validation
-    /// - `Performative` enum ensures only valid FIPA performatives can exist
-    ///
-    /// All validation occurs at type construction time, making invalid messages
-    /// literally impossible to represent in the type system.
-    ///
-    /// # Arguments
-    ///
-    /// * `params` - Validated parameters for FIPA message construction
-    ///
-    /// # Returns
-    ///
-    /// `Result<FipaMessage, RouterError>` - Returns the created message or type validation error
-    ///
-    /// # Type Safety Guarantees
-    ///
-    /// - **No self-messaging**: `MessageParticipants` prevents sender == receiver
-    /// - **No empty content**: `MessageContent` guarantees meaningful payload
-    /// - **Valid performatives**: `Performative` enum restricts to FIPA-compliant actions
-    ///
-    /// # Errors
-    ///
-    /// Returns `RouterError::ConversationThreadingError` when:
-    /// - The sender and receiver `AgentId` are identical (FIPA-ACL protocol violation)
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use caxton::message_router::{FipaMessage, FipaMessageParams, Performative, MessageContent, MessageId, MessageTimestamp, DeliveryOptions};
-    /// use caxton::domain_types::AgentId;
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    ///
-    /// let sender_id = AgentId::generate();
-    /// let receiver_id = AgentId::generate();
-    /// let content = MessageContent::try_new("Hello, world!".as_bytes().to_vec())?;
-    /// let message_id = MessageId::generate();
-    /// let created_at = MessageTimestamp::now();
-    /// let delivery_options = DeliveryOptions::default();
-    ///
-    /// let params = FipaMessageParams {
-    ///     performative: Performative::Request,
-    ///     sender: sender_id,
-    ///     receiver: receiver_id,
-    ///     content,
-    ///     conversation_id: None,
-    ///     reply_with: None,
-    ///     in_reply_to: None,
-    ///     message_id,
-    ///     created_at,
-    ///     trace_context: None,
-    ///     delivery_options,
-    /// };
-    /// let message = FipaMessage::try_new_validated(params)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn try_new_validated(
-        params: FipaMessageParams,
-    ) -> Result<Self, crate::message_router::traits::RouterError> {
-        // All validation happens at type construction level - no runtime validation needed
-        // MessageParticipants::try_new() ensures sender ≠ receiver
-        // MessageContent already guarantees non-empty content
-        // Performative enum ensures only valid FIPA performatives
-        let message = Self {
-            performative: params.performative,
-            participants: MessageParticipants::try_new(params.sender, params.receiver)?,
-            content: params.content,
-            conversation_id: params.conversation_id,
-            reply_with: params.reply_with,
-            in_reply_to: params.in_reply_to,
-            message_id: params.message_id,
-            created_at: params.created_at,
-            trace_context: params.trace_context,
-            delivery_options: params.delivery_options,
-        };
-
-        Ok(message)
-    }
-
-    /// Returns a reference to the sender `AgentId`
-    ///
-    /// Provides backward compatibility access to the sender through the participants field.
-    /// This method maintains API compatibility while using the new `MessageParticipants` type.
-    #[must_use]
-    pub fn sender(&self) -> &AgentId {
-        self.participants.sender()
-    }
-
-    /// Returns a reference to the receiver `AgentId`
-    ///
-    /// Provides backward compatibility access to the receiver through the participants field.
-    /// This method maintains API compatibility while using the new `MessageParticipants` type.
-    #[must_use]
-    pub fn receiver(&self) -> &AgentId {
-        self.participants.receiver()
-    }
-}
-
-/// Parameters for creating and validating a FIPA message
-///
-/// This struct consolidates all the parameters needed for `FipaMessage::try_new_validated()`
-/// to avoid `clippy::too_many_arguments` warnings while maintaining type safety.
-#[derive(Debug, Clone)]
-pub struct FipaMessageParams {
-    /// FIPA performative indicating the intended action or information type
-    pub performative: Performative,
-    /// ID of the agent sending the message
-    pub sender: AgentId,
-    /// ID of the agent receiving the message
-    pub receiver: AgentId,
-    /// Message payload content as JSON value
-    pub content: MessageContent,
-    /// Optional conversation identifier for grouping related messages
-    pub conversation_id: Option<ConversationId>,
-    /// Optional message ID that replies should reference
-    pub reply_with: Option<MessageId>,
-    /// Optional reference to the message this is replying to
-    pub in_reply_to: Option<MessageId>,
+/// Message metadata including ID, timestamp, trace context and delivery options
+#[derive(Debug, Clone, PartialEq)]
+pub struct MessageMetadata {
     /// Unique identifier for this specific message
     pub message_id: MessageId,
     /// Timestamp when this message was created
@@ -1086,8 +955,106 @@ pub struct FipaMessageParams {
     pub delivery_options: DeliveryOptions,
 }
 
+impl MessageMetadata {
+    /// Create new message metadata
+    #[must_use]
+    pub fn new(
+        message_id: MessageId,
+        created_at: MessageTimestamp,
+        trace_context: Option<TraceContext>,
+        delivery_options: DeliveryOptions,
+    ) -> Self {
+        Self {
+            message_id,
+            created_at,
+            trace_context,
+            delivery_options,
+        }
+    }
+}
+
+/// Conversation threading context for FIPA messages
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ConversationContext {
+    /// Optional conversation identifier for grouping related messages
+    pub conversation_id: Option<ConversationId>,
+    /// Optional message ID that replies should reference
+    pub reply_with: Option<MessageId>,
+    /// Optional reference to the message this is replying to
+    pub in_reply_to: Option<MessageId>,
+}
+
+impl ConversationContext {
+    /// Create new conversation context
+    #[must_use]
+    pub fn new(
+        conversation_id: Option<ConversationId>,
+        reply_with: Option<MessageId>,
+        in_reply_to: Option<MessageId>,
+    ) -> Self {
+        Self {
+            conversation_id,
+            reply_with,
+            in_reply_to,
+        }
+    }
+
+    /// Create empty conversation context
+    #[must_use]
+    pub fn empty() -> Self {
+        Self {
+            conversation_id: None,
+            reply_with: None,
+            in_reply_to: None,
+        }
+    }
+}
+
+impl FipaMessage {
+    /// Creates a FIPA message.
+    ///
+    /// # Errors
+    ///
+    /// Returns `RouterError::MessageValidationError` if:
+    /// - Sender and receiver agent IDs are identical (FIPA-ACL violation)
+    /// - Message content validation fails
+    pub fn try_new(
+        performative: Performative,
+        sender: AgentId,
+        receiver: AgentId,
+        content: MessageContent,
+        conversation_context: ConversationContext,
+        metadata: MessageMetadata,
+    ) -> Result<Self, crate::message_router::traits::RouterError> {
+        Ok(Self {
+            performative,
+            participants: MessageParticipants::try_new(sender, receiver)?,
+            content,
+            conversation_id: conversation_context.conversation_id,
+            reply_with: conversation_context.reply_with,
+            in_reply_to: conversation_context.in_reply_to,
+            message_id: metadata.message_id,
+            created_at: metadata.created_at,
+            trace_context: metadata.trace_context,
+            delivery_options: metadata.delivery_options,
+        })
+    }
+
+    /// Get message sender ID
+    #[must_use]
+    pub fn sender(&self) -> &AgentId {
+        self.participants.sender()
+    }
+
+    /// Get message receiver ID
+    #[must_use]
+    pub fn receiver(&self) -> &AgentId {
+        self.participants.receiver()
+    }
+}
+
 /// OpenTelemetry trace context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TraceContext {
     /// OpenTelemetry trace identifier for distributed tracing
     pub trace_id: TraceId,
@@ -1100,7 +1067,7 @@ pub struct TraceContext {
 }
 
 /// Message delivery options
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryOptions {
     /// Message priority level for routing decisions
     pub priority: MessagePriority,
@@ -1138,13 +1105,13 @@ impl Default for DeliveryOptions {
 pub struct Timestamp(SystemTime);
 
 impl Timestamp {
-    /// Creates timestamp for current time
+    /// Create timestamp for current system time
     #[must_use]
     pub fn now() -> Self {
         Self::new(SystemTime::now())
     }
 
-    /// Gets the inner `SystemTime`
+    /// Convert to `SystemTime` representation
     #[must_use]
     pub fn as_system_time(&self) -> SystemTime {
         self.into_inner()
@@ -1152,7 +1119,7 @@ impl Timestamp {
 }
 
 impl RouteInfo {
-    /// Creates new route information
+    /// Create new message route
     #[must_use]
     pub fn new(node_id: NodeId, hops: RouteHops, updated_at: MessageTimestamp) -> Self {
         let ttl_duration = std::time::Duration::from_secs(300); // 5 minutes default TTL
@@ -1177,13 +1144,6 @@ impl RouteInfo {
 }
 
 /// Message participants with sender and receiver validation
-///
-/// Ensures that sender and receiver are different agents at the type level,
-/// making self-messaging unrepresentable. This type follows Scott Wlaschin's
-/// "make illegal states unrepresentable" principle by preventing the creation
-/// of `MessageParticipants` where sender equals receiver.
-///
-/// Provides methods for accessing participants in a safe and controlled manner.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MessageParticipants {
     sender: AgentId,
@@ -1191,33 +1151,19 @@ pub struct MessageParticipants {
 }
 
 impl MessageParticipants {
-    /// Creates new `MessageParticipants` with validation
-    ///
-    /// This smart constructor ensures FIPA-ACL compliance by preventing
-    /// self-messaging scenarios where an agent would send a message to itself.
-    /// This validation is performed at the type level to make illegal states
-    /// unrepresentable.
-    ///
-    /// # Arguments
-    ///
-    /// * `sender` - The agent sending the message
-    /// * `receiver` - The agent receiving the message
-    ///
-    /// # Returns
-    ///
-    /// `Result<MessageParticipants, RouterError>` - Returns the validated participants
-    /// or a validation error if sender equals receiver
+    /// Create message participants with validation
     ///
     /// # Errors
     ///
-    /// Returns `RouterError::ConversationThreadingError` if sender equals receiver
+    /// Returns `RouterError::MessageValidationError` if sender and receiver agent IDs are identical,
+    /// which violates FIPA-ACL message protocol requirements.
     pub fn try_new(
         sender: AgentId,
         receiver: AgentId,
     ) -> Result<Self, crate::message_router::traits::RouterError> {
         if sender == receiver {
             return Err(
-                crate::message_router::traits::RouterError::ConversationThreadingError {
+                crate::message_router::traits::RouterError::MessageValidationError {
                     message:
                         "FIPA-ACL violation: sender cannot equal receiver in message participants"
                             .to_string(),
@@ -1228,19 +1174,13 @@ impl MessageParticipants {
         Ok(Self { sender, receiver })
     }
 
-    /// Returns a reference to the sender `AgentId`
-    ///
-    /// Gets the agent identifier of the message sender. This accessor
-    /// provides safe access to the validated sender field.
+    /// Get sender agent ID
     #[must_use]
     pub fn sender(&self) -> &AgentId {
         &self.sender
     }
 
-    /// Returns a reference to the receiver `AgentId`
-    ///
-    /// Gets the agent identifier of the message receiver. This accessor
-    /// provides safe access to the validated receiver field.
+    /// Get receiver agent ID
     #[must_use]
     pub fn receiver(&self) -> &AgentId {
         &self.receiver
@@ -1329,23 +1269,24 @@ mod tests {
         let created_at = MessageTimestamp::now();
         let delivery_options = DeliveryOptions::default();
 
-        let params = FipaMessageParams {
-            performative: Performative::Request,
-            sender: sender_id,
-            receiver: receiver_id,
-            content,
-            // language, ontology, protocol removed per ADR-0012
-            conversation_id: None,
-            reply_with: None,
-            in_reply_to: None,
-            message_id,
-            created_at,
-            trace_context: None,
-            delivery_options,
-        };
-
         // This should succeed - proving FipaMessage works without ADR-violating fields
-        let result = FipaMessage::try_new_validated(params);
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            sender_id,
+            receiver_id,
+            content,
+            ConversationContext {
+                conversation_id: None,
+                reply_with: None,
+                in_reply_to: None,
+            },
+            MessageMetadata {
+                message_id,
+                created_at,
+                trace_context: None,
+                delivery_options,
+            },
+        );
 
         assert!(
             result.is_ok(),
