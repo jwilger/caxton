@@ -28,16 +28,6 @@ use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
 
-// Constants for validation field names
-const FIELD_IN_REPLY_TO: &str = "in_reply_to";
-#[cfg(test)]
-const FIELD_ERROR_CONTENT: &str = "error_content";
-
-// Constants for common validation reasons
-const REASON_NO_REPLY_WITH: &str = "no corresponding reply_with found";
-#[cfg(test)]
-const REASON_ERROR_CONTENT_TOO_LARGE: &str = "generated error content exceeds maximum message size";
-
 // ============================================================================
 // Conversation Threading Tracker - Extracted for better organization
 // ============================================================================
@@ -76,7 +66,7 @@ impl ConversationThreadingTracker {
     ///
     /// # Returns
     /// * `Ok(())` - If the `reply_with` exists in the same conversation
-    /// * `Err(RouterError::ValidationError)` - If no corresponding `reply_with` found
+    /// * `Err(RouterError::ConversationThreadingError)` - If no corresponding `reply_with` found
     ///
     /// # Thread Safety
     /// Uses internal mutex for thread-safe access to conversation state.
@@ -93,9 +83,8 @@ impl ConversationThreadingTracker {
 
         match conversations.get(conversation_id) {
             Some(reply_with_set) if reply_with_set.contains(in_reply_to) => Ok(()),
-            _ => Err(RouterError::ValidationError {
-                field: FIELD_IN_REPLY_TO.to_string(),
-                reason: REASON_NO_REPLY_WITH.to_string(),
+            _ => Err(RouterError::ConversationThreadingError {
+                message: "Message references invalid reply_with ID: no corresponding reply_with found for message ID in conversation".to_string(),
             }),
         }
     }
@@ -154,14 +143,12 @@ fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterEr
     // FIPA validation: in_reply_to must have corresponding reply_with in same conversation
     if let Some(in_reply_to) = &message.in_reply_to {
         // Require conversation_id for proper threading context
-        let conversation_id =
-            message
-                .conversation_id
-                .as_ref()
-                .ok_or_else(|| RouterError::ValidationError {
-                    field: FIELD_IN_REPLY_TO.to_string(),
-                    reason: REASON_NO_REPLY_WITH.to_string(),
-                })?;
+        let conversation_id = message.conversation_id.as_ref().ok_or_else(|| {
+            RouterError::ConversationThreadingError {
+                message: "in_reply_to requires conversation_id for proper threading context"
+                    .to_string(),
+            }
+        })?;
 
         // Validate reply reference within conversation context
         tracker.validate_reply_reference(conversation_id, in_reply_to)?;
@@ -174,28 +161,6 @@ fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterEr
         tracker.record_reply_with(conversation_id, reply_with);
     }
 
-    Ok(())
-}
-
-/// Validates FIPA message requirements with comprehensive rule checking
-///
-/// Performs complete FIPA-ACL message validation by applying all required rules:
-/// 1. **Agent Identity**: Sender and receiver must be different agents
-/// 2. **Content Requirement**: Message content must not be empty
-/// 3. **Conversation Threading**: `in_reply_to` must have corresponding `reply_with`
-/// 4. **Future Extensions**: Additional FIPA compliance validations
-///
-/// This function follows the functional core pattern - it's pure, deterministic,
-/// and delegates stateful operations to specialized validation functions.
-///
-/// # Arguments
-/// * `message` - The FIPA message to validate against all rules
-///
-/// # Returns
-/// * `Ok(())` - If all FIPA validation rules pass
-/// * `Err(RouterError::ValidationError)` - If any validation rule fails
-fn validate_fipa_message(message: &FipaMessage) -> Result<(), RouterError> {
-    validate_conversation_threading(message)?;
     Ok(())
 }
 
@@ -261,9 +226,8 @@ fn create_not_understood_response(
 ) -> Result<FipaMessage, RouterError> {
     // Convert error content to MessageContent with proper validation
     let message_content = MessageContent::try_new(error_content.into_bytes()).map_err(|_| {
-        RouterError::ValidationError {
-            field: FIELD_ERROR_CONTENT.to_string(),
-            reason: REASON_ERROR_CONTENT_TOO_LARGE.to_string(),
+        RouterError::ContentSizeError {
+            message: "Generated error content exceeds maximum message size limit".to_string(),
         }
     })?;
 
@@ -536,7 +500,7 @@ impl MessageRouterImpl {
     /// # Errors
     ///
     /// Returns a `RouterError` if configuration validation fails or component creation fails.
-    pub fn new(config: RouterConfig) -> Result<Self, RouterError> {
+    pub fn try_new(config: RouterConfig) -> Result<Self, RouterError> {
         let span = span!(Level::INFO, "router_creation");
         let _enter = span.enter();
 
@@ -563,7 +527,7 @@ impl MessageRouterImpl {
         let failure_handler = Arc::new(FailureHandlerImpl::new(config.clone()));
 
         // Create metrics collector if enabled
-        let metrics_collector = if config.enable_metrics() {
+        let metrics_collector = if config.observability.enable_metrics {
             Some(Arc::new(MetricsCollectorImpl::new()) as Arc<dyn MetricsCollector>)
         } else {
             None
@@ -642,7 +606,7 @@ impl MessageRouterImpl {
         }
 
         // Spawn metrics collection task
-        if self.config.enable_metrics() {
+        if self.config.observability.enable_metrics {
             self.spawn_metrics_task();
         }
 
@@ -957,17 +921,17 @@ impl MessageRouter for MessageRouterImpl {
         }
 
         // Validate message size if validation is enabled
-        if self.config.enable_message_validation()
-            && message.content.len() > self.config.max_message_size_bytes()
+        if self.config.security.enable_message_validation
+            && message.content.len() > self.config.security.max_message_size_bytes
         {
             return Err(RouterError::MessageTooLarge {
                 size: message.content.len(),
-                max_size: self.config.max_message_size_bytes(),
+                max_size: self.config.security.max_message_size_bytes,
             });
         }
 
         // FIPA validation
-        validate_fipa_message(&message)?;
+        validate_conversation_threading(&message)?;
 
         // Create routing task
         let task = RoutingTask {
@@ -1246,7 +1210,7 @@ impl MessageRouterImpl {
     ///
     /// # Errors
     ///
-    /// Returns `RouterError::ValidationError` if the generated error content exceeds maximum message size limits.
+    /// Returns `RouterError::ContentSizeError` if the generated error content exceeds maximum message size limits.
     ///
     /// # FIPA Protocol Compliance
     /// The generated response follows FIPA-ACL standards:
@@ -1900,7 +1864,7 @@ mod tests {
     async fn test_should_reject_message_when_sender_equals_receiver() {
         // Create router with test configuration
         let config = RouterConfig::testing();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
         router.start().await.unwrap();
 
         // Test validation using FipaMessage::try_new_validated which should catch the error
@@ -1920,16 +1884,17 @@ mod tests {
             delivery_options: DeliveryOptions::default(),
         };
 
-        // Attempt to create message with validation - should fail with ValidationError
+        // Attempt to create message with validation - should fail with ConversationThreadingError
         let result = FipaMessage::try_new_validated(params);
 
         // Expect validation error for sender == receiver FIPA violation
         match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field, "sender/receiver");
-                assert!(reason.contains("sender cannot equal receiver"));
+            Err(RouterError::ConversationThreadingError { message }) => {
+                assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
             }
-            _ => panic!("Expected ValidationError for sender == receiver, got: {result:?}"),
+            _ => panic!(
+                "Expected ConversationThreadingError for sender == receiver, got: {result:?}"
+            ),
         }
     }
 
@@ -1942,7 +1907,7 @@ mod tests {
     async fn test_should_reject_message_when_in_reply_to_has_no_corresponding_reply_with() {
         // Create router with test configuration
         let config = RouterConfig::testing();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
         router.start().await.unwrap();
 
         // Create agents for conversation threading
@@ -1970,16 +1935,17 @@ mod tests {
             delivery_options: DeliveryOptions::default(),
         };
 
-        // Attempt to route the invalid message - should fail with ValidationError
+        // Attempt to route the invalid message - should fail with ConversationThreadingError
         let result = router.route_message(invalid_message).await;
 
         // Expect validation error for orphaned in_reply_to FIPA violation
         match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field, "in_reply_to");
-                assert!(reason.contains("no corresponding reply_with found"));
+            Err(RouterError::ConversationThreadingError { message }) => {
+                assert!(message.contains("no corresponding reply_with found"));
             }
-            _ => panic!("Expected ValidationError for orphaned in_reply_to, got: {result:?}"),
+            _ => panic!(
+                "Expected ConversationThreadingError for orphaned in_reply_to, got: {result:?}"
+            ),
         }
     }
 
@@ -1988,7 +1954,7 @@ mod tests {
     async fn test_should_accept_message_when_in_reply_to_has_corresponding_reply_with() {
         // Create router with test configuration
         let config = RouterConfig::testing();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
         router.start().await.unwrap();
 
         // Create agents for conversation threading
@@ -2052,7 +2018,7 @@ mod tests {
     async fn test_should_isolate_conversation_threading_across_different_conversations() {
         // Create router with test configuration
         let config = RouterConfig::testing();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
         router.start().await.unwrap();
 
         // Create agents
@@ -2106,22 +2072,23 @@ mod tests {
             result.is_err(),
             "Should reject cross-conversation threading attempt"
         );
-        if let Err(RouterError::ValidationError { field, reason }) = result {
-            assert_eq!(field, "in_reply_to");
+        if let Err(RouterError::ConversationThreadingError { message }) = result {
             assert!(
-                reason.contains("no corresponding reply_with found")
-                    || reason.contains("conversation"),
-                "Error should mention conversation isolation or missing reply_with: {reason}"
+                message.contains("no corresponding reply_with found")
+                    || message.contains("conversation"),
+                "Error should mention conversation isolation or missing reply_with: {message}"
             );
         } else {
-            panic!("Expected ValidationError for cross-conversation threading, got: {result:?}");
+            panic!(
+                "Expected ConversationThreadingError for cross-conversation threading, got: {result:?}"
+            );
         }
     }
 
     #[tokio::test]
     async fn test_should_generate_not_understood_response_when_message_processing_fails() {
         // Test that verifies NOT_UNDERSTOOD response generation for unprocessable messages
-        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        let router = MessageRouterImpl::try_new(RouterConfig::testing()).unwrap();
         let sender = AgentId::generate();
         let receiver = AgentId::generate();
 
@@ -2168,7 +2135,7 @@ mod tests {
     #[tokio::test]
     async fn test_should_preserve_conversation_context_in_not_understood_response() {
         // Test that verifies NOT_UNDERSTOOD responses maintain proper FIPA-ACL conversation threading
-        let router = MessageRouterImpl::new(RouterConfig::testing()).unwrap();
+        let router = MessageRouterImpl::try_new(RouterConfig::testing()).unwrap();
         let sender = AgentId::generate();
         let receiver = AgentId::generate();
         let conversation_id = ConversationId::generate();
@@ -2282,11 +2249,12 @@ mod tests {
 
         let result = FipaMessage::try_new_validated(params);
         match result {
-            Err(RouterError::ValidationError { field, reason }) => {
-                assert_eq!(field, "sender/receiver");
-                assert_eq!(reason, "sender cannot equal receiver");
+            Err(RouterError::ConversationThreadingError { message }) => {
+                assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
             }
-            _ => panic!("Expected ValidationError for same sender/receiver, got: {result:?}"),
+            _ => panic!(
+                "Expected ConversationThreadingError for same sender/receiver, got: {result:?}"
+            ),
         }
     }
 

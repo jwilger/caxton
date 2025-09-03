@@ -11,10 +11,7 @@ async fn test_router_creation_and_basic_operations() {
     let config = RouterConfig::development();
     assert!(config.validate().is_ok());
 
-    let router = MessageRouterImpl::new(config);
-    assert!(router.is_ok());
-
-    let router = router.unwrap();
+    let router = MessageRouterImpl::try_new(config).unwrap();
 
     // Test starting the router
     let start_result = router.start().await;
@@ -40,14 +37,14 @@ async fn test_router_configuration_variants() {
     // Test development config
     let dev_config = RouterConfig::development();
     assert!(dev_config.validate().is_ok());
-    assert!(dev_config.enable_detailed_logs());
-    assert!(dev_config.trace_sampling_ratio().as_f64() > 0.5); // High sampling for dev
+    assert!(dev_config.observability.enable_detailed_logs);
+    assert!(dev_config.observability.trace_sampling_ratio.as_f64() > 0.5); // High sampling for dev
 
     // Test production config
     let prod_config = RouterConfig::production();
     assert!(prod_config.validate().is_ok());
-    assert!(!prod_config.enable_detailed_logs());
-    assert!(prod_config.trace_sampling_ratio().as_f64() < 0.1); // Low sampling for prod
+    assert!(!prod_config.observability.enable_detailed_logs);
+    assert!(prod_config.observability.trace_sampling_ratio.as_f64() < 0.1); // Low sampling for prod
     assert!(prod_config.inbound_queue_size.as_usize() > dev_config.inbound_queue_size.as_usize());
 
     // Test testing config
@@ -70,8 +67,8 @@ async fn test_router_config_builder() {
     let config = config.unwrap();
     assert_eq!(config.inbound_queue_size.as_usize(), 5000);
     assert_eq!(config.message_timeout_ms.as_u64(), 15000);
-    assert!(!config.enable_persistence());
-    assert!(config.enable_metrics());
+    assert!(!config.storage.enable_persistence);
+    assert!(config.observability.enable_metrics);
 }
 
 #[tokio::test]

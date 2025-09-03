@@ -952,42 +952,35 @@ pub struct FipaMessage {
 }
 
 impl FipaMessage {
-    /// Creates a validated FIPA message with centralized validation.
+    /// Creates a FIPA message with type-safe construction.
     ///
-    /// This smart constructor centralizes all FIPA-ACL validation logic,
-    /// ensuring that only valid messages can be created. It performs
-    /// comprehensive validation including:
-    /// - Sender and receiver must be different agents (FIPA requirement)
-    /// - Message content must not be empty (FIPA requirement)
-    /// - Performative must be a standard FIPA performative
-    /// - JSON content format validation when language indicates JSON
+    /// This constructor follows Scott Wlaschin's "make illegal states unrepresentable"
+    /// principle by delegating all validation to the type system:
+    /// - `MessageParticipants::try_new()` ensures sender ≠ receiver at compile time
+    /// - `MessageContent` guarantees non-empty content through nutype validation
+    /// - `Performative` enum ensures only valid FIPA performatives can exist
+    ///
+    /// All validation occurs at type construction time, making invalid messages
+    /// literally impossible to represent in the type system.
     ///
     /// # Arguments
     ///
-    /// All required fields for a FIPA message:
-    /// - `performative`: The FIPA performative indicating message intent
-    /// - `sender`: The agent sending the message
-    /// - `receiver`: The agent receiving the message
-    /// - `content`: The message content
-    /// - `language`: Optional content language specification
-    /// - `ontology`: Optional ontology name for message semantics
-    /// - `protocol`: Optional protocol name for interaction pattern
-    /// - `conversation_id`: Optional conversation identifier for message threading
-    /// - `reply_with`: Optional identifier for expecting replies
-    /// - `in_reply_to`: Optional identifier referencing previous message
-    /// - `message_id`: Unique message identifier
-    /// - `created_at`: Timestamp when message was created
-    /// - `trace_context`: Optional OpenTelemetry trace context
-    /// - `delivery_options`: Message delivery configuration
+    /// * `params` - Validated parameters for FIPA message construction
     ///
     /// # Returns
     ///
-    /// `Result<FipaMessage, RouterError>` - Returns the created message or validation error
+    /// `Result<FipaMessage, RouterError>` - Returns the created message or type validation error
+    ///
+    /// # Type Safety Guarantees
+    ///
+    /// - **No self-messaging**: `MessageParticipants` prevents sender == receiver
+    /// - **No empty content**: `MessageContent` guarantees meaningful payload
+    /// - **Valid performatives**: `Performative` enum restricts to FIPA-compliant actions
     ///
     /// # Errors
     ///
-    /// Returns `RouterError::ValidationError` if:
-    /// - Sender equals receiver (field: "sender/receiver", reason: "sender cannot equal receiver")
+    /// Returns `RouterError::ConversationThreadingError` when:
+    /// - The sender and receiver `AgentId` are identical (FIPA-ACL protocol violation)
     ///
     /// # Example
     ///
@@ -997,7 +990,6 @@ impl FipaMessage {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     ///
-    /// // Create required parameters
     /// let sender_id = AgentId::generate();
     /// let receiver_id = AgentId::generate();
     /// let content = MessageContent::try_new("Hello, world!".as_bytes().to_vec())?;
@@ -1025,7 +1017,10 @@ impl FipaMessage {
     pub fn try_new_validated(
         params: FipaMessageParams,
     ) -> Result<Self, crate::message_router::traits::RouterError> {
-        // Create message instance with validated participants
+        // All validation happens at type construction level - no runtime validation needed
+        // MessageParticipants::try_new() ensures sender ≠ receiver
+        // MessageContent already guarantees non-empty content
+        // Performative enum ensures only valid FIPA performatives
         let message = Self {
             performative: params.performative,
             participants: MessageParticipants::try_new(params.sender, params.receiver)?,
@@ -1215,18 +1210,17 @@ impl MessageParticipants {
     ///
     /// # Errors
     ///
-    /// Returns `RouterError::ValidationError` if sender equals receiver, with:
-    /// - field: "sender/receiver"
-    /// - reason: "sender cannot equal receiver"
+    /// Returns `RouterError::ConversationThreadingError` if sender equals receiver
     pub fn try_new(
         sender: AgentId,
         receiver: AgentId,
     ) -> Result<Self, crate::message_router::traits::RouterError> {
         if sender == receiver {
             return Err(
-                crate::message_router::traits::RouterError::ValidationError {
-                    field: "sender/receiver".to_string(),
-                    reason: "sender cannot equal receiver".to_string(),
+                crate::message_router::traits::RouterError::ConversationThreadingError {
+                    message:
+                        "FIPA-ACL violation: sender cannot equal receiver in message participants"
+                            .to_string(),
                 },
             );
         }

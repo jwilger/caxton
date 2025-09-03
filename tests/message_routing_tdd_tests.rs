@@ -52,7 +52,7 @@ fn create_test_agent(id: u32) -> LocalAgent {
 async fn test_async_non_blocking_routing() {
     // Given: A message router with async processing
     let config = RouterConfig::testing();
-    let router = MessageRouterImpl::new(config).unwrap();
+    let router = MessageRouterImpl::try_new(config).unwrap();
     router.start().await.unwrap();
 
     // When: We send a message
@@ -87,7 +87,7 @@ async fn test_async_non_blocking_routing() {
 async fn test_route_message_by_agent_id() {
     // Given: Router with registered agents
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // Create test agents with message queues
@@ -119,7 +119,7 @@ async fn test_route_message_by_agent_id() {
 async fn test_agent_registration_deregistration() {
     // Given: A message router
     let config = RouterConfig::testing();
-    let router = MessageRouterImpl::new(config).unwrap();
+    let router = MessageRouterImpl::try_new(config).unwrap();
     router.start().await.unwrap();
 
     let agent = create_test_agent(1);
@@ -148,7 +148,7 @@ async fn test_agent_registration_deregistration() {
 async fn test_graceful_failure_handling() {
     // Given: Router with non-existent receiver
     let config = RouterConfig::testing();
-    let router = MessageRouterImpl::new(config).unwrap();
+    let router = MessageRouterImpl::try_new(config).unwrap();
     router.start().await.unwrap();
 
     // When: We send to non-existent agent
@@ -174,7 +174,7 @@ async fn test_graceful_failure_handling() {
 async fn test_conversation_context_maintenance() {
     // Given: Router with conversation tracking
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     let agent1 = create_test_agent(1);
@@ -216,7 +216,7 @@ async fn test_conversation_context_maintenance() {
 async fn test_trace_span_observability() {
     // Given: Router with observability
     let config = RouterConfig::testing();
-    let router = MessageRouterImpl::new(config).unwrap();
+    let router = MessageRouterImpl::try_new(config).unwrap();
     router.start().await.unwrap();
 
     // When: We route a message
@@ -240,7 +240,7 @@ async fn test_local_agent_message_routing_works() {
 
     // Given: Router with local agents that have message queues
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // Create agents with actual message channels
@@ -273,7 +273,7 @@ async fn test_local_agent_message_routing_works() {
 async fn test_performance_100k_messages_per_second() {
     // Given: Production configuration
     let config = RouterConfig::production();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // Setup: Create 100 agents
@@ -335,7 +335,7 @@ async fn test_performance_100k_messages_per_second() {
 async fn test_no_message_loss_normal_operation() {
     // Given: Router under normal load
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // When: We send 1000 messages
@@ -370,7 +370,7 @@ async fn test_no_message_loss_normal_operation() {
 async fn test_routing_scenario_high_concurrency() {
     // Given: Router with concurrent message flow
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // When: 100 concurrent senders
@@ -407,7 +407,7 @@ async fn test_end_to_end_delivery_integration() {
 
     // Given: Complete router setup with all components
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // TODO: This test needs actual delivery implementation
@@ -430,7 +430,7 @@ async fn test_end_to_end_delivery_integration() {
 async fn test_metrics_track_routing_performance() {
     // Given: Router with metrics collection
     let config = RouterConfig::testing();
-    let router = Arc::new(MessageRouterImpl::new(config).unwrap());
+    let router = Arc::new(MessageRouterImpl::try_new(config).unwrap());
     router.start().await.unwrap();
 
     // When: We route messages

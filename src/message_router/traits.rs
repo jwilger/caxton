@@ -84,13 +84,18 @@ pub enum RouterError {
         node_id: NodeId,
     },
 
-    #[error("Validation error: {field} - {reason}")]
-    /// Input validation failed for a specific field
-    ValidationError {
-        /// Name of the field that failed validation
-        field: String,
-        /// Reason why the field validation failed
-        reason: String,
+    #[error("Conversation threading error: {message}")]
+    /// FIPA conversation threading validation failed
+    ConversationThreadingError {
+        /// Description of the threading validation failure
+        message: String,
+    },
+
+    #[error("Content size error: {message}")]
+    /// Message content exceeds size limits
+    ContentSizeError {
+        /// Description of the content size problem
+        message: String,
     },
 
     #[error("Resource exhausted: {resource}")]

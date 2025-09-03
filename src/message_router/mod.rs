@@ -55,7 +55,7 @@
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create router with production configuration
 //! let config = RouterConfig::production();
-//! let router = MessageRouterImpl::new(config)?;
+//! let router = MessageRouterImpl::try_new(config)?;
 //!
 //! // Start background processing
 //! router.start().await?;
