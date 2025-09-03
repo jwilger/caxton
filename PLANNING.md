@@ -440,24 +440,42 @@ and prevention of code quality degradation
 ### Story 016: Resource Management and Limits
 
 **As a** system operator
-**I want** fine-grained resource control
-**So that** agents can't consume excessive resources
+**I want** dynamic resource management that adapts to deployment environment
+**So that** Caxton uses available system resources efficiently
 
 **Acceptance Criteria:**
 
 - [ ] CPU limits enforced via WASM fuel
-- [ ] Memory limits enforced per agent
-- [ ] Message size limits configurable
+- [ ] Memory limits dynamically calculated from system resources
+- [ ] Message size limits derived from agent memory with overhead buffer
 - [ ] Execution time limits prevent hangs
-- [ ] Resource violations logged
-- [ ] Graceful degradation on limits
+- [ ] Resource violations logged with clear diagnostics
+- [ ] Graceful degradation when resources constrained
 - [ ] Per-agent and global limits supported
+- [ ] Environment-based configuration using percentages not absolutes
+
+**Implementation Requirements:**
+
+- [ ] Replace hardcoded 10MB limits with dynamic calculation
+- [ ] Read system memory at startup to determine available resources
+- [ ] Support environment variables:
+  - `CAXTON_MAX_MEMORY_PERCENT`: % of system memory Caxton can use (default 50%)
+  - `CAXTON_AGENT_MEMORY_PERCENT`: % of Caxton memory per agent (default 10%)
+  - `CAXTON_MESSAGE_OVERHEAD_PERCENT`: Operational overhead buffer (default 20%)
+- [ ] Enforce type-level constraint: `message_size < agent_memory * (1 - overhead)`
+- [ ] Create `MemoryConfiguration` type that validates relationships at startup
+- [ ] Provide clear feedback on calculated limits in logs
+- [ ] Support minimum thresholds to prevent unusable configurations
 
 **Definition of Done:**
 
 - Limits enforced within 5% accuracy
 - Resource bombs prevented
 - Performance overhead < 10%
+- No hardcoded memory limits remain in codebase
+- Configuration adapts to systems from 512MB to 1TB RAM
+- Operators can tune via environment without code changes
+- Type system prevents invalid memory relationships
 - Monitoring shows resource usage
 - Configuration documented
 - Tests verify all limits
