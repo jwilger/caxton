@@ -25,7 +25,7 @@ command = ["cargo", "check", "--color=always"]
 need_stdout = false
 
 [jobs.clippy]
-command = ["cargo", "clippy", "--color=always", "--", "-D", "warnings"]
+command = ["cargo", "clippy", "--no-deps", "--color=always", "--", "-D", "warnings"]
 need_stdout = false
 
 [jobs.test-std]

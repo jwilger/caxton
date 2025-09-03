@@ -165,7 +165,8 @@ mod tests {
         use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
         use crate::domain_types::AgentId;
         use crate::message_router::domain_types::{
-            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
+            FipaMessage, MessageContent, MessageId, MessageParticipants, MessageTimestamp,
+            Performative,
         };
         use crate::message_router::traits::MessageStorage;
         use tempfile::TempDir;
@@ -190,12 +191,9 @@ mod tests {
 
         let message = FipaMessage {
             performative: Performative::Request,
-            sender: sender_id,
-            receiver: receiver_id,
+            participants: MessageParticipants::try_new(sender_id, receiver_id)
+                .expect("Valid participants"),
             content: message_content,
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,
@@ -231,7 +229,8 @@ mod tests {
         use crate::database::{DatabaseConfig, DatabaseConnection, DatabasePath};
         use crate::domain_types::AgentId;
         use crate::message_router::domain_types::{
-            FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative,
+            FipaMessage, MessageContent, MessageId, MessageParticipants, MessageTimestamp,
+            Performative,
         };
         use crate::message_router::traits::MessageStorage;
         use tempfile::TempDir;
@@ -256,12 +255,9 @@ mod tests {
 
         let message = FipaMessage {
             performative: Performative::Inform,
-            sender: sender_id,
-            receiver: receiver_id,
+            participants: MessageParticipants::try_new(sender_id, receiver_id)
+                .expect("Valid participants"),
             content: message_content,
-            language: None,
-            ontology: None,
-            protocol: None,
             conversation_id: None,
             reply_with: None,
             in_reply_to: None,
@@ -304,7 +300,6 @@ mod tests {
         use crate::domain_types::AgentId;
         use crate::message_router::domain_types::{
             Conversation, ConversationCreatedAt, ConversationId, MessageCount, MessageTimestamp,
-            ProtocolName,
         };
         use crate::message_router::traits::ConversationStorage;
         use sqlx::Row;
@@ -376,13 +371,9 @@ mod tests {
         participants.insert(agent2);
         participants.insert(agent3);
 
-        let protocol =
-            ProtocolName::try_new("contract-net").expect("Failed to create protocol name");
-
         let conversation = Conversation {
             id: ConversationId::generate(),
             participants,
-            protocol: Some(protocol),
             created_at: ConversationCreatedAt::now(),
             last_activity: MessageTimestamp::now(),
             message_count: MessageCount::new(7),

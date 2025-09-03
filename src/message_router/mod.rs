@@ -1,5 +1,3 @@
-#![allow(missing_docs)] // TODO: Add comprehensive documentation in REFINEMENT phase
-
 //! Core Message Router for Caxton Multi-Agent System
 //!
 //! This module implements a high-performance, async message router that enables
@@ -57,20 +55,20 @@
 //! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create router with production configuration
 //! let config = RouterConfig::production();
-//! let router = MessageRouterImpl::new(config)?;
+//! let router = MessageRouterImpl::try_new(config)?;
 //!
 //! // Start background processing
 //! router.start().await?;
 //!
-//! // Route a message
+//! // Route a message using the smart constructor
+//! let sender = AgentId::generate();
+//! let receiver = AgentId::generate();
+//! let content = MessageContent::try_new("Hello, world!".to_string().into_bytes()).unwrap();
+//! let participants = caxton::message_router::domain_types::MessageParticipants::try_new(sender, receiver).unwrap();
 //! let message = FipaMessage {
 //!     performative: Performative::Inform,
-//!     sender: AgentId::generate(),
-//!     receiver: AgentId::generate(),
-//!     content: MessageContent::try_new("Hello, world!".to_string().into_bytes()).unwrap(),
-//!     language: None,
-//!     ontology: None,
-//!     protocol: None,
+//!     participants,
+//!     content,
 //!     conversation_id: None,
 //!     reply_with: None,
 //!     in_reply_to: None,

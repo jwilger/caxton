@@ -17,16 +17,26 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ConfigError {
     #[error("Invalid configuration: {field} - {reason}")]
-    ValidationError { field: String, reason: String },
+    /// Configuration validation failed for specific field
+    ValidationError {
+        /// Name of the configuration field that failed validation
+        field: String,
+        /// Reason for validation failure
+        reason: String,
+    },
 
     #[error("I/O error: {source}")]
+    /// I/O error during configuration operations
     IoError {
+        /// Underlying I/O error source
         #[from]
         source: std::io::Error,
     },
 
     #[error("Serialization error: {source}")]
+    /// JSON serialization/deserialization error
     SerializationError {
+        /// Underlying serde JSON error source
         #[from]
         source: serde_json::Error,
     },
@@ -254,33 +264,51 @@ impl Default for StorageConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RouterConfig {
     // Core routing settings
+    /// Maximum size of inbound message queue for each worker thread
     pub inbound_queue_size: ChannelCapacity,
+    /// Maximum size of outbound message queue for delivery engine
     pub outbound_queue_size: ChannelCapacity,
+    /// Default timeout for message delivery operations in milliseconds
     pub message_timeout_ms: MessageTimeoutMs,
+    /// Number of messages to process in a single batch for efficiency
     pub message_batch_size: MessageBatchSize,
+    /// Number of worker threads for concurrent message processing
     pub worker_thread_count: WorkerThreadCount,
 
     // Retry and failure handling
+    /// Maximum number of retry attempts for failed message deliveries
     pub max_retries: MaxRetries,
+    /// Initial delay between retry attempts in milliseconds
     pub retry_delay_ms: RetryDelayMs,
+    /// Exponential backoff multiplier for retry delay calculation
     pub retry_backoff_factor: RetryBackoffFactor,
+    /// Maximum size of dead letter queue for permanently failed messages
     pub dead_letter_queue_size: DeadLetterQueueSize,
 
     // Circuit breaker settings
+    /// Failure threshold before circuit breaker opens to protect system
     pub circuit_breaker_threshold: CircuitBreakerThreshold,
+    /// Time to wait before attempting to close circuit breaker in milliseconds
     pub circuit_breaker_timeout_ms: CircuitBreakerTimeoutMs,
 
     // Conversation management
+    /// Timeout for conversation inactivity before cleanup in milliseconds
     pub conversation_timeout_ms: ConversationTimeoutMs,
+    /// Maximum number of agents allowed in a single conversation
     pub max_conversation_participants: MaxConversationParticipants,
 
     // Health monitoring
+    /// Interval between health checks for agents and system components
     pub health_check_interval_ms: HealthCheckIntervalMs,
 
     // Grouped configuration settings
+    /// Observability settings for metrics, tracing, and logging
     pub observability: ObservabilityConfig,
+    /// Storage configuration for message persistence and state management
     pub storage: StorageConfig,
+    /// Performance tuning settings for optimization and resource limits
     pub performance: PerformanceConfig,
+    /// Security configuration for authentication and authorization
     pub security: SecurityConfig,
 }
 
@@ -306,94 +334,6 @@ fn get_worker_thread_count_with_env_fallback() -> WorkerThreadCount {
     // Fall back to computed default if env var is missing, invalid, or out of range
     let computed_default = (num_cpus::get() * 2).clamp(2, 8);
     WorkerThreadCount::try_new(computed_default).unwrap()
-}
-
-impl RouterConfig {
-    // Backward compatibility methods for deprecated fields
-
-    /// Backward compatibility: get trace sampling ratio
-    #[must_use]
-    pub fn trace_sampling_ratio(&self) -> TraceSamplingRatio {
-        self.observability.trace_sampling_ratio
-    }
-
-    /// Backward compatibility: check if metrics are enabled
-    #[must_use]
-    pub fn enable_metrics(&self) -> bool {
-        self.observability.enable_metrics
-    }
-
-    /// Backward compatibility: check if detailed logs are enabled
-    #[must_use]
-    pub fn enable_detailed_logs(&self) -> bool {
-        self.observability.enable_detailed_logs
-    }
-
-    /// Backward compatibility: get storage path
-    #[must_use]
-    pub fn storage_path(&self) -> Option<&PathBuf> {
-        self.storage.storage_path.as_ref()
-    }
-
-    /// Backward compatibility: check if persistence is enabled
-    #[must_use]
-    pub fn enable_persistence(&self) -> bool {
-        self.storage.enable_persistence
-    }
-
-    /// Backward compatibility: get storage cleanup interval
-    #[must_use]
-    pub fn storage_cleanup_interval_ms(&self) -> u64 {
-        self.storage.storage_cleanup_interval_ms
-    }
-
-    /// Backward compatibility: check if batching is enabled
-    #[must_use]
-    pub fn enable_batching(&self) -> bool {
-        self.performance.enable_batching
-    }
-
-    /// Backward compatibility: check if connection pooling is enabled
-    #[must_use]
-    pub fn enable_connection_pooling(&self) -> bool {
-        self.performance.enable_connection_pooling
-    }
-
-    /// Backward compatibility: get connection pool size
-    #[must_use]
-    pub fn connection_pool_size(&self) -> usize {
-        self.performance.connection_pool_size
-    }
-
-    /// Backward compatibility: check if compression is enabled
-    #[must_use]
-    pub fn enable_compression(&self) -> bool {
-        self.performance.enable_compression
-    }
-
-    /// Backward compatibility: check if message validation is enabled
-    #[must_use]
-    pub fn enable_message_validation(&self) -> bool {
-        self.security.enable_message_validation
-    }
-
-    /// Backward compatibility: get max message size
-    #[must_use]
-    pub fn max_message_size_bytes(&self) -> usize {
-        self.security.max_message_size_bytes
-    }
-
-    /// Backward compatibility: check if rate limiting is enabled
-    #[must_use]
-    pub fn enable_rate_limiting(&self) -> bool {
-        self.security.enable_rate_limiting
-    }
-
-    /// Backward compatibility: get rate limit
-    #[must_use]
-    pub fn rate_limit_messages_per_second(&self) -> usize {
-        self.security.rate_limit_messages_per_second
-    }
 }
 
 impl RouterConfig {
@@ -869,7 +809,7 @@ mod tests {
 
         assert_eq!(config.inbound_queue_size.as_usize(), 5000);
         assert_eq!(config.message_timeout_ms.as_u64(), 15000);
-        assert!(!config.enable_persistence());
+        assert!(!config.storage.enable_persistence);
     }
 
     #[test]
@@ -899,8 +839,8 @@ mod tests {
         assert_eq!(config.inbound_queue_size, deserialized.inbound_queue_size);
         assert_eq!(config.message_timeout_ms, deserialized.message_timeout_ms);
         assert_eq!(
-            config.enable_persistence(),
-            deserialized.enable_persistence()
+            config.storage.enable_persistence,
+            deserialized.storage.enable_persistence
         );
     }
 

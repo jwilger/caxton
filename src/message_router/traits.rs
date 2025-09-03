@@ -10,168 +10,305 @@ use thiserror::Error;
 use super::domain_types::{
     AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationId,
     FailureReason, FipaMessage, LocalAgent, MaxRetries, MessageCount, MessageId, MessageTimestamp,
-    NodeId, ProtocolName, RouteHops, RouteInfo,
+    NodeId, RouteHops, RouteInfo,
 };
 
 /// Comprehensive error types for message routing operations
 #[derive(Debug, Error)]
 pub enum RouterError {
     #[error("Agent not found: {agent_id}")]
-    AgentNotFound { agent_id: AgentId },
+    /// The specified agent could not be found in the registry
+    AgentNotFound {
+        /// ID of the agent that could not be found
+        agent_id: AgentId,
+    },
 
     #[error("Message too large: {size} bytes (max: {max_size} bytes)")]
-    MessageTooLarge { size: usize, max_size: usize },
+    /// Message exceeds the maximum allowed size limit
+    MessageTooLarge {
+        /// Actual size of the message in bytes
+        size: usize,
+        /// Maximum allowed message size in bytes
+        max_size: usize,
+    },
 
     #[error("Queue full: {queue_type}")]
-    QueueFull { queue_type: String },
+    /// Message queue has reached capacity and cannot accept new messages
+    QueueFull {
+        /// Type of queue that is full (e.g., "inbound", "outbound")
+        queue_type: String,
+    },
 
     #[error("Network error: {source}")]
+    /// Network communication failure occurred
     NetworkError {
         #[source]
+        /// Underlying network error that caused the failure
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Serialization error: {source}")]
+    /// Message serialization or deserialization failed
     SerializationError {
         #[source]
+        /// Underlying JSON serialization error
         source: serde_json::Error,
     },
 
     #[error("Timeout: operation took longer than {timeout_ms}ms")]
-    Timeout { timeout_ms: u64 },
+    /// Operation exceeded the configured timeout duration
+    Timeout {
+        /// Timeout duration that was exceeded in milliseconds
+        timeout_ms: u64,
+    },
 
     #[error("Configuration error: {message}")]
-    ConfigurationError { message: String },
+    /// Invalid configuration settings detected
+    ConfigurationError {
+        /// Description of the configuration problem
+        message: String,
+    },
 
     #[error("Storage error: {source}")]
+    /// Database or storage system operation failed
     StorageError {
         #[source]
+        /// Underlying storage error that caused the failure
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Circuit breaker open for node: {node_id}")]
-    CircuitBreakerOpen { node_id: NodeId },
+    /// Circuit breaker protection activated due to repeated failures
+    CircuitBreakerOpen {
+        /// ID of the node that has circuit breaker protection active
+        node_id: NodeId,
+    },
 
-    #[error("Validation error: {field} - {reason}")]
-    ValidationError { field: String, reason: String },
+    #[error("Message validation error: {message}")]
+    /// General FIPA message validation failed
+    MessageValidationError {
+        /// Description of the validation failure
+        message: String,
+    },
+
+    #[error("Conversation threading error: {message}")]
+    /// FIPA conversation threading validation failed
+    ConversationThreadingError {
+        /// Description of the threading validation failure
+        message: String,
+    },
+
+    #[error("Content size error: {message}")]
+    /// Message content exceeds size limits
+    ContentSizeError {
+        /// Description of the content size problem
+        message: String,
+    },
 
     #[error("Resource exhausted: {resource}")]
-    ResourceExhausted { resource: String },
+    /// System resource limit has been reached or exceeded
+    ResourceExhausted {
+        /// Type of resource that was exhausted (e.g., "memory", "connections")
+        resource: String,
+    },
 }
 
 /// Delivery-specific errors
 #[derive(Debug, Error)]
 pub enum DeliveryError {
     #[error("Local delivery failed: {source}")]
+    /// Failed to deliver message locally to agent
     LocalDeliveryFailed {
         #[source]
+        /// Underlying error that caused the delivery failure
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Remote delivery failed to node {node_id}: {source}")]
+    /// Failed to deliver message to remote node
     RemoteDeliveryFailed {
+        /// ID of the remote node that failed to receive the message
         node_id: NodeId,
         #[source]
+        /// Underlying network or communication error
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Circuit breaker open for node: {node_id}")]
-    CircuitBreakerOpen { node_id: NodeId },
+    /// Circuit breaker protection activated for remote node
+    CircuitBreakerOpen {
+        /// ID of the node with active circuit breaker protection
+        node_id: NodeId,
+    },
 
     #[error("Connection pool exhausted for node: {node_id}")]
-    ConnectionPoolExhausted { node_id: NodeId },
+    /// Connection pool to remote node has no available connections
+    ConnectionPoolExhausted {
+        /// ID of the node with exhausted connection pool
+        node_id: NodeId,
+    },
 
     #[error("Serialization failed: {source}")]
+    /// Message serialization failed during delivery preparation
     SerializationFailed {
         #[source]
+        /// Underlying JSON serialization error
         source: serde_json::Error,
     },
 
     #[error("Retry limit exceeded: {max_retries}")]
-    RetryLimitExceeded { max_retries: MaxRetries },
+    /// Maximum number of delivery retries has been exceeded
+    RetryLimitExceeded {
+        /// Maximum retry limit that was exceeded
+        max_retries: MaxRetries,
+    },
 }
 
 /// Conversation management errors
 #[derive(Debug, Error)]
 pub enum ConversationError {
     #[error("Conversation not found: {conversation_id}")]
-    ConversationNotFound { conversation_id: ConversationId },
+    /// Specified conversation could not be found in storage
+    ConversationNotFound {
+        /// ID of the conversation that was not found
+        conversation_id: ConversationId,
+    },
 
     #[error("Too many participants: {count} (max: {max})")]
-    TooManyParticipants { count: usize, max: usize },
+    /// Conversation has exceeded the maximum allowed participants
+    TooManyParticipants {
+        /// Current number of participants
+        count: usize,
+        /// Maximum allowed participant count
+        max: usize,
+    },
 
     #[error("Storage error: {source}")]
+    /// Database or storage operation failed for conversation
     StorageError {
         #[source]
+        /// Underlying storage error that caused the failure
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Conversation timeout: {conversation_id}")]
-    ConversationTimeout { conversation_id: ConversationId },
+    /// Conversation has exceeded its configured timeout duration
+    ConversationTimeout {
+        /// ID of the conversation that timed out
+        conversation_id: ConversationId,
+    },
 }
 
 /// Agent registry errors
 #[derive(Debug, Error)]
 pub enum RegistryError {
     #[error("Agent already registered: {agent_id}")]
-    AgentAlreadyRegistered { agent_id: AgentId },
+    /// Attempted to register an agent that is already registered
+    AgentAlreadyRegistered {
+        /// ID of the agent that is already registered
+        agent_id: AgentId,
+    },
 
     #[error("Agent not found: {agent_id}")]
-    AgentNotFound { agent_id: AgentId },
+    /// Requested agent could not be found in the registry
+    AgentNotFound {
+        /// ID of the agent that was not found
+        agent_id: AgentId,
+    },
 
     #[error("Invalid agent state transition: {from:?} -> {to:?}")]
-    InvalidStateTransition { from: AgentState, to: AgentState },
+    /// Attempted invalid agent state transition
+    InvalidStateTransition {
+        /// Current agent state
+        from: AgentState,
+        /// Attempted target state
+        to: AgentState,
+    },
 
     #[error("Storage error: {source}")]
+    /// Database or storage operation failed for agent registry
     StorageError {
         #[source]
+        /// Underlying storage error that caused the failure
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Health check failed for agent: {agent_id}")]
-    HealthCheckFailed { agent_id: AgentId },
+    /// Agent health check operation failed
+    HealthCheckFailed {
+        /// ID of the agent that failed health check
+        agent_id: AgentId,
+    },
 }
 
 /// Router health status
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HealthStatus {
+    /// Router is operating normally with no issues
     Healthy,
-    Degraded { reason: String },
-    Unhealthy { reason: String },
+    /// Router is operational but with reduced performance
+    Degraded {
+        /// Description of the performance degradation
+        reason: String,
+    },
+    /// Router is experiencing serious problems affecting functionality
+    Unhealthy {
+        /// Description of the health problems
+        reason: String,
+    },
 }
 
 /// Router performance statistics
 #[derive(Debug, Clone)]
 pub struct RouterStats {
     // Throughput metrics
+    /// Current message processing rate in messages per second
     pub messages_per_second: f64,
+    /// Highest observed message processing rate since startup
     pub peak_messages_per_second: f64,
+    /// Total number of messages processed since startup
     pub total_messages_processed: MessageCount,
 
     // Latency metrics (in microseconds)
+    /// 50th percentile routing latency in microseconds
     pub routing_latency_p50: u64,
+    /// 90th percentile routing latency in microseconds
     pub routing_latency_p90: u64,
+    /// 99th percentile routing latency in microseconds
     pub routing_latency_p99: u64,
+    /// 99.9th percentile routing latency in microseconds
     pub routing_latency_p999: u64,
 
     // Error metrics
+    /// Total number of routing errors since startup
     pub total_errors: MessageCount,
+    /// Current error rate as a percentage of total messages
     pub error_rate: f64,
+    /// Count of errors grouped by error type
     pub errors_by_type: HashMap<String, MessageCount>,
 
     // Queue metrics
+    /// Number of messages waiting in the inbound queue
     pub inbound_queue_depth: usize,
+    /// Number of messages waiting in the outbound queue
     pub outbound_queue_depth: usize,
+    /// Message queue depth for each registered agent
     pub agent_queue_depths: HashMap<AgentId, usize>,
 
     // Conversation metrics
+    /// Number of currently active conversations
     pub active_conversations: usize,
+    /// Total number of conversations created since startup
     pub total_conversations: MessageCount,
+    /// Average number of messages per conversation
     pub average_conversation_length: f64,
 
     // Resource metrics
+    /// Current memory usage in bytes
     pub memory_usage_bytes: usize,
+    /// Current CPU usage as a percentage (0.0 to 100.0)
     pub cpu_usage_percent: f64,
+    /// Current database storage size in bytes
     pub database_size_bytes: usize,
 }
 
@@ -276,7 +413,6 @@ pub trait ConversationManager: Send + Sync {
         &self,
         conversation_id: ConversationId,
         participants: std::collections::HashSet<AgentId>,
-        protocol: Option<ProtocolName>,
     ) -> Result<Conversation, ConversationError>;
 
     /// Updates conversation state with a new message
@@ -507,54 +643,79 @@ pub trait MetricsCollector: Send + Sync {
 /// Conversation statistics
 #[derive(Debug, Clone)]
 pub struct ConversationStats {
+    /// Number of currently active conversations
     pub total_active: usize,
+    /// Total number of conversations created since startup
     pub total_created: MessageCount,
+    /// Average conversation duration in milliseconds
     pub average_duration_ms: u64,
+    /// Average number of messages per conversation
     pub average_message_count: f64,
+    /// Distribution of conversations by participant count
     pub participants_distribution: HashMap<usize, usize>, // participant_count -> conversation_count
 }
 
 /// Dead letter queue statistics
 #[derive(Debug, Clone)]
 pub struct DeadLetterStats {
+    /// Total number of messages in the dead letter queue
     pub total_messages: MessageCount,
+    /// Count of dead letter messages grouped by failure reason
     pub messages_by_reason: HashMap<FailureReason, MessageCount>,
+    /// Age of the oldest message in the queue in milliseconds
     pub oldest_message_age_ms: Option<u64>,
+    /// Total storage size of dead letter queue in bytes
     pub queue_size_bytes: usize,
 }
 
 /// Circuit breaker states
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CircuitBreakerState {
+    /// Circuit breaker is closed, allowing normal operation
     Closed,
+    /// Circuit breaker is half-open, testing if service has recovered
     HalfOpen,
+    /// Circuit breaker is open, blocking requests due to failures
     Open,
 }
 
 /// Retry reasons for failure classification
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RetryReason {
+    /// Network communication failure occurred
     NetworkError,
+    /// Message queue reached capacity
     QueueFull,
+    /// Target agent is not available to receive messages
     AgentUnavailable,
+    /// System resource limit has been reached
     ResourceExhausted,
+    /// Operation exceeded configured timeout duration
     Timeout,
 }
 
 /// Health check results with detailed information
 #[derive(Debug, Clone)]
 pub struct DetailedHealthStatus {
+    /// Overall health status of the system
     pub overall: HealthStatus,
+    /// Health status of individual system components
     pub components: HashMap<String, ComponentHealth>,
+    /// System uptime in milliseconds
     pub uptime_ms: u64,
+    /// Most recent error message if any
     pub last_error: Option<String>,
 }
 
 /// Individual component health
 #[derive(Debug, Clone)]
 pub struct ComponentHealth {
+    /// Current health status of this component
     pub status: HealthStatus,
+    /// Timestamp of the most recent health check
     pub last_check: MessageTimestamp,
+    /// Number of errors since last reset
     pub error_count: u32,
+    /// Component-specific performance metrics
     pub metrics: HashMap<String, f64>,
 }

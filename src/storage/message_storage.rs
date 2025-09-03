@@ -42,7 +42,10 @@ use crate::{
     database::DatabaseConnection,
     domain_types::AgentId,
     message_router::{
-        domain_types::{FipaMessage, MessageContent, MessageId, MessageTimestamp, Performative},
+        domain_types::{
+            FipaMessage, MessageContent, MessageId, MessageParticipants, MessageTimestamp,
+            Performative,
+        },
         traits::RouterError,
     },
 };
@@ -137,12 +140,9 @@ impl SqliteMessageStorage {
 
         Ok(FipaMessage {
             performative,
-            sender,
-            receiver,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants from storage"),
             content: message_content,
-            language: None, // Not stored in current schema
-            ontology: None, // Not stored in current schema
-            protocol: None, // Not stored in current schema
             conversation_id,
             reply_with: None,  // Not stored in current schema
             in_reply_to: None, // Not stored in current schema
@@ -378,8 +378,8 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
 
         sqlx::query(INSERT_MESSAGE)
             .bind(message.message_id.to_string())
-            .bind(message.sender.to_string())
-            .bind(message.receiver.to_string())
+            .bind(message.sender().to_string())
+            .bind(message.receiver().to_string())
             .bind(
                 message
                     .conversation_id
@@ -395,7 +395,10 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
             .map_err(|e| {
                 warn!(
                     "Failed to store message {} from {} to {}: {}",
-                    message.message_id, message.sender, message.receiver, e
+                    message.message_id,
+                    message.sender(),
+                    message.receiver(),
+                    e
                 );
                 RouterError::StorageError {
                     source: Box::new(e),
@@ -429,7 +432,9 @@ impl crate::message_router::traits::MessageStorage for SqliteMessageStorage {
 
         info!(
             "Retrieved message {} from sender {} to receiver {}",
-            message_id, fipa_message.sender, fipa_message.receiver
+            message_id,
+            fipa_message.sender(),
+            fipa_message.receiver()
         );
 
         Ok(Some(fipa_message))

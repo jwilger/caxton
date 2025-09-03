@@ -42,7 +42,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_registration_and_stats() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Initially no agents
         let initial_stats = router.get_stats().await.unwrap();
@@ -63,7 +63,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_deregistration() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Create and register test agent
         let (agent, capabilities) = create_test_agent(1, vec!["data-processing"]);
@@ -86,7 +86,7 @@ mod tests {
     #[tokio::test]
     async fn test_multiple_agent_registration() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Register multiple agents
         let (agent1, caps1) = create_test_agent(1, vec!["data-processing"]);
@@ -110,7 +110,7 @@ mod tests {
         const NUM_CONCURRENT_OPS: usize = 100;
 
         let config = test_config();
-        let router = std::sync::Arc::new(MessageRouterImpl::new(config).unwrap());
+        let router = std::sync::Arc::new(MessageRouterImpl::try_new(config).unwrap());
         let mut handles = Vec::new();
 
         // Spawn concurrent registration operations
@@ -152,7 +152,7 @@ mod tests {
         const STATS_CALLS: usize = 100;
 
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
         let mut agent_ids = Vec::with_capacity(NUM_AGENTS);
 
         // Registration phase
@@ -192,7 +192,7 @@ mod tests {
     #[tokio::test]
     async fn test_error_conditions() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Test deregistration of non-existent agent
         let nonexistent_id = AgentId::generate();
@@ -218,7 +218,7 @@ mod tests {
     #[tokio::test]
     async fn test_health_check() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Start the router so health checks work
         router.start().await.unwrap();
@@ -245,7 +245,7 @@ mod tests {
     #[tokio::test]
     async fn test_router_lifecycle() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Start the router
         router.start().await.unwrap();
@@ -275,7 +275,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_state_management() {
         let config = test_config();
-        let router = MessageRouterImpl::new(config).unwrap();
+        let router = MessageRouterImpl::try_new(config).unwrap();
 
         // Register an agent
         let (agent, capabilities) = create_test_agent(1, vec!["state-test"]);

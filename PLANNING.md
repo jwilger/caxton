@@ -2,11 +2,14 @@
 
 ## Overview
 
-This document contains the complete, prioritized backlog of user stories for the Caxton system development. Each story represents a thin vertical slice of functionality that delivers value independently. Stories are organized by priority and include complete acceptance criteria and definition of done.
+## Current Development Focus: Story 005 - FIPA ACL Message
+
+Protocol Implementation ✅
 
 ## Story Priority Levels
 
-- **P0 - Critical Foundation**: Core infrastructure that everything else depends on
+- **P0 - Critical Foundation**: Core infrastructure that everything
+  else depends on
 - **P1 - Essential Features**: Must-have features for minimal viable product
 - **P2 - Standard Features**: Features needed for production readiness
 - **P3 - Enhanced Features**: Features that improve usability and operations
@@ -19,16 +22,25 @@ This document contains the complete, prioritized backlog of user stories for the
 ### P0 - Critical Foundation
 
 - [X] Story 001: WebAssembly Runtime Foundation
-- [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec - See docs/story-002-verification-report.md)
-- [x] Story 003: Agent Lifecycle Management ✅ (COMPLETED - All acceptance criteria implemented and verified. 375 tests passing with comprehensive WASM validation, deployment management, hot reload, and lifecycle management)
-- [x] **Story 053: Code Quality Enforcement** - Systematically remove temporary clippy allow attributes and establish stricter code hygiene standards to prevent future accumulation of warnings ✅ (COMPLETED - PR #8 merged: comprehensive code quality enforcement implemented with clippy compliance, pre-commit hooks, and CI quality gates)
-- [x] Story 051: Full CI/CD Pipeline Setup - Set up comprehensive GitHub Actions CI build pipeline to test on all supported platforms (Linux, macOS, Windows) with matrix testing, security scanning, and automated releases
-- [x] Story 052: Dependency Vulnerability Resolution - Address the GitHub-detected dependency vulnerability to maintain security posture and prepare for production deployment
+- [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec -
+  See docs/story-002-verification-report.md)
+- [x] **Story 053: Code Quality Enforcement** - Systematically remove
+  temporary clippy allow attributes and establish stricter code hygiene
+  standards to prevent future accumulation of warnings ✅ (COMPLETED -
+  PR #8 merged: comprehensive code quality enforcement implemented with
+  clippy compliance, pre-commit hooks, and CI quality gates)
+- [x] Story 051: Full CI/CD Pipeline Setup - Set up comprehensive
+  GitHub Actions CI build pipeline to test on all supported platforms
+  (Linux, macOS, Windows) with matrix testing, security scanning, and
+  automated releases
+- [x] Story 052: Dependency Vulnerability Resolution - Address the
+  GitHub-detected dependency vulnerability to maintain security posture
+  and prepare for production deployment
 - [x] Story 004: Local State Storage ✅ (COMPLETED)
 
 ### P1 - Essential Features
 
-- [ ] Story 005: FIPA-ACL Message Protocol
+- [x] Story 005: FIPA-ACL Message Protocol ✅ (COMPLETED)
 - [ ] Story 006: gRPC Management API
 - [ ] Story 007: REST API Gateway
 - [ ] Story 008: CLI Tool
@@ -36,9 +48,13 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Story 010: Basic MCP Tool Integration
 - [ ] Story 016: Resource Management and Limits
 - [ ] Story 017: Health Checks and Readiness Probes
-- [ ] Story 055: TLS Security Infrastructure
-- [ ] Story 056: Security Audit and Logging
-- [ ] Story 057: Emergency Operations Framework
+- [ ] Story 054: Conversation Manager Integration
+- [ ] Story 055: Agent State Registry Integration
+- [ ] Story 056: Error Classification Tracking
+- [ ] Story 057: Message Latency Metrics
+- [ ] Story 058: TLS Security Infrastructure
+- [ ] Story 059: Security Audit and Logging
+- [ ] Story 060: Emergency Operations Framework
 
 ### P2 - Standard Features
 
@@ -52,6 +68,8 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Story 043: Agent Testing Framework
 - [ ] Story 044: Dynamic Configuration Management
 - [ ] Story 045: Advanced Security Operations
+- [ ] Story 058: Queue Depth Monitoring
+- [ ] Story 059: Message Rate Peak Tracking
 
 ### P3 - Enhanced Features
 
@@ -68,6 +86,7 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] Story 048: Performance Engineering Tools
 - [ ] Story 049: Compliance Framework
 - [ ] Story 050: Developer Experience Platform
+- [ ] Story 060: System Resource Monitoring
 
 ### P4 - Advanced Features
 
@@ -95,8 +114,8 @@ This document contains the complete, prioritized backlog of user stories for the
 
 **As a** system operator
 **I want** a secure WebAssembly runtime environment
-**So that** agents can execute in isolated sandboxes without affecting system stability
-
+**So that** agents can execute in isolated sandboxes without affecting
+system stability
 **Acceptance Criteria:**
 
 - [ ] WASM runtime (wasmtime) is integrated and configured
@@ -105,8 +124,8 @@ This document contains the complete, prioritized backlog of user stories for the
 - [ ] WASM modules can be loaded and instantiated
 - [ ] Host functions are exposed for controlled system access
 - [ ] Fuel-based cooperative scheduling prevents infinite loops
-- [ ] Security features disable dangerous WASM features (SIMD, ref types, bulk memory)
-
+- [ ] Security features disable dangerous WASM features (SIMD, ref types,
+  bulk memory)
 **Definition of Done:**
 
 - Unit tests pass for all sandbox operations
@@ -149,8 +168,8 @@ This document contains the complete, prioritized backlog of user stories for the
 **Acceptance Criteria:**
 
 - [x] Agents can be deployed from WASM modules ✅
-- [x] Agent state transitions follow defined lifecycle (Unloaded→Loaded→Running→Draining→Stopped) ✅
-- [x] Hot reload deploys new versions without downtime ✅
+- [x] Agent state transitions follow defined lifecycle
+  (Unloaded→Loaded→Running→Draining→Stopped) ✅
 - [x] Resource limits are set during deployment ✅
 - [x] Failed agents don't affect other agents ✅
 - [x] Deployment validates WASM modules before activation ✅
@@ -168,8 +187,8 @@ This document contains the complete, prioritized backlog of user stories for the
 
 **As a** development team
 **I want** comprehensive GitHub Actions CI/CD pipeline
-**So that** all code is tested on every platform we support with automated security scanning
-
+**So that** all code is tested on every platform we support with
+automated security scanning
 **Acceptance Criteria:**
 
 - [ ] Matrix testing across Linux, macOS, Windows
@@ -193,8 +212,8 @@ This document contains the complete, prioritized backlog of user stories for the
 ### Story 053: Code Quality Enforcement
 
 **As a** development team
-**I want** systematic removal of temporary clippy allow attributes and prevention of code quality degradation
-**So that** we maintain high code standards and prevent future accumulation of technical debt
+**I want** systematic removal of temporary clippy allow attributes
+and prevention of code quality degradation
 
 **Acceptance Criteria:**
 
@@ -276,10 +295,11 @@ This document contains the complete, prioritized backlog of user stories for the
 
 **Acceptance Criteria:**
 
-- [ ] Messages follow FIPA-ACL structure (performative, sender, receiver, content, etc.)
-- [ ] Core performatives implemented (REQUEST, INFORM, QUERY, PROPOSE, ACCEPT_PROPOSAL, REJECT_PROPOSAL, FAILURE, NOT_UNDERSTOOD)
+- [ ] Messages follow FIPA-ACL structure (performative, sender,
+  receiver, content, etc.)
+- [ ] Core performatives implemented (REQUEST, INFORM, QUERY,
+  PROPOSE, ACCEPT_PROPOSAL, REJECT_PROPOSAL, FAILURE, NOT_UNDERSTOOD)
 - [ ] Conversation tracking via conversation_id, reply_with, in_reply_to
-- [ ] JSON content format is supported
 - [ ] Message validation ensures required fields
 - [ ] Malformed messages generate NOT_UNDERSTOOD responses
 
@@ -420,24 +440,42 @@ This document contains the complete, prioritized backlog of user stories for the
 ### Story 016: Resource Management and Limits
 
 **As a** system operator
-**I want** fine-grained resource control
-**So that** agents can't consume excessive resources
+**I want** dynamic resource management that adapts to deployment environment
+**So that** Caxton uses available system resources efficiently
 
 **Acceptance Criteria:**
 
 - [ ] CPU limits enforced via WASM fuel
-- [ ] Memory limits enforced per agent
-- [ ] Message size limits configurable
+- [ ] Memory limits dynamically calculated from system resources
+- [ ] Message size limits derived from agent memory with overhead buffer
 - [ ] Execution time limits prevent hangs
-- [ ] Resource violations logged
-- [ ] Graceful degradation on limits
+- [ ] Resource violations logged with clear diagnostics
+- [ ] Graceful degradation when resources constrained
 - [ ] Per-agent and global limits supported
+- [ ] Environment-based configuration using percentages not absolutes
+
+**Implementation Requirements:**
+
+- [ ] Replace hardcoded 10MB limits with dynamic calculation
+- [ ] Read system memory at startup to determine available resources
+- [ ] Support environment variables:
+  - `CAXTON_MAX_MEMORY_PERCENT`: % of system memory Caxton can use (default 50%)
+  - `CAXTON_AGENT_MEMORY_PERCENT`: % of Caxton memory per agent (default 10%)
+  - `CAXTON_MESSAGE_OVERHEAD_PERCENT`: Operational overhead buffer (default 20%)
+- [ ] Enforce type-level constraint: `message_size < agent_memory * (1 - overhead)`
+- [ ] Create `MemoryConfiguration` type that validates relationships at startup
+- [ ] Provide clear feedback on calculated limits in logs
+- [ ] Support minimum thresholds to prevent unusable configurations
 
 **Definition of Done:**
 
 - Limits enforced within 5% accuracy
 - Resource bombs prevented
 - Performance overhead < 10%
+- No hardcoded memory limits remain in codebase
+- Configuration adapts to systems from 512MB to 1TB RAM
+- Operators can tune via environment without code changes
+- Type system prevents invalid memory relationships
 - Monitoring shows resource usage
 - Configuration documented
 - Tests verify all limits
@@ -476,8 +514,8 @@ This document contains the complete, prioritized backlog of user stories for the
 **Acceptance Criteria:**
 
 - [ ] TLS encryption for all API endpoints (gRPC, REST, WebSocket)
-- [ ] Environment variable configuration (CAXTON_TLS_ENABLED, CAXTON_TLS_CERT_PATH, CAXTON_TLS_KEY_PATH)
-- [ ] Certificate loading and validation at startup
+- [ ] Environment variable configuration (CAXTON_TLS_ENABLED,
+  CAXTON_TLS_CERT_PATH, CAXTON_TLS_KEY_PATH)
 - [ ] TLS 1.3 minimum version enforced
 - [ ] Certificate rotation without service restart
 - [ ] Client certificate authentication support
@@ -1517,7 +1555,8 @@ This document contains the complete, prioritized backlog of user stories for the
 
 ## Story Coverage Matrix
 
-This section maps ADR requirements and documentation features to user stories to ensure 100% coverage:
+This section maps ADR requirements and documentation features to user
+stories to ensure 100% coverage:
 
 ### ADR-0001: Observability First
 
@@ -1659,9 +1698,190 @@ Each story contributes to these overall success metrics:
 
 ---
 
+## P1 - Essential Features Stories (Router Observability)
+
+### Story 054: Conversation Manager Integration
+
+**As a** system architect
+**I want** proper ConversationManager integration to replace global
+conversation tracking
+**So that** conversation state management is properly architected
+
+**Acceptance Criteria:**
+
+- [ ] ConversationManager replaces global conversation tracker in message router
+- [ ] Automatic cleanup cycle removes stale conversations based on configurable timeout
+- [ ] Integration maintains all existing conversation threading functionality
+- [ ] Performance overhead remains < 5% compared to current global tracker
+- [ ] Proper error handling when ConversationManager operations fail
+- [ ] Thread safety verified under concurrent message processing
+
+**Definition of Done:**
+
+- All global conversation tracker references removed
+- ConversationManager integrated with proper lifecycle management
+- Cleanup cycles tested with configurable timeouts
+- Performance benchmarks confirm < 5% overhead
+- Integration tests verify conversation threading still works
+- Documentation updated to reflect new architecture
+
+### Story 055: Agent State Registry Integration
+
+**As a** system operator
+**I want** agent state updates tracked in the registry during lifecycle changes
+**So that** I have accurate visibility into agent states for debugging and monitoring
+
+**Acceptance Criteria:**
+
+- [ ] Agent state updated in registry during all lifecycle transitions
+- [ ] State changes logged with timestamps for audit trail
+- [ ] Registry updates are atomic with lifecycle state changes
+- [ ] Failed registry updates don't prevent agent lifecycle operations
+- [ ] Agent state query API returns current registry state
+- [ ] State persistence survives system restarts
+
+**Definition of Done:**
+
+- All agent lifecycle changes update registry state
+- Atomic transactions ensure consistency
+- API endpoints expose current agent states
+- State persistence tested across restarts
+- Error handling prevents registry failures from blocking operations
+- Documentation covers state tracking architecture
+
+### Story 056: Error Classification Tracking
+
+**As an** operations engineer
+**I want** errors classified by type for pattern analysis and debugging
+**So that** I can quickly identify recurring issues and implement targeted fixes
+
+**Acceptance Criteria:**
+
+- [ ] Error types classified (validation, routing, timeout, resource, system)
+- [ ] Error classification metrics exported to monitoring systems
+- [ ] Error patterns tracked over time for trend analysis
+- [ ] Classification overhead < 1ms per error
+- [ ] Error context preserved for debugging (agent ID, message type, etc.)
+- [ ] Configurable error thresholds trigger alerts
+
+**Definition of Done:**
+
+- Error classification system integrated throughout message router
+- Metrics exported to Prometheus/OpenTelemetry
+- Classification performance meets < 1ms requirement
+- Alert rules configured for error threshold breaches
+- Dashboard displays error patterns and trends
+- Documentation explains error categories and response procedures
+
+### Story 057: Message Latency Metrics
+
+**As an** operations engineer
+**I want** real-time message latency measurements collected
+**So that** I can monitor SLA compliance and identify performance bottlenecks
+
+**Acceptance Criteria:**
+
+- [ ] End-to-end message latency measured from router entry to delivery
+- [ ] Latency metrics collected with < 1ms measurement overhead
+- [ ] Percentile histograms (P50, P90, P95, P99) tracked
+- [ ] Per-agent and system-wide latency metrics available
+- [ ] Latency thresholds configurable with alerting
+- [ ] Historical latency trends preserved for analysis
+
+**Definition of Done:**
+
+- Latency measurement integrated with minimal performance impact
+- Histogram metrics exported to monitoring systems
+- Per-agent latency breakdown available
+- Alerting configured for SLA threshold violations
+- Performance dashboard displays latency trends
+- Documentation covers latency monitoring and troubleshooting
+
+---
+
+## P2 - Standard Features Stories (Router Monitoring)
+
+### Story 058: Queue Depth Monitoring
+
+**As an** operations engineer
+**I want** inbound and outbound queue depth monitoring
+**So that** I can detect queue congestion and prevent message backlogs
+
+**Acceptance Criteria:**
+
+- [ ] Inbound and outbound queue depths measured per agent
+- [ ] Queue depth metrics exported with current and peak values
+- [ ] Configurable queue depth thresholds trigger alerts
+- [ ] Queue monitoring overhead < 2% of message processing time
+- [ ] Queue depth trends available for capacity planning
+- [ ] Emergency queue drain procedures documented
+
+**Definition of Done:**
+
+- Queue depth monitoring integrated with message router
+- Metrics exported to monitoring systems with proper labeling
+- Alert thresholds configured and tested
+- Performance overhead within acceptable limits
+- Queue management dashboard shows current and historical data
+- Operational procedures documented for queue management
+
+### Story 059: Message Rate Peak Tracking
+
+**As an** capacity planner
+**I want** peak message rate tracking over configurable time windows
+**So that** I can plan for traffic spikes and ensure adequate system capacity
+
+**Acceptance Criteria:**
+
+- [ ] Message rate peaks tracked over multiple time windows (1min, 5min, 15min, 1hr)
+- [ ] Peak tracking per agent and system-wide aggregation
+- [ ] Rate spike detection with configurable sensitivity
+- [ ] Historical peak data retained for trend analysis
+- [ ] Peak rate metrics exported to monitoring systems
+- [ ] Capacity planning reports generated from peak data
+
+**Definition of Done:**
+
+- Peak tracking system integrated with message router
+- Multiple time window tracking verified
+- Spike detection algorithms tested with various load patterns
+- Historical data retention and cleanup policies implemented
+- Capacity planning dashboard displays peak trends
+- Documentation covers peak analysis and capacity planning
+
+---
+
+## P3 - Enhanced Features Stories (System Monitoring)
+
+### Story 060: System Resource Monitoring
+
+**As a** system administrator
+**I want** comprehensive system resource monitoring (memory, CPU, database usage)
+**So that** I can track resource utilization trends and plan for scaling
+
+**Acceptance Criteria:**
+
+- [ ] Memory usage tracking for Caxton process and per-agent allocation
+- [ ] CPU utilization monitoring with per-agent attribution
+- [ ] Database storage and connection pool metrics
+- [ ] Resource usage trends tracked over time
+- [ ] Resource threshold alerts configurable
+- [ ] Resource metrics exported to external monitoring systems
+
+**Definition of Done:**
+
+- Resource monitoring integrated with minimal system overhead
+- All resource metrics properly attributed and labeled
+- Threshold-based alerting configured and tested
+- Resource usage dashboard provides comprehensive visibility
+- Historical trend analysis available for planning
+- Documentation covers resource monitoring and optimization
+
+---
+
 ## Notes
 
-- **Total Stories**: 50 comprehensive user stories covering all aspects of the system
+- **Total Stories**: 57 comprehensive user stories covering all aspects of the system
 - Stories are intentionally kept independent to allow flexible scheduling
 - Each story delivers value even if others are delayed
 - Priority levels guide sequencing but dependencies are minimal

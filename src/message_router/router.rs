@@ -8,7 +8,8 @@ use crate::message_router::{
     domain_types::{
         AgentId, AgentLocation, AgentState, CapabilityName, Conversation, ConversationCreatedAt,
         ConversationId, DeliveryOptions, FailureReason, FipaMessage, LocalAgent, MessageContent,
-        MessageCount, MessageId, MessageTimestamp, NodeId, Performative, ProtocolName, RouteHops,
+        MessageCount, MessageId, MessageParticipants, MessageTimestamp, NodeId, Performative,
+        RouteHops,
     },
     traits::{
         AgentRegistry, ConversationError, ConversationManager, ConversationStats, DeadLetterStats,
@@ -22,9 +23,241 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::time::{Duration, Instant};
 use tracing::{Level, debug, error, info, span, trace, warn};
+
+// ============================================================================
+// Conversation Threading Tracker - Extracted for better organization
+// ============================================================================
+
+/// Manages conversation threading state with proper encapsulation
+///
+/// This tracker ensures FIPA-ACL conversation threading compliance by:
+/// - Isolating `reply_with/in_reply_to` tracking per conversation
+/// - Providing thread-safe access to conversation state
+/// - Supporting future cleanup and expiration mechanisms
+#[derive(Debug)]
+struct ConversationThreadingTracker {
+    /// Maps conversation IDs to sets of valid `reply_with` message IDs
+    /// This ensures conversation isolation - messages can only reply to
+    /// messages within their own conversation context
+    conversations: Mutex<HashMap<ConversationId, HashSet<MessageId>>>,
+}
+
+impl ConversationThreadingTracker {
+    fn new() -> Self {
+        Self {
+            conversations: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Validates that `in_reply_to` has a corresponding `reply_with` in the same conversation
+    ///
+    /// This method ensures FIPA conversation isolation by only allowing replies to
+    /// messages within the same conversation context. This prevents cross-conversation
+    /// threading attacks and maintains proper FIPA-ACL conversation boundaries.
+    ///
+    /// # Arguments
+    /// * `conversation_id` - The conversation context for validation
+    /// * `in_reply_to` - The message ID this message claims to reply to
+    ///
+    /// # Returns
+    /// * `Ok(())` - If the `reply_with` exists in the same conversation
+    /// * `Err(RouterError::ConversationThreadingError)` - If no corresponding `reply_with` found
+    ///
+    /// # Thread Safety
+    /// Uses internal mutex for thread-safe access to conversation state.
+    /// Short critical section ensures minimal lock contention.
+    fn validate_reply_reference(
+        &self,
+        conversation_id: &ConversationId,
+        in_reply_to: &MessageId,
+    ) -> Result<(), RouterError> {
+        let conversations = self
+            .conversations
+            .lock()
+            .expect("Conversation tracker mutex should not be poisoned");
+
+        match conversations.get(conversation_id) {
+            Some(reply_with_set) if reply_with_set.contains(in_reply_to) => Ok(()),
+            _ => Err(RouterError::ConversationThreadingError {
+                message: "Message references invalid reply_with ID: no corresponding reply_with found for message ID in conversation".to_string(),
+            }),
+        }
+    }
+
+    /// Records a `reply_with` ID for future validation within the conversation
+    ///
+    /// This method maintains the imperative shell responsibility of managing
+    /// conversation state while keeping the functional core pure. It ensures
+    /// that `reply_with` values are properly indexed for future validation.
+    ///
+    /// # Arguments
+    /// * `conversation_id` - The conversation context
+    /// * `reply_with` - The message ID that can be referenced in future replies
+    ///
+    /// # Thread Safety
+    /// Uses internal mutex for thread-safe access to conversation state.
+    /// Atomic operation ensures consistency during concurrent access.
+    fn record_reply_with(&self, conversation_id: &ConversationId, reply_with: &MessageId) {
+        let mut conversations = self
+            .conversations
+            .lock()
+            .expect("Conversation tracker mutex should not be poisoned");
+
+        conversations
+            .entry(*conversation_id)
+            .or_default()
+            .insert(*reply_with);
+    }
+}
+
+/// Global conversation threading tracker instance
+/// Stub implementation pending Story 054: `ConversationManager` Integration
+static CONVERSATION_TRACKER: OnceLock<ConversationThreadingTracker> = OnceLock::new();
+
+fn get_conversation_tracker() -> &'static ConversationThreadingTracker {
+    CONVERSATION_TRACKER.get_or_init(ConversationThreadingTracker::new)
+}
+
+// ============================================================================
+// Pure functions for FIPA message validation and response generation (functional core)
+// ============================================================================
+
+/// Validates FIPA conversation threading requirements
+///
+/// Ensures that:
+/// 1. Messages with `in_reply_to` reference valid `reply_with` values
+/// 2. Conversation isolation - replies only work within the same conversation
+/// 3. Reply threading maintains proper FIPA-ACL conversation flow
+///
+/// This is a pure function that delegates to the conversation tracker for
+/// stateful operations, maintaining functional core principles.
+fn validate_conversation_threading(message: &FipaMessage) -> Result<(), RouterError> {
+    let tracker = get_conversation_tracker();
+
+    // FIPA validation: in_reply_to must have corresponding reply_with in same conversation
+    if let Some(in_reply_to) = &message.in_reply_to {
+        // Require conversation_id for proper threading context
+        let conversation_id = message.conversation_id.as_ref().ok_or_else(|| {
+            RouterError::ConversationThreadingError {
+                message: "in_reply_to requires conversation_id for proper threading context"
+                    .to_string(),
+            }
+        })?;
+
+        // Validate reply reference within conversation context
+        tracker.validate_reply_reference(conversation_id, in_reply_to)?;
+    }
+
+    // Record reply_with for future threading validation (imperative shell operation)
+    if let (Some(reply_with), Some(conversation_id)) =
+        (&message.reply_with, &message.conversation_id)
+    {
+        tracker.record_reply_with(conversation_id, reply_with);
+    }
+
+    Ok(())
+}
+
+/// Generates FIPA-compliant `NOT_UNDERSTOOD` error content from original message
+///
+/// Creates a structured error description following FIPA-ACL conventions for
+/// `NOT_UNDERSTOOD` responses. This pure function generates deterministic error
+/// content based on the original message content.
+///
+/// # Arguments
+/// * `original_content` - The message content that could not be understood
+///
+/// # Returns
+/// A formatted error description suitable for `NOT_UNDERSTOOD` responses
+///
+/// # FIPA Compliance
+/// Error content follows FIPA-ACL patterns for communicative act failure reporting
+#[cfg(test)]
+fn generate_not_understood_error_content(original_content: &MessageContent) -> String {
+    const MAX_CONTENT_PREVIEW: usize = 100;
+    // Create structured error description with original content for debugging
+    // Uses lossy conversion to handle potentially invalid UTF-8 content gracefully
+    let content_preview = String::from_utf8_lossy(original_content.as_bytes());
+
+    // Truncate long content to prevent excessively large error messages
+
+    let truncated_content = if content_preview.len() > MAX_CONTENT_PREVIEW {
+        format!(
+            "{}... (truncated from {} bytes)",
+            &content_preview[..MAX_CONTENT_PREVIEW],
+            original_content.len()
+        )
+    } else {
+        content_preview.to_string()
+    };
+
+    format!("Message content could not be understood or processed: {truncated_content}")
+}
+
+/// Creates FIPA-compliant `NOT_UNDERSTOOD` response message structure
+///
+/// Constructs a properly formatted `NOT_UNDERSTOOD` response following FIPA-ACL
+/// specifications for communicative act failure responses. This pure function
+/// handles all the message field mappings and FIPA protocol requirements.
+///
+/// # Arguments
+/// * `original_message` - The message that could not be processed
+/// * `error_content` - The error description content
+///
+/// # Returns
+/// Result containing the `NOT_UNDERSTOOD` response message or content creation error
+///
+/// # FIPA Protocol Requirements
+/// - Performative: Set to `NotUnderstood`
+/// - Sender/Receiver: Swapped from original (response routing)
+/// - Conversation: Preserved for threading context
+/// - Reply threading: Proper `in_reply_to` and `reply_with` handling
+/// - Timestamp: Set to current time for response tracking
+#[cfg(test)]
+fn create_not_understood_response(
+    original_message: &FipaMessage,
+    error_content: String,
+) -> Result<FipaMessage, RouterError> {
+    // Convert error content to MessageContent with proper validation
+    let message_content = MessageContent::try_new(error_content.into_bytes()).map_err(|_| {
+        RouterError::ContentSizeError {
+            message: "Generated error content exceeds maximum message size limit".to_string(),
+        }
+    })?;
+
+    // Construct FIPA-compliant NOT_UNDERSTOOD response
+    Ok(FipaMessage {
+        // FIPA requirement: `NOT_UNDERSTOOD` performative for processing failures
+        performative: Performative::NotUnderstood,
+
+        // FIPA protocol: sender/receiver swap for proper response routing
+        participants: MessageParticipants::try_new(
+            *original_message.receiver(),
+            *original_message.sender(),
+        )
+        .expect("Valid participants for response"),
+
+        // Error description content with validation
+        content: message_content,
+
+        // Optional FIPA fields: removed - language, ontology, protocol fields no longer supported
+
+        // FIPA conversation threading: maintain conversation context
+        conversation_id: original_message.conversation_id,
+        reply_with: Some(MessageId::generate()), // Generate new ID for potential replies
+        in_reply_to: original_message.reply_with, // Reference original message
+
+        // Response metadata
+        message_id: MessageId::generate(), // Unique ID for this response
+        created_at: MessageTimestamp::now(), // Current timestamp
+        trace_context: original_message.trace_context.clone(), // Preserve tracing context
+        delivery_options: DeliveryOptions::default(), // Standard delivery options
+    })
+}
 
 /// Main message router implementation
 ///
@@ -66,11 +299,8 @@ pub struct MessageRouterImpl {
 
 /// Internal routing task
 #[derive(Debug)]
-#[allow(dead_code)]
 struct RoutingTask {
     message: FipaMessage,
-    attempt_count: u8,
-    created_at: Instant,
     span: tracing::Span,
 }
 
@@ -232,7 +462,6 @@ impl ThroughputTracker {
         }
     }
 
-    #[allow(dead_code)]
     fn record_message(&self) {
         let now = get_current_unix_timestamp();
 
@@ -262,14 +491,13 @@ impl ThroughputTracker {
 }
 
 impl MessageRouterImpl {
-    /// Creates a new message router with the given configuration
-    ///
-    /// This will create and wire up all necessary components based on the config.
+    /// Create new message router with configuration
     ///
     /// # Errors
     ///
-    /// Returns a `RouterError` if configuration validation fails or component creation fails.
-    pub fn new(config: RouterConfig) -> Result<Self, RouterError> {
+    /// Returns `RouterError::ConfigurationError` if the provided configuration fails validation,
+    /// or `RouterError::InitializationError` if router components fail to initialize.
+    pub fn try_new(config: RouterConfig) -> Result<Self, RouterError> {
         let span = span!(Level::INFO, "router_creation");
         let _enter = span.enter();
 
@@ -296,7 +524,7 @@ impl MessageRouterImpl {
         let failure_handler = Arc::new(FailureHandlerImpl::new(config.clone()));
 
         // Create metrics collector if enabled
-        let metrics_collector = if config.enable_metrics() {
+        let metrics_collector = if config.observability.enable_metrics {
             Some(Arc::new(MetricsCollectorImpl::new()) as Arc<dyn MetricsCollector>)
         } else {
             None
@@ -375,7 +603,7 @@ impl MessageRouterImpl {
         }
 
         // Spawn metrics collection task
-        if self.config.enable_metrics() {
+        if self.config.observability.enable_metrics {
             self.spawn_metrics_task();
         }
 
@@ -387,7 +615,6 @@ impl MessageRouterImpl {
     }
 
     /// Spawns a worker task for processing routing messages
-    #[allow(unused_variables)]
     fn spawn_worker_task(&self, worker_id: usize) {
         let _delivery_engine = Arc::clone(&self.delivery_engine);
         let _conversation_manager = Arc::clone(&self.conversation_manager);
@@ -489,16 +716,16 @@ impl MessageRouterImpl {
                                 collector.record_message_routed(
                                     &FipaMessage {
                                         performative: Performative::Inform,
-                                        sender: AgentId::generate(),
-                                        receiver: AgentId::generate(),
+                                        participants: MessageParticipants::try_new(
+                                            AgentId::generate(),
+                                            AgentId::generate(),
+                                        )
+                                        .expect("Valid participants"),
                                         content: MessageContent::try_new(vec![]).unwrap(),
                                         message_id,
                                         conversation_id: None,
                                         reply_with: None,
                                         in_reply_to: None,
-                                        protocol: None,
-                                        language: None,
-                                        ontology: None,
                                         created_at: MessageTimestamp::now(),
                                         trace_context: None,
                                         delivery_options: DeliveryOptions::default(),
@@ -529,7 +756,6 @@ impl MessageRouterImpl {
     }
 
     /// Processes a single routing task
-    #[allow(dead_code)]
     async fn process_routing_task(
         task: RoutingTask,
         delivery_engine: &Arc<dyn DeliveryEngine>,
@@ -556,7 +782,7 @@ impl MessageRouterImpl {
 
         // Look up the destination agent
         let agent_location = agent_registry
-            .lookup(&task.message.receiver)
+            .lookup(task.message.receiver())
             .await
             .map_err(|e| map_registry_error_to_router_error(&e))?;
 
@@ -577,9 +803,9 @@ impl MessageRouterImpl {
                     .map_err(map_delivery_error_to_router_error)
             }
             AgentLocation::Unknown => {
-                warn!("Agent location unknown for: {}", task.message.receiver);
+                warn!("Agent location unknown for: {}", task.message.receiver());
                 Err(RouterError::AgentNotFound {
-                    agent_id: task.message.receiver,
+                    agent_id: *task.message.receiver(),
                 })
             }
         }
@@ -671,12 +897,11 @@ impl Clone for MessageRouterImpl {
 
 #[async_trait]
 impl MessageRouter for MessageRouterImpl {
-    /// Routes a message to its destination agent
     async fn route_message(&self, message: FipaMessage) -> Result<MessageId, RouterError> {
         let span = span!(Level::DEBUG, "route_message",
                          message_id = %message.message_id,
-                         sender = %message.sender,
-                         receiver = %message.receiver);
+                         sender = %message.sender(),
+                         receiver = %message.receiver());
         let _enter = span.enter();
 
         if !self.is_running.load(Ordering::SeqCst) {
@@ -692,20 +917,21 @@ impl MessageRouter for MessageRouterImpl {
         }
 
         // Validate message size if validation is enabled
-        if self.config.enable_message_validation()
-            && message.content.len() > self.config.max_message_size_bytes()
+        if self.config.security.enable_message_validation
+            && message.content.len() > self.config.security.max_message_size_bytes
         {
             return Err(RouterError::MessageTooLarge {
                 size: message.content.len(),
-                max_size: self.config.max_message_size_bytes(),
+                max_size: self.config.security.max_message_size_bytes,
             });
         }
+
+        // FIPA validation
+        validate_conversation_threading(&message)?;
 
         // Create routing task
         let task = RoutingTask {
             message,
-            attempt_count: 1,
-            created_at: Instant::now(),
             span: span.clone(),
         };
 
@@ -726,7 +952,6 @@ impl MessageRouter for MessageRouterImpl {
         Ok(message_id)
     }
 
-    /// Registers a new local agent with the router
     async fn register_agent(
         &self,
         agent: LocalAgent,
@@ -753,7 +978,6 @@ impl MessageRouter for MessageRouterImpl {
         Ok(())
     }
 
-    /// Deregisters an agent from the router
     async fn deregister_agent(&self, agent_id: AgentId) -> Result<(), RouterError> {
         let span = span!(Level::INFO, "deregister_agent", agent_id = %agent_id);
         let _enter = span.enter();
@@ -801,7 +1025,7 @@ impl MessageRouter for MessageRouterImpl {
             });
         }
 
-        // TODO: Update agent state in registry
+        // Stub implementation pending Story 055: Agent State Persistence
         // This would require extending the AgentRegistry trait with an update_state method
 
         debug!(
@@ -849,10 +1073,10 @@ impl MessageRouter for MessageRouterImpl {
 
         let stats = RouterStats {
             messages_per_second: current_rate,
-            peak_messages_per_second: current_rate, // TODO: Track peak
+            peak_messages_per_second: current_rate, // Stub implementation pending Story 056: Peak Message Rate Tracking
             total_messages_processed: safe_message_count_from_u64(total_messages),
 
-            // TODO: Collect real latency metrics
+            // Stub implementation pending Story 057: Latency Monitoring
             routing_latency_p50: 500, // microseconds
             routing_latency_p90: 1_000,
             routing_latency_p99: 2_000,
@@ -860,19 +1084,19 @@ impl MessageRouter for MessageRouterImpl {
 
             total_errors: safe_message_count_from_u64(total_errors),
             error_rate,
-            errors_by_type: HashMap::new(), // TODO: Collect by error type
+            errors_by_type: HashMap::new(), // Stub implementation pending Story 058: Error Type Classification
 
-            inbound_queue_depth: 0,  // TODO: Get actual queue depth
-            outbound_queue_depth: 0, // TODO: Get actual queue depth
+            inbound_queue_depth: 0, // Stub implementation pending Story 059: Queue Depth Monitoring
+            outbound_queue_depth: 0, // Stub implementation pending Story 059: Queue Depth Monitoring
             agent_queue_depths,
 
             active_conversations: conversation_stats.total_active,
             total_conversations: conversation_stats.total_created,
             average_conversation_length: conversation_stats.average_message_count,
 
-            memory_usage_bytes: 0,  // TODO: Collect memory usage
-            cpu_usage_percent: 0.0, // TODO: Collect CPU usage
-            database_size_bytes: 0, // TODO: Collect database size
+            memory_usage_bytes: 0, // Stub implementation pending Story 060: Resource Usage Monitoring
+            cpu_usage_percent: 0.0, // Stub implementation pending Story 060: Resource Usage Monitoring
+            database_size_bytes: 0, // Stub implementation pending Story 060: Resource Usage Monitoring
         };
 
         trace!("Router stats collected: {:?}", stats);
@@ -964,40 +1188,64 @@ impl MessageRouterImpl {
     pub fn agent_registry(&self) -> &Arc<dyn AgentRegistry> {
         &self.agent_registry
     }
+
+    /// Generates a FIPA-compliant `NOT_UNDERSTOOD` response for message processing failures
+    ///
+    /// Creates properly formatted `NOT_UNDERSTOOD` responses following FIPA-ACL specifications
+    /// for communicative act failures. This method applies functional core principles by
+    /// delegating to pure functions for error content generation and response construction.
+    ///
+    /// # Arguments
+    /// * `original_message` - The message that couldn't be understood or processed
+    ///
+    /// # Returns
+    /// * `Ok(FipaMessage)` - FIPA-compliant `NOT_UNDERSTOOD` response message
+    /// * `Err(RouterError)` - If response generation fails (e.g., content too large)
+    ///
+    /// # Errors
+    ///
+    /// Returns `RouterError::ContentSizeError` if the generated error content exceeds maximum message size limits.
+    ///
+    /// # FIPA Protocol Compliance
+    /// The generated response follows FIPA-ACL standards:
+    /// - **Performative**: Set to `NotUnderstood` as required for processing failures
+    /// - **Routing**: Sender/receiver swapped for proper response delivery
+    /// - **Threading**: Maintains conversation context and reply references
+    /// - **Content**: Structured error description with original content preview
+    /// - **Metadata**: Preserves tracing context and protocol information
+    ///
+    /// # Architecture Pattern
+    /// Follows functional core/imperative shell pattern:
+    /// - **Functional Core**: Pure functions handle error content and message structure
+    /// - **Imperative Shell**: This method coordinates the pure functions
+    pub fn generate_not_understood_response(
+        &self,
+        original_message: &FipaMessage,
+    ) -> Result<FipaMessage, RouterError> {
+        // Functional core: Generate structured error content (pure function)
+        let error_content = generate_not_understood_error_content(&original_message.content);
+
+        // Functional core: Create FIPA-compliant response structure (pure function)
+        create_not_understood_response(original_message, error_content)
+    }
 }
 
 // Placeholder implementations for components that will be implemented next
 
 /// Real delivery engine implementation
-#[allow(dead_code)]
 struct DeliveryEngineImpl {
     /// Agent message queues for local delivery
     agent_queues: DashMap<AgentId, mpsc::Sender<FipaMessage>>,
     /// Remote node connections (placeholder for now)
     remote_connections: DashMap<NodeId, mpsc::Sender<FipaMessage>>,
-    /// Configuration
-    config: RouterConfig,
 }
 
 impl DeliveryEngineImpl {
-    fn new(config: RouterConfig) -> Self {
+    fn new(_config: RouterConfig) -> Self {
         Self {
             agent_queues: DashMap::new(),
             remote_connections: DashMap::new(),
-            config,
         }
-    }
-
-    /// Registers a message queue for a local agent
-    #[allow(dead_code)]
-    pub fn register_agent_queue(&self, agent_id: AgentId, queue: mpsc::Sender<FipaMessage>) {
-        self.agent_queues.insert(agent_id, queue);
-    }
-
-    /// Deregisters a message queue for a local agent
-    #[allow(dead_code)]
-    pub fn deregister_agent_queue(&self, agent_id: AgentId) {
-        self.agent_queues.remove(&agent_id);
     }
 }
 
@@ -1174,7 +1422,6 @@ impl ConversationManager for ConversationManagerImpl {
         &self,
         conversation_id: ConversationId,
         participants: std::collections::HashSet<AgentId>,
-        protocol: Option<ProtocolName>,
     ) -> Result<Conversation, ConversationError> {
         // Check if conversation already exists
         if let Some(conversation) = self.conversations.get(&conversation_id) {
@@ -1190,12 +1437,8 @@ impl ConversationManager for ConversationManagerImpl {
         }
 
         // Create new conversation
-        let conversation = Conversation::new(
-            conversation_id,
-            participants,
-            protocol,
-            ConversationCreatedAt::now(),
-        );
+        let conversation =
+            Conversation::new(conversation_id, participants, ConversationCreatedAt::now());
 
         // Store the conversation
         self.conversations
@@ -1217,11 +1460,11 @@ impl ConversationManager for ConversationManagerImpl {
         } else {
             // Conversation not found - create it if the message has participants
             let mut participants = HashSet::new();
-            participants.insert(message.sender);
-            participants.insert(message.receiver);
+            participants.insert(*message.sender());
+            participants.insert(*message.receiver());
 
             let mut conversation = self
-                .get_or_create_conversation(conversation_id, participants, message.protocol.clone())
+                .get_or_create_conversation(conversation_id, participants)
                 .await?;
 
             conversation.add_message(message);
@@ -1316,17 +1559,25 @@ impl ConversationManager for ConversationManagerImpl {
 }
 
 /// Node information for remote agent routing
+/// Information about a network node in the router cluster
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeInfo {
+    /// Unique identifier for this network node
     pub id: NodeId,
+    /// Human-readable name for this node
     pub name: String,
+    /// Network address where this node can be reached
     pub address: String,
+    /// Whether this node is currently healthy and responding
     pub is_healthy: bool,
+    /// Timestamp of the last received heartbeat from this node
     pub last_heartbeat: MessageTimestamp,
+    /// Number of active agents running on this node
     pub agent_count: usize,
 }
 
 impl NodeInfo {
+    /// Create new node info
     #[must_use]
     pub fn new(id: NodeId, name: String, address: String) -> Self {
         Self {
@@ -1389,7 +1640,6 @@ impl AgentRegistry for AgentRegistryImpl {
         })
     }
 
-    /// Registers a local agent with capabilities indexing
     async fn register_local_agent(
         &self,
         agent: LocalAgent,
@@ -1595,4 +1845,416 @@ impl MetricsCollector for MetricsCollectorImpl {
     fn record_agent_deregistered(&self, _agent_id: AgentId) {
         // Placeholder implementation
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::message_router::{ConversationContext, MessageMetadata, config::RouterConfig};
+
+    // Test that verifies FIPA message field validation rejects invalid sender/receiver combination
+    #[tokio::test]
+    async fn test_should_reject_message_when_sender_equals_receiver() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::try_new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Test validation using FipaMessage::try_new which should catch the error
+        let same_agent = AgentId::generate();
+
+        // Attempt to create message with validation - should fail with MessageValidationError
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            same_agent,
+            same_agent, // Same as sender - should trigger validation error
+            MessageContent::try_new(b"test content".to_vec()).unwrap(),
+            ConversationContext {
+                conversation_id: None,
+                reply_with: None,
+                in_reply_to: None,
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
+
+        // Expect validation error for sender == receiver FIPA violation
+        match result {
+            Err(RouterError::MessageValidationError { message }) => {
+                assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
+            }
+            _ => panic!("Expected MessageValidationError for sender == receiver, got: {result:?}"),
+        }
+    }
+
+    // NOTE: Empty content validation now happens at domain type level (MessageContent)
+    // This makes illegal states unrepresentable, which is superior to runtime validation.
+    // See test_message_content_should_reject_empty_content in domain_types.rs
+
+    // Test that verifies FIPA conversation threading validation requires corresponding reply_with/in_reply_to pairs
+    #[tokio::test]
+    async fn test_should_reject_message_when_in_reply_to_has_no_corresponding_reply_with() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::try_new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents for conversation threading
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+
+        // Create a message that claims to reply to a non-existent message
+        let orphaned_reply_id = MessageId::generate();
+
+        let invalid_message = FipaMessage {
+            performative: Performative::Inform,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(
+                b"This message claims to reply to something that doesn't exist".to_vec(),
+            )
+            .unwrap(),
+            conversation_id: Some(conversation_id),
+            reply_with: None,
+            in_reply_to: Some(orphaned_reply_id), // FIPA violation: no corresponding reply_with found
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the invalid message - should fail with ConversationThreadingError
+        let result = router.route_message(invalid_message).await;
+
+        // Expect validation error for orphaned in_reply_to FIPA violation
+        match result {
+            Err(RouterError::ConversationThreadingError { message }) => {
+                assert!(message.contains("no corresponding reply_with found"));
+            }
+            _ => panic!(
+                "Expected ConversationThreadingError for orphaned in_reply_to, got: {result:?}"
+            ),
+        }
+    }
+
+    // Test that verifies FIPA conversation threading accepts valid reply_with/in_reply_to pairs
+    #[tokio::test]
+    async fn test_should_accept_message_when_in_reply_to_has_corresponding_reply_with() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::try_new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents for conversation threading
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+
+        // First message: establishes reply_with for future responses
+        let reply_with_id = MessageId::generate();
+        let original_message = FipaMessage {
+            performative: Performative::Request,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(b"Original request expecting a reply".to_vec())
+                .unwrap(),
+            conversation_id: Some(conversation_id),
+            reply_with: Some(reply_with_id), // Establishes threading expectation
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route the original message first (should succeed)
+        let original_result = router.route_message(original_message).await;
+        assert!(
+            original_result.is_ok(),
+            "Original message should be accepted"
+        );
+
+        // Reply message: valid in_reply_to that corresponds to original reply_with
+        let reply_message = FipaMessage {
+            performative: Performative::Inform,
+            participants: MessageParticipants::try_new(receiver, sender)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(b"Reply to the original request".to_vec()).unwrap(),
+            conversation_id: Some(conversation_id),
+            reply_with: None,
+            in_reply_to: Some(reply_with_id), // FIPA compliance: matches original reply_with
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route the reply message - should succeed because it's valid threading
+        let reply_result = router.route_message(reply_message).await;
+
+        // Expect successful routing for valid conversation threading
+        match reply_result {
+            Ok(_message_id) => {
+                // Success - valid conversation threading was accepted
+            }
+            Err(error) => panic!("Expected successful routing for valid threading, got: {error:?}"),
+        }
+    }
+
+    // Test that verifies conversation threading validation isolates conversations properly
+    #[tokio::test]
+    async fn test_should_isolate_conversation_threading_across_different_conversations() {
+        // Create router with test configuration
+        let config = RouterConfig::testing();
+        let router = MessageRouterImpl::try_new(config).unwrap();
+        router.start().await.unwrap();
+
+        // Create agents
+        let agent_a = AgentId::generate();
+        let agent_b = AgentId::generate();
+        let agent_c = AgentId::generate();
+
+        // Create two separate conversations
+        let conversation_1 = ConversationId::generate();
+        let conversation_2 = ConversationId::generate();
+
+        // Conversation 1: Agent A requests something from Agent B
+        let reply_with_conv1 = MessageId::generate();
+        let request_conv1 = FipaMessage {
+            performative: Performative::Request,
+            participants: MessageParticipants::try_new(agent_a, agent_b)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(b"Request in conversation 1".to_vec()).unwrap(),
+            conversation_id: Some(conversation_1),
+            reply_with: Some(reply_with_conv1),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Route conversation 1 request (establishes reply_with in tracker)
+        router.route_message(request_conv1).await.unwrap();
+
+        // Conversation 2: Agent C tries to reply using reply_with from conversation 1
+        // This should be REJECTED because conversations should be isolated
+        let cross_conversation_reply = FipaMessage {
+            performative: Performative::Request,
+            participants: MessageParticipants::try_new(agent_c, agent_a)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(b"Cross-conversation reply attempt".to_vec()).unwrap(),
+            conversation_id: Some(conversation_2), // Different conversation!
+            reply_with: None,
+            in_reply_to: Some(reply_with_conv1), // Trying to use reply_with from conversation 1
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // This should fail - current implementation incorrectly allows cross-conversation threading
+        let result = router.route_message(cross_conversation_reply).await;
+
+        assert!(
+            result.is_err(),
+            "Should reject cross-conversation threading attempt"
+        );
+        if let Err(RouterError::ConversationThreadingError { message }) = result {
+            assert!(
+                message.contains("no corresponding reply_with found")
+                    || message.contains("conversation"),
+                "Error should mention conversation isolation or missing reply_with: {message}"
+            );
+        } else {
+            panic!(
+                "Expected ConversationThreadingError for cross-conversation threading, got: {result:?}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_generate_not_understood_response_when_message_processing_fails() {
+        // Test that verifies NOT_UNDERSTOOD response generation for unprocessable messages
+        let router = MessageRouterImpl::try_new(RouterConfig::testing()).unwrap();
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+
+        // Create a message that will cause processing failure (simulating unsupported performative handling)
+        let problematic_message = FipaMessage {
+            performative: Performative::Request,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(
+                b"UNSUPPORTED_OPERATION: complex_unsupported_request".to_vec(),
+            )
+            .unwrap(),
+            conversation_id: Some(ConversationId::generate()),
+            reply_with: Some(MessageId::generate()),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Attempt to route the message - should generate NOT_UNDERSTOOD response
+        let result = router.generate_not_understood_response(&problematic_message);
+
+        // Expect NOT_UNDERSTOOD response with appropriate error details
+        match result {
+            Ok(not_understood_message) => {
+                assert_eq!(
+                    not_understood_message.performative,
+                    Performative::NotUnderstood
+                );
+                assert_eq!(not_understood_message.sender(), &receiver); // Receiver becomes sender
+                assert_eq!(not_understood_message.receiver(), &sender); // Sender becomes receiver
+                assert!(!not_understood_message.content.is_empty());
+                // Should reference original message in some way
+                assert!(not_understood_message.in_reply_to.is_some());
+            }
+            Err(error) => {
+                panic!("Expected NOT_UNDERSTOOD response generation, got error: {error:?}")
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_preserve_conversation_context_in_not_understood_response() {
+        // Test that verifies NOT_UNDERSTOOD responses maintain proper FIPA-ACL conversation threading
+        let router = MessageRouterImpl::try_new(RouterConfig::testing()).unwrap();
+        let sender = AgentId::generate();
+        let receiver = AgentId::generate();
+        let conversation_id = ConversationId::generate();
+        let original_reply_with = MessageId::generate();
+
+        // Create original message with specific conversation context
+        let original_message = FipaMessage {
+            performative: Performative::QueryRef,
+            participants: MessageParticipants::try_new(sender, receiver)
+                .expect("Valid participants"),
+            content: MessageContent::try_new(
+                b"Invalid query syntax - should trigger NOT_UNDERSTOOD".to_vec(),
+            )
+            .unwrap(),
+            conversation_id: Some(conversation_id),
+            reply_with: Some(original_reply_with),
+            in_reply_to: None,
+            message_id: MessageId::generate(),
+            created_at: MessageTimestamp::now(),
+            trace_context: None,
+            delivery_options: DeliveryOptions::default(),
+        };
+
+        // Generate NOT_UNDERSTOOD response
+        let result = router.generate_not_understood_response(&original_message);
+
+        // Verify conversation threading compliance
+        match result {
+            Ok(not_understood_response) => {
+                // Should preserve conversation context
+                assert_eq!(
+                    not_understood_response.conversation_id,
+                    Some(conversation_id),
+                    "NOT_UNDERSTOOD response must preserve original conversation_id"
+                );
+
+                // Should reference original message via in_reply_to
+                assert_eq!(
+                    not_understood_response.in_reply_to,
+                    Some(original_reply_with),
+                    "NOT_UNDERSTOOD response must reference original reply_with in in_reply_to field"
+                );
+
+                // Should generate new reply_with for potential responses to this NOT_UNDERSTOOD
+                assert!(
+                    not_understood_response.reply_with.is_some(),
+                    "NOT_UNDERSTOOD response should generate new reply_with"
+                );
+
+                // Basic FIPA-ACL response structure
+                assert_eq!(
+                    not_understood_response.performative,
+                    Performative::NotUnderstood
+                );
+                assert_eq!(not_understood_response.sender(), &receiver); // Role reversal
+                assert_eq!(not_understood_response.receiver(), &sender); // Role reversal
+            }
+            Err(error) => panic!(
+                "Expected NOT_UNDERSTOOD response with conversation context, got error: {error:?}"
+            ),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_fipa_message_smart_constructor_creates_valid_messages() {
+        let valid_sender = AgentId::generate();
+        let valid_receiver = AgentId::generate();
+        let valid_content = MessageContent::try_new(b"valid request content".to_vec()).unwrap();
+
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            valid_sender,
+            valid_receiver,
+            valid_content,
+            ConversationContext {
+                conversation_id: Some(ConversationId::generate()),
+                reply_with: Some(MessageId::generate()),
+                in_reply_to: Some(MessageId::generate()),
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
+        match result {
+            Ok(message) => {
+                assert_eq!(message.performative, Performative::Request);
+                assert_eq!(message.sender(), &valid_sender);
+                assert_eq!(message.receiver(), &valid_receiver);
+            }
+            Err(e) => panic!("Expected valid message to be created, but got error: {e:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_fipa_message_smart_constructor_rejects_same_sender_receiver() {
+        let same_agent = AgentId::generate();
+        let result = FipaMessage::try_new(
+            Performative::Request,
+            same_agent,
+            same_agent,
+            MessageContent::try_new(b"test content".to_vec()).unwrap(),
+            ConversationContext {
+                conversation_id: None,
+                reply_with: None,
+                in_reply_to: None,
+            },
+            MessageMetadata {
+                message_id: MessageId::generate(),
+                created_at: MessageTimestamp::now(),
+                trace_context: None,
+                delivery_options: DeliveryOptions::default(),
+            },
+        );
+        match result {
+            Err(RouterError::MessageValidationError { message }) => {
+                assert!(message.contains("FIPA-ACL violation: sender cannot equal receiver"));
+            }
+            _ => {
+                panic!("Expected MessageValidationError for same sender/receiver, got: {result:?}")
+            }
+        }
+    }
+
+    // NOTE: Empty content validation now happens at domain type level (MessageContent)
+    // See test_message_content_should_reject_empty_content in domain_types.rs
 }

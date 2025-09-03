@@ -1,13 +1,3 @@
-#![allow(clippy::doc_markdown)]
-#![allow(clippy::unused_self)]
-#![allow(clippy::no_effect_underscore_binding)]
-#![allow(clippy::absurd_extreme_comparisons)]
-#![allow(clippy::useless_vec)]
-#![allow(clippy::type_complexity)]
-#![allow(clippy::cloned_instead_of_copied)]
-#![allow(clippy::redundant_closure)]
-#![allow(clippy::match_same_arms)]
-
 //! Comprehensive tests for `HotReloadManager`
 //!
 //! This test suite covers all aspects of the `HotReloadManager` including:
@@ -22,7 +12,8 @@ use proptest::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
+use std::time::SystemTime;
 use test_log::test;
 use tokio::sync::Mutex;
 
@@ -37,6 +28,9 @@ use caxton::{
     time_provider::test_time_provider,
 };
 
+// Type alias for complex preserved states type to improve readability
+type PreservedStates = Arc<Mutex<HashMap<(AgentId, AgentVersion), Vec<u8>>>>;
+
 // Mock RuntimeManager for testing
 #[derive(Clone)]
 struct MockRuntimeManager {
@@ -44,15 +38,12 @@ struct MockRuntimeManager {
     should_be_healthy: Arc<AtomicBool>,
     creation_delay: Arc<Mutex<Duration>>,
     instances: Arc<Mutex<HashMap<(AgentId, AgentVersion), InstanceData>>>,
-    preserved_states: Arc<Mutex<HashMap<(AgentId, AgentVersion), Vec<u8>>>>,
+    preserved_states: PreservedStates,
     call_count: Arc<AtomicU64>,
 }
 
 #[derive(Clone, Debug)]
 struct InstanceData {
-    // Timestamp field for potential future tests - currently unused
-    #[allow(dead_code)]
-    created_at: SystemTime,
     memory_usage: usize,
     fuel_consumed: u64,
     requests_handled: u64,
@@ -92,13 +83,6 @@ impl MockRuntimeManager {
             .await
             .contains_key(&(agent_id, version))
     }
-
-    // Helper method for verifying instance count - not currently used
-    // Kept for potential concurrency tests
-    #[allow(dead_code)]
-    async fn get_instance_count(&self) -> usize {
-        self.instances.lock().await.len()
-    }
 }
 
 #[async_trait::async_trait]
@@ -122,7 +106,6 @@ impl RuntimeManager for MockRuntimeManager {
 
         if self.should_succeed.load(Ordering::SeqCst) {
             let instance_data = InstanceData {
-                created_at: SystemTime::now(),
                 memory_usage: 1024 * (wasm_bytes.len() / 100 + 1), // Simulate memory based on WASM size
                 fuel_consumed: 1000,
                 requests_handled: 0,
@@ -260,7 +243,7 @@ impl MockTrafficRouter {
     }
 
     async fn get_active_version(&self, agent_id: AgentId) -> Option<AgentVersion> {
-        self.active_versions.lock().await.get(&agent_id).cloned()
+        self.active_versions.lock().await.get(&agent_id).copied()
     }
 }
 
@@ -293,8 +276,8 @@ impl TrafficRouter for MockTrafficRouter {
         let splits = self.traffic_splits.lock().await;
         Ok(splits
             .get(&agent_id)
-            .cloned()
-            .unwrap_or_else(|| TrafficSplitPercentage::half()))
+            .copied()
+            .unwrap_or_else(TrafficSplitPercentage::half))
     }
 
     async fn switch_traffic(
@@ -365,7 +348,7 @@ impl TestFixture {
         }
     }
 
-    fn create_test_hot_reload_request(&self, strategy: HotReloadStrategy) -> HotReloadRequest {
+    fn create_test_hot_reload_request(strategy: HotReloadStrategy) -> HotReloadRequest {
         let agent_id = AgentId::generate();
         let agent_name = Some(AgentName::try_new("test-agent".to_string()).unwrap());
         let from_version = AgentVersion::generate();
@@ -377,7 +360,7 @@ impl TestFixture {
         config.drain_timeout = caxton::domain::DeploymentTimeout::try_new(30_000).unwrap(); // 30 seconds - minimum allowed
         config.warmup_duration = Duration::from_millis(0); // No warmup
 
-        let wasm_bytes = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let wasm_bytes = [1, 2, 3, 4, 5, 6, 7, 8].to_vec();
 
         HotReloadRequest::new(
             agent_id,
@@ -396,7 +379,7 @@ impl TestFixture {
             .create_instance(
                 agent_id,
                 version,
-                &vec![9, 8, 7, 6, 5, 4, 3, 2], // Old WASM
+                &[9, 8, 7, 6, 5, 4, 3, 2], // Old WASM
             )
             .await
             .unwrap();
@@ -407,7 +390,7 @@ impl TestFixture {
 #[test(tokio::test)]
 async fn test_graceful_hot_reload_success() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
     let to_version = request.to_version;
@@ -449,7 +432,7 @@ async fn test_graceful_hot_reload_success() {
 #[test(tokio::test)]
 async fn test_graceful_hot_reload_with_state_preservation() {
     let fixture = TestFixture::new();
-    let mut request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let mut request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     request.preserve_state = true;
 
     let agent_id = request.agent_id;
@@ -485,7 +468,7 @@ async fn test_graceful_hot_reload_with_state_preservation() {
 #[test(tokio::test)]
 async fn test_graceful_hot_reload_with_warmup() {
     let fixture = TestFixture::new();
-    let mut request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let mut request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     request.config.warmup_duration = Duration::from_millis(1); // Reduced from 100ms to 1ms
 
     let agent_id = request.agent_id;
@@ -509,7 +492,7 @@ async fn test_graceful_hot_reload_with_warmup() {
 #[test(tokio::test)]
 async fn test_immediate_hot_reload_success() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Immediate);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Immediate);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
     let to_version = request.to_version;
@@ -549,7 +532,7 @@ async fn test_immediate_hot_reload_success() {
 #[test(tokio::test)]
 async fn test_parallel_hot_reload_success() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Parallel);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Parallel);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
     let to_version = request.to_version;
@@ -583,7 +566,7 @@ async fn test_parallel_hot_reload_success() {
 #[test(tokio::test)]
 async fn test_parallel_hot_reload_rollback_on_health_failure() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Parallel);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Parallel);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
 
@@ -617,7 +600,7 @@ async fn test_parallel_hot_reload_rollback_on_health_failure() {
 async fn test_traffic_splitting_hot_reload_success() {
     let fixture = TestFixture::new();
     let _traffic_split = TrafficSplitPercentage::try_new(25).unwrap();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::TrafficSplitting);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::TrafficSplitting);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
     let to_version = request.to_version;
@@ -654,7 +637,8 @@ async fn test_traffic_splitting_hot_reload_success() {
 #[test(tokio::test)]
 async fn test_traffic_splitting_with_progressive_rollout() {
     let fixture = TestFixture::new();
-    let mut request = fixture.create_test_hot_reload_request(HotReloadStrategy::TrafficSplitting);
+    let mut request =
+        TestFixture::create_test_hot_reload_request(HotReloadStrategy::TrafficSplitting);
     request.config.progressive_rollout = true;
 
     let agent_id = request.agent_id;
@@ -682,7 +666,7 @@ async fn test_traffic_splitting_with_progressive_rollout() {
 #[test(tokio::test)]
 async fn test_hot_reload_instance_creation_failure() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
 
@@ -714,7 +698,7 @@ async fn test_hot_reload_instance_creation_failure() {
 #[test(tokio::test)]
 async fn test_hot_reload_traffic_routing_failure() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Immediate);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Immediate);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
 
@@ -738,7 +722,7 @@ async fn test_hot_reload_traffic_routing_failure() {
 #[test(tokio::test)]
 async fn test_hot_reload_empty_wasm_module() {
     let fixture = TestFixture::new();
-    let mut request = fixture.create_test_hot_reload_request(HotReloadStrategy::Immediate);
+    let mut request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Immediate);
     request.new_wasm_module.clear(); // Empty WASM
 
     let agent_id = request.agent_id;
@@ -756,16 +740,16 @@ async fn test_hot_reload_empty_wasm_module() {
     // The mock create_instance returns StatePreservationFailed but the actual manager
     // might validate first and return a different error
     match result.unwrap_err() {
-        HotReloadError::StatePreservationFailed { .. } => {}
-        HotReloadError::ValidationFailed { .. } => {}
+        HotReloadError::StatePreservationFailed { .. }
+        | HotReloadError::ValidationFailed { .. } => {}
         other => panic!("Unexpected error: {other:?}"),
     }
 }
 
 #[test(tokio::test)]
 async fn test_hot_reload_validation_failure() {
-    let fixture = TestFixture::new();
-    let mut request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let _fixture = TestFixture::new();
+    let mut request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
 
     // Create invalid request - same from/to version
     request.to_version = request.from_version;
@@ -778,10 +762,9 @@ async fn test_hot_reload_validation_failure() {
 #[test(tokio::test)]
 async fn test_hot_reload_zero_downtime() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
-    let _to_version = request.to_version;
 
     // Setup existing instance
     fixture
@@ -804,7 +787,7 @@ async fn test_hot_reload_zero_downtime() {
 #[test(tokio::test)]
 async fn test_hot_reload_timeout() {
     let fixture = TestFixture::with_limits(5, Duration::from_millis(100));
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
 
@@ -831,7 +814,7 @@ async fn test_hot_reload_timeout() {
 #[test(tokio::test)]
 async fn test_hot_reload_performance_metrics() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
 
@@ -847,10 +830,7 @@ async fn test_hot_reload_performance_metrics() {
 
     // Verify metrics are populated
     assert!(metrics.memory_usage_peak > 0);
-    #[allow(unused_comparisons)]
-    {
-        assert!(metrics.requests_processed >= 0);
-    }
+    // requests_processed is unsigned, so it's always >= 0
     assert!(metrics.health_check_success_rate >= -0.0001); // Use small epsilon for >= comparison
     assert!(metrics.collected_at <= SystemTime::now());
 }
@@ -862,7 +842,7 @@ async fn test_concurrent_hot_reloads() {
 
     // Create multiple agents for concurrent hot reloads
     let requests: Vec<_> = (0..3)
-        .map(|_| fixture.create_test_hot_reload_request(HotReloadStrategy::Immediate))
+        .map(|_| TestFixture::create_test_hot_reload_request(HotReloadStrategy::Immediate))
         .collect();
 
     // Setup existing instances for all agents
@@ -893,8 +873,8 @@ async fn test_concurrent_hot_reloads() {
 async fn test_hot_reload_isolation() {
     let fixture = TestFixture::new();
 
-    let request1 = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
-    let request2 = fixture.create_test_hot_reload_request(HotReloadStrategy::Immediate);
+    let request1 = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request2 = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Immediate);
 
     let agent1_id = request1.agent_id;
     let agent2_id = request2.agent_id;
@@ -939,7 +919,7 @@ async fn test_hot_reload_isolation() {
 #[test(tokio::test)]
 async fn test_hot_reload_status_tracking() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let reload_id = request.reload_id;
     let agent_id = request.agent_id;
     let from_version = request.from_version;
@@ -961,7 +941,7 @@ async fn test_hot_reload_status_tracking() {
 #[test(tokio::test)]
 async fn test_hot_reload_cancellation() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let reload_id = request.reload_id;
     let agent_id = request.agent_id;
     let from_version = request.from_version;
@@ -990,11 +970,10 @@ async fn test_hot_reload_cancellation() {
 #[test(tokio::test)]
 async fn test_hot_reload_rollback() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let reload_id = request.reload_id;
     let agent_id = request.agent_id;
     let from_version = request.from_version;
-    let _to_version = request.to_version;
 
     // Setup existing instance and complete hot reload
     fixture
@@ -1030,10 +1009,7 @@ proptest! {
     #[test]
     fn test_traffic_split_percentage_properties(split in arb_traffic_split()) {
         assert!(split.as_percentage() <= 100);
-        #[allow(unused_comparisons)]
-        {
-            assert!(split.as_percentage() >= 0);
-        }
+        // as_percentage() returns unsigned value, always >= 0
     }
 
     #[test]
@@ -1047,7 +1023,7 @@ proptest! {
 #[test(tokio::test)]
 async fn test_complete_hot_reload_lifecycle() {
     let fixture = TestFixture::new();
-    let request = fixture.create_test_hot_reload_request(HotReloadStrategy::Graceful);
+    let request = TestFixture::create_test_hot_reload_request(HotReloadStrategy::Graceful);
     let agent_id = request.agent_id;
     let from_version = request.from_version;
     let to_version = request.to_version;
@@ -1130,7 +1106,7 @@ async fn test_all_hot_reload_strategies() {
     ];
 
     for strategy in strategies {
-        let request = fixture.create_test_hot_reload_request(strategy);
+        let request = TestFixture::create_test_hot_reload_request(strategy);
         let agent_id = request.agent_id;
         let from_version = request.from_version;
 
