@@ -6,8 +6,6 @@ layout: adr
 categories: [Technology]
 ---
 
-# 0009. CLI Tool Design
-
 Date: 2025-08-03
 
 ## Status
@@ -16,9 +14,13 @@ Proposed
 
 ## Context
 
-With Caxton as an application server (ADR-0006), users need a command-line interface for operational tasks, debugging, and development workflows. The CLI must be intuitive for developers who have never used Rust while providing power users with advanced capabilities.
+With Caxton as an application server (ADR-0006), users need a command-line
+interface for operational tasks, debugging, and development workflows. The CLI
+must be intuitive for developers who have never used Rust while providing
+power users with advanced capabilities.
 
 The CLI serves multiple audiences:
+
 - **Developers**: Quick iteration during agent development
 - **Operators**: Production deployment and monitoring
 - **Debuggers**: Troubleshooting distributed agent interactions
@@ -29,7 +31,8 @@ The CLI serves multiple audiences:
 - **Discoverability**: Commands should be intuitive and self-documenting
 - **Progressive disclosure**: Simple tasks simple, complex tasks possible
 - **Speed**: Sub-second response for common operations
-- **Integration**: Work seamlessly with existing tools (kubectl, docker, etc.)
+- **Integration**: Work seamlessly with existing tools (kubectl, docker,
+  etc.)
 
 ## Decision
 
@@ -38,6 +41,7 @@ We will implement a noun-verb CLI structure with progressive disclosure:
 ### 1. Command Structure
 
 **Noun-Verb Pattern**:
+
 ```bash
 caxton <noun> <verb> [options]
 
@@ -79,6 +83,7 @@ caxton dev validate <file>     # Pre-deployment checks
 ### 3. Progressive Disclosure
 
 **Level 1 - Getting Started**:
+
 ```bash
 $ caxton
 Caxton Multi-Agent Orchestration (v1.0.0)
@@ -90,12 +95,14 @@ Quick Start:
 
 Examples:
   caxton agent deploy processor.wasm --name my-processor
-  caxton message send --to my-processor --type task --data '{"id": 123}'
+  caxton message send --to my-processor --type task \
+    --data '{"id": 123}'
 
 Run 'caxton help <command>' for more information.
 ```
 
 **Level 2 - Common Tasks**:
+
 ```bash
 $ caxton agent deploy --help
 Deploy a WebAssembly agent to the server
@@ -114,13 +121,15 @@ Examples:
   caxton agent deploy processor.wasm
 
   # Production deployment with canary
-  caxton agent deploy processor.wasm --canary --name prod-processor
+  caxton agent deploy processor.wasm --canary \
+    --name prod-processor
 
   # High-availability deployment
   caxton agent deploy processor.wasm --replicas 3
 ```
 
 **Level 3 - Power User**:
+
 ```bash
 $ caxton agent deploy processor.wasm \
   --strategy canary \
@@ -134,6 +143,7 @@ $ caxton agent deploy processor.wasm \
 ### 4. Output Formats
 
 **Human-Friendly Default**:
+
 ```bash
 $ caxton agent list
 AGENT ID        NAME            STATUS    UPTIME    MESSAGES
@@ -145,6 +155,7 @@ filter-9b3c2    filter          Failed    -         0
 ```
 
 **Machine-Readable Options**:
+
 ```bash
 # JSON output for scripting
 $ caxton agent list --output json
@@ -153,12 +164,14 @@ $ caxton agent list --output json
 $ caxton agent list --output wide
 
 # Custom columns
-$ caxton agent list --output custom-columns=NAME:.name,MEM:.resources.memory
+$ caxton agent list \
+  --output custom-columns=NAME:.name,MEM:.resources.memory
 ```
 
 ### 5. Interactive Features
 
 **Auto-completion**:
+
 ```bash
 # Bash/Zsh completion
 $ caxton agent delete proc<TAB>
@@ -170,6 +183,7 @@ processor  calculator  filter
 ```
 
 **Interactive Mode**:
+
 ```bash
 $ caxton interactive
 caxton> agent list
@@ -185,6 +199,7 @@ caxton> trace 7f8d9a2b
 ### 6. Error Handling
 
 **Clear, Actionable Errors**:
+
 ```bash
 $ caxton agent deploy broken.wasm
 ✗ Deployment failed: Validation error
@@ -201,6 +216,7 @@ Run 'caxton dev validate broken.wasm' for detailed analysis.
 ```
 
 **Suggestions for Common Mistakes**:
+
 ```bash
 $ caxton agents list
 ✗ Unknown command: 'agents'
@@ -214,6 +230,7 @@ Run 'caxton help' to see all commands.
 ### 7. Development Workflow Integration
 
 **Watch Mode**:
+
 ```bash
 $ caxton dev watch processor.wasm
 👁  Watching processor.wasm for changes...
@@ -224,6 +241,7 @@ $ caxton dev watch processor.wasm
 ```
 
 **Testing Workflow**:
+
 ```bash
 $ caxton dev test processor.wasm --scenario order-processing
 Running test scenario: order-processing
@@ -257,15 +275,18 @@ Coverage: 92% of message handlers
 ### Mitigation Strategies
 
 **Binary Size**:
+
 - Provide lightweight "caxton-lite" for CI/CD
 - Web-based UI alternative for some users
 
 **Installation**:
+
 - One-line installers for all platforms
 - Package managers: brew, apt, yum
 - Docker image with CLI included
 
 **Learning Curve**:
+
 - Interactive tutorial: `caxton tutorial`
 - Command suggestions for mistakes
 - Extensive examples in help text
@@ -279,6 +300,7 @@ Coverage: 92% of message handlers
 ## References
 
 - [Command Line Interface Guidelines](https://clig.dev/)
-- [The Unix Philosophy](http://www.catb.org/~esr/writings/taoup/html/ch01s06.html)
+- [The Unix Philosophy](
+    http://www.catb.org/~esr/writings/taoup/html/ch01s06.html)
 - [Kubernetes CLI Design](https://kubernetes.io/docs/reference/kubectl/)
 - Nielsen's Usability Heuristics for CLIs

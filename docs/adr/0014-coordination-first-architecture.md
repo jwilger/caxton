@@ -5,46 +5,63 @@ status: proposed
 date: 2025-08-09
 ---
 
-# ADR-0014: Coordination-First Architecture
-
 ## Status
-Proposed (Supersedes ADR-0013)
+
+Superseded by ADR-0025: Single-Instance Architecture
 
 ## Context
-ADR-0013 proposed using PostgreSQL for state management with event sourcing and snapshots. However, after careful analysis, this approach:
+
+ADR-0013 proposed using PostgreSQL for state management with event sourcing
+and snapshots. However, after careful analysis, this approach:
+
 - Violates the minimal core philosophy by adding heavyweight dependencies
 - Makes Caxton responsible for business domain concerns (agent state)
 - Creates operational complexity (backups, migrations, replication)
 - Introduces a shared state bottleneck that limits scalability
 
-Further research revealed that Caxton's actual needs are **coordination** rather than **shared state**:
+Further research revealed that Caxton's actual needs are **coordination**
+rather than **shared state**:
+
 - Agent discovery and registry
 - Health monitoring and failure detection
 - Message routing information
 - Cluster membership
 
 ## Decision
-Caxton adopts a **coordination-first architecture** that eliminates shared state in favor of lightweight coordination protocols. Agent state management becomes a business domain responsibility through MCP tools.
+
+Caxton adopts a **coordination-first architecture** that eliminates shared
+state in favor of lightweight coordination protocols. Agent state management
+becomes a business domain responsibility through MCP tools.
 
 **Protocol Layering**:
-- **SWIM Protocol**: Infrastructure layer for cluster coordination and membership
-- **FIPA Protocol**: Application layer for semantic agent-to-agent messaging
-- **Clear Separation**: These protocols complement rather than compete with each other
+
+- **SWIM Protocol**: Infrastructure layer for cluster coordination and
+  membership
+- **FIPA Protocol**: Application layer for semantic agent-to-agent
+  messaging
+- **Clear Separation**: These protocols complement rather than compete
+  with each other
 
 ### Core Principles
 
 #### 1. No Shared State
-Each Caxton instance maintains only local state. No external database dependencies.
+
+Each Caxton instance maintains only local state. No external database
+dependencies.
 
 #### 2. Coordination Through Gossip
+
 Use SWIM protocol for cluster coordination:
+
 - Scalable membership protocol
 - Built-in failure detection
 - Eventually consistent
 - No single point of failure
 
 #### 3. Agent State via MCP Tools
+
 Agents requiring persistence use business-provided MCP tools:
+
 ```rust
 // Standard interface for state persistence
 #[async_trait]
@@ -59,11 +76,14 @@ pub trait McpStateTool: Send + Sync {
 ### Architecture Components
 
 #### Local State Storage
+
 Each instance uses embedded SQLite for local state:
+
 - Agent registry cache
 - Routing tables
 - Message queues during partitions
 - Conversation state tracking
+
 ```rust
 pub struct LocalState {
     db: rusqlite::Connection,
@@ -91,7 +111,9 @@ impl LocalState {
 ```
 
 #### Cluster Coordination
+
 SWIM protocol for distributed coordination:
+
 ```rust
 use memberlist::{Config, Memberlist, Node};
 
@@ -101,7 +123,11 @@ pub struct ClusterCoordinator {
 }
 
 impl ClusterCoordinator {
-    pub async fn start(&mut self, bind_addr: &str, seeds: Vec<String>) -> Result<()> {
+    pub async fn start(
+        &mut self,
+        bind_addr: &str,
+        seeds: Vec<String>
+    ) -> Result<()> {
         let config = Config::default()
             .with_bind_addr(bind_addr)
             .with_gossip_interval(Duration::from_millis(200));
@@ -129,7 +155,9 @@ impl ClusterCoordinator {
 ```
 
 #### Message Routing
+
 Routing without shared state:
+
 ```rust
 pub struct MessageRouter {
     local_routes: HashMap<AgentId, NodeId>,
@@ -157,12 +185,14 @@ impl MessageRouter {
 ### State Categories
 
 #### Caxton-Managed (Coordination)
+
 - **Agent Registry**: Which agents exist and their capabilities
 - **Cluster Membership**: Which Caxton instances are alive
 - **Routing Table**: Which node hosts which agents
 - **Health Status**: Liveness and readiness information
 
 #### Business-Managed (State)
+
 - **Agent Checkpoints**: Persistent agent state
 - **Conversation History**: Message logs and context
 - **Task State**: Long-running operation status
@@ -172,6 +202,7 @@ impl MessageRouter {
 ### Implementation Example
 
 #### Multi-Instance Deployment
+
 ```rust
 // Instance 1 (Primary datacenter)
 let instance1 = Caxton::builder()
@@ -194,6 +225,7 @@ let instance2 = Caxton::builder()
 ```
 
 #### Agent with Business State
+
 ```rust
 pub struct StatefulAgent {
     id: AgentId,
@@ -223,6 +255,7 @@ impl StatefulAgent {
 ## Consequences
 
 ### Positive
+
 - **No external dependencies**: SQLite is embedded, SWIM is a library
 - **Linear scalability**: No shared state bottleneck
 - **Operational simplicity**: No database administration
@@ -231,37 +264,47 @@ impl StatefulAgent {
 - **Business flexibility**: Choose any state backend via MCP
 - **Minimal core maintained**: Caxton remains a message router
 - **Partition tolerance**: Graceful degradation during network splits
-- **Cross-cluster communication**: Agents can communicate across instance boundaries
+- **Cross-cluster communication**: Agents can communicate across instance
+  boundaries
 
 ### Negative
-- **Eventual consistency**: Agent registry may be temporarily inconsistent
+
+- **Eventual consistency**: Agent registry may be temporarily
+  inconsistent
 - **No strong consistency**: Cannot guarantee global ordering
 - **Learning curve**: SWIM protocol less familiar than databases
 - **Network partitions**: Require careful handling and degraded modes
 - **Gossip overhead**: Background network traffic for coordination
 
 ### Neutral
+
 - **Different mental model**: Think coordination, not shared state
-- **MCP tool requirement**: Businesses must provide state tools if needed
-- **Migration complexity**: Existing systems expecting shared state need updates
+- **MCP tool requirement**: Businesses must provide state tools if
+  needed
+- **Migration complexity**: Existing systems expecting shared state need
+  updates
 
 ## Migration Path
 
 ### Phase 1: Local State (Week 1)
+
 - Implement SQLite for local storage
 - No breaking changes to external API
 
 ### Phase 2: SWIM Protocol (Week 2-3)
+
 - Add memberlist dependency
 - Implement gossip for agent registry
 - Maintain backward compatibility
 
 ### Phase 3: Remove Shared State (Week 4)
+
 - Deprecate PostgreSQL backend
 - Provide migration tools
 - Document MCP state tool interface
 
 ### Phase 4: MCP Tools (Week 5-6)
+
 - Publish MCP StateTool trait
 - Provide reference implementations
 - Create migration guides
@@ -269,16 +312,19 @@ impl StatefulAgent {
 ## Alternatives Considered
 
 ### Keep PostgreSQL (ADR-0013)
+
 - **Pros**: Strong consistency, familiar tooling
 - **Cons**: Heavy dependency, operational complexity, scalability limits
 - **Decision**: Rejected due to minimal core violation
 
 ### Embedded etcd
+
 - **Pros**: Strong consistency, proven in Kubernetes
 - **Cons**: Still requires consensus, complex for our needs
 - **Decision**: Overkill for coordination-only needs
 
 ### Redis with Clustering
+
 - **Pros**: Fast, supports pub/sub
 - **Cons**: External dependency, complex cluster setup
 - **Decision**: Still violates zero-dependency goal
@@ -286,16 +332,19 @@ impl StatefulAgent {
 ## Comparison with Industry Systems
 
 ### HashiCorp Consul
+
 - Uses SWIM for membership (like our proposal)
 - Raft only for critical config (we avoid entirely)
 - Proves gossip scales to thousands of nodes
 
 ### Apache Cassandra
+
 - Gossip protocol for cluster state
 - No central coordinator
 - Validates our approach at scale
 
 ### Kubernetes
+
 - etcd for config, local state in kubelet
 - Similar hybrid model
 - Shows pattern works in production
@@ -309,16 +358,32 @@ impl StatefulAgent {
 5. **Fail independently**: Design for partition tolerance
 
 ## Related ADRs
-- [ADR-0015: Distributed Protocol Architecture](0015-distributed-protocol-architecture.md) - Details FIPA/SWIM integration and partition handling
-- [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md) - Agent communication protocol
-- [ADR-0013: State Management Architecture (Superseded)](0013-state-management-architecture.md) - Previous approach
-- [ADR-0004: Minimal Core Philosophy](0004-minimal-core-philosophy.md) - Core design principle
+
+- [ADR-0015: Distributed Protocol Architecture](
+  0015-distributed-protocol-architecture.md) -
+  Details FIPA/SWIM integration and partition handling
+- [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md) - Agent
+  communication protocol
+- [ADR-0013: State Management Architecture (Superseded)](
+  0013-state-management-architecture.md) -
+  Previous approach
+- [ADR-0004: Minimal Core Philosophy](0004-minimal-core-philosophy.md) - Core
+  design principle
 
 ## References
-- [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
+
+- [SWIM: Scalable Weakly-consistent Infection-style Process Group
+  Membership Protocol](
+  https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
 - [Gossip Protocol (Wikipedia)](https://en.wikipedia.org/wiki/Gossip_protocol)
-- [Lightweight State Alternatives Research](../research/lightweight-state-alternatives.md)
+- [Lightweight State Alternatives Research](
+  ../research/lightweight-state-alternatives.md)
 - [MCP State Tool Specification](../mcp/state-tool-specification.md)
 
 ## Notes
-This architecture makes Caxton truly lightweight and cloud-native. By eliminating shared state, we remove the primary scaling bottleneck and operational burden. The coordination-first approach aligns perfectly with the minimal core philosophy while providing all necessary functionality through intelligent architectural choices.
+
+This architecture makes Caxton truly lightweight and cloud-native. By
+eliminating shared state, we remove the primary scaling bottleneck and
+operational burden. The coordination-first approach aligns perfectly with the
+minimal core philosophy while providing all necessary functionality through
+intelligent architectural choices.
