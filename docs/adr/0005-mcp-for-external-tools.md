@@ -6,24 +6,26 @@ layout: adr
 categories: [Technology]
 ---
 
-# 0005. MCP for External Tools
 
 Date: 2025-01-31
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
 Agents need to interact with the external world:
+
 - Query databases and APIs
 - Read and write files
 - Send emails and notifications
 - Call LLM services
 - Execute system commands
 
-We need a standardized way for agents to access these capabilities while maintaining:
+We need a standardized way for agents to access these capabilities while
+maintaining:
+
 - Security: Agents can only access approved tools
 - Observability: All tool usage is recorded as events
 - Portability: Same agent code works in different environments
@@ -31,9 +33,11 @@ We need a standardized way for agents to access these capabilities while maintai
 
 ## Decision
 
-We will use the Model Context Protocol (MCP) as the standard interface for agents to access external tools and resources.
+We will use the Model Context Protocol (MCP) as the standard interface for
+agents to access external tools and resources.
 
 Key aspects:
+
 - Tools are exposed to agents as MCP servers
 - Agents make tool requests through a standard API
 - The host manages tool authentication and authorization
@@ -44,7 +48,8 @@ Key aspects:
 
 ### Positive
 
-- **Industry standard**: MCP is becoming the de facto standard for LLM tools
+- **Industry standard**: MCP is becoming the de facto standard
+  for LLM tools
 - **Language agnostic**: Tools can be written in any language
 - **Rich ecosystem**: Growing collection of MCP-compatible tools
 - **Security model**: Clear boundary between agents and system resources
@@ -52,7 +57,8 @@ Key aspects:
 
 ### Negative
 
-- **Additional protocol**: Agents must understand MCP in addition to FIPA
+- **Additional protocol**: Agents must understand MCP in addition
+  to FIPA
 - **Performance overhead**: Extra serialization/deserialization step
 - **Complexity**: Another moving part in the system
 - **Early standard**: MCP is still evolving
@@ -68,18 +74,22 @@ Key aspects:
 ## Alternatives Considered
 
 ### Direct Function Calls
+
 - **Pros**: Simple, fast
 - **Cons**: No isolation, security risks, couples agents to host
 
 ### Custom Tool Protocol
+
 - **Pros**: Optimized for our use case
 - **Cons**: Another protocol to design and maintain, no ecosystem
 
 ### GraphQL/REST APIs
+
 - **Pros**: Familiar to developers
 - **Cons**: Not designed for tool discovery and invocation
 
 ### WASI (WebAssembly System Interface)
+
 - **Pros**: Standard for WASM system access
 - **Cons**: Limited to system calls, not general tools
 

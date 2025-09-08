@@ -6,29 +6,33 @@ layout: adr
 categories: [Architecture, Technology]
 ---
 
-# 0003. FIPA Messaging Protocol
 
 Date: 2025-01-31
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
 Agent communication requires a standardized message format that:
-- Supports various interaction patterns (request-reply, publish-subscribe, negotiations)
+
+- Supports various interaction patterns (request-reply,
+  publish-subscribe, negotiations)
 - Includes semantic information about message intent
 - Enables interoperability between different agent implementations
 - Has existing tooling and specifications
 
-While we could design a custom protocol, this would require significant design effort and limit interoperability with existing agent systems.
+While we could design a custom protocol, this would require significant design
+effort and limit interoperability with existing agent systems.
 
 ## Decision
 
-We will use FIPA ACL (Agent Communication Language) as the messaging protocol for agent communication in Caxton.
+We will use FIPA ACL (Agent Communication Language) as the messaging protocol
+for agent communication in Caxton.
 
 Key aspects:
+
 - Messages use FIPA performatives (request, inform, propose, etc.)
 - Standard fields: sender, receiver, content, language, ontology
 - Support for conversation protocols and correlation
@@ -48,13 +52,15 @@ Key aspects:
 ### Negative
 
 - **Complexity**: FIPA ACL is more complex than simple JSON messages
-- **Learning curve**: Developers must understand performatives and protocols
+- **Learning curve**: Developers must understand performatives
+  and protocols
 - **Overhead**: More verbose than minimal protocols
 - **Legacy aspects**: Some FIPA concepts feel dated in modern systems
 
 ### Mitigations
 
-- Provide high-level builders that hide FIPA complexity for simple cases
+- Provide high-level builders that hide FIPA complexity for
+  simple cases
 - Create comprehensive documentation with modern examples
 - Support efficient binary encoding (not just XML/string formats)
 - Focus on the subset of FIPA that provides clear value
@@ -63,18 +69,23 @@ Key aspects:
 ## Alternatives Considered
 
 ### Custom JSON Protocol
+
 - **Pros**: Simple, familiar to developers
 - **Cons**: Would need to reinvent interaction patterns, no standards
 
 ### Protocol Buffers / gRPC
+
 - **Pros**: Efficient, good tooling
-- **Cons**: RPC-focused, lacks semantic richness for agent interactions
+- **Cons**: RPC-focused, lacks semantic richness for agent
+  interactions
 
 ### Actor Model Messages (Erlang-style)
+
 - **Pros**: Simple, proven in production
 - **Cons**: Too low-level, no semantic information
 
 ### GraphQL Subscriptions
+
 - **Pros**: Modern, good for pub-sub
 - **Cons**: Designed for client-server, not peer-to-peer agents
 

@@ -14,6 +14,8 @@ Protocol Implementation ✅
 - **P2 - Standard Features**: Features needed for production readiness
 - **P3 - Enhanced Features**: Features that improve usability and operations
 - **P4 - Advanced Features**: Features for scale and enterprise adoption
+- **Future Considerations**: Multi-instance clustering features deprioritized
+  per ADR-0025 Single-Instance Architecture
 
 ---
 
@@ -41,7 +43,7 @@ Protocol Implementation ✅
 ### P1 - Essential Features
 
 - [x] Story 005: FIPA-ACL Message Protocol ✅ (COMPLETED)
-- [ ] Story 006: gRPC Management API
+- [ ] Story 006: Health Check Dashboard
 - [ ] Story 007: REST API Gateway
 - [ ] Story 008: CLI Tool
 - [ ] Story 009: OpenTelemetry Integration
@@ -55,6 +57,11 @@ Protocol Implementation ✅
 - [ ] Story 058: TLS Security Infrastructure
 - [ ] Story 059: Security Audit and Logging
 - [ ] Story 060: Emergency Operations Framework
+- [ ] Story 065: Web Console Authentication
+- [ ] Story 066: Agent Status Display
+- [ ] Story 067: Real-time Dashboard Updates (SSE)
+- [ ] Story 068: Agent Lifecycle Web Controls
+- [ ] Story 069: WASM File Upload Interface
 
 ### P2 - Standard Features
 
@@ -70,11 +77,11 @@ Protocol Implementation ✅
 - [ ] Story 045: Advanced Security Operations
 - [ ] Story 058: Queue Depth Monitoring
 - [ ] Story 059: Message Rate Peak Tracking
+- [ ] Story 061: OAuth2 Web Authentication
+- [ ] Story 062: Real-time Web Dashboard
 
 ### P3 - Enhanced Features
 
-- [ ] Story 018: SWIM Cluster Membership
-- [ ] Story 019: Cross-Instance Message Routing
 - [ ] Story 020: Canary Deployment Strategy
 - [ ] Story 021: Shadow Deployment Mode
 - [ ] Story 022: mTLS Inter-Node Security
@@ -87,9 +94,13 @@ Protocol Implementation ✅
 - [ ] Story 049: Compliance Framework
 - [ ] Story 050: Developer Experience Platform
 - [ ] Story 060: System Resource Monitoring
+- [ ] Story 063: Agent Management Web UI
+- [ ] Story 064: Professional Admin Console
 
 ### P4 - Advanced Features
 
+- [ ] Story 018: SWIM Cluster Membership
+- [ ] Story 019: Cross-Instance Message Routing
 - [ ] Story 026: Distributed Agent Registry
 - [ ] Story 027: Performance Monitoring Dashboard
 - [ ] Story 028: Automated Backup System
@@ -105,6 +116,12 @@ Protocol Implementation ✅
 - [ ] Story 038: Multi-Tenancy Support
 - [ ] Story 039: Plugin Architecture
 - [ ] Story 040: GraphQL API Layer
+
+### Future Considerations
+
+Multi-instance clustering features deprioritized per ADR-0025 Single-Instance
+Architecture. These stories moved to P4 - Advanced Features to maintain
+architectural flexibility for future requirements.
 
 ---
 
@@ -312,30 +329,31 @@ and prevention of code quality degradation
 - Documentation includes FIPA examples
 - Performance overhead < 1ms per message
 
-### Story 006: gRPC Management API
+### Story 006: Health Check Dashboard
 
-**As a** client application
-**I want** a gRPC API for Caxton management
-**So that** I can programmatically control the server
+**As a** system operator
+**I want** a basic health dashboard showing system status
+**So that** I can monitor Caxton server health through a web interface
 
 **Acceptance Criteria:**
 
-- [ ] CaxtonManagement service is implemented
-- [ ] Agent deployment endpoints work (Deploy, Undeploy, List, Get)
-- [ ] Message operations available (Send, Subscribe to responses)
-- [ ] Health and readiness endpoints respond correctly
-- [ ] Streaming operations support real-time updates
-- [ ] Protocol buffer schemas are versioned
-- [ ] Authentication tokens are validated
+- [ ] Simple web dashboard accessible at `/health-dashboard`
+- [ ] Shows basic system health indicators (running, agent count, uptime)
+- [ ] Displays current agent status (loaded, running, stopped)
+- [ ] Basic resource usage display (memory, CPU usage)
+- [ ] No authentication required for read-only health information
+- [ ] Server-side rendered HTML (no complex JavaScript frameworks)
+- [ ] Responsive design that works on mobile devices
 
 **Definition of Done:**
 
-- gRPC service handles all defined operations
-- Generated SDKs work for Go, Python, JavaScript
-- TLS encryption is enforced
-- Rate limiting prevents abuse
-- API documentation is auto-generated
-- Integration tests cover all endpoints
+- Health dashboard integrated and accessible via browser
+- Simple, fast-loading interface with minimal dependencies
+- Real-time health information updates automatically
+- Mobile-responsive design works on all screen sizes
+- Performance < 50ms response time for health data
+- Integration tests verify dashboard functionality
+- Documentation covers health monitoring setup
 
 ### Story 007: REST API Gateway
 
@@ -459,10 +477,13 @@ and prevention of code quality degradation
 - [ ] Replace hardcoded 10MB limits with dynamic calculation
 - [ ] Read system memory at startup to determine available resources
 - [ ] Support environment variables:
-  - `CAXTON_MAX_MEMORY_PERCENT`: % of system memory Caxton can use (default 50%)
+  - `CAXTON_MAX_MEMORY_PERCENT`: % of system memory Caxton can use
+    (default 50%)
   - `CAXTON_AGENT_MEMORY_PERCENT`: % of Caxton memory per agent (default 10%)
-  - `CAXTON_MESSAGE_OVERHEAD_PERCENT`: Operational overhead buffer (default 20%)
-- [ ] Enforce type-level constraint: `message_size < agent_memory * (1 - overhead)`
+  - `CAXTON_MESSAGE_OVERHEAD_PERCENT`: Operational overhead buffer
+    (default 20%)
+- [ ] Enforce type-level constraint:
+  `message_size < agent_memory * (1 - overhead)`
 - [ ] Create `MemoryConfiguration` type that validates relationships at startup
 - [ ] Provide clear feedback on calculated limits in logs
 - [ ] Support minimum thresholds to prevent unusable configurations
@@ -513,7 +534,7 @@ and prevention of code quality degradation
 
 **Acceptance Criteria:**
 
-- [ ] TLS encryption for all API endpoints (gRPC, REST, WebSocket)
+- [ ] TLS encryption for all API endpoints (Web, REST, WebSocket)
 - [ ] Environment variable configuration (CAXTON_TLS_ENABLED,
   CAXTON_TLS_CERT_PATH, CAXTON_TLS_KEY_PATH)
 - [ ] TLS 1.3 minimum version enforced
@@ -567,8 +588,10 @@ and prevention of code quality degradation
 - [ ] Emergency stop command with graceful shutdown
 - [ ] Memory garbage collection command (caxton memory gc)
 - [ ] Load shedding capabilities during overload
-- [ ] Configuration validation commands (caxton config validate --security-check)
-- [ ] Component status commands (caxton wasm isolation-status, caxton fipa validation-status)
+- [ ] Configuration validation commands
+  (caxton config validate --security-check)
+- [ ] Component status commands (caxton wasm isolation-status,
+  caxton fipa validation-status)
 - [ ] Resource monitoring commands (caxton resources status)
 - [ ] Emergency diagnostic data collection
 
@@ -1322,6 +1345,51 @@ and prevention of code quality degradation
 - Alerts configured for emergencies
 - Regular drill exercises defined
 
+### Story 061: OAuth2 Web Authentication
+
+**As a** system administrator
+**I want** OAuth2/OIDC authentication for the web console
+**So that** I can integrate with enterprise SSO providers
+
+**Acceptance Criteria:**
+
+- [ ] OAuth2 provider configuration via web interface
+- [ ] Support for common providers (GitHub, Google, Okta, Auth0)
+- [ ] JWT token validation with JWKS rotation
+- [ ] Session management with secure cookies
+- [ ] Replaces ROOT_PASSWORD with proper authentication
+
+**Dependencies:** Story 006 (Basic Web Server)
+
+**Definition of Done:**
+
+- OAuth2 flow working with at least one provider
+- Sessions persist across server restarts
+- ROOT_PASSWORD disabled after OAuth2 configured
+- Security best practices implemented
+
+### Story 062: Real-time Web Dashboard
+
+**As a** system operator
+**I want** real-time status updates in the web console
+**So that** I can monitor system health without refreshing
+
+**Acceptance Criteria:**
+
+- [ ] Server-Sent Events (SSE) for live updates
+- [ ] Agent status changes reflected immediately
+- [ ] Message throughput visualization
+- [ ] Resource usage charts and graphs
+- [ ] Connection status indicators
+
+**Dependencies:** Story 006, Story 009 (OpenTelemetry)
+
+**Definition of Done:**
+
+- SSE connections stable and auto-reconnecting
+- Updates appear within 1 second of changes
+- Graceful degradation without JavaScript
+
 ### Story 042: Multi-Language Agent SDK
 
 **As an** agent developer
@@ -1591,11 +1659,9 @@ stories to ensure 100% coverage:
 - Story 002: Core Message Router ✓
 - Story 003: Agent Lifecycle Management ✓
 
-### ADR-0007: Management API Design
+### ADR-0022: Web-based Admin Console
 
-- Story 006: gRPC Management API ✓
-- Story 007: REST API Gateway ✓
-- Story 040: GraphQL API Layer ✓
+- Story 006: Web-based Admin Console ✓
 
 ### ADR-0008: Agent Deployment Model
 
@@ -1853,6 +1919,51 @@ conversation tracking
 
 ## P3 - Enhanced Features Stories (System Monitoring)
 
+### Story 063: Agent Management Web UI
+
+**As a** system operator
+**I want** to manage agents through the web interface
+**So that** I can deploy and control agents without CLI
+
+**Acceptance Criteria:**
+
+- [ ] WASM file upload with drag-and-drop
+- [ ] Agent deployment configuration forms
+- [ ] Start/stop/restart controls for agents
+- [ ] Agent logs and status details
+- [ ] Batch operations for multiple agents
+
+**Dependencies:** Story 006, Story 003 (Agent Lifecycle)
+
+**Definition of Done:**
+
+- File uploads validated for security
+- All agent operations available via web
+- Error handling with clear user feedback
+
+### Story 064: Professional Admin Console
+
+**As a** system administrator
+**I want** a fully-featured admin dashboard
+**So that** I have comprehensive control and visibility
+
+**Acceptance Criteria:**
+
+- [ ] HTMX for rich interactions without full SPA
+- [ ] Advanced filtering and search capabilities
+- [ ] Export functionality for metrics and logs
+- [ ] Customizable dashboard layouts
+- [ ] Role-based access control (RBAC)
+
+**Dependencies:** Stories 061, 062, 063
+
+**Definition of Done:**
+
+- Professional UX with consistent design
+- Performance remains under 100ms response time
+- Mobile responsive design
+- Comprehensive documentation
+
 ### Story 060: System Resource Monitoring
 
 **As a** system administrator
@@ -1879,9 +1990,143 @@ conversation tracking
 
 ---
 
+## New P1 Stories - Web Console Foundation
+
+### Story 065: Web Console Authentication
+
+**As a** system administrator
+**I want** secure authentication for the web admin console
+**So that** only authorized personnel can access system management features
+
+**Acceptance Criteria:**
+
+- [ ] Authentication system integrated with web console
+- [ ] Session management with secure HTTP-only cookies
+- [ ] Login/logout functionality with session timeout
+- [ ] Support for environment-based credentials (ROOT_PASSWORD)
+- [ ] CSRF protection for all state-changing operations
+- [ ] Rate limiting on login attempts to prevent brute force
+- [ ] Secure password policies and validation
+
+**Definition of Done:**
+
+- Authentication prevents unauthorized console access
+- Session security follows web security best practices
+- Login attempts are properly rate limited
+- CSRF tokens protect all admin operations
+- Password validation enforces strong passwords
+- Session timeout prevents abandoned session abuse
+- Documentation covers authentication setup and configuration
+
+### Story 066: Agent Status Display
+
+**As a** system operator
+**I want** detailed agent status information in the web console
+**So that** I can monitor agent health and troubleshoot issues
+
+**Acceptance Criteria:**
+
+- [ ] Agent list shows current status (loaded, running, stopped, error)
+- [ ] Individual agent detail pages with full status information
+- [ ] Agent resource usage display (memory, CPU, execution time)
+- [ ] Agent lifecycle state visualization
+- [ ] Error details and stack traces for failed agents
+- [ ] Agent capabilities and configuration display
+- [ ] Filtering and sorting capabilities for large agent lists
+
+**Definition of Done:**
+
+- All agent states properly displayed with clear indicators
+- Agent detail pages provide comprehensive information
+- Resource usage information is accurate and current
+- Error information helps with troubleshooting
+- Interface handles large numbers of agents efficiently
+- Filtering and search functionality works intuitively
+- Documentation covers agent status interpretation
+
+### Story 067: Real-time Dashboard Updates (SSE)
+
+**As a** system operator
+**I want** live updates in the web console without page refreshes
+**So that** I can monitor system changes in real-time
+
+**Acceptance Criteria:**
+
+- [ ] Server-Sent Events (SSE) for live data updates
+- [ ] Agent status changes appear immediately in the interface
+- [ ] Message throughput and system metrics update in real-time
+- [ ] Connection management with automatic reconnection
+- [ ] Graceful degradation when SSE is unavailable
+- [ ] Event filtering to reduce bandwidth usage
+- [ ] Connection status indicator for users
+
+**Definition of Done:**
+
+- SSE connections are stable and perform well
+- Real-time updates appear within 1 second of changes
+- Connection recovery works reliably after network issues
+- Interface remains functional without SSE (graceful degradation)
+- Event filtering prevents information overload
+- Connection indicators provide clear feedback to users
+- Documentation covers SSE configuration and troubleshooting
+
+### Story 068: Agent Lifecycle Web Controls
+
+**As a** system operator
+**I want** web-based controls for agent lifecycle management
+**So that** I can manage agents without using command-line tools
+
+**Acceptance Criteria:**
+
+- [ ] Start, stop, restart controls for individual agents
+- [ ] Batch operations for multiple agent selection
+- [ ] Agent deployment status and progress indicators
+- [ ] Confirmation dialogs for destructive operations
+- [ ] Operation feedback with success/error messages
+- [ ] Agent dependency handling (prevent stopping required agents)
+- [ ] Operation history and audit trail
+
+**Definition of Done:**
+
+- All agent lifecycle operations available via web interface
+- Batch operations work efficiently with multiple agents
+- User confirmation prevents accidental destructive operations
+- Clear feedback informs users of operation results
+- Dependency checking prevents system instability
+- Operation history provides audit capabilities
+- Documentation covers agent management procedures
+
+### Story 069: WASM File Upload Interface
+
+**As a** system operator
+**I want** to upload WASM agent files through the web console
+**So that** I can deploy new agents without file system access
+
+**Acceptance Criteria:**
+
+- [ ] Drag-and-drop WASM file upload interface
+- [ ] File validation and security scanning before deployment
+- [ ] Upload progress indicators for large files
+- [ ] Deployment configuration forms (resources, permissions)
+- [ ] File size limits and format validation
+- [ ] Virus/malware scanning of uploaded files
+- [ ] Deployment preview and confirmation step
+
+**Definition of Done:**
+
+- File upload interface is intuitive and secure
+- Security validation prevents malicious file deployment
+- Upload progress provides clear feedback for large files
+- Configuration forms guide proper agent setup
+- File validation prevents invalid deployments
+- Security scanning protects against malware
+- Documentation covers secure agent deployment procedures
+
+---
+
 ## Notes
 
-- **Total Stories**: 57 comprehensive user stories covering all aspects of the system
+- **Total Stories**: 61 comprehensive user stories covering all aspects of the system
 - Stories are intentionally kept independent to allow flexible scheduling
 - Each story delivers value even if others are delayed
 - Priority levels guide sequencing but dependencies are minimal
