@@ -6,8 +6,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-# 0008. Agent Deployment Model
-
 Date: 2025-08-03
 
 ## Status
@@ -16,9 +14,15 @@ Proposed
 
 ## Context
 
-With Caxton as an application server (ADR-0006), we need a deployment model that enables continuous delivery of agents while maintaining system stability. The model must support modern deployment practices like canary releases, blue-green deployments, and instant rollbacks.
+With Caxton as an application server (ADR-0006), we need a deployment model
+that enables continuous delivery of agents while maintaining system stability.
+The model must support modern deployment practices like canary releases,
+blue-green deployments, and instant rollbacks.
 
-Traditional application servers often require restarts for deployments, causing downtime and limiting iteration speed. In a multi-agent system, we need to deploy, update, and remove agents without affecting other running agents or dropping messages.
+Traditional application servers often require restarts for deployments,
+causing downtime and limiting iteration speed. In a multi-agent system, we
+need to deploy, update, and remove agents without affecting other running
+agents or dropping messages.
 
 ## Decision Drivers
 
@@ -31,7 +35,8 @@ Traditional application servers often require restarts for deployments, causing 
 
 ## Decision
 
-We will implement a hot-reload deployment model with multi-stage validation:
+We will implement a hot-reload deployment model with multi-stage
+validation:
 
 ### 1. Deployment API
 
@@ -80,6 +85,7 @@ async fn validate_agent(wasm_module: &[u8]) -> Result<ValidationReport> {
 ### 3. Deployment Strategies
 
 **Blue-Green Deployment**:
+
 ```yaml
 deployment:
   strategy: blue-green
@@ -91,6 +97,7 @@ deployment:
 ```
 
 **Canary Deployment**:
+
 ```yaml
 deployment:
   strategy: canary
@@ -106,6 +113,7 @@ deployment:
 ```
 
 **Shadow Deployment**:
+
 ```yaml
 deployment:
   strategy: shadow
@@ -119,6 +127,7 @@ deployment:
 ### 4. State Management
 
 **Deployment States**:
+
 ```rust
 enum DeploymentState {
     Validating,      // Running validation pipeline
@@ -131,6 +140,7 @@ enum DeploymentState {
 ```
 
 **Message Handling During Deployment**:
+
 - New agents start receiving messages only after warm-up
 - Old agents continue processing during deployment
 - Message handoff coordinated by router
@@ -180,16 +190,19 @@ async fn rollback_deployment(deployment_id: &str) -> Result<()> {
 ### Mitigation Strategies
 
 **Memory Overhead**:
+
 - Aggressive cleanup of old versions
 - Resource limits during deployment
 - Deployment queuing to prevent overload
 
 **Complexity**:
+
 - Comprehensive observability for deployments
 - Clear state machine for deployment lifecycle
 - Automated testing of deployment scenarios
 
 **State Migration**:
+
 - Event sourcing for stateful agents
 - Backward-compatible message formats
 - State versioning and migration tools
@@ -197,6 +210,7 @@ async fn rollback_deployment(deployment_id: &str) -> Result<()> {
 ## Deployment Examples
 
 ### Simple Development Deployment
+
 ```bash
 caxton deploy agent processor.wasm
 ✓ Validation passed (0.8s)
@@ -206,6 +220,7 @@ caxton deploy agent processor.wasm
 ```
 
 ### Production Canary Deployment
+
 ```bash
 caxton deploy agent processor.wasm --strategy canary
 ✓ Validation passed (0.8s)
@@ -217,6 +232,7 @@ caxton deploy agent processor.wasm --strategy canary
 ```
 
 ### Emergency Rollback
+
 ```bash
 caxton rollback proc-v2-7f8d9
 ✓ Messages diverted (0.1s)
@@ -230,7 +246,8 @@ caxton rollback proc-v2-7f8d9
 Every deployment emits:
 
 **Metrics**:
-```
+
+```prometheus
 caxton_deployment_duration_seconds{strategy="canary", status="success"}
 caxton_deployment_validation_time_seconds{stage="sandbox"}
 caxton_deployment_rollback_total{reason="high_error_rate"}
@@ -238,7 +255,8 @@ caxton_agent_version_active{agent="processor", version="v2"}
 ```
 
 **Traces**:
-```
+
+```text
 deployment.create (25.3s)
 ├── validation.static (0.3s)
 ├── validation.sandbox (2.1s)
@@ -249,6 +267,7 @@ deployment.create (25.3s)
 ```
 
 **Structured Logs**:
+
 ```json
 {
   "timestamp": "2024-11-20T10:30:00Z",
@@ -276,5 +295,6 @@ deployment.create (25.3s)
 
 - [Continuous Delivery](https://continuousdelivery.com/) by Jez Humble
 - [Progressive Delivery](https://launchdarkly.com/blog/what-is-progressive-delivery/)
-- [Canary Deployments at Netflix](https://netflixtechblog.com/automated-canary-analysis-at-netflix-with-kayenta-3260bc7acc69)
+- [Canary Deployments at Netflix](
+    https://netflixtechblog.com/automated-canary-analysis-at-netflix-with-kayenta-3260bc7acc69)
 - Kubernetes deployment strategies

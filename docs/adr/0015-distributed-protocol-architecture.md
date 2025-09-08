@@ -1,18 +1,27 @@
-# ADR-0015: Distributed Protocol Architecture - FIPA and SWIM Integration
-
 ## Status
-Proposed
+
+Superseded by ADR-0025: Single-Instance Architecture
 
 ## Context
-With the coordination-first architecture (ADR-0014), Caxton uses SWIM for cluster coordination and FIPA for agent messaging. This ADR clarifies how these protocols interact and addresses distributed systems concerns including network partitioning, consistency, and fault tolerance.
+
+With the coordination-first architecture (ADR-0014), Caxton uses SWIM
+for
+cluster coordination and FIPA for agent messaging. This ADR clarifies
+how
+these protocols interact and addresses distributed systems concerns
+including
+network partitioning, consistency, and fault tolerance.
 
 ## Decision
 
 ### Protocol Layer Separation
 
-Caxton implements a clear separation between coordination (SWIM) and communication (FIPA) protocols:
+Caxton implements a clear separation between coordination (SWIM)
+and
+communication (FIPA) protocols:
 
 #### SWIM Protocol (Infrastructure Layer)
+
 - **Responsibility**: Cluster membership and failure detection
 - **Scope**: Caxton instance coordination
 - **Data**: Instance liveness, agent registry, routing tables
@@ -20,6 +29,7 @@ Caxton implements a clear separation between coordination (SWIM) and communicati
 - **Failure Model**: Crash-stop failures
 
 #### FIPA Protocol (Application Layer)
+
 - **Responsibility**: Agent-to-agent semantic messaging
 - **Scope**: Business logic communication
 - **Data**: Application messages, conversation state
@@ -44,7 +54,10 @@ pub struct DistributedMessageRouter {
 }
 
 impl DistributedMessageRouter {
-    pub async fn route_fipa_message(&self, msg: FipaMessage) -> Result<DeliveryStatus> {
+    pub async fn route_fipa_message(
+        &self,
+        msg: FipaMessage,
+    ) -> Result<DeliveryStatus> {
         let target = &msg.receiver;
 
         // Try local delivery first
@@ -64,12 +77,18 @@ impl DistributedMessageRouter {
         self.discover_and_route(msg).await
     }
 
-    async fn forward_to_remote(&self, node: &NodeId, msg: FipaMessage) -> Result<DeliveryStatus> {
+    async fn forward_to_remote(
+        &self,
+        node: &NodeId,
+        msg: FipaMessage,
+    ) -> Result<DeliveryStatus> {
         // Track in-flight message
         self.track_message(&msg).await;
 
         // Forward via cluster network
-        let result = self.cluster.send_to_node(node, Payload::FipaMessage(msg)).await;
+        let result = self.cluster
+            .send_to_node(node, Payload::FipaMessage(msg))
+            .await;
 
         // Update delivery status
         self.update_delivery_status(&msg.message_id, result).await
@@ -80,6 +99,7 @@ impl DistributedMessageRouter {
 ### Network Partition Handling
 
 #### Detection Strategy
+
 ```rust
 pub struct PartitionManager {
     membership: SwimMembership,
@@ -129,6 +149,7 @@ impl PartitionManager {
 ```
 
 #### Healing After Partition
+
 ```rust
 pub struct PartitionHealer {
     detector: PartitionDetector,
@@ -159,6 +180,7 @@ impl PartitionHealer {
 ### Consistency Models
 
 #### Agent Registry (Eventually Consistent)
+
 ```rust
 pub struct AgentRegistry {
     local: HashMap<AgentId, AgentMetadata>,
@@ -172,7 +194,8 @@ impl AgentRegistry {
             match self.local.get(agent_id) {
                 Some(local_meta) => {
                     // Resolve conflict using vector clocks
-                    if peer_registry.vector_clock.happens_after(&self.vector_clock, agent_id) {
+                    if peer_registry.vector_clock
+                        .happens_after(&self.vector_clock, agent_id) {
                         self.local.insert(agent_id.clone(), peer_meta.clone());
                     }
                 }
@@ -192,6 +215,7 @@ impl AgentRegistry {
 ```
 
 #### Message Ordering (Per-Conversation)
+
 ```rust
 pub struct ConversationManager {
     conversations: HashMap<ConversationId, Conversation>,
@@ -221,6 +245,7 @@ impl ConversationManager {
 ### Fault Tolerance Mechanisms
 
 #### Circuit Breaker for Remote Calls
+
 ```rust
 pub struct RemoteCallCircuitBreaker {
     state: Arc<RwLock<CircuitState>>,
@@ -267,6 +292,7 @@ impl RemoteCallCircuitBreaker {
 ```
 
 #### Supervisor Trees for Agents
+
 ```rust
 pub struct AgentSupervisor {
     strategy: SupervisionStrategy,
@@ -286,7 +312,8 @@ impl AgentSupervisor {
                             self.restart_all_agents().await;
                         }
                         SupervisionStrategy::RestForOne => {
-                            self.restart_dependent_agents(failure.agent_id).await;
+                            self.restart_dependent_agents(failure.agent_id)
+                                .await;
                         }
                     }
                 }
@@ -299,6 +326,7 @@ impl AgentSupervisor {
 ### Message Delivery Guarantees
 
 #### Configurable Delivery Semantics
+
 ```rust
 pub enum DeliveryGuarantee {
     AtMostOnce,   // Fire and forget (default)
@@ -312,7 +340,10 @@ pub struct MessageDelivery {
 }
 
 impl MessageDelivery {
-    pub async fn deliver(&mut self, msg: FipaMessage) -> Result<DeliveryStatus> {
+    pub async fn deliver(
+        &mut self,
+        msg: FipaMessage,
+    ) -> Result<DeliveryStatus> {
         match self.guarantee {
             DeliveryGuarantee::AtMostOnce => {
                 self.send_once(msg).await
@@ -338,19 +369,25 @@ impl MessageDelivery {
 ## Consequences
 
 ### Positive
-- **Clear separation of concerns**: SWIM handles infrastructure, FIPA handles application
+
+- **Clear separation of concerns**: SWIM handles infrastructure, FIPA handles
+  application
 - **Graceful degradation**: System continues functioning during partitions
-- **Flexible consistency**: Eventually consistent for coordination, stronger guarantees available when needed
+- **Flexible consistency**: Eventually consistent for coordination, stronger
+  guarantees available when needed
 - **Fault isolation**: Agent failures don't affect cluster coordination
 - **Scalable design**: Can handle thousands of agents across dozens of instances
 
 ### Negative
+
 - **Complexity**: Two protocols to understand and maintain
 - **Eventual consistency**: Agent registry may be temporarily inconsistent
 - **Network overhead**: Gossip protocol generates background traffic
-- **Partition handling**: Requires careful consideration of business requirements
+- **Partition handling**: Requires careful consideration of business
+  requirements
 
 ### Neutral
+
 - Standard distributed systems patterns apply
 - Similar complexity to other distributed agent systems
 - Trade-offs are well-understood in the industry
@@ -367,6 +404,7 @@ impl MessageDelivery {
 ### Technology Selection
 
 #### SWIM Implementation
+
 ```toml
 [dependencies]
 # Primary choice: memberlist-rs (Rust port of HashiCorp's memberlist)
@@ -381,6 +419,7 @@ tokio = { version = "1.0", features = ["full"] }
 ```
 
 #### Message Serialization
+
 ```toml
 # MessagePack for efficiency and schema evolution
 rmp-serde = "1.1"  # MessagePack serialization
@@ -392,6 +431,7 @@ serde = { version = "1.0", features = ["derive"] }
 ```
 
 #### Network Transport
+
 ```rust
 pub enum TransportLayer {
     // TCP for reliability (default)
@@ -563,7 +603,8 @@ impl QuicTransport {
         let mut transport_config = quinn::TransportConfig::default();
         transport_config.max_concurrent_uni_streams(0_u8.into());
         transport_config.max_concurrent_bidi_streams(100_u8.into());
-        transport_config.max_idle_timeout(Some(Duration::from_secs(30).try_into()?));
+        transport_config
+            .max_idle_timeout(Some(Duration::from_secs(30).try_into()?));
 
         endpoint_config.transport = Arc::new(transport_config);
 
@@ -624,13 +665,18 @@ coordination:
 ```
 
 ## References
-- [SWIM Protocol Paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
-- [FIPA Agent Communication Language](http://www.fipa.org/specs/fipa00061/SC00061G.html)
-- [Distributed Systems: Principles and Paradigms](https://www.distributed-systems.net/index.php/books/ds3/)
+
+- [SWIM Protocol Paper](
+  https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
+- [FIPA Agent Communication Language](
+  http://www.fipa.org/specs/fipa00061/SC00061G.html)
+- [Distributed Systems: Principles and Paradigms](
+  https://www.distributed-systems.net/index.php/books/ds3/)
 - [memberlist-rs](https://github.com/vectordotdev/memberlist-rs)
 - [MessagePack Specification](https://msgpack.org/)
 - [QUIC RFC 9000](https://datatracker.ietf.org/doc/html/rfc9000)
-- [ADR-0014: Coordination-First Architecture](0014-coordination-first-architecture.md)
+- [ADR-0014: Coordination-First Architecture](
+  0014-coordination-first-architecture.md)
 - [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md)
 - [ADR-0016: Security Architecture](0016-security-architecture.md)
 - [ADR-0017: Performance Requirements](0017-performance-requirements.md)
