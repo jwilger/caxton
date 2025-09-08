@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/jwilger/caxton/compare/v0.1.4...v0.2.0) - 2025-09-08
+
+### Bug Fixes
+
+- *(ci)* GitHub Actions security monitoring workflow fixes - eliminate race conditions and inappropriate container scanning ([#23](https://github.com/jwilger/caxton/pull/23))
+- *(ci)* remove unsupported --format flag from cargo-deny command
+
+### Features
+
+- *(ci)* Advanced CI/CD Pipeline Validation Framework ([#14](https://github.com/jwilger/caxton/pull/14))
+- *(sparc)* implement mandatory PLANNING.md auto-update on story completion ([#21](https://github.com/jwilger/caxton/pull/21))
+- port domain modeling enhancements and memory system improvements ([#27](https://github.com/jwilger/caxton/pull/27))
+
+### Miscellaneous Tasks
+
+- update PLANNING.md to mark 53 complete
+- Full CI/CD Pipeline Setup ([#13](https://github.com/jwilger/caxton/pull/13))
+
+### Refactoring
+
+- enforce clippy forbid level and remove redundant test ([#31](https://github.com/jwilger/caxton/pull/31))
+
 ## [0.1.4](https://github.com/jwilger/caxton/compare/v0.1.3...v0.1.4) - 2025-08-11
 
 ### Bug Fixes
