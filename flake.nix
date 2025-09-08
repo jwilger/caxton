@@ -66,9 +66,6 @@
 
           # Configure development environment
           shellHook = ''
-            # Note: GitHub operations now use gh CLI directly
-            # The gh CLI will use existing authentication from 'gh auth login'
-
             # Create local dependency directories
             mkdir -p .dependencies/nodejs
             mkdir -p .dependencies/rust
@@ -84,69 +81,11 @@
             export RUSTUP_HOME="$PWD/.dependencies/rust/rustup"
             export PATH="$PWD/.dependencies/rust/cargo/bin:$PATH"
 
-            # Ensure cargo-mcp is installed in local directory
+            # For AI coding assistants
             cargo install --locked cargo-mcp
-
-            echo "🦀 Caxton Development Environment"
-            echo "Rust version: $(rustc --version)"
-            echo "Available tools: cargo-nextest, cargo-watch, cargo-expand, cargo-edit"
-            echo ""
-
-            # Set up git safety wrapper
-            chmod +x "$PWD/scripts/git" 2>/dev/null || true
-            export PATH="$PWD/scripts:$PATH"
-
-            echo "🛡️  Git safety wrapper enabled"
-            echo "   - git commands now go through quality enforcement"
-            echo "   - --no-verify is blocked (use /usr/bin/git for emergencies)"
-            echo ""
-
-            # Ensure claude code is available (install to local directory)
-            if ! command -v claude &> /dev/null; then
-              npx @anthropic-ai/claude-code install --force latest
-            fi
-
-            # Configure MCP servers for project
-            echo "🔧 Configuring MCP servers..."
-
-            export QDRANT_URL="http://localhost:6333"
-            export COLLECTION_NAME="caxton-memory"
 
             pre-commit install
             pre-commit install-hooks
-
-            # Add MCP servers with proper configuration
-            claude mcp add cargo cargo-mcp serve
-            # GitHub operations now use gh CLI directly via Bash tool
-            claude mcp add git npx @cyanheads/git-mcp-server
-
-            # Install and configure MCP servers
-            uv tool install mcp-server-qdrant  # Creates executable in ~/.local/bin
-            claude mcp add qdrant mcp-server-qdrant
-
-            echo "✅ MCP servers configured successfully"
-            echo ""
-
-            echo "🧠 MCP servers configured:"
-            echo "   - qdrant: Semantic memory storage"
-            echo "   - cargo: Rust/Cargo integration"
-            echo "   - git: Enhanced git operations"
-            echo "   - GitHub: Now uses gh CLI directly (no MCP server)"
-            echo "   - Check status: claude mcp list"
-            echo ""
-
-            echo "📦 Dependency directories:"
-            echo "   - Node.js packages: .dependencies/nodejs/"
-            echo "   - Rust/Cargo packages: .dependencies/rust/"
-            echo ""
-
-            echo "📋 Common commands:"
-            echo "  cargo nextest run    # Run tests with nextest"
-            echo "  cargo watch -x test  # Auto-run tests on changes"
-            echo "  cargo clippy         # Lint code"
-            echo "  cargo fmt           # Format code"
-            echo "  bacon --headless     # Continuous testing"
-            echo ""
           '';
         };
       }
