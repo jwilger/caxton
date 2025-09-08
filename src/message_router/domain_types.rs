@@ -721,22 +721,17 @@ pub enum Performative {
 }
 
 /// Message delivery priority levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub enum MessagePriority {
     /// Low priority messages (lowest urgency, can be delayed)
     Low = 1,
     /// Normal priority messages (default processing priority)
+    #[default]
     Normal = 5,
     /// High priority messages (expedited processing required)
     High = 8,
     /// Critical priority messages (highest urgency, immediate processing)
     Critical = 10,
-}
-
-impl Default for MessagePriority {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 /// Reasons for message delivery failure
