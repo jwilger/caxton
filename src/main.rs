@@ -3,7 +3,8 @@
 //! This is the main entry point for the Caxton server application.
 
 use anyhow::Result;
-use caxton::{WasmRuntime, WasmRuntimeConfig};
+use caxton::{WasmRuntime, WasmRuntimeConfig, create_app};
+use tokio::net::TcpListener;
 use tracing::{error, info};
 
 #[tokio::main]
@@ -32,14 +33,15 @@ async fn main() -> Result<()> {
     if runtime.is_initialized() {
         info!("Caxton server is ready to accept agent deployments");
 
-        // TODO: Start gRPC server (Story 006)
-        // TODO: Start REST gateway (Story 007)
+        // Start REST API server
+        let app = create_app();
+        let listener = TcpListener::bind("localhost:8080").await?;
+        info!("REST API server listening on http://localhost:8080");
+
         // TODO: Initialize CLI interface (Story 008)
 
-        // For now, just keep the server running
-        info!("Server running. Press Ctrl+C to stop.");
-        tokio::signal::ctrl_c().await?;
-        info!("Shutdown signal received");
+        // Run the HTTP server
+        axum::serve(listener, app).await?;
     } else {
         error!("Failed to initialize runtime");
         return Err(anyhow::anyhow!("Runtime initialization failed"));
