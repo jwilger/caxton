@@ -32,6 +32,8 @@ pub mod ci_pipeline;
 pub mod deployment_manager;
 /// Hot reload operations with zero downtime
 pub mod hot_reload_manager;
+/// REST API endpoints for management interface
+pub mod rest_api;
 /// Time abstraction layer for testable time operations
 pub mod time_provider;
 /// WASM module validation and security analysis
@@ -69,6 +71,10 @@ pub use agent_lifecycle_manager::{
 };
 pub use deployment_manager::{CaxtonDeploymentManager, InstanceManager, ResourceAllocator};
 pub use hot_reload_manager::{CaxtonHotReloadManager, RuntimeManager, TrafficRouter};
+pub use rest_api::{
+    Agent, AgentDeploymentRequest, DeploymentResponse, ErrorResponse, HealthCheckResponse,
+    create_app, start_server,
+};
 pub use wasm_module_validator::{
     CaxtonWasmModuleValidator, ValidationConfig, ValidationStatistics,
 };

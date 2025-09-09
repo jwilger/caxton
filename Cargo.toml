@@ -34,6 +34,7 @@ test-log = "0.2"
 proptest = "1.6"
 toml = "0.9"
 wat = "1.223"
+reqwest = { version = "0.12", features = ["json"] }
 
 [[bin]]
 name = "caxton"
@@ -83,3 +84,5 @@ uuid = { version = "1.17.0", features = ["v4", "serde"] }
 wasmtime = "36.0"
 wasmtime-wasi = "36.0"
 wat = "1.223"
+axum = "0.8"
+tower = "0.5"
