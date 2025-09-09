@@ -98,7 +98,7 @@ echo "Number of agents: $AGENT_COUNT"
     "wasm_module": "...",
     "resource_limits": {
       "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }
@@ -118,7 +118,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }'
@@ -131,7 +131,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 52428800,
-      "max_fuel": 5000000,
+      "max_cpu_millis": 5000000,
       "max_execution_time_ms": 10000
     }
   }' | jq '.'
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
     \"wasm_module\": \"$WASM_B64\",
     \"resource_limits\": {
       \"max_memory_bytes\": 10485760,
-      \"max_fuel\": 1000000,
+      \"max_cpu_millis\": 1000000,
       \"max_execution_time_ms\": 5000
     }
   }"
@@ -175,7 +175,7 @@ AGENT_ID=$(curl -s -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }' | jq -r '.id')
@@ -266,7 +266,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }'
@@ -280,7 +280,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 0,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }'
@@ -334,7 +334,7 @@ AGENT_JSON=$(curl -s -X POST http://localhost:8080/api/v1/agents \
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
+      "max_cpu_millis": 1000000,
       "max_execution_time_ms": 5000
     }
   }')
@@ -390,7 +390,7 @@ http GET localhost:8080/api/v1/agents
 http POST localhost:8080/api/v1/agents \
   name="httpie-agent" \
   wasm_module="AGFzbQEAAAA=" \
-  resource_limits:='{"max_memory_bytes":10485760,"max_fuel":1000000,"max_execution_time_ms":5000}'
+  resource_limits:='{"max_memory_bytes":10485760,"max_cpu_millis":1000000,"max_execution_time_ms":5000}'
 
 # Get agent
 http GET localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000

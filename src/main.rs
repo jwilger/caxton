@@ -38,7 +38,6 @@ async fn main() -> Result<()> {
         let listener = TcpListener::bind("localhost:8080").await?;
         info!("REST API server listening on http://localhost:8080");
 
-        // TODO: Start gRPC server (Story 006)
         // TODO: Initialize CLI interface (Story 008)
 
         // Run the HTTP server

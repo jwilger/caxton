@@ -6,7 +6,7 @@
 use crate::domain_types::{AgentId, AgentName};
 use axum::{
     Router,
-    extract::Path,
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Json},
     routing::get,
@@ -17,6 +17,12 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use uuid::Uuid;
+
+/// Maximum allowed memory per agent in bytes (1GB)
+const MAX_AGENT_MEMORY_BYTES: u64 = 1_073_741_824;
+
+/// Maximum allowed CPU time per agent in milliseconds
+const MAX_AGENT_CPU_MILLIS: u64 = 1_000_000;
 
 /// Health check response for the /api/v1/health endpoint
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,13 +59,15 @@ impl ResourceLimits {
             return Err("max_execution_time_ms must be greater than 0".to_string());
         }
         // Add domain-specific validation
-        if self.max_memory_bytes > 1_073_741_824 {
-            // 1GB max per domain_types.rs
-            return Err("max_memory_bytes exceeds maximum limit of 1GB".to_string());
+        if self.max_memory_bytes > MAX_AGENT_MEMORY_BYTES {
+            return Err(format!(
+                "max_memory_bytes exceeds maximum limit of {MAX_AGENT_MEMORY_BYTES} bytes"
+            ));
         }
-        if self.max_cpu_millis > 1_000_000 {
-            // Reasonable upper bound
-            return Err("max_cpu_millis exceeds maximum limit".to_string());
+        if self.max_cpu_millis > MAX_AGENT_CPU_MILLIS {
+            return Err(format!(
+                "max_cpu_millis exceeds maximum limit of {MAX_AGENT_CPU_MILLIS} ms"
+            ));
         }
         Ok(())
     }
@@ -174,22 +182,18 @@ pub struct ErrorResponse {
 }
 
 /// Agent storage with domain types internally
-type AgentStore = Arc<Mutex<HashMap<AgentId, DomainAgent>>>;
-
-/// Global agent storage for minimal implementation
-static AGENTS: std::sync::OnceLock<AgentStore> = std::sync::OnceLock::new();
-
-/// Get or initialize the global agent store
-fn get_agent_store() -> &'static AgentStore {
-    AGENTS.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
-}
+pub type AgentStore = Arc<Mutex<HashMap<AgentId, DomainAgent>>>;
 
 /// Creates the Axum application router with all API endpoints
 pub fn create_app() -> Router {
+    // Create fresh agent store for each server instance
+    let agent_store: AgentStore = Arc::new(Mutex::new(HashMap::new()));
+
     Router::new()
         .route("/api/v1/health", get(health_check))
         .route("/api/v1/agents", get(list_agents).post(deploy_agent))
         .route("/api/v1/agents/{id}", get(get_agent_by_id))
+        .with_state(agent_store)
 }
 
 /// Starts the HTTP server on the specified address
@@ -216,8 +220,7 @@ async fn health_check() -> Json<HealthCheckResponse> {
 
 /// Handler for the list agents endpoint
 /// Returns all deployed agents converted from domain types
-async fn list_agents() -> Json<Vec<Agent>> {
-    let store = get_agent_store();
+async fn list_agents(State(store): State<AgentStore>) -> Json<Vec<Agent>> {
     let agents = store.lock().unwrap();
     let agent_list: Vec<Agent> = agents.values().cloned().map(Agent::from).collect();
     Json(agent_list)
@@ -226,6 +229,7 @@ async fn list_agents() -> Json<Vec<Agent>> {
 /// Handler for the deploy agent endpoint
 /// Creates a new agent with proper domain type validation
 async fn deploy_agent(
+    State(store): State<AgentStore>,
     Json(request): Json<AgentDeploymentRequest>,
 ) -> impl axum::response::IntoResponse {
     // Parse and validate using domain types at the boundary
@@ -255,7 +259,6 @@ async fn deploy_agent(
     };
 
     // Store the agent in our storage
-    let store = get_agent_store();
     let mut agents = store.lock().unwrap();
     agents.insert(agent_id, domain_agent);
 
@@ -265,7 +268,10 @@ async fn deploy_agent(
 
 /// Handler for the get agent by ID endpoint
 /// Returns the stored agent details or error responses
-async fn get_agent_by_id(Path(id_str): Path<String>) -> impl axum::response::IntoResponse {
+async fn get_agent_by_id(
+    State(store): State<AgentStore>,
+    Path(id_str): Path<String>,
+) -> impl axum::response::IntoResponse {
     // Parse the ID string to AgentId domain type
     let agent_id = match id_str.parse::<Uuid>() {
         Ok(uuid) => AgentId::new(uuid),
@@ -281,7 +287,6 @@ async fn get_agent_by_id(Path(id_str): Path<String>) -> impl axum::response::Int
         }
     };
 
-    let store = get_agent_store();
     let agents = store.lock().unwrap();
 
     match agents.get(&agent_id) {

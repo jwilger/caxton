@@ -8,26 +8,59 @@
 use caxton::start_server;
 use serde_json::Value;
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicU16, Ordering};
 use tokio::time::Duration;
+
+/// Base port for test servers to avoid conflicts
+static TEST_PORT_COUNTER: AtomicU16 = AtomicU16::new(8080);
+
+/// Maximum number of retries for server readiness check
+const MAX_READINESS_RETRIES: usize = 50;
+
+/// Delay between readiness check retries
+const READINESS_RETRY_DELAY: Duration = Duration::from_millis(10);
+
+/// Get a unique port for each test to avoid conflicts
+fn get_unique_test_port() -> u16 {
+    TEST_PORT_COUNTER.fetch_add(1, Ordering::SeqCst)
+}
+
+/// Wait for server to be ready with timeout and retries
+async fn wait_for_server_ready(port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let health_url = format!("http://localhost:{port}/api/v1/health");
+
+    for _ in 0..MAX_READINESS_RETRIES {
+        match client.get(&health_url).send().await {
+            Ok(response) if response.status().is_success() => return Ok(()),
+            _ => tokio::time::sleep(READINESS_RETRY_DELAY).await,
+        }
+    }
+
+    Err(format!("Server on port {port} failed to become ready after retries").into())
+}
 
 #[tokio::test]
 async fn health_check_endpoint_returns_json_status() {
     // Start the Caxton REST API server in the background
-    let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
+    let port = get_unique_test_port();
+    let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
 
     // Start server in a background task
     let _server_handle = tokio::spawn(async move {
         start_server(addr).await.expect("Server failed to start");
     });
 
-    // Give the server a moment to start up
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    // Wait for server to be ready
+    wait_for_server_ready(port)
+        .await
+        .expect("Server failed to start");
 
     let client = reqwest::Client::new();
 
     // Make a GET request to the health endpoint
     let response = client
-        .get("http://localhost:8080/api/v1/health")
+        .get(format!("http://localhost:{port}/api/v1/health"))
         .send()
         .await
         .expect("Failed to send health check request");
