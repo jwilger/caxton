@@ -1,4 +1,10 @@
-# ADR-0021: Atomic Primitives Exception for Internal Counters
+---
+title: "ADR-0021: Atomic Primitives Exception for Internal Counters"
+date: 2025-01-31
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
 ## Status
 

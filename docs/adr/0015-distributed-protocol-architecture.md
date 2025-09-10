@@ -1,4 +1,11 @@
-# ADR-0015: Distributed Protocol Architecture - FIPA and SWIM Integration
+---
+title: "ADR-0015: Distributed Protocol Architecture - FIPA and SWIM Integration"
+date: 2025-08-09
+status: proposed
+layout: adr
+categories: [Architecture]
+---
+
 
 ## Status
 

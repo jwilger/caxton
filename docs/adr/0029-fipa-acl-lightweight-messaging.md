@@ -1,12 +1,14 @@
-# ADR-0029: FIPA-ACL Lightweight Messaging
+---
+title: "ADR-0029: FIPA-ACL Lightweight Messaging"
+date: 2025-09-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
 ## Status
 
 Accepted
-
-## Date
-
-2025-09-09
 
 ## Context
 

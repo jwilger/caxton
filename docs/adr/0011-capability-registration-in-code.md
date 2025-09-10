@@ -1,8 +1,11 @@
-______________________________________________________________________
+---
+title: "ADR-0011: Capability Registration in Code"
+date: 2025-08-08
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
-## layout: adr title: "0011. Capability Registration in Code" status: accepted date: 2025-08-08
-
-# ADR-0011: Capability Registration in Code
 
 ## Status
 

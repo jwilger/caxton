@@ -1,12 +1,14 @@
-# ADR-0030: Embedded Memory System with Pluggable Backends
+---
+title: "ADR-0030: Embedded Memory System with Pluggable Backends"
+date: 2025-09-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
 ## Status
 
 Accepted
-
-## Date
-
-2025-09-09
 
 ## Context
 

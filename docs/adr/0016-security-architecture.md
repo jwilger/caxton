@@ -1,8 +1,11 @@
-______________________________________________________________________
+---
+title: "ADR-0016: Security Architecture"
+date: 2025-08-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
-## layout: adr title: "0016. Security Architecture" status: accepted date: 2025-08-09
-
-# ADR-0016: Security Architecture
 
 ## Status
 

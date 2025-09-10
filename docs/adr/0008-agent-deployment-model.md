@@ -1,8 +1,11 @@
-______________________________________________________________________
+---
+title: "ADR-0008: Agent Deployment Model"
+date: 2025-08-03
+status: proposed
+layout: adr
+categories: [Architecture]
+---
 
-## title: "0008. Agent Deployment Model" date: 2025-08-03 status: proposed layout: adr categories: [Architecture]
-
-Date: 2025-08-03
 
 ## Status
 

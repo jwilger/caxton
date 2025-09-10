@@ -1,12 +1,14 @@
-# ADR-0028: Configuration-Driven Agent Architecture
+---
+title: "ADR-0028: Configuration-Driven Agent Architecture"
+date: 2025-09-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
 ## Status
 
 Accepted
-
-## Date
-
-2025-09-09
 
 ## Context
 

@@ -1,8 +1,11 @@
-______________________________________________________________________
+---
+title: "ADR-0004: Minimal Core Philosophy"
+date: 2025-01-31
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
-## title: "0004. Minimal Core Philosophy" date: 2025-07-31 status: accepted layout: adr categories: [Architecture]
-
-Date: 2025-01-31
 
 ## Status
 

@@ -1,8 +1,11 @@
-______________________________________________________________________
+---
+title: "ADR-0012: Pragmatic FIPA Subset"
+date: 2025-08-08
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
-## layout: adr title: "0012. Pragmatic FIPA Subset" status: accepted date: 2025-08-08
-
-# ADR-0012: Pragmatic FIPA Subset
 
 ## Status
 

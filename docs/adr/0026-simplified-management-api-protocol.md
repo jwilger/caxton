@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0026. Simplified Management API Protocol" date: 2025-09-08 status: accepted layout: adr
-
+---
+title: "ADR-0026: Simplified Management API Protocol"
+date: 2025-09-08
+status: accepted
+layout: adr
 categories: [Architecture, Technology]
-
-Date: 2025-09-08
+---
 
 ## Status
 

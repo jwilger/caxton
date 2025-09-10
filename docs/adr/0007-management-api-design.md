@@ -1,10 +1,11 @@
-______________________________________________________________________
-
-## title: "0007. Management API Design" date: 2025-08-03 status: superseded layout: adr
-
+---
+title: "ADR-0007: Management API Design"
+date: 2025-08-03
+status: superseded
+layout: adr
 categories: [Architecture, Technology]
+---
 
-Date: 2025-08-03
 
 ## Status
 

@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0003. FIPA Messaging Protocol" date: 2025-07-31 status: accepted layout: adr
-
+---
+title: "ADR-0003: FIPA Messaging Protocol"
+date: 2025-01-31
+status: accepted
+layout: adr
 categories: [Architecture, Technology]
-
-Date: 2025-01-31
+---
 
 ## Status
 

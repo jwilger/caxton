@@ -1,10 +1,12 @@
-______________________________________________________________________
+---
+title: "ADR-0013: State Management Architecture"
+date: 2025-08-09
+status: superseded
+superseded_by: ADR-0014
+layout: adr
+categories: [Architecture]
+---
 
-## layout: adr title: "0013. State Management Architecture" status: superseded date: 2025-08-09
-
-## superseded_by: ADR-0014
-
-# ADR-0013: State Management Architecture
 
 ## Status
 

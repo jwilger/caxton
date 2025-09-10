@@ -1,12 +1,20 @@
-______________________________________________________________________
+---
+title: "ADR-0010: External Agent Routing API"
+date: 2025-08-03
+status: proposed
+layout: adr
+categories: [Architecture, Technology]
+---
 
-## title: "0010. External Agent Routing API" date: 2025-08-03 status: proposed layout: adr
 
-categories: [Architecture, Technology] deciders: \[Platform Systems Architect,
-UX Research Expert, Async Rust Expert, Observability Expert\]
+## Status
 
-Date: 2025-01-03 Status: Accepted Deciders: Platform Systems Architect, UX
-Research Expert, Async Rust Expert, Observability Expert
+Proposed
+
+## Deciders
+
+Platform Systems Architect, UX Research Expert, Async Rust Expert,
+Observability Expert
 
 ## Context and Problem Statement
 

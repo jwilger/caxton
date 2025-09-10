@@ -1,4 +1,11 @@
-# ADR-0018: Use Domain Types with nutype to Eliminate Primitive Obsession
+---
+title: "ADR-0018: Use Domain Types with nutype to Eliminate Primitive Obsession"
+date: 2025-08-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
+
 
 ## Status
 

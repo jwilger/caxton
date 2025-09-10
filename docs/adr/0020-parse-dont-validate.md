@@ -1,4 +1,10 @@
-# ADR-0020: Parse Don't Validate Paradigm
+---
+title: "ADR-0020: Parse Don't Validate Paradigm"
+date: 2025-01-31
+status: accepted
+layout: adr
+categories: [Architecture]
+---
 
 ## Status
 

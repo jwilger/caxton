@@ -1,4 +1,11 @@
-# ADR-0019: Primitives Only at System Boundaries
+---
+title: "ADR-0019: Primitives Only at System Boundaries"
+date: 2025-08-09
+status: accepted
+layout: adr
+categories: [Architecture]
+---
+
 
 ## Status
 
