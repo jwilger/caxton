@@ -2,7 +2,10 @@
 
 ## Overview
 
-This document defines the comprehensive testing strategy for Caxton, covering unit tests, integration tests, system tests, and chaos engineering. The strategy emphasizes testing distributed systems behaviors, agent interactions, and fault tolerance.
+This document defines the comprehensive testing strategy for Caxton, covering
+unit tests, integration tests, system tests, and chaos engineering. The strategy
+emphasizes testing distributed systems behaviors, agent interactions, and fault
+tolerance.
 
 ## Testing Principles
 
@@ -17,9 +20,11 @@ This document defines the comprehensive testing strategy for Caxton, covering un
 ### 1. Unit Tests
 
 #### Scope
+
 Individual components and functions in isolation.
 
 #### Framework
+
 ```toml
 [dev-dependencies]
 # Testing framework
@@ -30,6 +35,7 @@ criterion = "0.5" # Benchmarking
 ```
 
 #### Example Unit Test
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -94,11 +100,13 @@ mod tests {
 ### 2. Integration Tests
 
 #### Scope
+
 Multiple components working together, including external dependencies.
 
 #### Test Categories
 
 ##### Agent Integration Tests
+
 ```rust
 #[tokio::test]
 async fn test_agent_deployment_lifecycle() {
@@ -136,6 +144,7 @@ async fn test_agent_deployment_lifecycle() {
 ```
 
 ##### Cluster Integration Tests
+
 ```rust
 #[tokio::test]
 async fn test_cluster_formation() {
@@ -166,6 +175,7 @@ async fn test_cluster_formation() {
 ### 3. System Tests
 
 #### End-to-End Scenarios
+
 ```rust
 #[tokio::test]
 async fn test_multi_agent_conversation() {
@@ -209,6 +219,7 @@ async fn test_multi_agent_conversation() {
 ### 4. Performance Tests
 
 #### Benchmark Suite
+
 ```rust
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
@@ -248,6 +259,7 @@ criterion_main!(benches);
 ### 5. Chaos Testing
 
 #### Failure Injection
+
 ```rust
 pub struct ChaosTest {
     cluster: TestCluster,
@@ -307,6 +319,7 @@ impl ChaosTest {
 ## Test Infrastructure
 
 ### Test Fixtures
+
 ```rust
 pub mod test_fixtures {
     pub fn simple_agent_wasm() -> Vec<u8> {
@@ -325,6 +338,7 @@ pub mod test_fixtures {
 ```
 
 ### Test Harness
+
 ```rust
 pub struct TestHarness {
     docker: Docker,
@@ -367,6 +381,7 @@ impl TestHarness {
 ## Test Data Management
 
 ### Test Data Generation
+
 ```rust
 use proptest::prelude::*;
 
@@ -404,6 +419,7 @@ prop_compose! {
 ## Continuous Integration
 
 ### CI Pipeline
+
 ```yaml
 name: Test Suite
 
@@ -452,11 +468,13 @@ jobs:
 ## Test Coverage
 
 ### Coverage Requirements
+
 - Unit tests: 80% line coverage
 - Integration tests: 70% branch coverage
 - Critical paths: 100% coverage
 
 ### Coverage Measurement
+
 ```bash
 # Install coverage tools
 cargo install cargo-tarpaulin
@@ -471,6 +489,7 @@ cargo tarpaulin --fail-under 80
 ## Debugging Failed Tests
 
 ### Test Debugging Tools
+
 ```rust
 #[tokio::test]
 async fn test_with_debugging() {
@@ -502,7 +521,8 @@ async fn test_with_debugging() {
 ## Test Maintenance
 
 ### Test Organization
-```
+
+```text
 tests/
 ├── unit/
 │   ├── agents/
@@ -523,7 +543,9 @@ tests/
 ```
 
 ### Test Documentation
+
 Each test should include:
+
 - Purpose description
 - Setup requirements
 - Expected behavior
@@ -532,6 +554,7 @@ Each test should include:
 ## Security Testing
 
 ### Security Test Suite
+
 ```rust
 #[tokio::test]
 async fn test_resource_limits_enforced() {
@@ -568,6 +591,7 @@ async fn test_message_authentication() {
 ## Test Metrics
 
 ### Key Metrics to Track
+
 - Test execution time
 - Test flakiness rate
 - Coverage trends
@@ -575,7 +599,9 @@ async fn test_message_authentication() {
 - Failure patterns
 
 ### Test Dashboard
+
 Monitor test health with metrics:
+
 ```rust
 pub struct TestMetrics {
     test_duration: Histogram,

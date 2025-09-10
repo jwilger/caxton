@@ -1,34 +1,46 @@
----
-title: System Architecture
-layout: documentation
-description: Comprehensive technical architecture documentation for the Caxton multi-agent system platform.
----
+______________________________________________________________________
 
-# System Architecture
+## title: System Architecture layout: documentation
+
+## description: Comprehensive technical architecture documentation for the Caxton
+
+## multi-agent system platform
 
 ## Why These Design Choices?
 
-Caxton's architecture prioritizes **security**, **interoperability**, and **observability** to solve common problems in multi-agent systems:
+Caxton's architecture prioritizes **security**, **interoperability**, and
+**observability** to solve common problems in multi-agent systems:
 
-- **WebAssembly sandboxing** prevents malicious agents from compromising your system
+- **WebAssembly sandboxing** prevents malicious agents from compromising your
+  system
 - **FIPA protocols** ensure agents from different vendors can work together
-- **OpenTelemetry integration** gives you the visibility needed to debug and optimize complex agent interactions
+- **OpenTelemetry integration** gives you the visibility needed to debug and
+  optimize complex agent interactions
 
-This document provides a technical overview of how these pieces work together to create a robust multi-agent platform.
+This document provides a technical overview of how these pieces work together to
+create a robust multi-agent platform.
 
----
+______________________________________________________________________
 
-Caxton is a distributed multi-agent platform built on WebAssembly sandboxing, FIPA (Foundation for Intelligent Physical Agents) message protocols, and comprehensive observability. The platform enables secure execution of agents written in multiple programming languages while providing standardized communication and monitoring capabilities.
+Caxton is a distributed multi-agent platform built on WebAssembly sandboxing,
+FIPA (Foundation for Intelligent Physical Agents) message protocols, and
+comprehensive observability. The platform enables secure execution of agents
+written in multiple programming languages while providing standardized
+communication and monitoring capabilities.
 
 ## Architecture Overview
 
 The Caxton platform is designed around five core architectural principles:
 
 1. **Isolation**: WebAssembly-based sandboxing ensures secure agent execution
-2. **Communication**: FIPA-compliant message protocols enable standardized agent interaction
-3. **Observability**: OpenTelemetry integration provides comprehensive monitoring
-4. **Flexibility**: Multi-language runtime support accommodates diverse agent implementations
-5. **Coordination Over State**: Lightweight protocols instead of shared databases (see [ADR-0014](/adrs/0014-coordination-first-architecture))
+2. **Communication**: FIPA-compliant message protocols enable standardized agent
+   interaction
+3. **Observability**: OpenTelemetry integration provides comprehensive
+   monitoring
+4. **Flexibility**: Multi-language runtime support accommodates diverse agent
+   implementations
+5. **Coordination Over State**: Lightweight protocols instead of shared
+   databases (see [ADR-0014](/adrs/0014-coordination-first-architecture))
 
 ## WebAssembly Agent Isolation
 
@@ -47,16 +59,22 @@ Each agent runs in a dedicated WebAssembly sandbox that provides:
 
 The isolation model implements multiple security boundaries:
 
-Each agent runs in its own isolated WebAssembly sandbox, preventing malicious agents from accessing other agents' data or system resources. The Caxton runtime manages all communication between agents through a secure message bus.
+Each agent runs in its own isolated WebAssembly sandbox, preventing malicious
+agents from accessing other agents' data or system resources. The Caxton runtime
+manages all communication between agents through a secure message bus.
 
 ### Performance Characteristics
 
 These numbers show why WebAssembly is ideal for multi-agent systems:
 
-- **Startup Time**: < 100ms per agent *(faster than containers, enabling dynamic agent scaling)*
-- **Memory Overhead**: ~2MB baseline per sandbox *(minimal footprint allows thousands of concurrent agents)*
-- **Message Latency**: < 1ms for local communication *(near-native performance for agent coordination)*
-- **Throughput**: 10,000+ messages/second per agent *(sufficient for real-time collaborative tasks)*
+- **Startup Time**: < 100ms per agent *(faster than containers, enabling dynamic
+  agent scaling)*
+- **Memory Overhead**: ~2MB baseline per sandbox *(minimal footprint allows
+  thousands of concurrent agents)*
+- **Message Latency**: < 1ms for local communication *(near-native performance
+  for agent coordination)*
+- **Throughput**: 10,000+ messages/second per agent *(sufficient for real-time
+  collaborative tasks)*
 
 ## FIPA Message Flow
 
@@ -64,17 +82,23 @@ These numbers show why WebAssembly is ideal for multi-agent systems:
 
 ### Message Protocol Stack
 
-The FIPA (Foundation for Intelligent Physical Agents) protocol stack provides standardized communication between agents. FIPA is an IEEE standard that defines how autonomous agents should communicate, making it possible for agents from different developers to work together seamlessly:
+The FIPA (Foundation for Intelligent Physical Agents) protocol stack provides
+standardized communication between agents. FIPA is an IEEE standard that defines
+how autonomous agents should communicate, making it possible for agents from
+different developers to work together seamlessly:
 
 #### ACL (Agent Communication Language)
 
 ACL defines the message types and structure for agent communication:
 
-- **Performatives**: REQUEST, INFORM, PROPOSE, ACCEPT, REJECT, CFP (Call for Proposals), CANCEL, QUERY
+- **Performatives**: REQUEST, INFORM, PROPOSE, ACCEPT, REJECT, CFP (Call for
+  Proposals), CANCEL, QUERY
 - **Content Languages**: JSON, XML, Custom ontologies
-- **Conversation Management**: Thread tracking and correlation for multi-step interactions
+- **Conversation Management**: Thread tracking and correlation for multi-step
+  interactions
 
 #### Message Structure
+
 ```json
 {
   "performative": "request",
@@ -99,7 +123,8 @@ The Contract Net Protocol enables distributed task coordination:
 
 1. **Call for Proposals (CFP)**: Initiator broadcasts task requirements
 2. **Proposal Submission**: Capable agents submit bids with cost/time estimates
-3. **Proposal Evaluation**: Initiator evaluates proposals using selection criteria
+3. **Proposal Evaluation**: Initiator evaluates proposals using selection
+   criteria
 4. **Award Contract**: Best proposal receives ACCEPT, others get REJECT
 5. **Task Execution**: Winner executes task and reports results via INFORM
 
@@ -115,7 +140,10 @@ The message bus provides:
 
 ## OpenTelemetry Observability Pipeline
 
-OpenTelemetry (OTel) is a vendor-neutral observability framework that provides a unified way to collect telemetry data (metrics, logs, and traces) from applications. For Caxton, this means you can understand what's happening inside your agent system without vendor lock-in.
+OpenTelemetry (OTel) is a vendor-neutral observability framework that provides a
+unified way to collect telemetry data (metrics, logs, and traces) from
+applications. For Caxton, this means you can understand what's happening inside
+your agent system without vendor lock-in.
 
 <div data-diagram="observabilityPipeline" class="architecture-diagram-container"></div>
 
@@ -124,18 +152,21 @@ OpenTelemetry (OTel) is a vendor-neutral observability framework that provides a
 The observability system collects three types of telemetry data:
 
 #### Metrics
+
 - **System Metrics**: CPU, memory, disk, network utilization
 - **Agent Metrics**: Message throughput, processing latency, error rates
 - **Business Metrics**: Task completion rates, SLA compliance
 - **Custom Metrics**: Domain-specific measurements via SDK
 
 #### Traces
+
 - **Distributed Tracing**: End-to-end request flow across agents
 - **Span Relationships**: Parent-child and follows-from relationships
 - **Context Propagation**: Trace context carried in FIPA messages
 - **Performance Analysis**: Latency hotspots and bottleneck identification
 
 #### Logs
+
 - **Structured Logging**: JSON-formatted log entries with metadata
 - **Log Correlation**: Trace IDs embedded in log entries
 - **Agent Logging**: Sandbox-isolated log streams
@@ -143,7 +174,8 @@ The observability system collects three types of telemetry data:
 
 ### OpenTelemetry Collector Configuration
 
-This configuration sets up the observability pipeline that collects telemetry data from all agents:
+This configuration sets up the observability pipeline that collects telemetry
+data from all agents:
 
 ```yaml
 # Data collection endpoints
@@ -197,16 +229,19 @@ service:
 
 ### WASI (WebAssembly System Interface)
 
-WASI (WebAssembly System Interface) provides a standardized system interface that enables multiple programming languages to target WebAssembly. Think of WASI as the "POSIX for WebAssembly" - it defines standard APIs for file I/O, networking, and other system operations:
+WASI (WebAssembly System Interface) provides a standardized system interface
+that enables multiple programming languages to target WebAssembly. Think of WASI
+as the "POSIX for WebAssembly" - it defines standard APIs for file I/O,
+networking, and other system operations:
 
 #### Supported Languages
 
 | Language | Runtime | Compilation | Features |
-|----------|---------|-------------|----------|
-| **Rust** | Native | `cargo build --target wasm32-wasi` | Zero-cost abstractions, memory safety |
-| **JavaScript** | V8 | Node.js/Deno WASM runtime | JIT compilation, dynamic typing |
-| **Python** | CPython | `wasmtime-py` | Interpreted execution, rich ecosystem |
-| **Go** | TinyGo | `tinygo build -target wasi` | Garbage collection, concurrency |
+|----------|---------|-------------|----------| | **Rust** | Native |
+`cargo build --target wasm32-wasi` | Zero-cost abstractions | | **JavaScript** |
+V8 | Node.js/Deno runtime | JIT compilation | | **Python** | CPython |
+`wasmtime-py` | Interpreted execution | | **Go** | TinyGo |
+`tinygo build -target wasi` | Garbage collection |
 
 #### Cross-Language Communication
 
@@ -222,37 +257,44 @@ Agents written in different languages can communicate through:
 Performance characteristics vary by language:
 
 | Language | Cold Start | Memory | Throughput | Best For |
-|----------|------------|--------|------------|----------|
-| **Rust** | < 50ms | 1-5MB | Native speed | High-performance, systems programming |
-| **JavaScript** | < 100ms | 5-15MB | 80-90% | Web integration, rapid prototyping |
-| **Python** | < 200ms | 8-20MB | 60-70% | ML/AI workloads, data processing |
-| **Go** | < 80ms | 3-10MB | 85-95% | Concurrent processing, networking |
+|----------|------------|--------|------------|----------| | **Rust** | < 50ms |
+1-5MB | Native speed | High-performance, systems programming | | **JavaScript**
+| < 100ms | 5-15MB | 80-90% | Web integration, rapid prototyping | | **Python**
+| < 200ms | 8-20MB | 60-70% | ML/AI workloads, data processing | | **Go** | \<
+80ms | 3-10MB | 85-95% | Concurrent processing, networking |
 
-**Why the differences?** Compiled languages (Rust, Go) start faster and use less memory because they don't need runtime interpretation. JavaScript benefits from V8's JIT compiler, while Python's interpreted nature means slower execution but easier development.
+**Why the differences?** Compiled languages (Rust, Go) start faster and use less
+memory because they don't need runtime interpretation. JavaScript benefits from
+V8's JIT compiler, while Python's interpreted nature means slower execution but
+easier development.
 
 ## System Components
 
 ### Core Services
 
 #### Agent Registry
+
 - **Agent Discovery**: Service discovery and capability advertisement
 - **Lifecycle Management**: Agent deployment, scaling, and termination
 - **Health Monitoring**: Agent health checks and failure detection
 - **Version Control**: Blue-green deployments and rollback capabilities
 
 #### Message Router
+
 - **Routing Engine**: Content-based and topic-based message routing
-- **Protocol Adapters**: FIPA, HTTP, WebSocket, gRPC protocol support
+- **Protocol Adapters**: FIPA, HTTP, WebSocket protocol support
 - **Queue Management**: Message queuing, prioritization, and flow control
 - **Circuit Breakers**: Failure isolation and automatic recovery
 
 #### Resource Manager
+
 - **Resource Allocation**: CPU, memory, and network resource allocation
 - **Quota Enforcement**: Per-agent resource limits and enforcement
 - **Scaling Logic**: Horizontal and vertical scaling decisions
 - **Cost Optimization**: Resource usage optimization and cost tracking
 
 #### Security Service
+
 - **Authentication**: Agent identity verification and token management
 - **Authorization**: Role-based access control (RBAC) for agent operations
 - **Encryption**: Message encryption and secure communication channels
@@ -261,7 +303,9 @@ Performance characteristics vary by language:
 ### Data Storage
 
 #### Metadata Store (etcd)
-etcd is a distributed key-value store that provides the "source of truth" for cluster state:
+
+etcd is a distributed key-value store that provides the "source of truth" for
+cluster state:
 
 - **Configuration**: System and agent configuration management
 - **Service Discovery**: Agent registration and capability information
@@ -269,14 +313,17 @@ etcd is a distributed key-value store that provides the "source of truth" for cl
 - **Watch API**: Configuration change notifications
 
 #### Coordination Layer
+
 Caxton uses lightweight coordination protocols instead of heavy databases:
 
 - **SWIM Protocol**: Scalable membership and failure detection
 - **Gossip Protocol**: Eventually consistent agent registry
 - **Local State**: Each instance uses embedded SQLite
-- **No External Dependencies**: No PostgreSQL, Kafka, or other databases required
+- **No External Dependencies**: No PostgreSQL, Kafka, or other databases
+  required
 
 #### Metrics Database (Prometheus + InfluxDB)
+
 Time-series databases optimized for metrics and monitoring data:
 
 - **Time Series**: Metrics collection and time-based queries
@@ -287,16 +334,19 @@ Time-series databases optimized for metrics and monitoring data:
 ### External Integrations
 
 #### Container Orchestration
+
 - **Kubernetes**: Native Kubernetes integration for cloud deployments
 - **Docker Swarm**: Docker Swarm support for simpler deployments
 - **Nomad**: HashiCorp Nomad integration for hybrid cloud scenarios
 
 #### Service Mesh
+
 - **Istio**: Traffic management, security, and observability
 - **Linkerd**: Lightweight service mesh with automatic mTLS
 - **Consul Connect**: Service discovery and secure service communication
 
 #### Cloud Providers
+
 - **AWS**: EKS, Fargate, Lambda integration
 - **Azure**: AKS, Container Instances, Functions
 - **GCP**: GKE, Cloud Run, Cloud Functions
@@ -313,7 +363,7 @@ services:
   caxton:
     image: caxton/runtime:latest
     ports:
-      - "50051:50051"  # gRPC API for agent communication
+      - "8080:8080"  # REST API for management
       - "8080:8080"    # HTTP API for management
     environment:
       - CAXTON_CONFIG=/etc/caxton/config.yaml
@@ -349,9 +399,9 @@ data:
     cluster:
       enabled: true
       peers:  # All cluster members for consensus
-        - caxton-0.caxton-headless:50051
-        - caxton-1.caxton-headless:50051
-        - caxton-2.caxton-headless:50051
+        - caxton-0.caxton-headless:8080
+        - caxton-1.caxton-headless:8080
+        - caxton-2.caxton-headless:8080
 
     storage:
       type: etcd    # Distributed key-value store for cluster state
@@ -381,8 +431,8 @@ spec:
       - name: caxton
         image: caxton/runtime:latest
         ports:
-        - containerPort: 50051
-          name: grpc     # Inter-node communication
+        - containerPort: 8080
+          name: http     # REST API
         - containerPort: 8080
           name: http     # Management API
         volumeMounts:
@@ -410,27 +460,34 @@ spec:
 
 The security model addresses these primary threats:
 
-1. **Malicious Agents**: Sandboxing prevents agent breakout and system compromise
+1. **Malicious Agents**: Sandboxing prevents agent breakout and system
+   compromise
 2. **Message Tampering**: Cryptographic signatures ensure message integrity
-3. **Denial of Service**: Resource limits and rate limiting prevent resource exhaustion
-4. **Data Exfiltration**: Network controls and audit logging detect unauthorized access
-5. **Privilege Escalation**: RBAC and capability-based security enforce least privilege
+3. **Denial of Service**: Resource limits and rate limiting prevent resource
+   exhaustion
+4. **Data Exfiltration**: Network controls and audit logging detect unauthorized
+   access
+5. **Privilege Escalation**: RBAC and capability-based security enforce least
+   privilege
 
 ### Security Controls
 
 #### Agent Sandboxing
+
 - **WebAssembly Isolation**: Memory-safe execution environment
 - **Capability-based Security**: Explicit permissions for system resources
 - **Resource Limits**: CPU, memory, and I/O quotas per agent
 - **Network Policies**: Firewall rules and traffic inspection
 
 #### Communication Security
+
 - **Message Encryption**: TLS 1.3 for transport encryption
 - **Message Signing**: Ed25519 signatures for message authentication
 - **Certificate Management**: Automatic certificate rotation and PKI
 - **Protocol Security**: FIPA message validation and sanitization
 
 #### Access Control
+
 - **Authentication**: JWT tokens with RSA-256 signing
 - **Authorization**: RBAC with fine-grained permissions
 - **API Security**: Rate limiting and request validation
@@ -443,24 +500,25 @@ The security model addresses these primary threats:
 Real-world performance numbers from production deployments:
 
 | Metric | Single Node | 3-Node Cluster | 10-Node Cluster |
-|--------|-------------|----------------|-----------------|
-| **Agents** | 1,000 | 5,000 | 20,000 |
-| **Messages/sec** | 10,000 | 50,000 | 200,000 |
-| **Latency (p99)** | 10ms | 15ms | 25ms |
-| **Memory** | 4GB | 12GB | 40GB |
-| **CPU** | 2 cores | 6 cores | 20 cores |
+|--------|-------------|----------------|-----------------| | **Agents** | 1,000
+| 5,000 | 20,000 | | **Messages/sec** | 10,000 | 50,000 | 200,000 | | **Latency
+(p99)** | 10ms | 15ms | 25ms | | **Memory** | 4GB | 12GB | 40GB | | **CPU** | 2
+cores | 6 cores | 20 cores |
 
-*Note: p99 latency means 99% of requests complete within the stated time. These numbers assume mixed workloads with typical agent complexity.*
+*Note: p99 latency means 99% of requests complete within the stated time. These
+numbers assume mixed workloads with typical agent complexity.*
 
 ### Optimization Strategies
 
 #### Message Processing
+
 - **Batching**: Group messages to reduce overhead
 - **Pipelining**: Parallel message processing stages
 - **Caching**: Message routing and agent discovery caching
 - **Compression**: Protocol buffer message compression
 
 #### Resource Management
+
 - **Agent Pooling**: Reuse agent instances for similar tasks
 - **Lazy Loading**: Load agents on-demand
 - **Resource Sharing**: Shared libraries and common resources
@@ -471,12 +529,14 @@ Real-world performance numbers from production deployments:
 ### Key Performance Indicators
 
 #### System Health
+
 - **Agent Availability**: Percentage of agents in healthy state
 - **Message Success Rate**: Percentage of messages delivered successfully
 - **Resource Utilization**: CPU, memory, disk, and network usage
 - **Error Rate**: System and application error frequency
 
 #### Business Metrics
+
 - **Task Completion Time**: End-to-end task processing duration
 - **SLA Compliance**: Service level agreement adherence
 - **Cost per Transaction**: Resource cost per business transaction
@@ -526,6 +586,7 @@ groups:
 ### Operations Runbooks
 
 #### Agent Deployment
+
 ```bash
 # Build and package agent
 caxton build --language rust --output agent.wasm
@@ -541,6 +602,7 @@ caxton deploy --env prod --strategy blue-green
 ```
 
 #### Incident Response
+
 ```bash
 # Check system health
 caxton status --cluster
@@ -560,32 +622,40 @@ caxton stop --agent <agent-id> --force
 ### Planned Enhancements
 
 #### WebAssembly Component Model
+
 - **Component Composition**: Compose agents from reusable components
 - **Interface Types**: Type-safe cross-language interfaces
 - **Wit Bindings**: Automatic language binding generation
 - **Package Registry**: Centralized component repository
 
 #### Advanced Scheduling
+
 - **Gang Scheduling**: Coordinated multi-agent scheduling
 - **Resource Affinity**: Co-locate related agents
 - **Preemption**: Priority-based agent preemption
 - **Topology Awareness**: Rack and zone aware scheduling
 
 #### Enhanced Security
+
 - **Confidential Computing**: Trusted execution environments (TEE)
 - **Zero-Knowledge Proofs**: Privacy-preserving agent computation
 - **Homomorphic Encryption**: Compute on encrypted data
 - **Hardware Security Modules**: HSM integration for key management
 
----
+______________________________________________________________________
 
 ## Related Documentation
 
-- [API Reference]({{ site.baseurl }}/docs/developer-guide/api-reference) - Complete API documentation
-- [Agent Development Guide]({{ site.baseurl }}/docs/developer-guide/building-agents) - Building agents tutorial
-- [Deployment Guide]({{ site.baseurl }}/docs/operations/deployment) - Production deployment strategies
-- [Security Guide]({{ site.baseurl }}/docs/operations/security) - Security best practices
-- [Monitoring Guide]({{ site.baseurl }}/docs/operations/monitoring) - Observability setup and configuration
+- \[API Reference\]({{ site.baseurl }}/docs/developer-guide/api-reference) -
+  Complete API documentation
+- \[Agent Development Guide\]({{ site.baseurl
+  }}/docs/developer-guide/building-agents) - Building agents tutorial
+- \[Deployment Guide\]({{ site.baseurl }}/docs/operations/deployment) -
+  Production deployment strategies
+- \[Security Guide\]({{ site.baseurl }}/docs/operations/security) - Security
+  best practices
+- \[Monitoring Guide\]({{ site.baseurl }}/docs/operations/monitoring) -
+  Observability setup and configuration
 
 <script src="/assets/js/architecture-diagrams.js"></script>
 
@@ -611,7 +681,7 @@ caxton stop --agent <agent-id> --force
   }
 }
 
-/* Ensure diagrams are accessible */
+/*Ensure diagrams are accessible*/
 [data-diagram] {
   position: relative;
 }

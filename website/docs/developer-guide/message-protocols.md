@@ -1,23 +1,29 @@
----
-title: FIPA Message Protocols
-layout: documentation
-description: Comprehensive guide to FIPA message protocols used in Caxton for agent communication.
----
+______________________________________________________________________
+
+## title: FIPA Message Protocols layout: documentation
+
+## description: Comprehensive guide to FIPA message protocols used in Caxton for agent communication
 
 # Message Protocols for Service Communication
 
-This guide explains how to send messages between services in Caxton using FIPA-based protocols. Think of it as a standardized way for your services to talk to each other - like having a common language for requests, responses, and negotiations.
+This guide explains how to send messages between services in Caxton using
+FIPA-based protocols. Think of it as a standardized way for your services to
+talk to each other - like having a common language for requests, responses, and
+negotiations.
 
 ## What Are Message Protocols?
 
-Message protocols define how services communicate with each other. Instead of just sending raw data, these protocols include information about:
+Message protocols define how services communicate with each other. Instead of
+just sending raw data, these protocols include information about:
 
 - **What** you're sending (the data)
 - **Why** you're sending it (request, notification, proposal, etc.)
 - **What response** you expect (if any)
 - **How long** to wait for a response
 
-FIPA (Foundation for Intelligent Physical Agents) provides proven patterns that have been used in distributed systems for over 20 years. Caxton implements a pragmatic subset focused on practical service communication needs.
+FIPA (Foundation for Intelligent Physical Agents) provides proven patterns that
+have been used in distributed systems for over 20 years. Caxton implements a
+pragmatic subset focused on practical service communication needs.
 
 ### Why Use Structured Message Types?
 
@@ -71,19 +77,20 @@ Every FIPA message in Caxton follows this standardized structure:
 ### When to Use Each Message Type
 
 | Message Type | Use When | Expected Response |
-|-------------|----------|------------------|
-| `INFORM` | Sharing information, status updates | None (fire-and-forget) |
-| `REQUEST` | Asking another service to do something | `AGREE`/`REFUSE`, then `INFORM`/`FAILURE` |
-| `QUERY_IF` | Asking "is this true?" | `INFORM` with true/false |
-| `QUERY_REF` | Asking "what is the value of X?" | `INFORM` with the data |
-| `CFP` | Starting a bidding process | `PROPOSE` or `REFUSE` |
-| `PROPOSE` | Making an offer or bid | `ACCEPT_PROPOSAL`/`REJECT_PROPOSAL` |
+|-------------|----------|------------------| | `INFORM` | Sharing information,
+status updates | None (fire-and-forget) | | `REQUEST` | Asking another service
+to do something | `AGREE`/`REFUSE`, then `INFORM`/`FAILURE` | | `QUERY_IF` |
+Asking "is this true?" | `INFORM` with true/false | | `QUERY_REF` | Asking "what
+is the value of X?" | `INFORM` with the data | | `CFP` | Starting a bidding
+process | `PROPOSE` or `REFUSE` | | `PROPOSE` | Making an offer or bid |
+`ACCEPT_PROPOSAL`/`REJECT_PROPOSAL` |
 
 ### Detailed Message Types
 
 ### Information Exchange
 
 #### INFORM
+
 Shares information without expecting a response.
 
 ```rust
@@ -99,11 +106,13 @@ let message = FipaMessage::inform()
 ```
 
 **Use Cases:**
+
 - Status updates
 - Event notifications
 - Data broadcasting
 
 #### QUERY_IF
+
 Asks whether a given proposition is true.
 
 ```rust
@@ -120,6 +129,7 @@ let message = FipaMessage::query_if()
 **Expected Response:** INFORM with true/false
 
 #### QUERY_REF
+
 Requests the value of a reference or variable.
 
 ```rust
@@ -138,6 +148,7 @@ let message = FipaMessage::query_ref()
 ### Action Requests
 
 #### REQUEST
+
 Asks another agent to perform an action.
 
 ```rust
@@ -156,6 +167,7 @@ let message = FipaMessage::request()
 ```
 
 **Expected Responses:**
+
 - AGREE (will perform the action)
 - REFUSE (cannot/will not perform)
 - NOT_UNDERSTOOD (cannot parse request)
@@ -163,6 +175,7 @@ let message = FipaMessage::request()
 ### Negotiation
 
 #### PROPOSE
+
 Offers to perform an action or provide information, often with conditions.
 
 ```rust
@@ -184,11 +197,13 @@ let message = FipaMessage::propose()
 ```
 
 **Expected Responses:**
+
 - ACCEPT_PROPOSAL
 - REJECT_PROPOSAL
 - COUNTER_PROPOSE
 
 #### CFP (Call for Proposals)
+
 Initiates a bidding process for a task or service.
 
 ```rust
@@ -217,6 +232,7 @@ let message = FipaMessage::cfp()
 ### Response Management
 
 #### AGREE/REFUSE
+
 Responds to requests indicating willingness to perform actions.
 
 ```rust
@@ -246,6 +262,7 @@ let refuse = FipaMessage::refuse()
 ```
 
 #### ACCEPT_PROPOSAL/REJECT_PROPOSAL
+
 Responds to proposals in negotiation scenarios.
 
 ```rust
@@ -263,13 +280,14 @@ let accept = FipaMessage::accept_proposal()
 
 ## Interaction Protocols
 
-FIPA defines several standard interaction protocols that combine multiple performatives into coordinated patterns.
+FIPA defines several standard interaction protocols that combine multiple
+performatives into coordinated patterns.
 
 ### Request Protocol
 
 Simple request-response interaction:
 
-```
+```text
 Client → Server: REQUEST
 Server → Client: AGREE|REFUSE
 [If AGREE]
@@ -353,14 +371,17 @@ async fn handle_request(server: &FipaServer, message: FipaMessage) {
 
 ### Bidding System (Contract Net Protocol)
 
-The Contract Net Protocol is a bidding system where one service asks others to bid on a task:
+The Contract Net Protocol is a bidding system where one service asks others to
+bid on a task:
 
 1. **Coordinator** sends `CFP` (Call for Proposals) to multiple services
 2. **Services** respond with `PROPOSE` (their bid) or `REFUSE` (can't do it)
-3. **Coordinator** picks the best bid and sends `ACCEPT_PROPOSAL` to winner, `REJECT_PROPOSAL` to others
+3. **Coordinator** picks the best bid and sends `ACCEPT_PROPOSAL` to winner,
+   `REJECT_PROPOSAL` to others
 4. **Winner** does the work and sends `INFORM` (result) or `FAILURE`
 
 **Simple Example:**
+
 ```rust
 // Ask for bids on a data processing task
 let cfp = FipaMessage::cfp()
@@ -386,18 +407,24 @@ let proposal = FipaMessage::propose()
 
 ## Pragmatic FIPA Implementation
 
-Caxton implements a pragmatic subset of FIPA protocols, focusing on the most commonly needed message patterns while maintaining compatibility with the broader FIPA ecosystem. Our approach prioritizes:
+Caxton implements a pragmatic subset of FIPA protocols, focusing on the most
+commonly needed message patterns while maintaining compatibility with the
+broader FIPA ecosystem. Our approach prioritizes:
 
 - **Simplicity**: Use only the message types you actually need
 - **Performance**: Efficient serialization and routing
 - **Reliability**: Built-in timeouts and error handling
 - **Debuggability**: Clear message tracing and logging
 
-This pragmatic approach follows our architectural decision (see [ADR-0012]({{ '/adr/0012-pragmatic-fipa-subset/' | relative_url }})) to adopt proven FIPA patterns without the complexity of full academic FIPA implementations.
+This pragmatic approach follows our architectural decision (see \[ADR-0012\]({{
+'/adr/0012-pragmatic-fipa-subset/' | relative_url }})) to adopt proven FIPA
+patterns without the complexity of full academic FIPA implementations.
 
 ## Advanced Features
 
-*For complex implementations that require detailed conversation management, message validation, and error handling patterns, see the [Advanced FIPA Implementation Guide](/docs/advanced/fipa-advanced).*
+*For complex implementations that require detailed conversation management,
+message validation, and error handling patterns, see the
+[Advanced FIPA Implementation Guide](/docs/advanced/fipa-advanced).*
 
 ## Quick Start Examples
 
@@ -465,23 +492,30 @@ let is_healthy = response.content["result"].as_bool().unwrap_or(false);
 
 ## Getting Started
 
-These examples should cover most common service communication needs. For advanced patterns like complex negotiations, distributed coordination, or custom protocol implementations, consult the [Advanced FIPA Guide](/docs/advanced/fipa-advanced) or our API documentation.
+These examples should cover most common service communication needs. For
+advanced patterns like complex negotiations, distributed coordination, or custom
+protocol implementations, consult the
+[Advanced FIPA Guide](/docs/advanced/fipa-advanced) or our API documentation.
 
 ## Best Practices
 
 ### Message Design
 
-1. **Use Appropriate Performatives**: Choose the performative that best matches your intent
+1. **Use Appropriate Performatives**: Choose the performative that best matches
+   your intent
 2. **Include Context**: Use conversation_id for related messages
 3. **Set Timeouts**: Include reply_by for time-sensitive requests
-4. **Handle Errors**: Always handle REFUSE, FAILURE, and NOT_UNDERSTOOD responses
+4. **Handle Errors**: Always handle REFUSE, FAILURE, and NOT_UNDERSTOOD
+   responses
 
 ### Performance Optimization
 
 1. **Batch Messages**: Group related communications when possible
-2. **Use Efficient Serialization**: Consider binary formats for high-throughput scenarios
+2. **Use Efficient Serialization**: Consider binary formats for high-throughput
+   scenarios
 3. **Implement Caching**: Cache frequently accessed ontologies and schemas
-4. **Monitor Conversations**: Clean up expired conversations to prevent memory leaks
+4. **Monitor Conversations**: Clean up expired conversations to prevent memory
+   leaks
 
 ### Security Considerations
 
@@ -495,6 +529,7 @@ These examples should cover most common service communication needs. For advance
 ### Common Issues
 
 #### Messages Not Being Delivered
+
 ```bash
 # Check agent connectivity
 curl -X GET http://localhost:8080/api/v1/agents/agent_123/status
@@ -506,6 +541,7 @@ curl -X POST http://localhost:8080/api/v1/messages/validate \
 ```
 
 #### Conversation Timeouts
+
 ```rust
 // Set reasonable timeouts
 let message = FipaMessage::request()
@@ -531,6 +567,7 @@ async fn send_with_retry(
 ```
 
 #### Protocol Violations
+
 ```rust
 // Implement protocol state machines
 pub enum RequestProtocolState {
@@ -558,6 +595,7 @@ impl RequestProtocolState {
 ### Debugging Tools
 
 #### Message Tracing
+
 ```rust
 // Enable detailed message logging
 pub struct MessageTracer {
@@ -590,6 +628,7 @@ impl MessageTracer {
 ```
 
 #### Conversation Analysis
+
 ```rust
 // Analyze conversation patterns
 pub fn analyze_conversation(
@@ -611,4 +650,7 @@ pub fn analyze_conversation(
 }
 ```
 
-This comprehensive guide provides the foundation for implementing robust FIPA-based agent communication in Caxton. The protocol's semantic richness enables sophisticated agent interactions while maintaining interoperability with existing multi-agent systems.
+This comprehensive guide provides the foundation for implementing robust
+FIPA-based agent communication in Caxton. The protocol's semantic richness
+enables sophisticated agent interactions while maintaining interoperability with
+existing multi-agent systems.

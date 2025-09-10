@@ -4,7 +4,8 @@ Complete reference for configuring Caxton server and agents.
 
 ## Configuration File
 
-Caxton uses YAML configuration files. The default location is `/etc/caxton/config.yaml`.
+Caxton uses YAML configuration files. The default location is
+`/etc/caxton/config.yaml`.
 
 ### Minimal Configuration
 
@@ -20,9 +21,8 @@ server:
 # Server configuration
 server:
   host: 0.0.0.0              # Bind address
-  port: 8080                  # API port
+  port: 8080                  # REST API port
   metrics_port: 9090          # Prometheus metrics port
-  grpc_port: 50051           # gRPC port (optional)
   tls:
     enabled: false
     cert_path: /etc/caxton/tls/cert.pem
@@ -511,12 +511,14 @@ resources:
 ### Common Issues
 
 1. **Port Already in Use**
+
    ```yaml
    server:
      port: 8081  # Change to available port
    ```
 
 2. **Database Connection Failed**
+
    ```yaml
    storage:
      postgres:
@@ -525,6 +527,7 @@ resources:
    ```
 
 3. **High Memory Usage**
+
    ```yaml
    runtime:
      max_memory_per_agent: 50MB  # Reduce per-agent memory
@@ -532,6 +535,7 @@ resources:
    ```
 
 4. **Slow Message Delivery**
+
    ```yaml
    messaging:
      queue_size: 50000          # Increase queue size
@@ -570,6 +574,8 @@ experimental:
 ## Next Steps
 
 - [CLI Reference](../user-guide/cli-reference.md) - Complete CLI documentation
-- [Production Deployment](../operations/production-deployment.md) - Production configuration
+- [Production Deployment](../operations/production-deployment.md) - Production
+  configuration
 - [Monitoring Guide](../user-guide/monitoring.md) - Observability configuration
-- [Security Guide](../operations/devops-security-guide.md) - Security configuration
+- [Security Guide](../operations/devops-security-guide.md) - Security
+  configuration

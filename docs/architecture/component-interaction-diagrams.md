@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document presents detailed component interaction diagrams showing how MessageRouter, DeliveryEngine, ConversationManager, and AgentRegistry components collaborate to provide high-performance message routing in the Caxton system.
+This document presents detailed component interaction diagrams showing how
+MessageRouter, DeliveryEngine, ConversationManager, and AgentRegistry components
+collaborate to provide high-performance message routing in the Caxton system.
 
 ## Message Flow Diagrams
 
@@ -518,18 +520,25 @@ flowchart TD
 
 These component interaction diagrams illustrate:
 
-1. **Message Routing Flows**: Fast local delivery, remote routing with fault tolerance, and agent discovery
+1. **Message Routing Flows**: Fast local delivery, remote routing with fault
+   tolerance, and agent discovery
 2. **State Management**: Agent lifecycle and circuit breaker state transitions
-3. **Error Handling**: Comprehensive error recovery with retries, circuit breaking, and dead letter queues
-4. **Performance Optimization**: Multi-level caching with adaptive TTL and predictive warming
-5. **Observability**: Complete telemetry integration with traces, metrics, and structured logging
-6. **Configuration Management**: Hot-reload capabilities with validation and rollback
+3. **Error Handling**: Comprehensive error recovery with retries, circuit
+   breaking, and dead letter queues
+4. **Performance Optimization**: Multi-level caching with adaptive TTL and
+   predictive warming
+5. **Observability**: Complete telemetry integration with traces, metrics, and
+   structured logging
+6. **Configuration Management**: Hot-reload capabilities with validation and
+   rollback
 
 The diagrams demonstrate how the components collaborate to achieve:
+
 - **Sub-millisecond local routing** (< 1ms target)
 - **Fast remote routing** (< 5ms target)
 - **High throughput processing** (100K+ messages/second)
 - **Comprehensive fault tolerance** with graceful degradation
 - **Complete observability** for operational excellence
 
-This architecture provides the foundation for reliable, scalable message routing in the Caxton multi-agent system.
+This architecture provides the foundation for reliable, scalable message routing
+in the Caxton multi-agent system.

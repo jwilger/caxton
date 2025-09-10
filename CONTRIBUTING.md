@@ -1,10 +1,12 @@
 # Contributing to Caxton
 
-Thank you for your interest in contributing to Caxton! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Caxton! This document provides
+guidelines and instructions for contributing to the project.
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct. Please read it before contributing.
+By participating in this project, you agree to abide by our Code of Conduct.
+Please read it before contributing.
 
 ## How to Contribute
 
@@ -26,11 +28,14 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 
 ### Conventional Commit Format
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This enables automatic changelog generation and semantic versioning.
+We use [Conventional Commits](https://www.conventionalcommits.org/) for all
+commit messages. This enables automatic changelog generation and semantic
+versioning.
 
 Format: `<type>(<scope>): <subject>`
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -44,7 +49,8 @@ Format: `<type>(<scope>): <subject>`
 - `revert`: Revert a previous commit
 
 **Examples:**
-```
+
+```text
 feat(agent): add WebAssembly instance pooling
 fix(fipa): correct message routing logic
 docs(api): update agent lifecycle documentation
@@ -54,17 +60,20 @@ perf(runtime): optimize memory allocation
 ### Development Setup
 
 1. **Install Rust** (1.70.0 or later)
+
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
 
 2. **Clone the repository**
+
    ```bash
    git clone https://github.com/jwilger/caxton.git
    cd caxton
    ```
 
 3. **Install development tools**
+
    ```bash
    cargo install cargo-nextest
    cargo install cargo-watch
@@ -72,12 +81,14 @@ perf(runtime): optimize memory allocation
    ```
 
 4. **Run tests**
+
    ```bash
    cargo nextest run
    cargo test --doc
    ```
 
 5. **Run benchmarks**
+
    ```bash
    cargo bench
    ```
@@ -101,7 +112,9 @@ perf(runtime): optimize memory allocation
 
 Releases are automated using [release-plz](https://release-plz.ieni.dev/):
 
-1. **Automatic PR Creation**: When commits land on `main`, release-plz creates/updates a PR with:
+1. **Automatic PR Creation**: When commits land on `main`, release-plz
+   creates/updates a PR with:
+
    - Version bumps based on conventional commits
    - Updated CHANGELOG.md
    - Updated Cargo.toml versions
@@ -109,6 +122,7 @@ Releases are automated using [release-plz](https://release-plz.ieni.dev/):
 2. **Review and Merge**: Maintainers review and merge the release PR
 
 3. **Automatic Release**: Upon merge, the system automatically:
+
    - Creates git tags
    - Publishes to crates.io
    - Creates GitHub releases with binaries
@@ -117,6 +131,7 @@ Releases are automated using [release-plz](https://release-plz.ieni.dev/):
 ### Manual Release (Maintainers Only)
 
 If needed, maintainers can trigger a release manually:
+
 ```bash
 cargo install release-plz
 release-plz release
@@ -140,6 +155,7 @@ release-plz release
 ## Recognition
 
 Contributors will be recognized in:
+
 - The project README
 - Release notes
 - The contributors page in documentation

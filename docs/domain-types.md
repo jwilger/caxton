@@ -1,10 +1,12 @@
 # Domain Types in Caxton
 
-This document describes the domain types used throughout the Caxton WebAssembly runtime to eliminate primitive obsession and improve type safety.
+This document describes the domain types used throughout the Caxton WebAssembly
+runtime to eliminate primitive obsession and improve type safety.
 
 ## Overview
 
-Caxton uses the `nutype` crate to create strongly-typed domain values that prevent primitive obsession throughout the codebase. These domain types provide:
+Caxton uses the `nutype` crate to create strongly-typed domain values that
+prevent primitive obsession throughout the codebase. These domain types provide:
 
 - **Compile-time validation**: Invalid values are caught at compile time
 - **Type safety**: Operations on the wrong type are prevented
@@ -16,12 +18,15 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 ### Agent Management
 
 #### `AgentId`
+
 - **Type**: `Uuid` wrapper
 - **Purpose**: Unique identifier for agents
 - **Usage**: `AgentId::generate()` creates a new random ID
-- **Derives**: Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Display
+- **Derives**: Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
+  Display
 
 #### `AgentName`
+
 - **Type**: `String` wrapper with validation
 - **Validation**: 1-255 characters
 - **Purpose**: Human-readable name for agents
@@ -30,6 +35,7 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 ### Resource Management
 
 #### `MemoryBytes`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: ≤ 1GB (1,073,741,824 bytes)
 - **Purpose**: Memory size in bytes
@@ -37,6 +43,7 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 - **Helper methods**: `zero()`, `from_mb()`, `as_usize()`
 
 #### `CpuFuel`
+
 - **Type**: `u64` wrapper with validation
 - **Validation**: ≤ 1 billion fuel units
 - **Purpose**: CPU execution fuel for WebAssembly
@@ -44,6 +51,7 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 - **Helper methods**: `zero()`, `saturating_add()`, `as_u64()`
 
 #### `MaxAgentMemory`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 0-10MB per agent
 - **Purpose**: Maximum memory allocation per agent
@@ -51,6 +59,7 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 - **Default**: 1MB
 
 #### `MaxTotalMemory`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 0-100MB total
 - **Purpose**: Maximum total memory across all agents
@@ -58,6 +67,7 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 - **Default**: 100MB
 
 #### `MaxTableEntries`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 1-100,000 entries
 - **Purpose**: Maximum WASM table entries
@@ -66,30 +76,35 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 ### Message Routing
 
 #### `MessageSize`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: ≤ 10MB
 - **Purpose**: Size of messages in bytes
 - **Usage**: `MessageSize::from_kb(100)?` for 100KB
 
 #### `MessageCount`
+
 - **Type**: `usize` wrapper
 - **Purpose**: Count of messages processed
 - **Usage**: `MessageCount::zero().increment()`
 - **Helper methods**: `zero()`, `increment()`, `as_usize()`
 
 #### `ChannelCapacity`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 1-1,000,000
 - **Purpose**: Capacity for message channels
 - **Default**: 1,000
 
 #### `MaxRetries`
+
 - **Type**: `u8` wrapper with validation
 - **Validation**: 1-10 retries
 - **Purpose**: Maximum retry attempts for failed operations
 - **Default**: 3 retries
 
 #### `RetryDelayMs`
+
 - **Type**: `u64` wrapper with validation
 - **Validation**: 100ms - 5 minutes
 - **Purpose**: Delay between retry attempts
@@ -99,21 +114,25 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 ### Host Functions
 
 #### `HostFunctionName`
+
 - **Type**: `String` wrapper with validation
 - **Validation**: 1-100 characters
 - **Purpose**: Name of host functions exposed to WASM
 
 #### `FunctionModuleName`
+
 - **Type**: `String` wrapper with validation
 - **Validation**: 1-100 characters
 - **Purpose**: Module name containing the function
 
 #### `FunctionDescription`
+
 - **Type**: `String` wrapper with validation
 - **Validation**: 1-1,000 characters
 - **Purpose**: Human-readable description of function
 
 #### `PermissionName`
+
 - **Type**: `String` wrapper with validation
 - **Validation**: 1-100 characters
 - **Purpose**: Required permission to access host function
@@ -121,18 +140,21 @@ Caxton uses the `nutype` crate to create strongly-typed domain values that preve
 ### Configuration Types
 
 #### `ConnectionPoolSize`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 1-1,000
 - **Purpose**: Size of connection pools
 - **Default**: 10
 
 #### `StorageCleanupIntervalMs`
+
 - **Type**: `u64` wrapper with validation
 - **Validation**: 1 minute - 24 hours
 - **Purpose**: Interval for storage cleanup operations
 - **Default**: 1 hour
 
 #### `RateLimitPerSecond`
+
 - **Type**: `usize` wrapper with validation
 - **Validation**: 1-100,000
 - **Purpose**: Rate limit for messages per second
@@ -165,7 +187,8 @@ let duration: Duration = timeout.as_duration();
 
 ### System Boundaries
 
-Domain types should be used throughout internal APIs. Only extract primitive values when interfacing with external systems:
+Domain types should be used throughout internal APIs. Only extract primitive
+values when interfacing with external systems:
 
 ```rust
 // ✅ Good: Internal APIs use domain types
@@ -225,4 +248,5 @@ When adding new domain types:
 5. Update tests to use domain types
 6. Document the new type
 
-This systematic approach to domain modeling helps create more maintainable and bug-free code.
+This systematic approach to domain modeling helps create more maintainable and
+bug-free code.

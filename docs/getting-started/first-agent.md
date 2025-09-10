@@ -1,10 +1,12 @@
 # Building Your First Agent
 
-Learn how to create WebAssembly agents for Caxton in your preferred programming language.
+Learn how to create WebAssembly agents for Caxton in your preferred programming
+language.
 
 ## Agent Basics
 
 Every Caxton agent must:
+
 1. Export a `handle_message` function
 2. Accept FIPA-formatted messages
 3. Return valid FIPA responses (or null)
@@ -13,12 +15,14 @@ Every Caxton agent must:
 ## Agent Lifecycle
 
 Agents follow a managed lifecycle:
+
 - **Deployment**: WASM modules are validated and loaded
 - **Execution**: Agents process messages in isolated sandboxes
 - **Management**: Hot reload enables zero-downtime updates
 - **Monitoring**: Resource usage and health are tracked
 
-For production deployment and management, see [Agent Lifecycle Management](../operations/agent-lifecycle-management.md).
+For production deployment and management, see
+[Agent Lifecycle Management](../operations/agent-lifecycle-management.md).
 
 ## JavaScript Agent
 
@@ -737,7 +741,11 @@ chmod +x test.sh
 
 ## Next Steps
 
-- [Message Protocol Guide](../developer-guide/message-protocols.md) - Deep dive into FIPA protocols
-- [API Reference](../developer-guide/api-reference.md) - Complete API documentation
-- [Testing Guide](../developer-guide/testing.md) - Comprehensive testing strategies
-- [Production Deployment](../operations/production-deployment.md) - Deploy to production
+- [Message Protocol Guide](../developer-guide/message-protocols.md) - Deep dive
+  into FIPA protocols
+- [API Reference](../developer-guide/api-reference.md) - Complete API
+  documentation
+- [Testing Guide](../developer-guide/testing.md) - Comprehensive testing
+  strategies
+- [Production Deployment](../operations/production-deployment.md) - Deploy to
+  production

@@ -21,14 +21,18 @@ caxton server status
 ```
 
 You should see:
-```
+
+```text
 ✓ Server running at http://localhost:8080
 ✓ Dashboard available at http://localhost:8080/dashboard
 ✓ Metrics available at http://localhost:9090/metrics
 ✓ Cluster coordination: enabled (3 nodes)
 ```
 
-> **Note**: Caxton uses a coordination-first architecture with no external dependencies. Each instance maintains its own local state while coordinating with other instances via the SWIM protocol. See [ADR-0014](../adr/0014-coordination-first-architecture.md) for details.
+> **Note**: Caxton uses a coordination-first architecture with no external
+> dependencies. Each instance maintains its own local state while coordinating
+> with other instances via the SWIM protocol. See
+> [ADR-0014](../adr/0014-coordination-first-architecture.md) for details.
 
 ## 2. Deploy Example Agents
 
@@ -52,7 +56,8 @@ caxton logs --agents ping-agent,pong-agent --follow
 ```
 
 You'll see output like:
-```
+
+```text
 [ping-agent] Sending ping to pong-agent
 [pong-agent] Received ping, sending pong back
 [ping-agent] Received pong, sending ping to pong-agent
@@ -214,10 +219,14 @@ caxton server stop
 
 Now that you have Caxton running:
 
-- **[Build Your First Agent](first-agent.md)** - Create custom agents in your preferred language
-- **[Agent Communication Patterns](../developer-guide/message-protocols.md)** - Learn FIPA protocols
-- **[Production Deployment](../operations/production-deployment.md)** - Scale to production
-- **[API Reference](../developer-guide/api-reference.md)** - Full API documentation
+- **[Build Your First Agent](first-agent.md)** - Create custom agents in your
+  preferred language
+- **[Agent Communication Patterns](../developer-guide/message-protocols.md)** -
+  Learn FIPA protocols
+- **[Production Deployment](../operations/production-deployment.md)** - Scale to
+  production
+- **[API Reference](../developer-guide/api-reference.md)** - Full API
+  documentation
 
 ## Common Patterns
 

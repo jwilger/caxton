@@ -1,10 +1,8 @@
----
-title: "0002. WebAssembly for Agent Isolation"
-date: 2025-07-31
-status: proposed
-layout: adr
-categories: [Architecture, Technology]
----
+______________________________________________________________________
+
+## title: "0002. WebAssembly for Agent Isolation" date: 2025-07-31 status: proposed layout: adr
+
+## categories: [Architecture, Technology]
 
 # 0002. WebAssembly for Agent Isolation
 
@@ -17,18 +15,23 @@ Proposed
 ## Context
 
 Multi-agent systems require strong isolation between agents to ensure:
+
 - Security: One agent cannot access another's memory or state
 - Fault tolerance: Agent crashes don't affect the host or other agents
 - Resource control: Agents can be limited in CPU, memory, and I/O
 - Portability: Agents can be written in any language
 
-Traditional approaches like OS processes are too heavyweight, while language-level isolation (e.g., JavaScript isolates) ties us to specific runtimes.
+Traditional approaches like OS processes are too heavyweight, while
+language-level isolation (e.g., JavaScript isolates) ties us to specific
+runtimes.
 
 ## Decision
 
-We will use WebAssembly (WASM) as the execution environment for all agents in Caxton.
+We will use WebAssembly (WASM) as the execution environment for all agents in
+Caxton.
 
 Key aspects:
+
 - Agents are compiled to WASM modules
 - Each agent runs in its own WASM instance with isolated memory
 - Communication happens only through well-defined message passing interfaces
@@ -39,7 +42,8 @@ Key aspects:
 
 ### Positive
 
-- **True isolation**: WASM's sandboxing ensures agents cannot interfere with each other
+- **True isolation**: WASM's sandboxing ensures agents cannot interfere with
+  each other
 - **Language agnostic**: Write agents in Rust, Go, AssemblyScript, C++, etc.
 - **Deterministic execution**: WASM's semantics enable reproducible behavior
 - **Fast instantiation**: WASM modules start in milliseconds
@@ -65,22 +69,27 @@ Key aspects:
 ## Alternatives Considered
 
 ### OS Processes
+
 - **Pros**: Maximum isolation, existing tooling
 - **Cons**: High overhead, slow startup, complex IPC
 
 ### Docker/Containers
+
 - **Pros**: Good isolation, rich ecosystem
 - **Cons**: Heavyweight, requires container runtime, slow startup
 
 ### Language-specific Isolation (V8 Isolates, Erlang Processes)
+
 - **Pros**: Fast, efficient for specific languages
 - **Cons**: Locks us into specific language/runtime
 
 ### Shared Memory Threads
+
 - **Pros**: Maximum performance
 - **Cons**: No isolation, complex concurrency bugs
 
 ### Native Plugins
+
 - **Pros**: Full system access, maximum performance
 - **Cons**: No isolation, security risks, platform-specific
 
@@ -100,6 +109,7 @@ pub extern "C" fn get_response(buf_ptr: *mut u8, buf_len: usize) -> i32 {
 ```
 
 The host will:
+
 1. Load WASM modules using wasmtime or similar runtime
 2. Provide imports for MCP tool access
 3. Marshal messages in/out of WASM memory

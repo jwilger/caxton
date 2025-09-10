@@ -1,18 +1,25 @@
----
-title: Security Best Practices
+______________________________________________________________________
+
+## title: Security Best Practices
+
 layout: documentation
-description: Comprehensive security guide for Caxton multi-agent systems covering WebAssembly isolation, network security, authentication, secrets management, and incident response.
----
+description: Comprehensive security guide for Caxton multi-agent systems covering
+  WebAssembly isolation, network security, authentication, secrets management, and
+  incident response
 
 # Security Best Practices
 
-This guide covers essential security practices for deploying and maintaining Caxton multi-agent systems in production environments, including WebAssembly isolation, network security, authentication, authorization, secrets management, and incident response procedures.
+This guide covers essential security practices for deploying and maintaining
+Caxton multi-agent systems in production environments, including WebAssembly
+isolation, network security, authentication, authorization, secrets management,
+and incident response procedures.
 
 ## WebAssembly Isolation
 
 ### Sandbox Security Model
 
-Caxton's security model is built on WebAssembly's capability-based sandboxing, providing multiple layers of isolation:
+Caxton's security model is built on WebAssembly's capability-based sandboxing,
+providing multiple layers of isolation:
 
 #### Memory Isolation
 
@@ -932,4 +939,6 @@ if __name__ == "__main__":
 - [ ] Data protection measures
 - [ ] Business continuity planning
 
-For additional operational guidance, see the [Deployment Guide]({{ '/docs/operations/deployment/' | relative_url }}) and [Monitoring Guide]({{ '/docs/operations/monitoring/' | relative_url }}).
+For additional operational guidance, see the \[Deployment Guide\]({{
+'/docs/operations/deployment/' | relative_url }}) and \[Monitoring Guide\]({{
+'/docs/operations/monitoring/' | relative_url }}).

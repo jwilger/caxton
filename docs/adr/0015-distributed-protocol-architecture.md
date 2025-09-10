@@ -1,18 +1,25 @@
 # ADR-0015: Distributed Protocol Architecture - FIPA and SWIM Integration
 
 ## Status
+
 Proposed
 
 ## Context
-With the coordination-first architecture (ADR-0014), Caxton uses SWIM for cluster coordination and FIPA for agent messaging. This ADR clarifies how these protocols interact and addresses distributed systems concerns including network partitioning, consistency, and fault tolerance.
+
+With the coordination-first architecture (ADR-0014), Caxton uses SWIM for
+cluster coordination and FIPA for agent messaging. This ADR clarifies how these
+protocols interact and addresses distributed systems concerns including network
+partitioning, consistency, and fault tolerance.
 
 ## Decision
 
 ### Protocol Layer Separation
 
-Caxton implements a clear separation between coordination (SWIM) and communication (FIPA) protocols:
+Caxton implements a clear separation between coordination (SWIM) and
+communication (FIPA) protocols:
 
 #### SWIM Protocol (Infrastructure Layer)
+
 - **Responsibility**: Cluster membership and failure detection
 - **Scope**: Caxton instance coordination
 - **Data**: Instance liveness, agent registry, routing tables
@@ -20,6 +27,7 @@ Caxton implements a clear separation between coordination (SWIM) and communicati
 - **Failure Model**: Crash-stop failures
 
 #### FIPA Protocol (Application Layer)
+
 - **Responsibility**: Agent-to-agent semantic messaging
 - **Scope**: Business logic communication
 - **Data**: Application messages, conversation state
@@ -80,6 +88,7 @@ impl DistributedMessageRouter {
 ### Network Partition Handling
 
 #### Detection Strategy
+
 ```rust
 pub struct PartitionManager {
     membership: SwimMembership,
@@ -129,6 +138,7 @@ impl PartitionManager {
 ```
 
 #### Healing After Partition
+
 ```rust
 pub struct PartitionHealer {
     detector: PartitionDetector,
@@ -159,6 +169,7 @@ impl PartitionHealer {
 ### Consistency Models
 
 #### Agent Registry (Eventually Consistent)
+
 ```rust
 pub struct AgentRegistry {
     local: HashMap<AgentId, AgentMetadata>,
@@ -192,6 +203,7 @@ impl AgentRegistry {
 ```
 
 #### Message Ordering (Per-Conversation)
+
 ```rust
 pub struct ConversationManager {
     conversations: HashMap<ConversationId, Conversation>,
@@ -221,6 +233,7 @@ impl ConversationManager {
 ### Fault Tolerance Mechanisms
 
 #### Circuit Breaker for Remote Calls
+
 ```rust
 pub struct RemoteCallCircuitBreaker {
     state: Arc<RwLock<CircuitState>>,
@@ -267,6 +280,7 @@ impl RemoteCallCircuitBreaker {
 ```
 
 #### Supervisor Trees for Agents
+
 ```rust
 pub struct AgentSupervisor {
     strategy: SupervisionStrategy,
@@ -299,6 +313,7 @@ impl AgentSupervisor {
 ### Message Delivery Guarantees
 
 #### Configurable Delivery Semantics
+
 ```rust
 pub enum DeliveryGuarantee {
     AtMostOnce,   // Fire and forget (default)
@@ -338,19 +353,25 @@ impl MessageDelivery {
 ## Consequences
 
 ### Positive
-- **Clear separation of concerns**: SWIM handles infrastructure, FIPA handles application
+
+- **Clear separation of concerns**: SWIM handles infrastructure, FIPA handles
+  application
 - **Graceful degradation**: System continues functioning during partitions
-- **Flexible consistency**: Eventually consistent for coordination, stronger guarantees available when needed
+- **Flexible consistency**: Eventually consistent for coordination, stronger
+  guarantees available when needed
 - **Fault isolation**: Agent failures don't affect cluster coordination
 - **Scalable design**: Can handle thousands of agents across dozens of instances
 
 ### Negative
+
 - **Complexity**: Two protocols to understand and maintain
 - **Eventual consistency**: Agent registry may be temporarily inconsistent
 - **Network overhead**: Gossip protocol generates background traffic
-- **Partition handling**: Requires careful consideration of business requirements
+- **Partition handling**: Requires careful consideration of business
+  requirements
 
 ### Neutral
+
 - Standard distributed systems patterns apply
 - Similar complexity to other distributed agent systems
 - Trade-offs are well-understood in the industry
@@ -367,6 +388,7 @@ impl MessageDelivery {
 ### Technology Selection
 
 #### SWIM Implementation
+
 ```toml
 [dependencies]
 # Primary choice: memberlist-rs (Rust port of HashiCorp's memberlist)
@@ -381,6 +403,7 @@ tokio = { version = "1.0", features = ["full"] }
 ```
 
 #### Message Serialization
+
 ```toml
 # MessagePack for efficiency and schema evolution
 rmp-serde = "1.1"  # MessagePack serialization
@@ -392,6 +415,7 @@ serde = { version = "1.0", features = ["derive"] }
 ```
 
 #### Network Transport
+
 ```rust
 pub enum TransportLayer {
     // TCP for reliability (default)
@@ -624,6 +648,7 @@ coordination:
 ```
 
 ## References
+
 - [SWIM Protocol Paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
 - [FIPA Agent Communication Language](http://www.fipa.org/specs/fipa00061/SC00061G.html)
 - [Distributed Systems: Principles and Paradigms](https://www.distributed-systems.net/index.php/books/ds3/)

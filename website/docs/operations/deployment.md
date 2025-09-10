@@ -1,12 +1,17 @@
----
-title: Production Deployment Guide
+______________________________________________________________________
+
+## title: Production Deployment Guide
+
 layout: documentation
-description: Comprehensive guide for deploying Caxton multi-agent systems in production environments with high availability, load balancing, and backup strategies.
----
+description: Comprehensive guide for deploying Caxton multi-agent systems in
+  production environments with high availability, load balancing, and backup
+  strategies
 
 # Production Deployment Guide
 
-This guide covers deploying Caxton multi-agent systems in production environments, including system requirements, installation methods, configuration best practices, and operational considerations.
+This guide covers deploying Caxton multi-agent systems in production
+environments, including system requirements, installation methods, configuration
+best practices, and operational considerations.
 
 ## System Requirements
 
@@ -601,6 +606,7 @@ WantedBy=timers.target
 #### Recovery Procedures
 
 1. **Local State Recovery**:
+
    ```bash
    # Stop Caxton service
    sudo systemctl stop caxton
@@ -616,6 +622,7 @@ WantedBy=timers.target
    ```
 
 2. **Configuration Recovery**:
+
    ```bash
    # Extract configuration backup
    tar -xzf config_backup.tar.gz -C /opt/caxton/
@@ -628,6 +635,7 @@ WantedBy=timers.target
    ```
 
 3. **Full System Recovery**:
+
    ```bash
    # Deploy infrastructure
    kubectl apply -f kubernetes/
@@ -661,6 +669,7 @@ agent_memory_reclaim = true
 ### Monitoring and Alerts
 
 Set up monitoring for:
+
 - CPU and memory usage
 - Agent execution metrics
 - Network I/O
@@ -668,23 +677,27 @@ Set up monitoring for:
 - Error rates
 - Response times
 
-Example Prometheus alert rules are provided in the [Monitoring Guide]({{ '/docs/operations/monitoring/' | relative_url }}).
+Example Prometheus alert rules are provided in the \[Monitoring Guide\]({{
+'/docs/operations/monitoring/' | relative_url }}).
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **High Memory Usage**:
+
    - Check agent memory limits
    - Monitor for memory leaks
    - Adjust garbage collection settings
 
 2. **Agent Startup Failures**:
+
    - Verify WASM module validity
    - Check resource limits
    - Review error logs
 
 3. **Network Connectivity Issues**:
+
    - Verify firewall rules
    - Check DNS resolution
    - Test load balancer health
@@ -713,4 +726,5 @@ caxton debug --agent-id <agent-id>
 - Regular security updates and patches
 - Monitor for suspicious activity
 
-For detailed security guidelines, see the [Security Guide]({{ '/docs/operations/security/' | relative_url }}).
+For detailed security guidelines, see the \[Security Guide\]({{
+'/docs/operations/security/' | relative_url }}).

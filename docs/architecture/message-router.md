@@ -2,13 +2,18 @@
 
 ## Overview
 
-The Message Router is the core communication infrastructure for the Caxton multi-agent system, providing high-performance, asynchronous message routing between agents. It achieves 100,000+ messages/second throughput through lock-free data structures and async Rust with Tokio.
+The Message Router is the core communication infrastructure for the Caxton
+multi-agent system, providing high-performance, asynchronous message routing
+between agents. It achieves 100,000+ messages/second throughput through
+lock-free data structures and async Rust with Tokio.
 
 ## Architecture
 
 ### System Context
 
-The Message Router sits at the heart of each Caxton instance, coordinating message flow between agents running in isolated WebAssembly sandboxes. It integrates with:
+The Message Router sits at the heart of each Caxton instance, coordinating
+message flow between agents running in isolated WebAssembly sandboxes. It
+integrates with:
 
 - **WasmRuntime**: Manages agent lifecycle and execution
 - **Sandbox**: Provides isolated execution environments
@@ -19,35 +24,45 @@ The Message Router sits at the heart of each Caxton instance, coordinating messa
 ### Core Components
 
 #### 1. MessageRouterImpl
+
 Central orchestration hub that:
+
 - Accepts messages for routing via async channels
 - Coordinates with other components
 - Manages worker threads for parallel processing
 - Tracks performance metrics
 
 #### 2. AgentRegistryImpl
+
 O(1) agent lookup system using:
+
 - `DashMap<AgentId, LocalAgent>` for agent storage
 - `DashMap<AgentId, AgentLocation>` for routing cache
 - `DashMap<CapabilityName, HashSet<AgentId>>` for capability discovery
 - Thread-safe concurrent access without locks
 
 #### 3. DeliveryEngineImpl
+
 Handles actual message delivery:
+
 - Local delivery via agent message queues
 - Remote delivery preparation (for future cluster support)
 - Message batching for high throughput
 - Circuit breaker patterns for fault tolerance
 
 #### 4. ConversationManagerImpl
+
 Manages multi-turn conversations:
+
 - Tracks conversation state and participants
 - Enforces timeouts and participant limits
 - Maintains message correlation
 - Provides conversation history
 
 #### 5. FailureHandler (Trait)
+
 Comprehensive error handling:
+
 - Retry logic with exponential backoff
 - Circuit breakers to prevent cascading failures
 - Dead letter queue for undeliverable messages
@@ -55,7 +70,7 @@ Comprehensive error handling:
 
 ## Message Flow
 
-```
+```text
 Client → MessageRouter → AgentRegistry → DeliveryEngine → Agent
              |               |                    |
              v               v                    v
@@ -70,18 +85,21 @@ Client → MessageRouter → AgentRegistry → DeliveryEngine → Agent
 All types use strong typing with `nutype` to eliminate primitive obsession:
 
 ### Core Types
+
 - `AgentId`: Unique agent identifier
 - `MessageId`: Unique message identifier
 - `ConversationId`: Conversation correlation ID
 - `NodeId`: Cluster node identifier
 
 ### Message Types
+
 - `FipaMessage`: FIPA-ACL compliant message structure
 - `Performative`: FIPA message types (REQUEST, INFORM, etc.)
 - `MessageContent`: Validated message payload
 - `DeliveryOptions`: Reliability and priority settings
 
 ### Configuration Types
+
 - `RouterConfig`: Environment-specific configurations
 - `ChannelCapacity`: Queue size limits
 - `WorkerThreadCount`: Parallelism control
@@ -101,16 +119,19 @@ All types use strong typing with `nutype` to eliminate primitive obsession:
 Three pre-configured environments:
 
 ### Development
+
 - Small queues for quick failure detection
 - Detailed logging enabled
 - Short timeouts for rapid iteration
 
 ### Testing
+
 - Large queues to handle test loads
 - Balanced timeouts
 - Metrics collection enabled
 
 ### Production
+
 - Optimized queue sizes
 - Minimal logging overhead
 - Extended timeouts for reliability

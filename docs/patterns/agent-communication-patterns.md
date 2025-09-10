@@ -1,7 +1,10 @@
 # Agent Communication Pattern Catalog
 
 ## Introduction
-This catalog documents common agent interaction patterns in Caxton, providing developers with proven solutions for typical multi-agent coordination scenarios. Each pattern includes implementation examples, use cases, and best practices.
+
+This catalog documents common agent interaction patterns in Caxton, providing
+developers with proven solutions for typical multi-agent coordination scenarios.
+Each pattern includes implementation examples, use cases, and best practices.
 
 ## Pattern Categories
 
@@ -11,14 +14,16 @@ This catalog documents common agent interaction patterns in Caxton, providing de
 4. **Workflow Patterns** - Complex task orchestration
 5. **Resilience Patterns** - Error handling and recovery
 
----
+______________________________________________________________________
 
 ## 1. Basic Patterns
 
 ### 1.1 Request-Response Pattern
+
 **Purpose**: Simple synchronous communication between two agents.
 
 **Structure**:
+
 ```json
 // Request
 {
@@ -47,19 +52,23 @@ This catalog documents common agent interaction patterns in Caxton, providing de
 ```
 
 **Use Cases**:
+
 - Service invocation
 - Data retrieval
 - Computation requests
 
 **Best Practices**:
+
 - Always include `reply_with` and `conversation_id`
 - Set reasonable timeouts (default: 30s)
 - Handle `failure` and `not_understood` responses
 
 ### 1.2 Fire-and-Forget Pattern
+
 **Purpose**: Asynchronous notification without expecting response.
 
 **Structure**:
+
 ```json
 {
   "performative": "inform",
@@ -75,19 +84,23 @@ This catalog documents common agent interaction patterns in Caxton, providing de
 ```
 
 **Use Cases**:
+
 - Event notifications
 - Logging
 - Metrics collection
 
 **Best Practices**:
+
 - Use for non-critical notifications
 - Implement at-least-once delivery
 - Consider batching for high-volume events
 
 ### 1.3 Query Pattern
+
 **Purpose**: Information retrieval from knowledge-holding agents.
 
 **Structure**:
+
 ```json
 // Query
 {
@@ -116,18 +129,21 @@ This catalog documents common agent interaction patterns in Caxton, providing de
 ```
 
 **Use Cases**:
+
 - Database queries
 - Knowledge base lookups
 - Status inquiries
 
----
+______________________________________________________________________
 
 ## 2. Coordination Patterns
 
 ### 2.1 Publish-Subscribe Pattern
+
 **Purpose**: One-to-many event distribution.
 
 **Implementation**:
+
 ```rust
 // Publisher
 pub fn publish_event(event: Event) {
@@ -148,20 +164,25 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 ```
 
 **Use Cases**:
+
 - Event streaming
 - Broadcast notifications
 - Market data distribution
 
 **Best Practices**:
+
 - Use topic hierarchies (e.g., `events/orders/created`)
 - Implement subscription filtering
 - Handle subscriber disconnections gracefully
 
 ### 2.2 Contract Net Protocol
+
 **Purpose**: Task distribution through bidding.
 
 **Flow**:
+
 1. **Call for Proposals (CFP)**
+
 ```json
 {
   "performative": "cfp",
@@ -179,7 +200,8 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 }
 ```
 
-2. **Proposals from Agents**
+1. **Proposals from Agents**
+
 ```json
 {
   "performative": "propose",
@@ -195,7 +217,8 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 }
 ```
 
-3. **Accept/Reject Proposals**
+1. **Accept/Reject Proposals**
+
 ```json
 {
   "performative": "accept_proposal",
@@ -209,14 +232,17 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 ```
 
 **Use Cases**:
+
 - Load balancing
 - Resource allocation
 - Service discovery
 
 ### 2.3 Blackboard Pattern
+
 **Purpose**: Shared workspace for collaborative problem-solving.
 
 **Implementation**:
+
 ```rust
 pub struct Blackboard {
     entries: HashMap<String, BlackboardEntry>,
@@ -248,23 +274,27 @@ impl Blackboard {
 ```
 
 **Use Cases**:
+
 - Collaborative planning
 - Shared state management
 - Knowledge accumulation
 
----
+______________________________________________________________________
 
 ## 3. Negotiation Patterns
 
 ### 3.1 Auction Pattern
+
 **Purpose**: Resource allocation through competitive bidding.
 
 **Types**:
+
 - **English Auction**: Ascending price
 - **Dutch Auction**: Descending price
 - **Vickrey Auction**: Sealed-bid, second-price
 
 **Example (English Auction)**:
+
 ```json
 // Auctioneer announces
 {
@@ -288,9 +318,11 @@ impl Blackboard {
 ```
 
 ### 3.2 Bargaining Pattern
+
 **Purpose**: Bilateral negotiation for mutual agreement.
 
 **Flow**:
+
 ```rust
 enum NegotiationState {
     Initial,
@@ -334,14 +366,16 @@ pub fn negotiate(initial_offer: Offer) -> Result<Agreement> {
 }
 ```
 
----
+______________________________________________________________________
 
 ## 4. Workflow Patterns
 
 ### 4.1 Pipeline Pattern
+
 **Purpose**: Sequential processing through agent chain.
 
 **Structure**:
+
 ```yaml
 pipeline:
   name: "data_processing"
@@ -357,6 +391,7 @@ pipeline:
 ```
 
 **Implementation**:
+
 ```rust
 pub async fn execute_pipeline(data: Data, pipeline: Pipeline) -> Result<Data> {
     let mut result = data;
@@ -370,9 +405,11 @@ pub async fn execute_pipeline(data: Data, pipeline: Pipeline) -> Result<Data> {
 ```
 
 ### 4.2 Scatter-Gather Pattern
+
 **Purpose**: Parallel processing with result aggregation.
 
 **Structure**:
+
 ```rust
 pub async fn scatter_gather<T>(
     task: Task,
@@ -394,14 +431,17 @@ pub async fn scatter_gather<T>(
 ```
 
 **Use Cases**:
+
 - Map-reduce operations
 - Distributed search
 - Parallel computation
 
 ### 4.3 Saga Pattern
+
 **Purpose**: Distributed transaction with compensation.
 
 **Implementation**:
+
 ```rust
 pub struct Saga {
     steps: Vec<SagaStep>,
@@ -439,14 +479,16 @@ impl Saga {
 }
 ```
 
----
+______________________________________________________________________
 
 ## 5. Resilience Patterns
 
 ### 5.1 Circuit Breaker Pattern
+
 **Purpose**: Prevent cascading failures.
 
 **Implementation**:
+
 ```rust
 pub struct CircuitBreaker {
     failure_threshold: u32,
@@ -489,9 +531,11 @@ impl CircuitBreaker {
 ```
 
 ### 5.2 Retry Pattern with Exponential Backoff
+
 **Purpose**: Handle transient failures.
 
 **Implementation**:
+
 ```rust
 pub async fn retry_with_backoff<F, T>(
     mut f: F,
@@ -518,9 +562,11 @@ where
 ```
 
 ### 5.3 Bulkhead Pattern
+
 **Purpose**: Isolate failures to prevent system-wide impact.
 
 **Implementation**:
+
 ```rust
 pub struct Bulkhead {
     semaphore: Arc<Semaphore>,
@@ -544,11 +590,12 @@ impl Bulkhead {
 }
 ```
 
----
+______________________________________________________________________
 
 ## Pattern Composition
 
 ### Combining Patterns
+
 Patterns can be composed for complex scenarios:
 
 ```rust
@@ -581,28 +628,34 @@ pub async fn resilient_scatter_gather(task: Task) -> Result<Vec<Output>> {
 ## Anti-Patterns to Avoid
 
 ### 1. Chatty Communication
-**Problem**: Excessive message exchanges for simple operations.
-**Solution**: Batch operations, use coarser-grained interfaces.
+
+**Problem**: Excessive message exchanges for simple operations. **Solution**:
+Batch operations, use coarser-grained interfaces.
 
 ### 2. Missing Correlation IDs
-**Problem**: Cannot track related messages in conversations.
-**Solution**: Always include `conversation_id` and use `reply_with`/`in_reply_to`.
+
+**Problem**: Cannot track related messages in conversations. **Solution**:
+Always include `conversation_id` and use `reply_with`/`in_reply_to`.
 
 ### 3. Unbounded Waits
-**Problem**: Waiting indefinitely for responses.
-**Solution**: Implement timeouts and fallback strategies.
+
+**Problem**: Waiting indefinitely for responses. **Solution**: Implement
+timeouts and fallback strategies.
 
 ### 4. Ignoring Failures
-**Problem**: Not handling `failure` or `not_understood` messages.
-**Solution**: Implement comprehensive error handling.
+
+**Problem**: Not handling `failure` or `not_understood` messages. **Solution**:
+Implement comprehensive error handling.
 
 ### 5. Synchronous Chains
-**Problem**: Sequential processing when parallelism is possible.
-**Solution**: Use Scatter-Gather or parallel patterns where applicable.
+
+**Problem**: Sequential processing when parallelism is possible. **Solution**:
+Use Scatter-Gather or parallel patterns where applicable.
 
 ## Testing Patterns
 
 ### Pattern Test Framework
+
 ```rust
 #[cfg(test)]
 mod pattern_tests {
@@ -636,21 +689,25 @@ mod pattern_tests {
 ## Performance Considerations
 
 ### Message Size Limits
+
 - Keep message payloads under 1MB
 - Use references for large data (store in shared storage)
 - Implement chunking for large transfers
 
 ### Throughput Optimization
+
 - Batch small messages
 - Use async patterns for I/O-bound operations
 - Implement connection pooling
 
 ### Latency Reduction
+
 - Minimize message hops
 - Cache frequently accessed data
 - Use regional agent deployment
 
 ## References
+
 - [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md)
 - [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md)
 - [Enterprise Integration Patterns](https://www.enterpriseintegrationpatterns.com/)

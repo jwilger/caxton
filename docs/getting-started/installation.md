@@ -1,6 +1,7 @@
 # Installation Guide
 
-Caxton is a standalone server application that orchestrates multi-agent systems. This guide covers all installation methods.
+Caxton is a standalone server application that orchestrates multi-agent systems.
+This guide covers all installation methods.
 
 ## System Requirements
 
@@ -18,6 +19,7 @@ curl -sSL https://caxton.io/install.sh | sh
 ```
 
 This script will:
+
 1. Detect your operating system and architecture
 2. Download the appropriate Caxton binary
 3. Install it to `/usr/local/bin`
@@ -221,7 +223,7 @@ sudo launchctl load /Library/LaunchDaemons/io.caxton.server.plist
 
 Ensure the following ports are accessible:
 
-- **8080**: Management API (gRPC/REST)
+- **8080**: REST Management API
 - **9090**: Metrics endpoint (Prometheus)
 
 ```bash
@@ -240,6 +242,7 @@ sudo firewall-cmd --reload
 ### Common Issues
 
 1. **Port already in use**
+
    ```bash
    # Check what's using the port
    sudo lsof -i :8080
@@ -248,12 +251,14 @@ sudo firewall-cmd --reload
    ```
 
 2. **Permission denied**
+
    ```bash
    # Ensure caxton binary is executable
    chmod +x /usr/local/bin/caxton
    ```
 
 3. **Service won't start**
+
    ```bash
    # Check logs
    journalctl -u caxton -f  # Linux

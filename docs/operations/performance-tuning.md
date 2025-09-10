@@ -1,18 +1,20 @@
 # Performance Tuning Guide
 
-This guide provides detailed instructions for optimizing Caxton performance. For performance targets and requirements, see [ADR-0017: Performance Requirements](../adr/0017-performance-requirements.md).
+This guide provides detailed instructions for optimizing Caxton performance. For
+performance targets and requirements, see
+[ADR-0017: Performance Requirements](../adr/0017-performance-requirements.md).
 
 ## Performance Targets
 
 Caxton is designed to meet these performance targets:
 
 | Metric | Target P50 | Target P99 | Measurement |
-|--------|------------|------------|-------------|
-| Local message routing | 100μs | 1ms | `caxton_routing_latency` |
-| Remote message routing | 5ms | 50ms | `caxton_remote_routing_latency` |
-| Agent startup | 10ms | 100ms | `caxton_agent_startup_time` |
-| Message processing | 1ms | 10ms | `caxton_message_processing_time` |
-| Gossip convergence | - | 5s | `caxton_gossip_convergence_time` |
+|--------|------------|------------|-------------| | Local message routing |
+100μs | 1ms | `caxton_routing_latency` | | Remote message routing | 5ms | 50ms |
+`caxton_remote_routing_latency` | | Agent startup | 10ms | 100ms |
+`caxton_agent_startup_time` | | Message processing | 1ms | 10ms |
+`caxton_message_processing_time` | | Gossip convergence | - | 5s |
+`caxton_gossip_convergence_time` |
 
 ## Quick Optimization Checklist
 
@@ -477,15 +479,18 @@ caxton profile trace --messages 1000 --output trace.json
 ### Issue: High Message Latency
 
 **Symptoms:**
+
 - P99 latency > 10ms
 - Message queue growing
 
 **Diagnosis:**
+
 ```bash
 caxton performance diagnose --issue high-latency
 ```
 
 **Solutions:**
+
 1. Increase worker threads
 2. Enable priority routing
 3. Reduce batch size
@@ -494,15 +499,18 @@ caxton performance diagnose --issue high-latency
 ### Issue: Memory Growth
 
 **Symptoms:**
+
 - Steadily increasing memory usage
 - OOM kills
 
 **Diagnosis:**
+
 ```bash
 caxton memory analyze --duration 1h
 ```
 
 **Solutions:**
+
 1. Enable message TTL
 2. Reduce agent pool size
 3. Increase cleanup frequency
@@ -511,15 +519,18 @@ caxton memory analyze --duration 1h
 ### Issue: Gossip Storm
 
 **Symptoms:**
+
 - High network traffic
 - Slow convergence
 
 **Diagnosis:**
+
 ```bash
 caxton cluster analyze-gossip
 ```
 
 **Solutions:**
+
 1. Increase gossip interval
 2. Reduce gossip fanout
 3. Tune suspicion multiplier

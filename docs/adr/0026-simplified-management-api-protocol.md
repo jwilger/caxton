@@ -1,10 +1,8 @@
----
-title: "0026. Simplified Management API Protocol"
-date: 2025-09-08
-status: accepted
-layout: adr
+______________________________________________________________________
+
+## title: "0026. Simplified Management API Protocol" date: 2025-09-08 status: accepted layout: adr
+
 categories: [Architecture, Technology]
----
 
 Date: 2025-09-08
 
@@ -33,11 +31,11 @@ infrastructure now appears unnecessary for our actual use case.
 
 ## Decision
 
-We will adopt a single REST/HTTP protocol for the management API, replacing
-the dual-protocol approach of ADR-0007.
+We will adopt a single REST/HTTP protocol for the management API, replacing the
+dual-protocol approach of ADR-0007.
 
-This decision prioritizes operational simplicity and debugging transparency
-over theoretical performance gains and polyglot support that our single-client
+This decision prioritizes operational simplicity and debugging transparency over
+theoretical performance gains and polyglot support that our single-client
 scenario does not require.
 
 ## Decision Drivers
@@ -78,8 +76,8 @@ scenario does not require.
 
 ### tarpc (Rust-native RPC)
 
-- Advantages: Elegant trait-based RPC, no protobuf compilation, excellent
-  type safety
+- Advantages: Elegant trait-based RPC, no protobuf compilation, excellent type
+  safety
 - Rejected because: Limited production evidence, binary protocol hinders
   debugging, smaller ecosystem
 
@@ -97,15 +95,15 @@ scenario does not require.
 
 ### Positive
 
-- **Operational Excellence**: Standard HTTP tools enable rapid incident
-  response
-- **Debugging Transparency**: JSON payloads inspectable with curl, browser
-  dev tools, proxies
-- **Ecosystem Compatibility**: Works with existing load balancers, API
-  gateways, monitoring tools
+- **Operational Excellence**: Standard HTTP tools enable rapid incident response
+- **Debugging Transparency**: JSON payloads inspectable with curl, browser dev
+  tools, proxies
+- **Ecosystem Compatibility**: Works with existing load balancers, API gateways,
+  monitoring tools
 - **Reduced Dependencies**: No protobuf compiler, no code generation pipeline
 - **Lower Barrier to Entry**: Any developer can understand and debug REST APIs
-- **Future Extensibility**: Natural path to browser dashboards or third-party integrations
+- **Future Extensibility**: Natural path to browser dashboards or third-party
+  integrations
 
 ### Negative
 
@@ -144,5 +142,6 @@ scenario does not require.
 ## References
 
 - Industry best practices favor boring technology for critical infrastructure
-- Bryan Cantrill: "The Paradox of Choice in Technology" - simpler is often better
+- Bryan Cantrill: "The Paradox of Choice in Technology" - simpler is often
+  better
 - Martin Fowler: "Richardson Maturity Model" - REST API design principles

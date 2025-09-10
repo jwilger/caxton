@@ -1,10 +1,6 @@
----
-title: "0004. Minimal Core Philosophy"
-date: 2025-07-31
-status: proposed
-layout: adr
-categories: [Architecture]
----
+______________________________________________________________________
+
+## title: "0004. Minimal Core Philosophy" date: 2025-07-31 status: proposed layout: adr categories: [Architecture]
 
 # 0004. Minimal Core Philosophy
 
@@ -17,12 +13,14 @@ Proposed
 ## Context
 
 Framework design faces constant pressure to add features:
+
 - Users request built-in workflow orchestration
 - Developers want automatic scaling and load balancing
 - Enterprises need complex permission systems
 - Everyone wants their specific use case supported in core
 
 This feature creep leads to:
+
 - Bloated APIs that are hard to learn
 - Rigid abstractions that don't fit all use cases
 - Performance overhead from unused features
@@ -31,32 +29,39 @@ This feature creep leads to:
 
 ## Decision
 
-Caxton will maintain a strictly minimal server design, providing only three core capabilities:
+Caxton will maintain a strictly minimal server design, providing only three core
+capabilities:
 
 1. **Agent Runtime**: WebAssembly-based isolation and execution
-2. **Message Router**: FIPA protocol implementation including Contract Net Protocol (CNP) for agent coordination
+2. **Message Router**: FIPA protocol implementation including Contract Net
+   Protocol (CNP) for agent coordination
 3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
 Everything else must be implemented as agents deployed to the server.
 
 This means explicitly NOT including:
+
 - Workflow orchestration languages
 - Built-in agent hierarchies or permissions
 - Message transformation or routing rules
-- Infrastructure-level consensus protocols (Raft, Paxos, PBFT) for distributed state agreement
+- Infrastructure-level consensus protocols (Raft, Paxos, PBFT) for distributed
+  state agreement
 - State management or persistence layers
 - Retry/circuit breaker policies
 - Event storage or databases
 
 ### Important Distinction: Agent Coordination vs Infrastructure Consensus
 
-Caxton DOES include FIPA agent coordination protocols like Contract Net Protocol (CNP) because:
+Caxton DOES include FIPA agent coordination protocols like Contract Net Protocol
+(CNP) because:
+
 - CNP is about task delegation and negotiation between agents
 - It's essential for multi-agent coordination
 - It operates at the application/business logic layer
 - It doesn't require distributed state agreement
 
 Caxton does NOT include infrastructure consensus protocols because:
+
 - These solve distributed state agreement problems
 - They add operational complexity
 - They're better handled by specialized systems (etcd, Consul)
@@ -91,24 +96,29 @@ Caxton does NOT include infrastructure consensus protocols because:
 ## Alternatives Considered
 
 ### Batteries-Included Framework
+
 - **Pros**: Everything works out of the box
 - **Cons**: Bloated, opinionated, hard to customize
 
 ### Plugin Architecture
+
 - **Pros**: Core stays small, extensions are modular
 - **Cons**: Plugin APIs become another thing to maintain
 
 ### Layered Architecture
+
 - **Pros**: Progressive disclosure of complexity
 - **Cons**: Layers create artificial boundaries
 
 ### Microkernel Pattern
+
 - **Pros**: Minimal core with services
 - **Cons**: Still prescribes an architecture
 
 ## Philosophical Alignment
 
 This decision aligns with successful minimal systems:
+
 - **Unix philosophy**: Small tools that do one thing well
 - **Plan 9**: Everything is a file (everything is an event)
 - **Erlang/OTP**: Simple server model, rich ecosystem
@@ -117,6 +127,7 @@ This decision aligns with successful minimal systems:
 ## Implementation Guidelines
 
 When evaluating new features, ask:
+
 1. Can this be implemented as an agent using the server's capabilities?
 2. Would adding this prevent other valid use cases?
 3. Is this essential for the server to function?

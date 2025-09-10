@@ -37,9 +37,9 @@ including:
 
 Before diving into any task, search for relevant knowledge:
 
-**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find relevant memories
-by content, context, or topic. The tool returns the most relevant stored
-knowledge based on semantic similarity.
+**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find relevant memories by
+content, context, or topic. The tool returns the most relevant stored knowledge
+based on semantic similarity.
 
 #### Example Memory Storage Scenarios
 
@@ -79,15 +79,17 @@ bacon check                         # Run cargo check continuously
 
 #### Bacon Integration Workflow (NON-NEGOTIABLE)
 
-1. **MANDATORY STARTUP**: The SPARC coordinator MUST start bacon at workflow beginning
+1. **MANDATORY STARTUP**: The SPARC coordinator MUST start bacon at workflow
+   beginning
    - Start with: `bacon --headless` using `run_in_background: true`
    - Capture the auto-assigned ID (e.g., `bash_1`)
    - **CRITICAL**: TDD cycle CANNOT function without bacon running
-2. **Pass bacon_id to ALL agents**: Every agent invocation MUST include the bacon_id
+2. **Pass bacon_id to ALL agents**: Every agent invocation MUST include the
+   bacon_id
    - Include in prompt: `bacon_id: bash_X` where X is the captured ID
    - Agents will error if bacon_id is not provided
-3. **Monitor bacon output**: Use BashOutput tool with bacon_id to check test results
-   and compilation feedback
+3. **Monitor bacon output**: Use BashOutput tool with bacon_id to check test
+   results and compilation feedback
 4. **React to failures immediately**: Address compilation errors and test
    failures as they occur
 5. **Look for expected failures**: During TDD, expect to see specific test
@@ -327,8 +329,8 @@ without team approval.
 - If build fails with warnings, FIX the warnings - don't suppress them
 - When facing extensive warnings, create a GitHub issue and systematic plan to
   address them
-- The only acceptable temporary measure is to create a focused story (like
-  Story 053) to address them systematically
+- The only acceptable temporary measure is to create a focused story (like Story
+  053\) to address them systematically
 
 **Exception Process (Rare):**
 
@@ -410,9 +412,9 @@ that includes:
 
 #### Search Strategy
 
-**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by
-meaning, context, or topic. The search returns relevant stored knowledge
-based on semantic similarity.
+**Semantic Search**: Use `mcp__qdrant__qdrant-find` to find memories by meaning,
+context, or topic. The search returns relevant stored knowledge based on
+semantic similarity.
 
 **Knowledge not stored is knowledge lost. This is not optional and will be
 enforced by the SPARC orchestrator.**
@@ -459,8 +461,8 @@ All GitHub comments from Claude Code include minimal attribution:
 [Direct, concise response]
 ```
 
-PRs created in **draft status only** - humans control ready-for-review.
-**NEVER modify PR status back to draft once a human has marked it ready-for-review.**
+PRs created in **draft status only** - humans control ready-for-review. **NEVER
+modify PR status back to draft once a human has marked it ready-for-review.**
 
 **PR descriptions must be concise** - 5-7 lines maximum, facts only, no
 self-congratulatory language.
@@ -473,10 +475,12 @@ threaded replies within review discussions.
 #### Mandatory Review Response Process
 
 1. **DELETE all existing top-level Claude comments first**
+
    - Use `gh api` to find and delete ALL issue comments from Claude
    - Only the PR description should remain at top level
 
 2. **FIX all issues BEFORE replying**
+
    - NEVER reply saying "will fix" or "working on it"
    - Complete ALL fixes, commit, and push FIRST
    - Only reply to confirm what was already done
@@ -498,12 +502,14 @@ threaded replies within review discussions.
    - Find thread IDs with `reviewThreads` query first
 
 4. **Reply format requirements**
+
    - State what was DONE, not what will be done
    - Reference specific commits where fixes were made
    - For suggestions you won't implement, explain why clearly
    - Keep replies concise and factual
 
 5. **Copilot vs Human review prioritization**
+
    - Human feedback MUST be addressed or explicitly declined with reasoning
    - Copilot suggestions can be declined if not applicable
    - Always fix issues from humans before responding
@@ -544,7 +550,8 @@ The SPARC coordinator's ONLY responsibilities are:
 1. **Start and manage bacon** - Launch `bacon --headless` with
    `run_in_background: true` at workflow start and capture the assigned ID
    (e.g., `bash_1`)
-2. **Pass bacon_id to ALL agents** - Include `bacon_id: bash_X` in every agent prompt
+2. **Pass bacon_id to ALL agents** - Include `bacon_id: bash_X` in every agent
+   prompt
 3. **Delegate to subagents** - Use the Task tool to invoke appropriate subagents
    for each phase
 4. **Relay information** - Pass outputs from one subagent to another as needed
@@ -666,6 +673,7 @@ completion at each TDD phase to prevent phantom claims.
    ```
 
 4. **Line Count Requirements**:
+
    - Minimum 3 lines of meaningful test code beyond `#[test]` attribute
    - Must contain actual assertions or panic conditions
    - No empty test bodies or placeholder comments
@@ -767,16 +775,19 @@ verify:**
 **The coordinator MUST detect and reject phantom claims:**
 
 1. **Empty Test Detection**:
+
    - Tests with only `#[test]` and empty body
    - Tests with only `todo!()` or `unimplemented!()`
    - Tests with only comments and no executable code
 
 2. **Phantom Implementation Detection**:
+
    - Claims of implementation without actual code changes
    - Implementation that doesn't address the failing tests
    - Copy-paste code without meaningful logic
 
 3. **False Refactoring Detection**:
+
    - Claims of refactoring without structural improvements
    - Cosmetic changes that don't improve code quality
    - Whitespace-only modifications

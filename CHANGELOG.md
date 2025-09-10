@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -47,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - correct ADR-0012 links to GitHub repository
 - correct Jekyll workflow to properly publish ADRs
 - add Jekyll front matter to ADRs for proper site publication
-- rename _adr to _adrs to match Jekyll collection config
+- rename \_adr to_adrs to match Jekyll collection config
 - add Jekyll front matter to SOURCE ADRs in docs/adr/
 - use consistent ADR title format in front matter
 - add logo to documentation pages and fix README logo path
@@ -83,12 +84,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - complete website redesign with enhanced UX and accessibility
 - dynamically fetch and display GitHub release information
 - add comprehensive development planning with 50 user stories
-- implement Story 001 - WebAssembly runtime with sandboxing ([#001](https://github.com/jwilger/caxton/pull/001))
+- implement Story 001 - WebAssembly runtime with sandboxing
+  ([#001](https://github.com/jwilger/caxton/pull/001))
 - implement Story 002 - Core Message Router with 236K msgs/sec performance
-- implement Story 003 - Agent Lifecycle Management with comprehensive WASM validation
+- implement Story 003 - Agent Lifecycle Management with comprehensive WASM
+  validation
 - implement comprehensive SPARC workflow with GitHub PR integration
 - add hook to prevent git commit --no-verify
-- implement comprehensive code quality enforcement ([#8](https://github.com/jwilger/caxton/pull/8))
+- implement comprehensive code quality enforcement
+  ([#8](https://github.com/jwilger/caxton/pull/8))
 
 ### Miscellaneous Tasks
 
@@ -124,22 +128,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-08-06
 
 ### Changed
+
 - Complete project restart with simplified foundation
 - Removed all previous implementation code
 - Established clean base for new development approach
 
 ### Added
+
 - Basic Rust project structure with Cargo.toml
 - Minimal main.rs entry point
 - Development environment configuration (flake.nix)
 - Claude Code and Claude Flow tools integration for AI-assisted development
 
 ### Fixed
+
 - Corrected rust toolchain target parameter in build workflow
 
 ## [0.1.0] - 2025-08-06
 
 ### Added
+
 - Initial release with comprehensive build and release automation
 - GitHub Actions workflows for CI/CD
 - Release automation with release-plz
@@ -149,11 +157,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive project documentation structure
 
 ### Documentation
+
 - README with project vision
 - SECURITY.md with vulnerability reporting process
 - Basic ARCHITECTURE.md placeholder
 - CONTRIBUTING.md guidelines
 
-[Unreleased]: https://github.com/jwilger/caxton/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/jwilger/caxton/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/jwilger/caxton/releases/tag/v0.1.0
+[0.1.1]: https://github.com/jwilger/caxton/compare/v0.1.0...v0.1.1
+[unreleased]: https://github.com/jwilger/caxton/compare/v0.1.1...HEAD

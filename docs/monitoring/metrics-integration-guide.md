@@ -1,12 +1,16 @@
 # Metrics Integration Guide
 
 ## Overview
-This guide documents Caxton's metrics aggregation and monitoring strategy using Prometheus and OpenTelemetry, ensuring comprehensive observability across all components.
+
+This guide documents Caxton's metrics aggregation and monitoring strategy using
+Prometheus and OpenTelemetry, ensuring comprehensive observability across all
+components.
 
 ## Architecture
 
 ### Metrics Pipeline
-```
+
+```text
 Agents → OpenTelemetry Collector → Prometheus → Grafana
                 ↓
           Alternative Backends
@@ -16,6 +20,7 @@ Agents → OpenTelemetry Collector → Prometheus → Grafana
 ## Prometheus Integration
 
 ### Configuration
+
 ```yaml
 # prometheus.yml
 global:
@@ -41,6 +46,7 @@ scrape_configs:
 ### Key Metrics
 
 #### Orchestrator Metrics
+
 ```rust
 // Core orchestrator metrics
 pub static MESSAGES_PROCESSED: Counter = Counter::new(
@@ -65,6 +71,7 @@ pub static AGENT_MEMORY_USAGE: Gauge = Gauge::new(
 ```
 
 #### Agent Metrics
+
 ```rust
 // Per-agent metrics
 pub static TASK_DURATION: Histogram = Histogram::new(
@@ -86,11 +93,13 @@ pub static AGENT_CPU_USAGE: Gauge = Gauge::new(
 ### Metric Labels and Cardinality
 
 #### Best Practices
+
 - Keep cardinality under control (< 10 label values per metric)
 - Use consistent label names across metrics
 - Avoid high-cardinality labels (user IDs, request IDs)
 
 #### Standard Labels
+
 ```rust
 pub struct StandardLabels {
     pub agent_id: String,      // Agent identifier
@@ -104,6 +113,7 @@ pub struct StandardLabels {
 ## OpenTelemetry Collector Configuration
 
 ### Collector Setup
+
 ```yaml
 # otel-collector-config.yaml
 receivers:
@@ -169,6 +179,7 @@ service:
 ### Core Dashboards
 
 #### System Overview Dashboard
+
 ```json
 {
   "dashboard": {
@@ -212,6 +223,7 @@ service:
 ```
 
 #### Agent Performance Dashboard
+
 ```json
 {
   "dashboard": {
@@ -249,6 +261,7 @@ service:
 ## Alert Rules
 
 ### Critical Alerts
+
 ```yaml
 groups:
   - name: caxton_critical
@@ -281,6 +294,7 @@ groups:
 ```
 
 ### Performance Alerts
+
 ```yaml
 groups:
   - name: caxton_performance
@@ -308,6 +322,7 @@ groups:
 ## Custom Metrics Implementation
 
 ### Adding New Metrics
+
 ```rust
 use prometheus::{register_counter, register_histogram, register_gauge};
 
@@ -324,6 +339,7 @@ CUSTOM_METRIC.inc();
 ```
 
 ### Metric Types Guide
+
 - **Counter**: For monotonically increasing values (requests, errors)
 - **Gauge**: For values that go up and down (memory, connections)
 - **Histogram**: For distributions (latency, sizes)
@@ -332,6 +348,7 @@ CUSTOM_METRIC.inc();
 ## Backend Alternatives
 
 ### Datadog Integration
+
 ```yaml
 # For Datadog backend
 exporters:
@@ -343,6 +360,7 @@ exporters:
 ```
 
 ### New Relic Integration
+
 ```yaml
 # For New Relic backend
 exporters:
@@ -352,6 +370,7 @@ exporters:
 ```
 
 ### CloudWatch Integration
+
 ```yaml
 # For AWS CloudWatch
 exporters:
@@ -363,12 +382,14 @@ exporters:
 ## Performance Considerations
 
 ### Metric Collection Overhead
+
 - Keep scrape intervals reasonable (15-30s for most metrics)
 - Use histograms sparingly (higher storage cost)
 - Batch metric updates where possible
 - Consider sampling for high-volume metrics
 
 ### Storage and Retention
+
 ```yaml
 # Prometheus storage configuration
 storage:
@@ -380,6 +401,7 @@ storage:
 ```
 
 ### Query Optimization
+
 - Use recording rules for expensive queries
 - Implement query result caching
 - Optimize label cardinality
@@ -390,6 +412,7 @@ storage:
 ### Common Problems and Solutions
 
 #### Missing Metrics
+
 ```bash
 # Check if metrics endpoint is accessible
 curl http://localhost:9090/metrics
@@ -402,6 +425,7 @@ docker logs otel-collector
 ```
 
 #### High Cardinality
+
 ```promql
 # Find high cardinality metrics
 count by (__name__)({__name__=~".+"})
@@ -411,6 +435,7 @@ count by (label_name) (metric_name)
 ```
 
 #### Performance Issues
+
 ```bash
 # Profile Prometheus
 curl http://localhost:9090/debug/pprof/profile?seconds=30 > profile.pb.gz
@@ -430,6 +455,7 @@ curl http://localhost:9090/api/v1/tsdb_status
 7. **Regular cleanup** - Remove unused metrics and dashboards
 
 ## References
+
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/)
 - [OpenTelemetry Collector Docs](https://opentelemetry.io/docs/collector/)
 - [Grafana Dashboard Best Practices](https://grafana.com/docs/grafana/latest/best-practices/)

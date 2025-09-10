@@ -1,28 +1,270 @@
 # Operational Runbook
 
-This runbook provides step-by-step procedures for operating Caxton in production.
+This runbook provides step-by-step procedures for operating Caxton in
+production.
 
 ## Quick Reference
 
-| Situation | Command | Page |
-|-----------|---------|------|
-| Node down | `caxton cluster members` | [Node Failure](#node-failure) |
-| High latency | `caxton cluster performance` | [Performance Issues](#performance-degradation) |
-| Network partition | `caxton cluster detect-partition` | [Partition Handling](#network-partition) |
-| Upgrade cluster | `caxton cluster upgrade` | [Rolling Upgrade](#rolling-upgrade) |
-| Emergency stop | `caxton emergency stop` | [Emergency Procedures](#emergency-procedures) |
+| Situation | Command | Page | |-----------|---------|------| | Server not
+responding | `curl http://localhost:8080/api/v1/health` |
+[REST API Health](#rest-api-health-checks) | | Deploy agent via API |
+`curl -X POST /api/v1/agents` | [Agent Deployment](#rest-api-agent-deployment) |
+| List deployed agents | `curl /api/v1/agents` |
+[Agent Management](#rest-api-agent-management) | | Node down |
+`caxton cluster members` | [Node Failure](#node-failure) | | High latency |
+`caxton cluster performance` | [Performance Issues](#performance-degradation) |
+| Network partition | `caxton cluster detect-partition` |
+[Partition Handling](#network-partition) | | Upgrade cluster |
+`caxton cluster upgrade` | [Rolling Upgrade](#rolling-upgrade) | | Emergency
+stop | `caxton emergency stop` | [Emergency Procedures](#emergency-procedures) |
+
+## REST API Operations (Story 006 - Current Implementation)
+
+### REST API Health Checks
+
+**Purpose**: Verify REST API server is running and responsive
+
+#### Basic Health Check
+
+```bash
+# Check if API is responding
+curl http://localhost:8080/api/v1/health
+
+# Expected response:
+# {"status":"healthy"}
+
+# Automated monitoring script
+#!/bin/bash
+while true; do
+    if curl -f -s http://localhost:8080/api/v1/health > /dev/null; then
+        echo "$(date): API healthy"
+    else
+        echo "$(date): API DOWN - alerting..."
+        # Send alert via your monitoring system
+    fi
+    sleep 30
+done
+```
+
+#### Troubleshooting API Issues
+
+```bash
+# If health check fails:
+
+# 1. Check if server process is running
+ps aux | grep caxton
+
+# 2. Check if port 8080 is listening
+netstat -tlnp | grep 8080
+
+# 3. Check server logs
+tail -f /var/log/caxton/caxton.log
+
+# 4. Restart server if needed
+cargo run --release
+# OR with systemd:
+systemctl restart caxton
+```
+
+### REST API Agent Deployment
+
+**Purpose**: Deploy WebAssembly agents via REST API
+
+#### Deploy Agent
+
+```bash
+# Basic deployment
+curl -X POST http://localhost:8080/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "production-agent-1",
+    "wasm_module": "AGFzbQEAAAA=",
+    "resource_limits": {
+      "max_memory_bytes": 10485760,
+      "max_fuel": 1000000,
+      "max_execution_time_ms": 5000
+    }
+  }'
+
+# Deploy with error handling
+deploy_agent() {
+    local AGENT_NAME=$1
+    local RESPONSE=$(curl -s -w "\n%{http_code}" \
+      -X POST http://localhost:8080/api/v1/agents \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"name\": \"$AGENT_NAME\",
+        \"wasm_module\": \"AGFzbQEAAAA=\",
+        \"resource_limits\": {
+          \"max_memory_bytes\": 10485760,
+          \"max_fuel\": 1000000,
+          \"max_execution_time_ms\": 5000
+        }
+      }")
+
+    local HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+    local BODY=$(echo "$RESPONSE" | head -n-1)
+
+    if [ "$HTTP_CODE" -eq 201 ]; then
+        echo "Agent deployed successfully:"
+        echo "$BODY" | jq '.'
+    else
+        echo "Deployment failed with code $HTTP_CODE:"
+        echo "$BODY" | jq '.'
+        return 1
+    fi
+}
+
+# Usage
+deploy_agent "my-agent"
+```
+
+#### Common Deployment Errors
+
+| Error | Cause | Solution | |-------|-------|----------| | 400 Bad Request |
+Empty agent name | Provide non-empty name (1-64 chars) | | 400 Bad Request |
+Zero resource limits | Set all limits > 0 | | 400 Bad Request | Malformed JSON |
+Validate JSON syntax | | 404 Not Found | Wrong endpoint | Use `/api/v1/agents`
+exactly |
+
+### REST API Agent Management
+
+**Purpose**: Monitor and manage deployed agents
+
+#### List All Agents
+
+```bash
+# Get all deployed agents
+curl http://localhost:8080/api/v1/agents | jq '.'
+
+# Count deployed agents
+AGENT_COUNT=$(curl -s http://localhost:8080/api/v1/agents | jq '. | length')
+echo "Total agents: $AGENT_COUNT"
+
+# Monitor agent deployments
+watch -n 5 'curl -s http://localhost:8080/api/v1/agents | jq ".[].name"'
+```
+
+#### Get Agent Details
+
+```bash
+# Get specific agent
+AGENT_ID="550e8400-e29b-41d4-a716-446655440000"
+curl http://localhost:8080/api/v1/agents/$AGENT_ID | jq '.'
+
+# Check if agent exists
+check_agent() {
+    local AGENT_ID=$1
+    if curl -f -s http://localhost:8080/api/v1/agents/$AGENT_ID \
+      > /dev/null; then
+        echo "Agent $AGENT_ID exists"
+        return 0
+    else
+        echo "Agent $AGENT_ID not found"
+        return 1
+    fi
+}
+```
+
+### REST API Production Limitations
+
+**Current implementation (Story 006) has these limitations:**
+
+1. **No Authentication**:
+
+   - Run only in trusted networks
+   - Use reverse proxy with auth (nginx/Apache)
+
+2. **No Agent Lifecycle Control**:
+
+   - Cannot stop/update agents via API
+   - Requires server restart for changes
+
+3. **No Rate Limiting**:
+
+   - Implement at proxy layer
+   - Monitor for abuse
+
+4. **Basic Error Handling**:
+
+   - Only 400 and 404 errors implemented
+   - No retry mechanisms
+
+### REST API Security Hardening
+
+Until authentication is implemented:
+
+```bash
+# 1. Restrict to localhost only
+# In your reverse proxy config:
+location /api/v1/ {
+    allow 127.0.0.1;
+    deny all;
+    proxy_pass http://localhost:8080;
+}
+
+# 2. Add basic auth at proxy layer
+htpasswd -c /etc/nginx/.htpasswd caxton-admin
+
+# nginx config:
+location /api/v1/ {
+    auth_basic "Caxton API";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+    proxy_pass http://localhost:8080;
+}
+
+# 3. Rate limit at proxy
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+
+location /api/v1/ {
+    limit_req zone=api burst=20;
+    proxy_pass http://localhost:8080;
+}
+```
 
 ## Initial Setup
 
 ### Prerequisites Checklist
 
-- [ ] TLS certificates generated
-- [ ] Network ports open (8080, 7946, 9090)
+- [ ] Rust toolchain installed (for REST API server)
+- [ ] TLS certificates generated (for future clustering)
+- [ ] Network ports open (8080 for REST API, 7946, 9090)
 - [ ] Storage directories created
 - [ ] Configuration files in place
 - [ ] Monitoring endpoints configured
 
 ### First-Time Bootstrap
+
+#### REST API Server (Current - Story 006)
+
+```bash
+#!/bin/bash
+# Start REST API server
+
+# 1. Build the server
+cargo build --release
+
+# 2. Run the server
+./target/release/caxton
+
+# 3. Verify it's running
+curl http://localhost:8080/api/v1/health
+
+# 4. Deploy first agent
+curl -X POST http://localhost:8080/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bootstrap-agent",
+    "wasm_module": "AGFzbQEAAAA=",
+    "resource_limits": {
+      "max_memory_bytes": 10485760,
+      "max_fuel": 1000000,
+      "max_execution_time_ms": 5000
+    }
+  }'
+```
+
+#### Future Cluster Bootstrap (Not Yet Implemented)
 
 ```bash
 #!/bin/bash
@@ -53,6 +295,7 @@ caxton server start --bootstrap --config /etc/caxton/config.yaml
 ### Node Failure
 
 #### Detection
+
 ```bash
 # Check node status
 caxton cluster members
@@ -63,6 +306,7 @@ node-2     suspect   45s ago      38
 ```
 
 #### Diagnosis
+
 ```bash
 # 1. Try to ping the node
 ping node-2.example.com
@@ -78,6 +322,7 @@ ssh node-2 'tail -100 /var/log/caxton/caxton.log'
 ```
 
 #### Recovery
+
 ```bash
 # Option 1: Restart the service
 ssh node-2 'systemctl restart caxton'
@@ -93,6 +338,7 @@ caxton cluster remove --node node-2 --force
 ### Performance Degradation
 
 #### Detection
+
 ```bash
 # Check performance metrics
 caxton cluster performance
@@ -103,6 +349,7 @@ Message routing P99   1ms       12.3ms    ✗ DEGRADED
 ```
 
 #### Diagnosis
+
 ```bash
 # 1. Check message queue depth
 caxton queue stats
@@ -120,6 +367,7 @@ caxton resources
 ```
 
 #### Mitigation
+
 ```bash
 # 1. Suspend slow agents
 caxton agent suspend processor-5
@@ -137,6 +385,7 @@ caxton queue drain --timeout 60s
 ### Network Partition
 
 #### Detection
+
 ```bash
 # Check for partitions
 caxton cluster detect-partition
@@ -150,6 +399,7 @@ Partition B: [node-3] (minority)
 #### During Partition
 
 **On Majority Side:**
+
 ```bash
 # Verify majority status
 caxton cluster status
@@ -160,6 +410,7 @@ caxton cluster status
 ```
 
 **On Minority Side:**
+
 ```bash
 # Check degraded mode
 caxton cluster status
@@ -172,6 +423,7 @@ watch -n 5 'caxton queue stats'
 ```
 
 #### Healing Partition
+
 ```bash
 # 1. Fix network issue
 # (resolve firewall/routing/dns problem)
@@ -194,12 +446,14 @@ caxton cluster verify
 ### Rolling Upgrade
 
 #### Pre-Upgrade Checklist
+
 - [ ] Backup completed
 - [ ] Upgrade tested in staging
 - [ ] Rollback plan documented
 - [ ] Maintenance window scheduled
 
 #### Upgrade Process
+
 ```bash
 # 1. Start upgrade coordinator
 caxton cluster upgrade start --version v1.2.0
@@ -225,6 +479,7 @@ caxton cluster upgrade rollback
 ### Backup and Recovery
 
 #### Scheduled Backup
+
 ```bash
 # Create full backup
 caxton backup create \
@@ -237,6 +492,7 @@ caxton backup verify --id backup-20240115-0200
 ```
 
 #### Recovery from Backup
+
 ```bash
 # 1. Stop cluster
 caxton cluster stop --all
@@ -271,6 +527,7 @@ caxton cluster rolling-restart --reason cert-rotation
 ## Emergency Procedures
 
 ### Emergency Stop
+
 ```bash
 # Stop all agents immediately
 caxton emergency stop --all-agents
@@ -283,6 +540,7 @@ caxton emergency stop --preserve-state --dump-to /backup/emergency/
 ```
 
 ### Data Corruption Recovery
+
 ```bash
 # 1. Identify corrupted node
 caxton cluster verify --deep
@@ -300,6 +558,7 @@ caxton cluster rejoin --node node-2
 ```
 
 ### Memory Exhaustion
+
 ```bash
 # 1. Identify memory usage
 caxton memory stats
@@ -343,7 +602,8 @@ curl -s localhost:9090/metrics | grep caxton_system_
 
 #### Critical Alerts
 
-**Cluster Split Brain**
+##### Cluster Split Brain
+
 ```bash
 # Immediate response
 caxton cluster detect-partition --resolve-strategy manual
@@ -355,7 +615,8 @@ caxton cluster compare-state
 caxton cluster resolve-partition --prefer majority
 ```
 
-**Agent Storm (Cascading Failures)**
+##### Agent Storm (Cascading Failures)
+
 ```bash
 # Stop cascade
 caxton circuit-breaker activate --all
@@ -390,13 +651,13 @@ caxton config diff --baseline /etc/caxton/config.yaml
 
 ### Common Issues
 
-| Symptom | Likely Cause | Solution |
-|---------|--------------|----------|
-| Agents not discovered | Gossip not converging | Check network, increase gossip_interval |
-| High memory usage | Message queue backlog | Check slow agents, increase throughput |
-| Cluster won't form | mTLS mismatch | Verify certificates on all nodes |
-| Degraded performance | Resource exhaustion | Add nodes or reduce agent count |
-| Messages lost | Partition during write | Check partition logs, replay from queue |
+| Symptom | Likely Cause | Solution | |---------|--------------|----------| |
+Agents not discovered | Gossip not converging | Check network, increase
+gossip_interval | | High memory usage | Message queue backlog | Check slow
+agents, increase throughput | | Cluster won't form | mTLS mismatch | Verify
+certificates on all nodes | | Degraded performance | Resource exhaustion | Add
+nodes or reduce agent count | | Messages lost | Partition during write | Check
+partition logs, replay from queue |
 
 ## Best Practices
 

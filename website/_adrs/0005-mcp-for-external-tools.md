@@ -1,10 +1,6 @@
----
-title: "0005. MCP for External Tools"
-date: 2025-07-31
-status: proposed
-layout: adr
-categories: [Technology]
----
+______________________________________________________________________
+
+## title: "0005. MCP for External Tools" date: 2025-07-31 status: proposed layout: adr categories: [Technology]
 
 # 0005. MCP for External Tools
 
@@ -17,13 +13,16 @@ Proposed
 ## Context
 
 Agents need to interact with the external world:
+
 - Query databases and APIs
 - Read and write files
 - Send emails and notifications
 - Call LLM services
 - Execute system commands
 
-We need a standardized way for agents to access these capabilities while maintaining:
+We need a standardized way for agents to access these capabilities while
+maintaining:
+
 - Security: Agents can only access approved tools
 - Observability: All tool usage is recorded as events
 - Portability: Same agent code works in different environments
@@ -31,9 +30,11 @@ We need a standardized way for agents to access these capabilities while maintai
 
 ## Decision
 
-We will use the Model Context Protocol (MCP) as the standard interface for agents to access external tools and resources.
+We will use the Model Context Protocol (MCP) as the standard interface for
+agents to access external tools and resources.
 
 Key aspects:
+
 - Tools are exposed to agents as MCP servers
 - Agents make tool requests through a standard API
 - The host manages tool authentication and authorization
@@ -68,18 +69,22 @@ Key aspects:
 ## Alternatives Considered
 
 ### Direct Function Calls
+
 - **Pros**: Simple, fast
 - **Cons**: No isolation, security risks, couples agents to host
 
 ### Custom Tool Protocol
+
 - **Pros**: Optimized for our use case
 - **Cons**: Another protocol to design and maintain, no ecosystem
 
 ### GraphQL/REST APIs
+
 - **Pros**: Familiar to developers
 - **Cons**: Not designed for tool discovery and invocation
 
 ### WASI (WebAssembly System Interface)
+
 - **Pros**: Standard for WASM system access
 - **Cons**: Limited to system calls, not general tools
 

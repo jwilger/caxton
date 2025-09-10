@@ -1,8 +1,7 @@
 # REST API Implementation Status
 
-**Last Updated**: 2025-01-14
-**Story**: 006 - REST Management API
-**Status**: MINIMAL VIABLE IMPLEMENTATION
+**Last Updated**: 2025-01-14 **Story**: 006 - REST Management API **Status**:
+MINIMAL VIABLE IMPLEMENTATION
 
 ## Overview
 
@@ -14,13 +13,9 @@ remains to be implemented.
 ## Implementation Summary
 
 | Category | Implemented | Planned | Coverage |
-|----------|------------|---------|----------|
-| Agent Management | 4 | 8 | 50% |
-| Message API | 0 | 3 | 0% |
-| Task API | 0 | 3 | 0% |
-| Deployment API | 0 | 3 | 0% |
-| Metrics API | 0 | 2 | 0% |
-| **Total** | **4** | **19** | **21%** |
+|----------|------------|---------|----------| | Agent Management | 4 | 8 | 50%
+| | Message API | 0 | 3 | 0% | | Task API | 0 | 3 | 0% | | Deployment API | 0 |
+3 | 0% | | Metrics API | 0 | 2 | 0% | | **Total** | **4** | **19** | **21%** |
 
 ## Implemented Endpoints (Production Ready)
 
@@ -167,13 +162,9 @@ All endpoints return consistent error responses:
 
 ## HTTP Status Codes
 
-| Code | Usage |
-|------|-------|
-| 200 | Success (GET requests) |
-| 201 | Created (POST requests) |
-| 400 | Validation errors, malformed requests |
-| 404 | Resource not found |
-| 500 | Internal server error (not yet implemented) |
+| Code | Usage | |------|-------| | 200 | Success (GET requests) | | 201 |
+Created (POST requests) | | 400 | Validation errors, malformed requests | | 404
+| Resource not found | | 500 | Internal server error (not yet implemented) |
 
 ## Testing Coverage
 
@@ -190,16 +181,19 @@ All endpoints return consistent error responses:
 For teams adopting the current implementation:
 
 1. **Phase 1** (Current): Use for development and testing
+
    - Deploy simple agents via REST API
    - Monitor health via `/api/v1/health`
    - List and inspect deployed agents
 
 2. **Phase 2** (Next): Add authentication layer
+
    - Implement reverse proxy with auth
    - Add API key validation
    - Enable TLS termination
 
 3. **Phase 3** (Future): Full lifecycle management
+
    - Agent updates and removal
    - Hot reload capabilities
    - Message routing APIs
@@ -230,6 +224,9 @@ For teams adopting the current implementation:
 ## Related Documentation
 
 - [API Reference](../developer-guide/api-reference.md) - Full API specification
-- [Quick Start Guide](../getting-started/rest-api-quickstart.md) - Practical examples
-- [ADR-0026](../adr/0026-simplified-management-api-protocol.md) - REST-only decision
-- [ADR-0027](../adr/0027-single-codebase-architecture.md) - Unified codebase approach
+- [Quick Start Guide](../getting-started/rest-api-quickstart.md) - Practical
+  examples
+- [ADR-0026](../adr/0026-simplified-management-api-protocol.md) - REST-only
+  decision
+- [ADR-0027](../adr/0027-single-codebase-architecture.md) - Unified codebase
+  approach

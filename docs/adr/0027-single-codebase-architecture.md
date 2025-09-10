@@ -1,10 +1,8 @@
----
-title: "0027. Single Codebase Architecture"
-date: 2025-09-08
-status: accepted
-layout: adr
+______________________________________________________________________
+
+## title: "0027. Single Codebase Architecture" date: 2025-09-08 status: accepted layout: adr
+
 categories: [Architecture, Organization]
----
 
 Date: 2025-09-08
 
@@ -17,8 +15,8 @@ Accepted
 The Caxton system consists of two primary components: the server process that
 hosts and orchestrates agents, and the CLI client that administrators use to
 manage the system. A fundamental architectural decision is whether these
-components should be maintained in separate repositories or combined in a
-single codebase.
+components should be maintained in separate repositories or combined in a single
+codebase.
 
 This decision impacts:
 
@@ -35,8 +33,8 @@ reconsider this convention.
 
 ## Decision
 
-We will maintain both the Caxton server and CLI client in a single codebase
-as a unified Rust project with multiple binary targets.
+We will maintain both the Caxton server and CLI client in a single codebase as a
+unified Rust project with multiple binary targets.
 
 This monorepo approach prioritizes development velocity, type safety, and
 operational simplicity over the theoretical benefits of separation that do not
@@ -113,7 +111,8 @@ apply to our single-client scenario.
 - **Build Time**: Changes to shared code trigger rebuilds of both binaries
 - **Version Lock-step**: Cannot deploy server and client independently
 - **Potential Bloat**: Client binary includes server dependencies and vice versa
-- **Future Splitting Cost**: Separating later would require significant refactoring
+- **Future Splitting Cost**: Separating later would require significant
+  refactoring
 
 ### Risk Mitigation
 

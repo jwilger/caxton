@@ -26,7 +26,10 @@
 
 ## Overview
 
-Caxton is a multi-agent orchestration platform that prioritizes security through WebAssembly isolation, FIPA protocol validation, and comprehensive observability. This document outlines our security practices, vulnerability reporting procedures, and security guarantees.
+Caxton is a multi-agent orchestration platform that prioritizes security through
+WebAssembly isolation, FIPA protocol validation, and comprehensive
+observability. This document outlines our security practices, vulnerability
+reporting procedures, and security guarantees.
 
 ## Security Architecture
 
@@ -34,10 +37,13 @@ Caxton is a multi-agent orchestration platform that prioritizes security through
 
 Caxton uses WebAssembly (WASM) as a fundamental security boundary:
 
-- **Memory Isolation**: Each agent runs in a separate WASM instance with isolated linear memory
-- **Resource Limits**: Configurable memory and CPU time limits prevent resource exhaustion
+- **Memory Isolation**: Each agent runs in a separate WASM instance with
+  isolated linear memory
+- **Resource Limits**: Configurable memory and CPU time limits prevent resource
+  exhaustion
 - **System Call Restrictions**: WASM sandbox prevents direct system access
-- **Capability-Based Security**: Agents can only access explicitly granted capabilities
+- **Capability-Based Security**: Agents can only access explicitly granted
+  capabilities
 
 ```rust
 // Example: Strict isolation configuration for production
@@ -53,8 +59,10 @@ IsolationConfig::strict() {
 
 All inter-agent communication uses validated FIPA messages:
 
-- **Message Validation**: All messages are parsed and validated before processing
-- **Conversation Tracking**: Deterministic conversation IDs prevent replay attacks
+- **Message Validation**: All messages are parsed and validated before
+  processing
+- **Conversation Tracking**: Deterministic conversation IDs prevent replay
+  attacks
 - **Content Sanitization**: Message content is sanitized based on content type
 - **Size Limits**: Messages have configurable size limits to prevent DoS attacks
 
@@ -69,7 +77,8 @@ All inter-agent communication uses validated FIPA messages:
 
 ### Agent Isolation
 
-1. **Memory Safety**: Agents cannot access each other's memory or host system memory
+1. **Memory Safety**: Agents cannot access each other's memory or host system
+   memory
 2. **Resource Limits**: Agents cannot consume more resources than allocated
 3. **System Boundaries**: Agents cannot make unauthorized system calls
 4. **Network Isolation**: Agents cannot make unauthorized network connections
@@ -77,14 +86,17 @@ All inter-agent communication uses validated FIPA messages:
 ### Message Security
 
 1. **Validation**: All messages are validated against FIPA protocol standards
-2. **Integrity**: Message integrity is maintained through the entire processing pipeline
-3. **Authentication**: Message senders are authenticated through agent lifecycle management
+2. **Integrity**: Message integrity is maintained through the entire processing
+   pipeline
+3. **Authentication**: Message senders are authenticated through agent lifecycle
+   management
 4. **Non-repudiation**: All messages are logged with sender identification
 
 ### Platform Security
 
 1. **Least Privilege**: Components run with minimal required privileges
-2. **Defense in Depth**: Multiple security layers prevent single points of failure
+2. **Defense in Depth**: Multiple security layers prevent single points of
+   failure
 3. **Fail-Safe Defaults**: Secure defaults are used throughout the system
 4. **Security Monitoring**: Continuous monitoring detects security anomalies
 
@@ -111,13 +123,17 @@ All inter-agent communication uses validated FIPA messages:
 ### Development Security
 
 - **Secure Coding**: Rust memory safety prevents common vulnerability classes
-- **Dependency Management**: All dependencies are audited for known vulnerabilities using `cargo-deny`
-- **Static Analysis**: Code is analyzed with Clippy and additional security lints
-- **Testing**: Comprehensive security testing including fuzzing and property-based tests
+- **Dependency Management**: All dependencies are audited for known
+  vulnerabilities using `cargo-deny`
+- **Static Analysis**: Code is analyzed with Clippy and additional security
+  lints
+- **Testing**: Comprehensive security testing including fuzzing and
+  property-based tests
 
 #### Cargo-Deny Integration
 
-[Cargo-deny](https://github.com/EmbarkStudios/cargo-deny) provides comprehensive dependency security validation:
+[Cargo-deny](https://github.com/EmbarkStudios/cargo-deny) provides comprehensive
+dependency security validation:
 
 ```bash
 # Install cargo-deny for security auditing
@@ -133,14 +149,17 @@ cargo deny check bans          # Dependency policies
 cargo deny check sources       # Supply chain security
 ```
 
-**Security Policy Configuration:**
-Our `deny.toml` configuration enforces:
-- **Zero tolerance for vulnerabilities** in runtime dependencies (enhanced beyond cargo audit)
+**Security Policy Configuration:** Our `deny.toml` configuration enforces:
+
+- **Zero tolerance for vulnerabilities** in runtime dependencies (enhanced
+  beyond cargo audit)
 - **Approved license whitelist** for enterprise compliance
 - **Supply chain validation** restricting to crates.io registry
 - **Dependency hygiene** warnings for multiple versions and maintenance status
 
-**Migration from cargo audit**: We've evolved from basic `cargo audit` vulnerability checking to comprehensive `cargo deny` policy enforcement for enterprise-grade security validation.
+**Migration from cargo audit**: We've evolved from basic `cargo audit`
+vulnerability checking to comprehensive `cargo deny` policy enforcement for
+enterprise-grade security validation.
 
 See [deny.toml](deny.toml) for complete configuration details.
 
@@ -148,7 +167,8 @@ See [deny.toml](deny.toml) for complete configuration details.
 
 - **Reproducible Builds**: Container images are built reproducibly with SBOMs
 - **Supply Chain Security**: All dependencies are verified and pinned
-- **Container Hardening**: Containers run as non-root with minimal attack surface
+- **Container Hardening**: Containers run as non-root with minimal attack
+  surface
 - **Image Scanning**: Container images are scanned for vulnerabilities
 
 ### Runtime Security
@@ -164,31 +184,38 @@ See [deny.toml](deny.toml) for complete configuration details.
 
 We provide security updates for the following versions:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+| Version | Supported | | ------- | ------------------ | | 0.1.x |
+:white_check_mark: | | < 0.1 | :x: |
 
 ### Reporting Security Vulnerabilities
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them by emailing john+caxton-security-report@johnwilger.com or through GitHub's private vulnerability reporting feature (preferred).
+Instead, please report them by emailing
+john+caxton-security-report@johnwilger.com or through GitHub's private
+vulnerability reporting feature (preferred).
 
-For automated vulnerability reporting, see our [security.txt file](.well-known/security.txt) which follows [RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards.
+For automated vulnerability reporting, see our
+[security.txt file](.well-known/security.txt) which follows
+[RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards.
 
 #### Security.txt Implementation
 
 Our security.txt provides machine-readable security contact information:
 
-- **Primary Contact**: `john+caxton-security-report@johnwilger.com` for vulnerability reports
-- **Policy Location**: Comprehensive disclosure guidelines at `https://jwilger.github.io/caxton/security/policy`
-- **Acknowledgments**: Public recognition for responsible disclosure at `https://jwilger.github.io/caxton/security/acknowledgments`
+- **Primary Contact**: `john+caxton-security-report@johnwilger.com` for
+  vulnerability reports
+- **Policy Location**: Comprehensive disclosure guidelines at
+  `https://jwilger.github.io/caxton/security/policy`
+- **Acknowledgments**: Public recognition for responsible disclosure at
+  `https://jwilger.github.io/caxton/security/acknowledgments`
 - **Expiration**: Annual renewal required (expires 2025-12-31)
 - **Language**: English for fastest response times
 
 **Best Practices Implemented:**
-- Located at both `/.well-known/security.txt` and `/security.txt` for discoverability
+
+- Located at both `/.well-known/security.txt` and `/security.txt` for
+  discoverability
 - Signed with PGP key for authenticity (planned)
 - Regular expiration updates to ensure current contact information
 - Clear scope definition in linked policy document
@@ -210,23 +237,27 @@ When reporting a vulnerability, please include:
 ### Severity Classification
 
 #### Critical (Fix within 24 hours)
+
 - Remote code execution
 - Authentication bypass
 - Data exfiltration
 - Complete system compromise
 
 #### High (Fix within 1 week)
+
 - Privilege escalation
 - Denial of service
 - Information disclosure
 - Security control bypass
 
 #### Medium (Fix within 1 month)
+
 - Less severe information disclosure
 - Limited privilege escalation
 - Security feature weakness
 
 #### Low (Fix in next release)
+
 - Security hardening opportunities
 - Defense-in-depth improvements
 - Minor information leaks
@@ -246,7 +277,8 @@ When reporting a vulnerability, please include:
 
 Our CI/CD pipeline includes:
 
-- **Security Audit**: `cargo deny check` provides comprehensive dependency validation
+- **Security Audit**: `cargo deny check` provides comprehensive dependency
+  validation
 - **Vulnerability Database**: Automated checks against RustSec Advisory Database
 - **License Compliance**: Automated license compatibility verification
 - **Supply Chain Security**: Registry and source validation
@@ -270,7 +302,9 @@ Every pull request triggers security validation:
   run: cargo deny check licenses
 ```
 
-See [.github/workflows/](https://github.com/jwilger/caxton/tree/main/.github/workflows) for complete CI configuration.
+See
+[.github/workflows/](https://github.com/jwilger/caxton/tree/main/.github/workflows)
+for complete CI configuration.
 
 ### Manual Testing
 
@@ -283,23 +317,33 @@ Regular manual security testing includes:
 
 ### Bug Bounty Program
 
-We are planning to launch a bug bounty program. Details will be announced on our security page.
+We are planning to launch a bug bounty program. Details will be announced on our
+security page.
 
 ## RFC 9116 Security.txt Best Practices
 
 ### Implementation Details
 
-Our security.txt implementation follows RFC 9116 specifications for machine-readable security policies:
+Our security.txt implementation follows RFC 9116 specifications for
+machine-readable security policies:
 
 #### Required Fields
-- **Contact**: Primary security email (`john+caxton-security-report@johnwilger.com`) with 24-hour response commitment
-- **Expires**: Annual renewal with clear expiration date to ensure current information
+
+- **Contact**: Primary security email
+  (`john+caxton-security-report@johnwilger.com`) with 24-hour response
+  commitment
+- **Expires**: Annual renewal with clear expiration date to ensure current
+  information
 
 #### Optional Fields (Enhanced Disclosure)
-- **Acknowledgments**: Public recognition page for responsible disclosure participants
-- **Policy**: Comprehensive vulnerability disclosure policy with scope and safe harbor provisions
+
+- **Acknowledgments**: Public recognition page for responsible disclosure
+  participants
+- **Policy**: Comprehensive vulnerability disclosure policy with scope and safe
+  harbor provisions
 - **Preferred-Languages**: English prioritized for fastest response times
-- **Canonical**: Authoritative location preventing stale security contact information
+- **Canonical**: Authoritative location preventing stale security contact
+  information
 
 #### Security.txt Validation
 
@@ -320,7 +364,8 @@ echo "security-test@example.com" | \
 
 #### Deployment Considerations
 
-- **Dual Location**: Available at both `/.well-known/security.txt` and `/security.txt`
+- **Dual Location**: Available at both `/.well-known/security.txt` and
+  `/security.txt`
 - **HTTPS Required**: Only served over encrypted connections
 - **Regular Updates**: Automated expiration monitoring with renewal alerts
 - **Backup Contacts**: Secondary contacts for incident response team
@@ -330,10 +375,14 @@ echo "security-test@example.com" | \
 
 Security.txt coordinates with our broader vulnerability management:
 
-1. **Automated Reporting**: Enables security scanners to report findings directly
-2. **Researcher Onboarding**: Provides clear entry point for security researchers
-3. **Process Documentation**: Links to detailed disclosure policies and procedures
-4. **Recognition Program**: Acknowledges responsible disclosure through public acknowledgments
+1. **Automated Reporting**: Enables security scanners to report findings
+   directly
+2. **Researcher Onboarding**: Provides clear entry point for security
+   researchers
+3. **Process Documentation**: Links to detailed disclosure policies and
+   procedures
+4. **Recognition Program**: Acknowledges responsible disclosure through public
+   acknowledgments
 
 ## Security Configuration
 
@@ -367,22 +416,32 @@ CaxtonConfig {
 
 Security-related environment variables:
 
-- `CAXTON_WASM_ISOLATION=strict`: Enable strict WASM isolation (see [WebAssembly Isolation](#webassembly-isolation))
-- `CAXTON_FIPA_VALIDATION=enabled`: Enable FIPA message validation (see [FIPA Message Security](#fipa-message-security))
-- `CAXTON_SECURITY_AUDIT=enabled`: Enable security audit logging (see [Observability-First Security](#observability-first-security))
+- `CAXTON_WASM_ISOLATION=strict`: Enable strict WASM isolation (see
+  [WebAssembly Isolation](#webassembly-isolation))
+- `CAXTON_FIPA_VALIDATION=enabled`: Enable FIPA message validation (see
+  [FIPA Message Security](#fipa-message-security))
+- `CAXTON_SECURITY_AUDIT=enabled`: Enable security audit logging (see
+  [Observability-First Security](#observability-first-security))
 - `CAXTON_LOG_LEVEL=info`: Set appropriate logging level for security monitoring
 
 ### Integrated Security Workflow
 
 Caxton's security architecture integrates multiple layers:
 
-1. **Development Phase**: [Cargo-deny](#cargo-deny-integration) validates dependencies before deployment
-2. **Build Phase**: [CI security checks](#ci-security-workflow) prevent vulnerable code from merging
-3. **Runtime Phase**: [WebAssembly isolation](#webassembly-isolation) and [FIPA validation](#fipa-message-security) protect against runtime threats
-4. **Monitoring Phase**: [Observability](#observability-first-security) provides continuous security visibility
-5. **Response Phase**: [RFC 9116 security.txt](#rfc-9116-securitytxt-best-practices) enables coordinated vulnerability disclosure
+1. **Development Phase**: [Cargo-deny](#cargo-deny-integration) validates
+   dependencies before deployment
+2. **Build Phase**: [CI security checks](#ci-security-workflow) prevent
+   vulnerable code from merging
+3. **Runtime Phase**: [WebAssembly isolation](#webassembly-isolation) and
+   [FIPA validation](#fipa-message-security) protect against runtime threats
+4. **Monitoring Phase**: [Observability](#observability-first-security) provides
+   continuous security visibility
+5. **Response Phase**:
+   [RFC 9116 security.txt](#rfc-9116-securitytxt-best-practices) enables
+   coordinated vulnerability disclosure
 
-This defense-in-depth approach ensures security at every stage of the software lifecycle."
+This defense-in-depth approach ensures security at every stage of the software
+lifecycle."
 
 ## Compliance
 
@@ -408,27 +467,40 @@ We are working toward:
 ### Security Documentation
 
 #### Core Security Architecture
-- [Architecture Decision Records](/docs/adr/): Security-related architectural decisions
-- [WebAssembly Isolation ADR](/docs/adr/0002-webassembly-for-agent-isolation.md): Agent sandboxing design
-- [FIPA Messaging Protocol ADR](/docs/adr/0003-fipa-messaging-protocol.md): Secure messaging architecture
-- [Observability Architecture ADR](/docs/adr/0001-observability-first-architecture.md): Security monitoring approach
+
+- [Architecture Decision Records](/docs/adr/): Security-related architectural
+  decisions
+- [WebAssembly Isolation ADR](/docs/adr/0002-webassembly-for-agent-isolation.md):
+  Agent sandboxing design
+- [FIPA Messaging Protocol ADR](/docs/adr/0003-fipa-messaging-protocol.md):
+  Secure messaging architecture
+- [Observability Architecture ADR](/docs/adr/0001-observability-first-architecture.md):
+  Security monitoring approach
 
 #### Security Configuration Files
+
 - [deny.toml](deny.toml): Cargo-deny security policy configuration
-- [.well-known/security.txt](.well-known/security.txt): RFC 9116 security contact information
+- [.well-known/security.txt](.well-known/security.txt): RFC 9116 security
+  contact information
 - [Clippy configuration](.clippy.toml): Security-focused linting rules (planned)
 
 #### Developer Security Resources
-- [Security Development Workflows](#security-development-workflows): Daily security practices
+
+- [Security Development Workflows](#security-development-workflows): Daily
+  security practices
 - [CI Security Integration](.github/workflows/): Automated security validation
-- [Vulnerability Response Process](#vulnerability-management): Security incident handling
+- [Vulnerability Response Process](#vulnerability-management): Security incident
+  handling
 
 #### External Security Standards
-- [RFC 9116 Security.txt](https://tools.ietf.org/rfc/rfc9116.txt): Security contact standard
-- [RustSec Advisory Database](https://rustsec.org/): Vulnerability tracking
-- [OWASP Application Security](https://owasp.org/): Web application security guidance
 
-# Run security checks
+- [RFC 9116 Security.txt](https://tools.ietf.org/rfc/rfc9116.txt): Security
+  contact standard
+- [RustSec Advisory Database](https://rustsec.org/): Vulnerability tracking
+- [OWASP Application Security](https://owasp.org/): Web application security
+  guidance
+
+## Run security checks
 
 ## Security Development Workflows
 
@@ -472,8 +544,10 @@ cargo test --test security_   # Run security integration tests
 Before merging security-sensitive changes:
 
 1. **Dependency Review**: Run `cargo deny check` and review any new dependencies
-2. **Vulnerability Scan**: Verify no new advisories with `cargo deny check advisories`
-3. **License Validation**: Confirm license compatibility with `cargo deny check licenses`
+2. **Vulnerability Scan**: Verify no new advisories with
+   `cargo deny check advisories`
+3. **License Validation**: Confirm license compatibility with
+   `cargo deny check licenses`
 4. **Unsafe Code Review**: Check `cargo geiger` output for new unsafe blocks
 5. **Test Coverage**: Ensure security tests cover new functionality
 6. **Documentation**: Update security documentation for new features
@@ -488,7 +562,8 @@ Before merging security-sensitive changes:
 
 ### Security Updates
 
-All security updates are documented in our [CHANGELOG.md](CHANGELOG.md) with the `[SECURITY]` tag.
+All security updates are documented in our [CHANGELOG.md](CHANGELOG.md) with the
+`[SECURITY]` tag.
 
 Recent security improvements:
 
@@ -497,6 +572,8 @@ Recent security improvements:
 - **v0.1.0**: FIPA message validation framework
 - **v0.1.0**: Comprehensive security testing suite
 
----
+______________________________________________________________________
 
-For the latest security information, please visit our [security page](https://jwilger.github.io/caxton/security) or subscribe to our security announcements.
+For the latest security information, please visit our
+[security page](https://jwilger.github.io/caxton/security) or subscribe to our
+security announcements.

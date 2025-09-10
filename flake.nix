@@ -36,6 +36,7 @@
             gh
             jq
             pre-commit
+            mdformat
             cargo-nextest
             cargo-watch
             cargo-expand

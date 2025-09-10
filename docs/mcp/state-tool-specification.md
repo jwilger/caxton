@@ -1,16 +1,25 @@
 # MCP StateTool Interface Specification
 
 ## Overview
-This specification defines the standard interface for MCP (Model Context Protocol) tools that provide state persistence capabilities to agents in Caxton. By delegating state management to business-provided MCP tools, Caxton maintains its minimal core philosophy while enabling flexible state persistence strategies.
+
+This specification defines the standard interface for MCP (Model Context
+Protocol) tools that provide state persistence capabilities to agents in Caxton.
+By delegating state management to business-provided MCP tools, Caxton maintains
+its minimal core philosophy while enabling flexible state persistence
+strategies.
 
 ## Core Principle
+
 **Agent state is a business domain concern, not Caxton's responsibility.**
 
-Caxton provides message routing and coordination. If agents need persistent state, the business domain provides appropriate MCP tools implementing this interface.
+Caxton provides message routing and coordination. If agents need persistent
+state, the business domain provides appropriate MCP tools implementing this
+interface.
 
 ## Interface Definition
 
 ### Rust Trait
+
 ```rust
 use async_trait::async_trait;
 use serde_json::Value;
@@ -56,6 +65,7 @@ pub trait McpStateTool: Send + Sync {
 ```
 
 ### TypeScript/JavaScript Interface
+
 ```typescript
 /**
  * MCP StateTool interface for JavaScript/TypeScript agents
@@ -101,6 +111,7 @@ export interface McpStateTool {
 ## Implementation Examples
 
 ### Redis Implementation
+
 ```rust
 use redis::{Client, AsyncCommands};
 
@@ -148,6 +159,7 @@ impl McpStateTool for RedisStateTool {
 ```
 
 ### PostgreSQL Implementation
+
 ```rust
 use sqlx::{PgPool, Row};
 
@@ -191,6 +203,7 @@ impl McpStateTool for PostgresStateTool {
 ```
 
 ### S3 Implementation
+
 ```rust
 use aws_sdk_s3::{Client as S3Client, ByteStream};
 
@@ -240,6 +253,7 @@ impl McpStateTool for S3StateTool {
 ```
 
 ### Local File System Implementation
+
 ```rust
 use tokio::fs;
 use std::path::PathBuf;
@@ -276,6 +290,7 @@ impl McpStateTool for FileStateTool {
 ## Usage in Agents
 
 ### Basic Usage
+
 ```rust
 pub struct MyAgent {
     id: AgentId,
@@ -310,6 +325,7 @@ impl MyAgent {
 ### Advanced Patterns
 
 #### Partition-Aware State Management
+
 ```rust
 pub struct PartitionAwareAgent {
     id: AgentId,
@@ -357,6 +373,7 @@ impl PartitionAwareAgent {
 ```
 
 #### Versioned State
+
 ```rust
 impl MyAgent {
     pub async fn save_versioned(&self, version: u64) -> Result<()> {
@@ -384,6 +401,7 @@ impl MyAgent {
 ```
 
 #### Transaction Log
+
 ```rust
 impl MyAgent {
     pub async fn append_to_log(&self, event: Event) -> Result<()> {
@@ -416,6 +434,7 @@ impl MyAgent {
 ## Configuration
 
 ### Agent Configuration with State Tool
+
 ```yaml
 # agent-config.yaml
 agent:
@@ -431,6 +450,7 @@ state_tool:
 ```
 
 ### Alternative Configurations
+
 ```yaml
 # PostgreSQL backend
 state_tool:
@@ -457,8 +477,10 @@ state_tool:
 ## Best Practices
 
 ### 1. Key Naming Conventions
+
 Use hierarchical keys for organization:
-```
+
+```text
 checkpoints/{agent_id}/latest
 checkpoints/{agent_id}/v{version}
 logs/{agent_id}/{timestamp}
@@ -467,7 +489,9 @@ conversations/{conversation_id}/messages/{index}
 ```
 
 ### 2. Error Handling
+
 Always handle state tool failures gracefully:
+
 ```rust
 match self.state_tool.retrieve(key).await {
     Ok(Some(state)) => self.restore(state),
@@ -480,7 +504,9 @@ match self.state_tool.retrieve(key).await {
 ```
 
 ### 3. Atomic Operations
+
 Use batch operations when available:
+
 ```rust
 let updates = vec![
     (format!("state/{}", id), state),
@@ -491,7 +517,9 @@ self.state_tool.batch_store(updates).await?;
 ```
 
 ### 4. TTL and Cleanup
+
 Implement cleanup for temporary data:
+
 ```rust
 // Store with timestamp in key for natural expiration
 let key = format!("temp/{}/{}",
@@ -515,6 +543,7 @@ async fn cleanup_old_temp_data(&self, days: i64) -> Result<()> {
 ## Testing
 
 ### Mock Implementation for Tests
+
 ```rust
 use std::collections::HashMap;
 use parking_lot::RwLock;
@@ -541,6 +570,7 @@ impl McpStateTool for MockStateTool {
 ## Migration Guide
 
 ### From Shared State to MCP Tools
+
 ```rust
 // Before: Direct database access
 let pool = PgPool::connect("postgresql://...").await?;
@@ -554,9 +584,14 @@ state_tool.store("agent_state", state).await?;
 ## Security Considerations
 
 1. **Encryption**: Sensitive data should be encrypted before storage
-2. **Access Control**: Implement proper authentication/authorization in tool implementations
+2. **Access Control**: Implement proper authentication/authorization in tool
+   implementations
 3. **Key Isolation**: Use prefixes to isolate different agents/tenants
 4. **Audit Logging**: Log all state operations for compliance
 
 ## Conclusion
-The MCP StateTool interface provides a flexible abstraction for state persistence while maintaining Caxton's minimal core philosophy. Businesses can choose the most appropriate storage backend for their needs without affecting Caxton's core architecture.
+
+The MCP StateTool interface provides a flexible abstraction for state
+persistence while maintaining Caxton's minimal core philosophy. Businesses can
+choose the most appropriate storage backend for their needs without affecting
+Caxton's core architecture.

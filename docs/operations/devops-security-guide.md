@@ -2,26 +2,33 @@
 
 ## Overview
 
-This guide provides essential security information for users installing Caxton binaries and operators deploying Caxton in production environments. It covers vulnerability reporting, security updates, secure deployment practices, and operational security monitoring.
+This guide provides essential security information for users installing Caxton
+binaries and operators deploying Caxton in production environments. It covers
+vulnerability reporting, security updates, secure deployment practices, and
+operational security monitoring.
 
 ## Security Vulnerability Reporting
 
 ### How to Report Security Issues
 
-**🚨 CRITICAL: Do not report security vulnerabilities through public GitHub issues.**
+**🚨 CRITICAL: Do not report security vulnerabilities through public GitHub
+issues.**
 
 For security vulnerabilities, use GitHub's secure reporting system:
 
 #### GitHub Security Advisory Reporting
 
-- **Method**: Use GitHub's private vulnerability reporting feature in the Caxton repository
+- **Method**: Use GitHub's private vulnerability reporting feature in the Caxton
+  repository
 - **Location**: Security tab → Report a vulnerability
 - **Response Time**: Within 24 hours
 - **Benefits**: Private, secure communication with maintainers
 
 #### Automated Reporting
 
-Our [security.txt file](/.well-known/security.txt) follows [RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards for automated security scanner integration.
+Our [security.txt file](/.well-known/security.txt) follows
+[RFC 9116](https://tools.ietf.org/rfc/rfc9116.txt) standards for automated
+security scanner integration.
 
 #### What to Include in Your Report
 
@@ -36,11 +43,9 @@ When reporting a vulnerability, please provide:
 ### Response Timeline
 
 | Severity | Response Time | Fix Timeline |
-|----------|--------------|--------------|
-| **Critical** | 24 hours | 24-48 hours |
-| **High** | 72 hours | 1 week |
-| **Medium** | 1 week | 1 month |
-| **Low** | 1 week | Next release |
+|----------|--------------|--------------| | **Critical** | 24 hours | 24-48
+hours | | **High** | 72 hours | 1 week | | **Medium** | 1 week | 1 month | |
+**Low** | 1 week | Next release |
 
 ## Security Updates and Notifications
 
@@ -115,9 +120,8 @@ echo "Latest release: https://github.com/$REPO/releases/latest"
 ### Supported Versions for Security Updates
 
 | Version | Security Support | End of Support |
-|---------|------------------|----------------|
-| 0.1.x   | ✅ Full support | TBD |
-| < 0.1   | ❌ No support | Already ended |
+|---------|------------------|----------------| | 0.1.x | ✅ Full support | TBD |
+| < 0.1 | ❌ No support | Already ended |
 
 ## Secure Deployment Configuration
 
@@ -136,7 +140,8 @@ export CAXTON_RESOURCE_LIMITS=production
 
 #### WebAssembly Security Configuration
 
-Caxton's security relies on WebAssembly isolation. Ensure strict isolation is enabled:
+Caxton's security relies on WebAssembly isolation. Ensure strict isolation is
+enabled:
 
 ```yaml
 # Example production configuration
@@ -373,7 +378,8 @@ When security incidents occur, classify them quickly:
 Before deploying Caxton to production, verify:
 
 - [ ] **Environment Variables**: All security-required environment variables set
-- [ ] **Container Security**: Non-root user, read-only filesystem, dropped capabilities
+- [ ] **Container Security**: Non-root user, read-only filesystem, dropped
+  capabilities
 - [ ] **Network Policies**: Proper network segmentation configured
 - [ ] **TLS Configuration**: Encrypted communications enabled
 - [ ] **Resource Limits**: Memory and CPU limits configured
@@ -440,7 +446,8 @@ aws s3 cp caxton-config-backup-$(date +%Y%m%d).tar.gz.gpg \
 
 ### Industry Standards Support
 
-Caxton deployments can help you achieve compliance with common security frameworks:
+Caxton deployments can help you achieve compliance with common security
+frameworks:
 
 - **NIST Cybersecurity Framework**: Risk-based security controls
 - **OWASP Top 10**: Protection against common application vulnerabilities
@@ -475,29 +482,40 @@ Caxton maintains comprehensive audit logs for:
 
 #### For Operators and DevOps Teams
 
-- [Security Policy (SECURITY.md)](../../SECURITY.md): Complete security overview and vulnerability reporting
-- [Security.txt](../../.well-known/security.txt): Machine-readable security contact information
+- [Security Policy (SECURITY.md)](../../SECURITY.md): Complete security overview
+  and vulnerability reporting
+- [Security.txt](../../.well-known/security.txt): Machine-readable security
+  contact information
 - This deployment security guide: Production security configuration
 
 #### Security Architecture References
 
-- [WebAssembly Isolation ADR](../adr/0002-webassembly-for-agent-isolation.md): Understanding agent isolation
-- [FIPA Messaging Security ADR](../adr/0003-fipa-messaging-protocol.md): Message security design
-- [Observability ADR](../adr/0001-observability-first-architecture.md): Security monitoring approach
+- [WebAssembly Isolation ADR](../adr/0002-webassembly-for-agent-isolation.md):
+  Understanding agent isolation
+- [FIPA Messaging Security ADR](../adr/0003-fipa-messaging-protocol.md): Message
+  security design
+- [Observability ADR](../adr/0001-observability-first-architecture.md): Security
+  monitoring approach
 
 ### External Security Resources
 
-- [RFC 9116 Security.txt Standard](https://tools.ietf.org/rfc/rfc9116.txt): Vulnerability disclosure standard
-- [OWASP Container Security](https://owasp.org/www-project-container-security/): Container security best practices
-- [Kubernetes Security Best Practices](https://kubernetes.io/docs/concepts/security/): Platform security guidance
+- [RFC 9116 Security.txt Standard](https://tools.ietf.org/rfc/rfc9116.txt):
+  Vulnerability disclosure standard
+- [OWASP Container Security](https://owasp.org/www-project-container-security/):
+  Container security best practices
+- [Kubernetes Security Best Practices](https://kubernetes.io/docs/concepts/security/):
+  Platform security guidance
 
 ### Getting Security Help
 
 #### Security Questions and Support
 
-- **General Security Questions**: Create an issue in the GitHub repository (for non-sensitive questions)
-- **Security Vulnerabilities**: Use GitHub's security advisory reporting (see [vulnerability reporting](#security-vulnerability-reporting))
-- **Deployment Security**: Review this guide and the main [Security Policy](../../SECURITY.md)
+- **General Security Questions**: Create an issue in the GitHub repository (for
+  non-sensitive questions)
+- **Security Vulnerabilities**: Use GitHub's security advisory reporting (see
+  [vulnerability reporting](#security-vulnerability-reporting))
+- **Deployment Security**: Review this guide and the main
+  [Security Policy](../../SECURITY.md)
 
 #### Security Community
 
@@ -506,26 +524,35 @@ Caxton maintains comprehensive audit logs for:
 
 ## Conclusion
 
-This guide provides the essential security information for deploying and operating Caxton safely in production environments. The key security priorities for operators are:
+This guide provides the essential security information for deploying and
+operating Caxton safely in production environments. The key security priorities
+for operators are:
 
-1. **Stay Informed**: Configure GitHub repository watching for security advisories and releases, or use RSS feeds for automated monitoring
-2. **Report Issues**: Use GitHub's security advisory reporting to report any security concerns
-3. **Secure Configuration**: Follow the deployment security guidelines in this document
-4. **Monitor Operations**: Implement security monitoring and incident response procedures
-5. **Regular Maintenance**: Perform regular security maintenance tasks and reviews
+1. **Stay Informed**: Configure GitHub repository watching for security
+   advisories and releases, or use RSS feeds for automated monitoring
+2. **Report Issues**: Use GitHub's security advisory reporting to report any
+   security concerns
+3. **Secure Configuration**: Follow the deployment security guidelines in this
+   document
+4. **Monitor Operations**: Implement security monitoring and incident response
+   procedures
+5. **Regular Maintenance**: Perform regular security maintenance tasks and
+   reviews
 
-Caxton's security architecture provides strong isolation and validation, but proper deployment and operational practices are essential for maintaining security in production environments.
+Caxton's security architecture provides strong isolation and validation, but
+proper deployment and operational practices are essential for maintaining
+security in production environments.
 
 **To stay informed about security updates:**
 
 - Watch the GitHub repository for security advisories and releases
 - Subscribe to RSS feeds for automated monitoring
-- Check the security advisories page regularly: [GitHub Security Advisories](https://github.com/your-org/caxton/security/advisories)
-- Monitor the releases page for updates: [GitHub Releases](https://github.com/your-org/caxton/releases)
+- Check the security advisories page regularly:
+  [GitHub Security Advisories](https://github.com/your-org/caxton/security/advisories)
+- Monitor the releases page for updates:
+  [GitHub Releases](https://github.com/your-org/caxton/releases)
 
----
+______________________________________________________________________
 
-**Document Version**: 2.0
-**Last Updated**: 2025-08-16
-**Target Audience**: End-users, Operators, DevOps Teams
-**Next Review**: 2025-09-16
+**Document Version**: 2.0 **Last Updated**: 2025-08-16 **Target Audience**:
+End-users, Operators, DevOps Teams **Next Review**: 2025-09-16

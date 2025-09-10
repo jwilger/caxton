@@ -2,23 +2,33 @@
 
 ## Introduction
 
-FIPA (Foundation for Intelligent Physical Agents) provides standardized patterns for agent communication. While Caxton uses a pragmatic subset of FIPA (see [ADR-0012](../adr/0012-pragmatic-fipa-subset.md)), understanding FIPA concepts helps developers build better multi-agent systems.
+FIPA (Foundation for Intelligent Physical Agents) provides standardized patterns
+for agent communication. While Caxton uses a pragmatic subset of FIPA (see
+[ADR-0012](../adr/0012-pragmatic-fipa-subset.md)), understanding FIPA concepts
+helps developers build better multi-agent systems.
 
-This guide explains FIPA concepts in practical terms, focusing on what developers need to know to work with Caxton.
+This guide explains FIPA concepts in practical terms, focusing on what
+developers need to know to work with Caxton.
 
 ## Quick Start: FIPA in 5 Minutes
 
 ### What is FIPA?
-FIPA is a set of standards for how autonomous software agents communicate and coordinate. Think of it as "HTTP for agents" - a common language that lets different agents work together.
+
+FIPA is a set of standards for how autonomous software agents communicate and
+coordinate. Think of it as "HTTP for agents" - a common language that lets
+different agents work together.
 
 ### Core Concept: Speech Acts
+
 Agents communicate using "speech acts" - messages with specific intentions:
+
 - **REQUEST**: "Please do X"
 - **INFORM**: "Here's some information"
 - **QUERY**: "Tell me about Y"
 - **PROPOSE**: "I can do Z for price P"
 
 ### Basic Example
+
 ```json
 {
   "performative": "request",
@@ -37,19 +47,21 @@ Agents communicate using "speech acts" - messages with specific intentions:
 ### 1. Performatives (Message Types)
 
 #### What Caxton Uses
+
 | Performative | Purpose | Example Use Case |
-|--------------|---------|------------------|
-| **REQUEST** | Ask agent to perform action | "Process this data" |
-| **INFORM** | Share information | "Task completed" |
-| **QUERY** | Ask for information | "What's the status?" |
-| **PROPOSE** | Offer to do something | "I can handle this for $10" |
-| **ACCEPT_PROPOSAL** | Accept an offer | "Yes, proceed" |
-| **REJECT_PROPOSAL** | Decline an offer | "No, too expensive" |
-| **FAILURE** | Report inability | "Cannot complete: disk full" |
-| **NOT_UNDERSTOOD** | Message unclear | "Unknown action requested" |
+|--------------|---------|------------------| | **REQUEST** | Ask agent to
+perform action | "Process this data" | | **INFORM** | Share information | "Task
+completed" | | **QUERY** | Ask for information | "What's the status?" | |
+**PROPOSE** | Offer to do something | "I can handle this for $10" | |
+**ACCEPT_PROPOSAL** | Accept an offer | "Yes, proceed" | | **REJECT_PROPOSAL** |
+Decline an offer | "No, too expensive" | | **FAILURE** | Report inability |
+"Cannot complete: disk full" | | **NOT_UNDERSTOOD** | Message unclear | "Unknown
+action requested" |
 
 #### Real-World Analogy
+
 Think of performatives like email subject line prefixes:
+
 - REQUEST = "Action Required:"
 - INFORM = "FYI:"
 - QUERY = "Question:"
@@ -58,6 +70,7 @@ Think of performatives like email subject line prefixes:
 ### 2. Message Structure
 
 #### Essential Fields
+
 ```rust
 pub struct FIPAMessage {
     // What kind of message (request, inform, etc.)
@@ -82,13 +95,18 @@ pub struct FIPAMessage {
 ```
 
 #### Why These Fields Matter
-- **conversation_id**: Links all messages in a workflow (like a support ticket number)
-- **reply_with/in_reply_to**: Matches responses to requests (like email threading)
-- **content**: Your actual data - Caxton uses JSON instead of FIPA's complex formats
+
+- **conversation_id**: Links all messages in a workflow (like a support ticket
+  number)
+- **reply_with/in_reply_to**: Matches responses to requests (like email
+  threading)
+- **content**: Your actual data - Caxton uses JSON instead of FIPA's complex
+  formats
 
 ### 3. Interaction Protocols
 
 #### Request-Response Protocol
+
 The most common pattern - one agent asks, another responds:
 
 ```mermaid
@@ -101,6 +119,7 @@ sequenceDiagram
 ```
 
 **Code Example**:
+
 ```rust
 // Agent A sends request
 let request = Message {
@@ -123,6 +142,7 @@ let response = Message {
 ```
 
 #### Contract Net Protocol
+
 For task distribution through bidding:
 
 ```mermaid
@@ -141,6 +161,7 @@ sequenceDiagram
 ```
 
 **When to Use**:
+
 - Load balancing across agents
 - Finding best agent for a task
 - Resource allocation
@@ -149,7 +170,9 @@ sequenceDiagram
 ### 4. Agent Concepts
 
 #### Agent Identity
+
 Every agent has a unique identifier:
+
 ```rust
 pub struct AgentId {
     name: String,        // e.g., "weather-agent"
@@ -159,7 +182,9 @@ pub struct AgentId {
 ```
 
 #### Agent Capabilities
+
 Agents advertise what they can do:
+
 ```rust
 pub struct Capability {
     action: String,      // What the agent can do
@@ -186,6 +211,7 @@ Capability {
 ## Common Patterns in Practice
 
 ### Pattern 1: Service Request
+
 ```rust
 // Client agent needs weather data
 async fn get_weather(location: &str) -> Result<Weather> {
@@ -205,6 +231,7 @@ async fn get_weather(location: &str) -> Result<Weather> {
 ```
 
 ### Pattern 2: Asynchronous Processing
+
 ```rust
 // Long-running task with progress updates
 async fn process_large_file(file: &str) -> Result<()> {
@@ -242,6 +269,7 @@ async fn process_large_file(file: &str) -> Result<()> {
 ```
 
 ### Pattern 3: Multi-Agent Coordination
+
 ```rust
 // Coordinate multiple agents for complex task
 async fn distributed_analysis(data: Data) -> Result<Report> {
@@ -277,25 +305,28 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 ## FIPA vs Modern Approaches
 
 ### What FIPA Got Right
+
 1. **Standardized communication** - Common language for agents
 2. **Speech acts** - Clear message intentions
 3. **Conversation tracking** - Related messages stay together
 4. **Protocol patterns** - Reusable interaction templates
 
 ### What We Simplified
+
 | FIPA Approach | Caxton Approach | Why |
-|---------------|-----------------|-----|
-| Complex ontologies (OWL/RDF) | JSON Schema | Better tooling, developer friendly |
-| Semantic languages (FIPA-SL) | Plain JSON | Universal support |
-| Many performatives (~22) | Essential 8 | Simpler mental model |
-| Agent platforms (JADE) | Container orchestration | Cloud-native |
-| Service discovery (DF/AMS) | Kubernetes/Consul | Modern infrastructure |
+|---------------|-----------------|-----| | Complex ontologies (OWL/RDF) | JSON
+Schema | Better tooling, developer friendly | | Semantic languages (FIPA-SL) |
+Plain JSON | Universal support | | Many performatives (~22) | Essential 8 |
+Simpler mental model | | Agent platforms (JADE) | Container orchestration |
+Cloud-native | | Service discovery (DF/AMS) | Kubernetes/Consul | Modern
+infrastructure |
 
 ## Debugging FIPA Messages
 
 ### Common Issues and Solutions
 
 #### Issue: Messages Not Received
+
 ```rust
 // Check 1: Verify agent registration
 let agents = orchestrator.list_agents().await?;
@@ -311,6 +342,7 @@ message.headers.insert("X-Trace-Id", Uuid::new_v4().to_string());
 ```
 
 #### Issue: Conversation Confusion
+
 ```rust
 // Always use unique conversation IDs
 let conv_id = format!("{}-{}-{}",
@@ -337,6 +369,7 @@ impl ConversationTracker {
 ```
 
 #### Issue: Protocol Mismatch
+
 ```rust
 // Document expected protocols
 #[derive(Debug)]
@@ -372,6 +405,7 @@ fn validate_message(msg: &Message, expected: &Step) -> Result<()> {
 ## Best Practices
 
 ### 1. Message Design
+
 ```rust
 // DO: Clear, self-contained messages
 Message {
@@ -398,6 +432,7 @@ Message {
 ```
 
 ### 2. Error Handling
+
 ```rust
 // Always handle failure responses
 match response.performative {
@@ -430,6 +465,7 @@ match response.performative {
 ```
 
 ### 3. Conversation Management
+
 ```rust
 // Use conversation IDs effectively
 pub struct ConversationManager {
@@ -456,17 +492,24 @@ impl ConversationManager {
 ## Learning Resources
 
 ### Tutorials
+
 1. [Building Your First FIPA Agent](../tutorials/first-fipa-agent.md)
 2. [Implementing Contract Net Protocol](../tutorials/contract-net.md)
 3. [Advanced Message Patterns](../tutorials/advanced-patterns.md)
 
 ### References
-- [FIPA Specifications](http://www.fipa.org/repository/standardspecs.html) - Original specs (academic)
-- [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md) - Why we chose FIPA
-- [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md) - Our simplifications
-- [Agent Communication Patterns](../patterns/agent-communication-patterns.md) - Practical patterns
+
+- [FIPA Specifications](http://www.fipa.org/repository/standardspecs.html) -
+  Original specs (academic)
+- [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md) -
+  Why we chose FIPA
+- [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md) - Our
+  simplifications
+- [Agent Communication Patterns](../patterns/agent-communication-patterns.md) -
+  Practical patterns
 
 ### Examples in Caxton Repository
+
 - `examples/simple-request-response/` - Basic pattern
 - `examples/contract-net/` - Bidding system
 - `examples/multi-agent-workflow/` - Complex coordination
@@ -475,28 +518,36 @@ impl ConversationManager {
 ## FAQ
 
 ### Q: Why use FIPA instead of REST/GraphQL?
+
 **A**: FIPA provides:
+
 - Conversation tracking across multiple messages
 - Explicit message intentions (performatives)
 - Proven patterns for agent coordination
 - Decoupled, asynchronous communication
 
 ### Q: Do I need to learn all of FIPA?
+
 **A**: No! Caxton uses only the useful parts. Focus on:
+
 - The 8 core performatives
 - Basic message structure
 - Request-response pattern
 - Contract net (if doing task distribution)
 
 ### Q: How is this different from message queues?
+
 **A**: FIPA adds semantics:
+
 - Messages have explicit meanings (performatives)
 - Built-in conversation tracking
 - Standard coordination protocols
 - Agent-specific patterns
 
 ### Q: Can I use FIPA with existing services?
+
 **A**: Yes! Create adapter agents:
+
 ```rust
 pub struct RestAdapter {
     base_url: String,
@@ -515,12 +566,16 @@ impl RestAdapter {
 
 ## Summary
 
-FIPA provides a time-tested foundation for agent communication. While the full specification is complex, Caxton's pragmatic subset gives you:
+FIPA provides a time-tested foundation for agent communication. While the full
+specification is complex, Caxton's pragmatic subset gives you:
+
 - Clear communication patterns
 - Standardized message formats
 - Proven coordination protocols
 - Extensible architecture
 
-Focus on understanding performatives, message structure, and basic patterns. The rest can be learned as needed.
+Focus on understanding performatives, message structure, and basic patterns. The
+rest can be learned as needed.
 
-Remember: **FIPA is just a tool** - the goal is building reliable, maintainable multi-agent systems.
+Remember: **FIPA is just a tool** - the goal is building reliable, maintainable
+multi-agent systems.

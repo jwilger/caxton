@@ -1,14 +1,19 @@
 # Caxton Website Validation Suite
 
-Comprehensive technical validation scripts for the Caxton multi-agent orchestration platform website.
+Comprehensive technical validation scripts for the Caxton multi-agent
+orchestration platform website.
 
 ## Overview
 
-This validation suite provides automated testing and quality assurance for the Caxton Jekyll-based website. It includes seven specialized validators that check different aspects of website functionality, accessibility, and deployment readiness.
+This validation suite provides automated testing and quality assurance for the
+Caxton Jekyll-based website. It includes seven specialized validators that check
+different aspects of website functionality, accessibility, and deployment
+readiness.
 
 ## Validators Included
 
 ### 1. 🔗 Dead Link Checker (`dead-link-checker.js`)
+
 - **Purpose**: Validates internal and external links across the site
 - **Checks**:
   - Link accessibility and response codes
@@ -18,6 +23,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: Yes
 
 ### 2. 📄 HTML/CSS Validator (`html-css-validator.js`)
+
 - **Purpose**: Validates HTML structure, CSS syntax, and accessibility
 - **Checks**:
   - HTML5 compliance and semantic structure
@@ -28,6 +34,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: Yes
 
 ### 3. 📜 JavaScript Error Checker (`js-error-checker.js`)
+
 - **Purpose**: Detects JavaScript syntax errors and runtime issues
 - **Checks**:
   - Syntax validation and static analysis
@@ -38,6 +45,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: Yes
 
 ### 4. 🎨 Code Syntax Highlighter (`code-syntax-highlighter.js`)
+
 - **Purpose**: Validates code block syntax highlighting
 - **Checks**:
   - Language specification accuracy
@@ -47,6 +55,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: No
 
 ### 5. 🏷️ SEO Meta Validator (`seo-meta-validator.js`)
+
 - **Purpose**: Validates SEO elements and metadata
 - **Checks**:
   - Title and description tags
@@ -57,6 +66,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: No
 
 ### 6. 🔨 Build/Deployment Checker (`build-deployment-checker.js`)
+
 - **Purpose**: Validates Jekyll build and GitHub Pages deployment
 - **Checks**:
   - Jekyll configuration compatibility
@@ -67,6 +77,7 @@ This validation suite provides automated testing and quality assurance for the C
 - **Critical**: Yes
 
 ### 7. 📱 Responsive Design Checker (`responsive-design-checker.js`)
+
 - **Purpose**: Validates responsive design implementation
 - **Checks**:
   - Viewport configuration
@@ -123,14 +134,18 @@ node run-all-validations.js --version
 ## Output & Reports
 
 ### Console Output
+
 Each validator provides real-time console output with:
+
 - ✅ Success indicators
 - ❌ Error messages
 - ⚠️ Warning notifications
 - 📊 Progress and statistics
 
 ### JSON Reports
+
 Detailed JSON reports are generated for each validator:
+
 - `dead-link-report.json`
 - `html-css-report.json`
 - `js-error-report.json`
@@ -141,6 +156,7 @@ Detailed JSON reports are generated for each validator:
 - `master-validation-report.json` (combined summary)
 
 ### Exit Codes
+
 - `0`: All validations passed
 - `1`: Critical validation failures detected
 - `2`: Non-critical issues found
@@ -150,12 +166,14 @@ Detailed JSON reports are generated for each validator:
 ### Critical vs Non-Critical Issues
 
 **Critical Issues** (must be fixed before deployment):
+
 - Dead links that break user experience
 - HTML/CSS syntax errors causing browser issues
 - JavaScript errors preventing functionality
 - Build/deployment configuration problems
 
 **Non-Critical Issues** (recommended fixes):
+
 - Missing SEO optimization
 - Code syntax highlighting problems
 - Responsive design improvements
@@ -164,6 +182,7 @@ Detailed JSON reports are generated for each validator:
 ### Success Metrics
 
 The validation suite tracks:
+
 - **Success Rate**: Percentage of checks passed
 - **Response Time**: Individual validator performance
 - **Coverage**: Areas of the website validated
@@ -172,6 +191,7 @@ The validation suite tracks:
 ## Integration
 
 ### CI/CD Pipeline
+
 Add to your GitHub Actions workflow:
 
 ```yaml
@@ -182,6 +202,7 @@ Add to your GitHub Actions workflow:
 ```
 
 ### Pre-commit Hook
+
 Add to `.git/hooks/pre-commit`:
 
 ```bash
@@ -190,6 +211,7 @@ cd scripts/validation && npm run validate
 ```
 
 ### Development Workflow
+
 1. Run validations locally before committing
 2. Address critical issues immediately
 3. Plan non-critical improvements
@@ -198,7 +220,9 @@ cd scripts/validation && npm run validate
 ## Configuration
 
 ### Customizing Validators
-Each validator can be configured by modifying constants at the top of the respective files:
+
+Each validator can be configured by modifying constants at the top of the
+respective files:
 
 ```javascript
 // Example: Configure dead link checker timeouts
@@ -212,6 +236,7 @@ const STANDARD_BREAKPOINTS = {
 ```
 
 ### Adding Custom Checks
+
 1. Create new validator class extending base patterns
 2. Add to `run-all-validations.js` validators array
 3. Update package.json scripts
@@ -222,23 +247,26 @@ const STANDARD_BREAKPOINTS = {
 ### Common Issues
 
 **Jekyll not found**:
+
 ```bash
 gem install jekyll bundler
 ```
 
 **Permission errors**:
+
 ```bash
 chmod +x *.js
 ```
 
-**Node.js version**:
-Requires Node.js 14.0.0 or higher
+**Node.js version**: Requires Node.js 14.0.0 or higher
 
-**Large repository timeouts**:
-Increase timeout values in validator configuration
+**Large repository timeouts**: Increase timeout values in validator
+configuration
 
 ### Debug Mode
+
 Add verbose logging by setting environment variable:
+
 ```bash
 DEBUG=true node run-all-validations.js
 ```
@@ -246,6 +274,7 @@ DEBUG=true node run-all-validations.js
 ## Development
 
 ### Adding New Validators
+
 1. Follow the pattern established in existing validators
 2. Implement async `run()` method
 3. Generate JSON report with consistent structure
@@ -254,6 +283,7 @@ DEBUG=true node run-all-validations.js
 6. Update master runner configuration
 
 ### Testing Validators
+
 ```bash
 # Test on sample files
 mkdir test-site
@@ -266,12 +296,14 @@ node dead-link-checker.js
 ## Maintenance
 
 ### Regular Updates
+
 - Keep Jekyll and dependencies updated
 - Review validator logic for new web standards
 - Update breakpoints and responsive design patterns
 - Monitor for new accessibility guidelines
 
 ### Performance Optimization
+
 - Cache results where appropriate
 - Implement parallel processing for large sites
 - Optimize file system operations
@@ -296,6 +328,7 @@ MIT License - see LICENSE file for details.
 - Documentation: [Caxton Website](https://jwilger.github.io/caxton)
 - Community: [GitHub Discussions](https://github.com/jwilger/caxton/discussions)
 
----
+______________________________________________________________________
 
-*This validation suite is part of the Caxton multi-agent orchestration platform project.*
+*This validation suite is part of the Caxton multi-agent orchestration platform
+project.*

@@ -2,9 +2,14 @@
 
 ## Executive Summary
 
-This specification defines the requirements and design for the Core Message Router, a critical foundation component of the Caxton multi-agent system. The router enables asynchronous message routing between agents without requiring them to know infrastructure details, while maintaining conversation context and providing comprehensive observability.
+This specification defines the requirements and design for the Core Message
+Router, a critical foundation component of the Caxton multi-agent system. The
+router enables asynchronous message routing between agents without requiring
+them to know infrastructure details, while maintaining conversation context and
+providing comprehensive observability.
 
 **Key Requirements:**
+
 - Async message processing without blocking
 - Agent-ID based message routing
 - Agent registration/deregistration lifecycle
@@ -19,15 +24,20 @@ This specification defines the requirements and design for the Core Message Rout
 
 Based on analysis of the existing codebase:
 
-1. **WebAssembly Runtime Foundation**: Established in Story 001 with `WasmRuntime`, `Sandbox`, and agent lifecycle management
-2. **Domain Types**: Strong type safety using `nutype` for preventing primitive obsession
-3. **Coordination-First Architecture**: ADR-0014 establishes lightweight coordination via SWIM protocol and FIPA messaging
+1. **WebAssembly Runtime Foundation**: Established in Story 001 with
+   `WasmRuntime`, `Sandbox`, and agent lifecycle management
+2. **Domain Types**: Strong type safety using `nutype` for preventing primitive
+   obsession
+3. **Coordination-First Architecture**: ADR-0014 establishes lightweight
+   coordination via SWIM protocol and FIPA messaging
 4. **Agent Lifecycle States**: Unloaded → Loaded → Running → Draining → Stopped
-5. **Resource Management**: CPU fuel, memory limits, and message counting already implemented
+5. **Resource Management**: CPU fuel, memory limits, and message counting
+   already implemented
 
 ### Domain-Driven Design Analysis
 
 The message router must handle multiple domain concepts:
+
 - **Agent Communication**: FIPA-ACL message structure and performatives
 - **Routing Information**: Agent location and reachability
 - **Conversation Management**: Multi-turn dialog state
@@ -38,9 +48,11 @@ The message router must handle multiple domain concepts:
 
 ### FR1: Asynchronous Message Processing
 
-**Requirement**: The message router MUST process messages asynchronously without blocking caller threads.
+**Requirement**: The message router MUST process messages asynchronously without
+blocking caller threads.
 
 **Acceptance Criteria:**
+
 - Message submission returns immediately with correlation ID
 - Processing occurs on background tokio tasks
 - Back-pressure is applied through bounded channels
@@ -48,6 +60,7 @@ The message router must handle multiple domain concepts:
 - Message ordering is preserved per conversation
 
 **Domain Types Required:**
+
 ```rust
 #[nutype(derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Display))]
 pub struct MessageId(Uuid);
@@ -65,9 +78,11 @@ pub struct ChannelCapacity(usize);
 
 ### FR2: Agent-ID Based Routing
 
-**Requirement**: Messages MUST be routed to agents based on their unique AgentId without requiring senders to know agent locations.
+**Requirement**: Messages MUST be routed to agents based on their unique AgentId
+without requiring senders to know agent locations.
 
 **Acceptance Criteria:**
+
 - Local agent lookup occurs in O(1) time using HashMap
 - Unknown agents trigger discovery via gossip protocol
 - Routing table is updated as agents move between nodes
@@ -75,6 +90,7 @@ pub struct ChannelCapacity(usize);
 - Dead letter queue captures undeliverable messages
 
 **Domain Types Required:**
+
 ```rust
 #[nutype(derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Display))]
 pub struct NodeId(Uuid);
@@ -96,9 +112,11 @@ pub struct RetryDelayMs(u64);
 
 ### FR3: Agent Registration and Deregistration
 
-**Requirement**: The router MUST handle dynamic agent registration and deregistration throughout agent lifecycle.
+**Requirement**: The router MUST handle dynamic agent registration and
+deregistration throughout agent lifecycle.
 
 **Acceptance Criteria:**
+
 - Agent registration occurs during deployment (Unloaded → Loaded transition)
 - Agent activation updates routing table (Loaded → Running transition)
 - Graceful deregistration during shutdown (Running → Draining → Stopped)
@@ -107,6 +125,7 @@ pub struct RetryDelayMs(u64);
 - Capability metadata is included in registration
 
 **Domain Types Required:**
+
 ```rust
 #[nutype(
     validate(len_char_min = 1, len_char_max = 1000),
@@ -130,9 +149,11 @@ pub struct HealthCheckIntervalMs(u64);
 
 ### FR4: Message Delivery Failure Handling
 
-**Requirement**: The router MUST handle message delivery failures gracefully without losing messages.
+**Requirement**: The router MUST handle message delivery failures gracefully
+without losing messages.
 
 **Acceptance Criteria:**
+
 - Failed deliveries generate FIPA FAILURE messages back to sender
 - Temporary failures are retried with exponential backoff
 - Permanent failures (agent not found) are reported immediately
@@ -141,6 +162,7 @@ pub struct HealthCheckIntervalMs(u64);
 - Delivery receipts are supported for critical messages
 
 **Domain Types Required:**
+
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FailureReason {
@@ -169,9 +191,11 @@ pub struct DeadLetterQueueSize(usize);
 
 ### FR5: Conversation Context Management
 
-**Requirement**: The router MUST maintain conversation context to enable multi-turn agent dialogues.
+**Requirement**: The router MUST maintain conversation context to enable
+multi-turn agent dialogues.
 
 **Acceptance Criteria:**
+
 - Conversations are identified by unique ConversationId
 - Message correlation via reply_with and in_reply_to fields
 - Conversation state is persisted across system restarts
@@ -180,6 +204,7 @@ pub struct DeadLetterQueueSize(usize);
 - Context is preserved during agent migration
 
 **Domain Types Required:**
+
 ```rust
 #[nutype(
     validate(greater_or_equal = 300000, less_or_equal = 86400000),
@@ -201,9 +226,11 @@ pub struct ConversationCreatedAt(std::time::SystemTime);
 
 ### FR6: OpenTelemetry Integration
 
-**Requirement**: All messages MUST include trace and span IDs for end-to-end observability.
+**Requirement**: All messages MUST include trace and span IDs for end-to-end
+observability.
 
 **Acceptance Criteria:**
+
 - Trace context is automatically injected into FIPA message headers
 - Span is created for each routing operation
 - Trace context propagates across node boundaries
@@ -212,6 +239,7 @@ pub struct ConversationCreatedAt(std::time::SystemTime);
 - Integration with Jaeger, Zipkin, and OTLP exporters
 
 **Domain Types Required:**
+
 ```rust
 #[nutype(
     validate(len_char_min = 1, len_char_max = 100),
@@ -240,6 +268,7 @@ pub struct TraceSamplingRatio(f64);
 **Target**: 100,000 messages per second sustained throughput per instance.
 
 **Acceptance Criteria:**
+
 - P99 message routing latency < 1ms for local agents
 - P99 message routing latency < 5ms for remote agents
 - Memory usage grows linearly with active conversations
@@ -248,6 +277,7 @@ pub struct TraceSamplingRatio(f64);
 - Batch processing optimizes high-volume scenarios
 
 **Implementation Notes:**
+
 - Use `tokio::sync::mpsc` with bounded channels for back-pressure
 - Implement message batching for high-throughput scenarios
 - Use connection pooling for remote node communication
@@ -259,6 +289,7 @@ pub struct TraceSamplingRatio(f64);
 **Target**: Zero message loss under normal operation conditions.
 
 **Acceptance Criteria:**
+
 - Messages are persisted before acknowledgment
 - Graceful degradation during high load
 - Circuit breakers prevent cascade failures
@@ -271,6 +302,7 @@ pub struct TraceSamplingRatio(f64);
 **Target**: Linear scaling with number of agents and nodes.
 
 **Acceptance Criteria:**
+
 - O(1) agent lookup using HashMap indexing
 - O(log n) conversation cleanup using priority queues
 - Gossip protocol scales to 1000+ nodes
@@ -283,6 +315,7 @@ pub struct TraceSamplingRatio(f64);
 **Target**: Complete visibility into message flow for debugging and monitoring.
 
 **Acceptance Criteria:**
+
 - Every message generates structured logs with correlation IDs
 - Metrics track latency, throughput, errors, and saturation
 - Distributed traces show end-to-end message flow
@@ -562,7 +595,8 @@ pub enum RouterError {
 
 ### Local SQLite Schema
 
-Based on ADR-0014's coordination-first architecture, local state is stored in SQLite:
+Based on ADR-0014's coordination-first architecture, local state is stored in
+SQLite:
 
 ```sql
 -- Agent registry
@@ -853,7 +887,8 @@ router:
 1. **Functional Requirements**: All FR1-FR6 acceptance criteria met
 2. **Performance Requirements**: 100K msg/sec sustained throughput achieved
 3. **Test Coverage**: >95% code coverage with unit and integration tests
-4. **Documentation**: API documentation, deployment guides, troubleshooting runbooks
+4. **Documentation**: API documentation, deployment guides, troubleshooting
+   runbooks
 5. **Observability**: Metrics, logging, and tracing working end-to-end
 6. **Production Readiness**: Security review passed, chaos testing completed
 
@@ -898,6 +933,7 @@ async fn acceptance_test_100k_messages_per_second() {
 ## Implementation Roadmap
 
 ### Phase 1: Core Foundation (Week 1)
+
 - Domain types definition with nutype
 - Basic MessageRouter structure
 - Local agent registration/deregistration
@@ -905,28 +941,35 @@ async fn acceptance_test_100k_messages_per_second() {
 - SQLite storage schema
 
 ### Phase 2: Message Processing (Week 2)
+
 - Async message queues with tokio::mpsc
 - FIPA message parsing and validation
 - Conversation management
 - Basic error handling and retries
 
 ### Phase 3: Performance Optimization (Week 3)
+
 - Message batching for high throughput
 - Connection pooling for remote delivery
 - Circuit breaker pattern
 - Performance benchmarking
 
 ### Phase 4: Observability (Week 4)
+
 - OpenTelemetry integration
 - Structured logging
 - Metrics collection
 - Health check endpoints
 
 ### Phase 5: Production Hardening (Week 5)
+
 - Comprehensive error handling
 - Dead letter queue
 - Graceful shutdown
 - Configuration management
 - Security hardening
 
-This specification provides the complete foundation for implementing Story 002: Core Message Router, ensuring type safety through domain types, meeting performance requirements, and establishing the critical messaging infrastructure for the Caxton multi-agent system.
+This specification provides the complete foundation for implementing Story 002:
+Core Message Router, ensuring type safety through domain types, meeting
+performance requirements, and establishing the critical messaging infrastructure
+for the Caxton multi-agent system.

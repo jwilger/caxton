@@ -1,16 +1,20 @@
----
-title: WebAssembly Integration Guide
-layout: documentation
-description: Complete guide to WebAssembly integration in Caxton, including agent development, sandboxing, and performance optimization.
----
+______________________________________________________________________
+
+## title: WebAssembly Integration Guide layout: documentation description: Complete guide to
+
+WebAssembly integration in Caxton, including agent development, sandboxing, and performance
+optimization
 
 # WebAssembly Integration Guide
 
-WebAssembly (WASM) provides the secure sandboxing foundation for Caxton's multi-agent system. This comprehensive guide covers everything from basic agent development to advanced optimization techniques and security considerations.
+WebAssembly (WASM) provides the secure sandboxing foundation for Caxton's
+multi-agent system. This comprehensive guide covers everything from basic agent
+development to advanced optimization techniques and security considerations.
 
 ## Overview
 
-Caxton uses WebAssembly to create isolated execution environments for agents, providing:
+Caxton uses WebAssembly to create isolated execution environments for agents,
+providing:
 
 - **Security**: Memory-safe execution with controlled system access
 - **Performance**: Near-native execution speed with minimal overhead
@@ -22,7 +26,7 @@ Caxton uses WebAssembly to create isolated execution environments for agents, pr
 
 ### Execution Model
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ Caxton Host Runtime (Rust)                            │
 │  ┌─────────────────────────────────────────────────┐   │
@@ -55,8 +59,10 @@ Each WASM agent runs in a completely isolated sandbox:
 
 - **Memory Isolation**: Agents cannot access each other's memory
 - **Function Isolation**: Only explicitly exported functions are accessible
-- **System Call Mediation**: All system interactions go through controlled host functions
-- **Resource Limits**: CPU time, memory usage, and network access are strictly controlled
+- **System Call Mediation**: All system interactions go through controlled host
+  functions
+- **Resource Limits**: CPU time, memory usage, and network access are strictly
+  controlled
 
 ## Agent Development
 
@@ -65,6 +71,7 @@ Each WASM agent runs in a completely isolated sandbox:
 Caxton supports agents written in any language that compiles to WebAssembly:
 
 #### Rust (Recommended)
+
 ```toml
 # Cargo.toml
 [package]
@@ -192,6 +199,7 @@ fn process_data(request: ProcessRequest) -> ProcessResponse {
 ```
 
 #### AssemblyScript
+
 ```typescript
 // assembly/index.ts
 import { JSON } from "assemblyscript-json";
@@ -285,6 +293,7 @@ function getCurrentTimestamp(): u64 {
 ```
 
 #### Go (TinyGo)
+
 ```go
 // main.go
 package main
@@ -433,6 +442,7 @@ func main() {}
 ### Build Process
 
 #### Rust Build
+
 ```bash
 # Install WASM target
 rustup target add wasm32-wasi
@@ -445,6 +455,7 @@ wasm-opt -Os -o agent_optimized.wasm target/wasm32-wasi/release/my_caxton_agent.
 ```
 
 #### AssemblyScript Build
+
 ```bash
 # Install dependencies
 npm install assemblyscript @assemblyscript/wasi-shim
@@ -457,6 +468,7 @@ wasm-opt -Os -o agent_optimized.wasm agent.wasm
 ```
 
 #### Go Build
+
 ```bash
 # Install TinyGo
 curl -L https://github.com/tinygo-org/tinygo/releases/download/v0.30.0/tinygo_0.30.0_amd64.deb -o tinygo.deb
@@ -471,9 +483,11 @@ wasm-opt -Os -o agent_optimized.wasm agent.wasm
 
 ## Host Interface (WASI Extensions)
 
-Caxton extends WASI with custom host functions for agent communication and system interaction.
+Caxton extends WASI with custom host functions for agent communication and
+system interaction.
 
 ### Message Interface
+
 ```rust
 // Host-provided functions (imported by agents)
 #[link(wasm_import_module = "caxton")]
@@ -520,6 +534,7 @@ extern "C" {
 ```
 
 ### Resource Management
+
 ```rust
 // Resource limit configuration
 pub struct ResourceLimits {
@@ -557,6 +572,7 @@ impl Default for ResourceLimits {
 ```
 
 ### Capability Declaration
+
 ```rust
 // Agent capabilities descriptor
 #[derive(Serialize, Deserialize)]
@@ -1546,6 +1562,7 @@ fn profile_end(name: &str) {
 ### Common Issues
 
 #### Agent Won't Load
+
 ```bash
 # Check WASM validity
 wasm-validate agent.wasm
@@ -1558,6 +1575,7 @@ wasm-objdump -j Import agent.wasm
 ```
 
 #### Memory Issues
+
 ```rust
 // Add memory tracking
 static mut ALLOCATED_BYTES: usize = 0;
@@ -1584,6 +1602,7 @@ pub extern "C" fn __wbindgen_free(ptr: *mut u8, size: usize) {
 ```
 
 #### Performance Problems
+
 ```bash
 # Profile WASM execution
 perf record -g ./caxton run-agent agent.wasm
@@ -1594,4 +1613,7 @@ wasm-objdump -h agent.wasm
 wasm-opt --print-stats agent.wasm
 ```
 
-This comprehensive guide covers all aspects of WebAssembly integration in Caxton, from basic agent development to advanced optimization and debugging techniques. The sandboxed execution model provides security and isolation while maintaining high performance for agent-based systems.
+This comprehensive guide covers all aspects of WebAssembly integration in
+Caxton, from basic agent development to advanced optimization and debugging
+techniques. The sandboxed execution model provides security and isolation while
+maintaining high performance for agent-based systems.

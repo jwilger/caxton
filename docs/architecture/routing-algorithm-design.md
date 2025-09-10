@@ -2,7 +2,10 @@
 
 ## Overview
 
-This document specifies the O(1) agent lookup algorithm that enables the message router to achieve 100,000+ messages/second throughput. The algorithm uses multiple data structures optimized for different lookup patterns while maintaining consistency through careful coordination.
+This document specifies the O(1) agent lookup algorithm that enables the message
+router to achieve 100,000+ messages/second throughput. The algorithm uses
+multiple data structures optimized for different lookup patterns while
+maintaining consistency through careful coordination.
 
 ## Algorithm Architecture
 
@@ -490,12 +493,12 @@ impl SimdOptimizedBatch {
 ### Lookup Complexity Analysis
 
 | Operation | Time Complexity | Space Complexity | Cache Behavior |
-|-----------|----------------|------------------|----------------|
-| Local Agent Lookup | O(1) | O(1) | Hot cache line |
-| Remote Agent Lookup | O(1) | O(1) | Warm cache line |
-| Capability Discovery | O(1) | O(k) where k = agents with capability | Cold cache possible |
-| Batch Lookup | O(n) where n = batch size | O(n) | Vectorized operations |
-| Route Update | O(1) amortized | O(1) | Cache invalidation |
+|-----------|----------------|------------------|----------------| | Local Agent
+Lookup | O(1) | O(1) | Hot cache line | | Remote Agent Lookup | O(1) | O(1) |
+Warm cache line | | Capability Discovery | O(1) | O(k) where k = agents with
+capability | Cold cache possible | | Batch Lookup | O(n) where n = batch size |
+O(n) | Vectorized operations | | Route Update | O(1) amortized | O(1) | Cache
+invalidation |
 
 ### Memory Usage Patterns
 
@@ -632,10 +635,14 @@ The O(1) routing algorithm achieves high performance through:
 
 1. **Optimal Data Structures**: DashMap for lock-free concurrent access
 2. **Intelligent Caching**: Multi-level cache hierarchy with adaptive TTL
-3. **Consistency Management**: Version-based conflict resolution with gossip coordination
+3. **Consistency Management**: Version-based conflict resolution with gossip
+   coordination
 4. **Memory Optimization**: Cache-aligned structures and SIMD operations
 5. **Batch Processing**: Vectorized operations for high-throughput scenarios
 
-This design enables the message router to handle 100,000+ messages/second while maintaining sub-millisecond lookup latencies and strong consistency across distributed nodes.
+This design enables the message router to handle 100,000+ messages/second while
+maintaining sub-millisecond lookup latencies and strong consistency across
+distributed nodes.
 
-The algorithm gracefully degrades under high load and provides comprehensive observability for operational monitoring and capacity planning.
+The algorithm gracefully degrades under high load and provides comprehensive
+observability for operational monitoring and capacity planning.

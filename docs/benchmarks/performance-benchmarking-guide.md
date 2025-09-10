@@ -1,26 +1,28 @@
 # Performance Benchmarking Suite
 
 ## Overview
-This guide establishes Caxton's performance benchmarking framework, including baseline metrics, continuous performance testing, and regression detection strategies.
+
+This guide establishes Caxton's performance benchmarking framework, including
+baseline metrics, continuous performance testing, and regression detection
+strategies.
 
 ## Performance Targets
 
 ### Core Metrics
+
 | Metric | Target | Acceptable | Critical |
-|--------|--------|------------|----------|
-| Message Throughput | 100K msg/sec | 50K msg/sec | 10K msg/sec |
-| Message Latency (p50) | < 1ms | < 5ms | < 10ms |
-| Message Latency (p99) | < 10ms | < 50ms | < 100ms |
-| Agent Spawn Time | < 100ms | < 500ms | < 1s |
-| Memory per Agent | < 10MB | < 50MB | < 100MB |
-| CPU per Agent | < 5% | < 10% | < 25% |
-| Recovery Time | < 30s | < 2min | < 5min |
+|--------|--------|------------|----------| | Message Throughput | 100K msg/sec
+| 50K msg/sec | 10K msg/sec | | Message Latency (p50) | < 1ms | < 5ms | < 10ms |
+| Message Latency (p99) | < 10ms | < 50ms | < 100ms | | Agent Spawn Time | \<
+100ms | < 500ms | < 1s | | Memory per Agent | < 10MB | < 50MB | < 100MB | | CPU
+per Agent | < 5% | < 10% | < 25% | | Recovery Time | < 30s | < 2min | < 5min |
 
 ## Benchmark Categories
 
 ### 1. Throughput Benchmarks
 
 #### Message Processing Throughput
+
 ```rust
 #[bench]
 fn bench_message_throughput(b: &mut Bencher) {
@@ -42,6 +44,7 @@ fn bench_message_throughput(b: &mut Bencher) {
 ```
 
 #### Agent Task Processing
+
 ```rust
 #[bench]
 fn bench_task_processing(b: &mut Bencher) {
@@ -64,6 +67,7 @@ fn bench_task_processing(b: &mut Bencher) {
 ### 2. Latency Benchmarks
 
 #### End-to-End Message Latency
+
 ```rust
 pub struct LatencyBenchmark {
     samples: Vec<Duration>,
@@ -99,6 +103,7 @@ impl LatencyBenchmark {
 ```
 
 #### Agent Response Time
+
 ```rust
 #[bench]
 fn bench_agent_response_time(b: &mut Bencher) {
@@ -116,6 +121,7 @@ fn bench_agent_response_time(b: &mut Bencher) {
 ### 3. Scalability Benchmarks
 
 #### Horizontal Scaling Test
+
 ```rust
 pub async fn benchmark_horizontal_scaling() -> ScalingReport {
     let mut report = ScalingReport::new();
@@ -142,6 +148,7 @@ pub async fn benchmark_horizontal_scaling() -> ScalingReport {
 ```
 
 #### Load Testing
+
 ```rust
 pub struct LoadTest {
     target_rps: u32,
@@ -180,6 +187,7 @@ impl LoadTest {
 ### 4. Resource Usage Benchmarks
 
 #### Memory Profiling
+
 ```rust
 pub struct MemoryBenchmark {
     allocator: StatsAllocator,
@@ -213,6 +221,7 @@ impl MemoryBenchmark {
 ```
 
 #### CPU Profiling
+
 ```rust
 pub async fn profile_cpu_usage() -> CpuProfile {
     let sampler = CpuSampler::new();
@@ -239,6 +248,7 @@ pub async fn profile_cpu_usage() -> CpuProfile {
 ### 5. WebAssembly Performance
 
 #### WASM Execution Overhead
+
 ```rust
 #[bench]
 fn bench_wasm_overhead(b: &mut Bencher) {
@@ -255,6 +265,7 @@ fn bench_wasm_overhead(b: &mut Bencher) {
 ```
 
 #### WASM Memory Limits
+
 ```rust
 pub async fn test_wasm_memory_limits() -> MemoryLimitReport {
     let mut report = MemoryLimitReport::new();
@@ -277,6 +288,7 @@ pub async fn test_wasm_memory_limits() -> MemoryLimitReport {
 ### CI/CD Integration
 
 #### GitHub Actions Workflow
+
 ```yaml
 name: Performance Benchmarks
 
@@ -379,6 +391,7 @@ impl RegressionDetector {
 ## Benchmark Scenarios
 
 ### Scenario 1: Peak Load
+
 ```rust
 pub async fn benchmark_peak_load() {
     let config = LoadTestConfig {
@@ -395,6 +408,7 @@ pub async fn benchmark_peak_load() {
 ```
 
 ### Scenario 2: Sustained Load
+
 ```rust
 pub async fn benchmark_sustained_load() {
     let config = LoadTestConfig {
@@ -411,6 +425,7 @@ pub async fn benchmark_sustained_load() {
 ```
 
 ### Scenario 3: Burst Traffic
+
 ```rust
 pub async fn benchmark_burst_traffic() {
     let config = BurstTestConfig {
@@ -431,6 +446,7 @@ pub async fn benchmark_burst_traffic() {
 ### Optimization Strategies
 
 #### 1. Message Batching
+
 ```rust
 pub struct MessageBatcher {
     batch_size: usize,
@@ -456,6 +472,7 @@ impl MessageBatcher {
 ```
 
 #### 2. Connection Pooling
+
 ```rust
 pub struct ConnectionPool {
     connections: Vec<Arc<Connection>>,
@@ -472,6 +489,7 @@ impl ConnectionPool {
 ```
 
 #### 3. Zero-Copy Optimizations
+
 ```rust
 pub fn process_message_zero_copy(data: &[u8]) -> Result<()> {
     // Parse without allocation
@@ -490,6 +508,7 @@ pub fn process_message_zero_copy(data: &[u8]) -> Result<()> {
 ## Benchmark Reports
 
 ### Report Format
+
 ```markdown
 # Performance Benchmark Report
 Date: 2025-01-15
@@ -525,6 +544,7 @@ Environment: Production-like
 ## Monitoring Production Performance
 
 ### Real-time Metrics
+
 ```rust
 pub struct ProductionMonitor {
     metrics: Arc<Metrics>,
@@ -554,31 +574,37 @@ impl ProductionMonitor {
 ## Best Practices
 
 1. **Benchmark Early and Often**
+
    - Run benchmarks on every commit
    - Track performance over time
    - Set up alerts for regressions
 
 2. **Use Representative Workloads**
+
    - Model real production patterns
    - Include edge cases
    - Test failure scenarios
 
 3. **Isolate Variables**
+
    - Control environment
    - Minimize noise
    - Run multiple iterations
 
 4. **Profile Before Optimizing**
+
    - Identify actual bottlenecks
    - Measure impact of changes
    - Avoid premature optimization
 
 5. **Document Performance Characteristics**
+
    - Known limitations
    - Scaling boundaries
    - Optimization opportunities
 
 ## References
+
 - [Criterion.rs Documentation](https://bheisler.github.io/criterion.rs/book/)
 - [cargo-flamegraph](https://github.com/flamegraph-rs/flamegraph)
 - [ADR-0001: Observability-First Architecture](../adr/0001-observability-first-architecture.md)

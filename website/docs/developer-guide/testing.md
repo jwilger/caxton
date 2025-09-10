@@ -1,18 +1,23 @@
----
-title: Testing Strategies and Best Practices
+______________________________________________________________________
+
+## title: Testing Strategies and Best Practices
+
 layout: documentation
-description: Comprehensive guide to testing multi-agent systems in Caxton, including unit tests, integration tests, and load testing strategies.
----
+description: Comprehensive guide to testing multi-agent systems in Caxton, including
+  unit tests, integration tests, and load testing strategies
 
 # Testing Strategies and Best Practices
 
-Testing multi-agent systems presents unique challenges due to their distributed, asynchronous, and interactive nature. This guide provides comprehensive strategies for testing Caxton agents and the platform itself, ensuring reliability, performance, and correctness.
+Testing multi-agent systems presents unique challenges due to their distributed,
+asynchronous, and interactive nature. This guide provides comprehensive
+strategies for testing Caxton agents and the platform itself, ensuring
+reliability, performance, and correctness.
 
 ## Testing Philosophy
 
 ### Multi-Layer Testing Strategy
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ End-to-End Tests                                       │
 │ • Full system scenarios                                │
@@ -1745,4 +1750,7 @@ tokio-test = "0.4"
 tempfile = "3.0"
 ```
 
-This comprehensive testing guide provides strategies for validating all aspects of Caxton's multi-agent system, from individual agent behavior to system-wide performance and resilience. The layered approach ensures thorough coverage while maintaining test efficiency and reliability.
+This comprehensive testing guide provides strategies for validating all aspects
+of Caxton's multi-agent system, from individual agent behavior to system-wide
+performance and resilience. The layered approach ensures thorough coverage while
+maintaining test efficiency and reliability.

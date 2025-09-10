@@ -1,12 +1,15 @@
----
-title: Building Agents
+______________________________________________________________________
+
+## title: Building Agents
+
 layout: documentation
-description: Comprehensive guide to developing WebAssembly agents for Caxton multi-agent systems.
----
+description: Comprehensive guide to developing WebAssembly agents for Caxton
+  multi-agent systems
 
 # Building Agents
 
-Learn how to create production-ready WebAssembly agents that integrate seamlessly with the Caxton multi-agent orchestration platform.
+Learn how to create production-ready WebAssembly agents that integrate
+seamlessly with the Caxton multi-agent orchestration platform.
 
 ## Table of Contents
 
@@ -23,19 +26,23 @@ Learn how to create production-ready WebAssembly agents that integrate seamlessl
 
 ## Introduction
 
-Caxton agents are WebAssembly (WASM) modules that run in isolated sandboxes within the Caxton orchestration server. Each agent operates independently while participating in coordinated multi-agent workflows through the Foundation for Intelligent Physical Agents (FIPA) messaging protocol.
+Caxton agents are WebAssembly (WASM) modules that run in isolated sandboxes
+within the Caxton orchestration server. Each agent operates independently while
+participating in coordinated multi-agent workflows through the Foundation for
+Intelligent Physical Agents (FIPA) messaging protocol.
 
 ### Key Benefits
 
 - **Isolation**: Each agent runs in its own secure WebAssembly sandbox
 - **Performance**: < 50μs message routing overhead
-- **Language Agnostic**: Write agents in any language that compiles to WebAssembly
+- **Language Agnostic**: Write agents in any language that compiles to
+  WebAssembly
 - **Observable**: Built-in OpenTelemetry support for tracing and metrics
 - **Scalable**: Dynamic resource allocation and horizontal scaling
 
 ### Agent Architecture
 
-```
+```text
 ┌─────────────────────────────────────┐
 │            Caxton Server            │
 ├─────────────────────────────────────┤
@@ -63,7 +70,8 @@ Caxton agents are WebAssembly (WASM) modules that run in isolated sandboxes with
 - **Rust Programming**: Primary supported language for agent development
 - **WebAssembly Concepts**: Understanding of WASM compilation and runtime
 - **Message-Passing Systems**: Experience with actor model or similar patterns
-- **Protocol Understanding**: Basic familiarity with FIPA ACL or similar agent communication
+- **Protocol Understanding**: Basic familiarity with FIPA ACL or similar agent
+  communication
 
 ### Optional Knowledge
 
@@ -372,7 +380,8 @@ wasm-opt -Oz -o target/wasm32-wasi/release/my_agent_opt.wasm \
 
 ### Deployment Configuration
 
-Create agent deployment manifest (Note: capabilities are registered in code, not config):
+Create agent deployment manifest (Note: capabilities are registered in code, not
+config):
 
 ```json
 // agent-manifest.json
@@ -394,7 +403,8 @@ Create agent deployment manifest (Note: capabilities are registered in code, not
 }
 ```
 
-**That's it!** The manifest is purely for deployment configuration. Caxton validates manifests against this schema on deployment:
+**That's it!** The manifest is purely for deployment configuration. Caxton
+validates manifests against this schema on deployment:
 
 ### Manifest JSON Schema
 
@@ -465,7 +475,8 @@ Invalid manifests are rejected at deployment with clear error messages.
 
 ## Capability Registration
 
-Capabilities are registered programmatically in the agent's initialization method:
+Capabilities are registered programmatically in the agent's initialization
+method:
 
 ```rust
 async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
@@ -476,7 +487,8 @@ async fn initialize(&mut self, ctx: &AgentContext) -> AgentResult<()> {
 }
 ```
 
-Capabilities determine which agents receive specific types of messages and tasks.
+Capabilities determine which agents receive specific types of messages and
+tasks.
 
 ## Agent Lifecycle
 
@@ -589,7 +601,9 @@ impl Agent for MyAgent {
 
 ### State Management
 
-Caxton follows a **coordination-first architecture** where agent state is the responsibility of the business domain, not Caxton itself. Agents requiring persistent state should use MCP tools:
+Caxton follows a **coordination-first architecture** where agent state is the
+responsibility of the business domain, not Caxton itself. Agents requiring
+persistent state should use MCP tools:
 
 ```rust
 #[derive(Debug, Serialize, Deserialize)]
@@ -627,7 +641,8 @@ impl PersistentAgent {
 
 ## FIPA Message Protocol
 
-Caxton uses the Foundation for Intelligent Physical Agents (FIPA) Agent Communication Language (ACL) for inter-agent messaging.
+Caxton uses the Foundation for Intelligent Physical Agents (FIPA) Agent
+Communication Language (ACL) for inter-agent messaging.
 
 ### Message Structure
 
@@ -1524,13 +1539,22 @@ impl TeamCoordinator {
 
 Now that you understand the fundamentals of building agents for Caxton:
 
-1. **Start Simple**: Begin with the echo agent example and gradually add functionality
-2. **Read the API Reference**: Familiarize yourself with the complete [API documentation]({{ '/docs/developer-guide/api-reference/' | relative_url }})
-3. **Study Examples**: Explore the [examples repository]({{ site.social.github }}/tree/main/examples) for more complex agent patterns
-4. **Join the Community**: Participate in [GitHub Discussions]({{ site.social.github }}/discussions) to share experiences and get help
-5. **Contribute**: Help improve Caxton by contributing to the [project]({{ site.social.github }})
+1. **Start Simple**: Begin with the echo agent example and gradually add
+   functionality
+2. **Read the API Reference**: Familiarize yourself with the complete \[API
+   documentation\]({{ '/docs/developer-guide/api-reference/' | relative_url }})
+3. **Study Examples**: Explore the \[examples repository\]({{ site.social.github
+   }}/tree/main/examples) for more complex agent patterns
+4. **Join the Community**: Participate in \[GitHub Discussions\]({{
+   site.social.github }}/discussions) to share experiences and get help
+5. **Contribute**: Help improve Caxton by contributing to the \[project\]({{
+   site.social.github }})
 
 For advanced topics, see:
-- [Message Protocols]({{ '/docs/developer-guide/message-protocols/' | relative_url }}) - Deep dive into FIPA protocols
-- [WebAssembly Integration]({{ '/docs/developer-guide/wasm-integration/' | relative_url }}) - Advanced WASM techniques
-- [DevOps & Security Guide]({{ '/docs/operations/devops-security-guide/' | relative_url }}) - Production deployment
+
+- \[Message Protocols\]({{ '/docs/developer-guide/message-protocols/' |
+  relative_url }}) - Deep dive into FIPA protocols
+- \[WebAssembly Integration\]({{ '/docs/developer-guide/wasm-integration/' |
+  relative_url }}) - Advanced WASM techniques
+- \[DevOps & Security Guide\]({{ '/docs/operations/devops-security-guide/' |
+  relative_url }}) - Production deployment

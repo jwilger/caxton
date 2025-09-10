@@ -2,13 +2,17 @@
 
 ## Welcome to Caxton Development
 
-This guide provides comprehensive best practices, tools, and workflows for developing with Caxton. Whether you're building agents, extending the orchestrator, or integrating with external systems, this guide will help you be productive and successful.
+This guide provides comprehensive best practices, tools, and workflows for
+developing with Caxton. Whether you're building agents, extending the
+orchestrator, or integrating with external systems, this guide will help you be
+productive and successful.
 
 ## Quick Start
 
 ### Development Environment Setup
 
 #### Prerequisites
+
 ```bash
 # Required tools
 rustc >= 1.70.0
@@ -26,6 +30,7 @@ cargo-flamegraph # Performance profiling
 ```
 
 #### Initial Setup
+
 ```bash
 # Clone the repository
 git clone https://github.com/your-org/caxton.git
@@ -50,6 +55,7 @@ docker-compose up -d
 ### Your First Agent
 
 #### Agent Scaffolding
+
 ```bash
 # Use the agent generator
 cargo run --bin caxton-cli -- agent new my-agent \
@@ -69,6 +75,7 @@ cargo run --bin caxton-cli -- agent new my-agent \
 ```
 
 #### Basic Agent Implementation
+
 ```rust
 use caxton_sdk::prelude::*;
 
@@ -107,6 +114,7 @@ pub extern "C" fn init() -> *mut dyn Agent {
 ### 1. Test-Driven Development (TDD)
 
 #### Writing Tests First
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -134,6 +142,7 @@ mod tests {
 ```
 
 #### Test Categories
+
 - **Unit Tests**: Test individual components
 - **Integration Tests**: Test agent interactions
 - **Property Tests**: Test invariants with random data
@@ -142,6 +151,7 @@ mod tests {
 ### 2. Debugging Agents
 
 #### Local Debugging
+
 ```rust
 // Enable debug logging
 use tracing::{debug, info, warn, error};
@@ -168,6 +178,7 @@ impl MyAgent {
 ```
 
 #### Remote Debugging
+
 ```bash
 # Enable remote debugging
 cargo run --features debug -- \
@@ -180,6 +191,7 @@ lldb target/debug/my-agent
 ```
 
 #### Tracing and Observability
+
 ```rust
 use tracing::instrument;
 
@@ -200,6 +212,7 @@ async fn complex_operation(&mut self, input: String) -> Result<Output> {
 ### 3. Performance Optimization
 
 #### Profiling Tools
+
 ```bash
 # CPU profiling with flamegraph
 cargo flamegraph --bin my-agent -- --bench
@@ -214,6 +227,7 @@ MALLOC_CONF=prof:true,prof_prefix:jeprof.out \
 ```
 
 #### Common Optimizations
+
 ```rust
 // 1. Use efficient data structures
 use rustc_hash::FxHashMap; // Faster than std::HashMap for small keys
@@ -245,7 +259,8 @@ pub fn process_bytes(data: Bytes) -> Result<Bytes> {
 ### 1. Code Organization
 
 #### Project Structure
-```
+
+```text
 caxton/
 ├── src/
 │   ├── orchestrator/     # Core orchestrator
@@ -260,6 +275,7 @@ caxton/
 ```
 
 #### Module Guidelines
+
 - Keep modules focused and < 500 lines
 - Use clear, descriptive names
 - Group related functionality
@@ -268,6 +284,7 @@ caxton/
 ### 2. Error Handling
 
 #### Error Design
+
 ```rust
 use thiserror::Error;
 
@@ -291,6 +308,7 @@ pub type Result<T> = std::result::Result<T, AgentError>;
 ```
 
 #### Error Handling Patterns
+
 ```rust
 // 1. Early returns for cleaner code
 pub fn process(input: Input) -> Result<Output> {
@@ -331,6 +349,7 @@ pub async fn resilient_operation() -> Result<Value> {
 ### 3. Testing Strategies
 
 #### Test Organization
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -369,6 +388,7 @@ mod tests {
 ```
 
 #### Test Utilities
+
 ```rust
 // Test fixture builder
 pub struct AgentTestBuilder {
@@ -406,7 +426,8 @@ let agent = AgentTestBuilder::new()
 ### 4. Documentation
 
 #### Code Documentation
-```rust
+
+````rust
 /// Processes incoming messages according to business rules.
 ///
 /// # Arguments
@@ -428,10 +449,11 @@ let agent = AgentTestBuilder::new()
 pub async fn process_message(&mut self, message: Message) -> Result<Response> {
     // Implementation
 }
-```
+````
 
 #### README Template
-```markdown
+
+````markdown
 # Agent Name
 
 Brief description of what this agent does.
@@ -460,7 +482,7 @@ agent.start().await?;
 
 ## Contributing
 See [CONTRIBUTING.md](../CONTRIBUTING.md)
-```
+````
 
 ## Development Tools
 
@@ -487,6 +509,7 @@ caxton-cli restart <agent-id>        # Restart agent
 ### 2. IDE Integration
 
 #### VS Code Extensions
+
 ```json
 {
   "recommendations": [
@@ -500,6 +523,7 @@ caxton-cli restart <agent-id>        # Restart agent
 ```
 
 #### Settings
+
 ```json
 {
   "rust-analyzer.cargo.features": ["all"],
@@ -512,6 +536,7 @@ caxton-cli restart <agent-id>        # Restart agent
 ### 3. Continuous Integration
 
 #### GitHub Actions Workflow
+
 ```yaml
 name: CI
 
@@ -545,6 +570,7 @@ jobs:
 ### Common Issues
 
 #### Issue: Agent Won't Start
+
 ```bash
 # Check logs
 caxton-cli logs <agent-id> --tail 100
@@ -557,6 +583,7 @@ caxton-cli describe <agent-id> --resources
 ```
 
 #### Issue: Performance Problems
+
 ```bash
 # Profile CPU usage
 cargo flamegraph --bin <agent-name>
@@ -569,6 +596,7 @@ caxton-cli metrics <agent-id> --interval 1s
 ```
 
 #### Issue: Message Not Received
+
 ```rust
 // Add debug logging
 #[instrument]
@@ -584,36 +612,45 @@ caxton-cli trace message <conversation-id>
 ## Learning Resources
 
 ### Tutorials
+
 1. [Building Your First Agent](../tutorials/first-agent.md)
 2. [Agent Communication Patterns](../patterns/agent-communication-patterns.md)
 3. [Advanced WebAssembly Agents](../tutorials/wasm-agents.md)
 
 ### Examples
+
 - [Simple Echo Agent](../../examples/echo-agent)
 - [Database Agent](../../examples/database-agent)
 - [ML Inference Agent](../../examples/ml-agent)
 - [Workflow Orchestration](../../examples/workflow)
 
 ### API Documentation
+
 - [Rust SDK Docs](https://docs.rs/caxton-sdk)
 - [REST API Reference](../api/rest-api.md)
-- [gRPC API Reference](../api/grpc-api.md)
 
 ## Community and Support
 
 ### Getting Help
+
 - **Documentation**: [docs.caxton.io](https://docs.caxton.io)
 - **Discord**: [discord.gg/caxton](https://discord.gg/caxton)
-- **GitHub Issues**: [github.com/caxton/caxton/issues](https://github.com/caxton/caxton/issues)
+- **GitHub Issues**:
+  [github.com/caxton/caxton/issues](https://github.com/caxton/caxton/issues)
 - **Stack Overflow**: Tag questions with `caxton`
 
 ### Contributing
-We welcome contributions! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+
+We welcome contributions! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for
+guidelines.
 
 ### Code of Conduct
-Please read our [Code of Conduct](../../CODE_OF_CONDUCT.md) before participating.
+
+Please read our [Code of Conduct](../../CODE_OF_CONDUCT.md) before
+participating.
 
 ## References
+
 - [Architecture Decision Records](../adr/)
 - [Security Guidelines](../security/security-audit-checklist.md)
 - [Performance Benchmarks](../benchmarks/performance-benchmarking-guide.md)

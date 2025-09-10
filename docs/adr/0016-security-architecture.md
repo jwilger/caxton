@@ -1,25 +1,30 @@
----
-layout: adr
-title: "0016. Security Architecture"
-status: accepted
-date: 2025-08-09
----
+______________________________________________________________________
+
+## layout: adr title: "0016. Security Architecture" status: accepted date: 2025-08-09
 
 # ADR-0016: Security Architecture
 
 ## Status
+
 Accepted
 
 ## Context
-Caxton's distributed architecture requires comprehensive security measures to protect agent communications, prevent unauthorized access, and ensure data confidentiality. With the coordination-first architecture (ADR-0014) and distributed protocols (ADR-0015), we need clear security boundaries and authentication mechanisms.
 
-The security model must balance strong protection with operational simplicity, avoiding complexity that would violate our minimal core philosophy (ADR-0004).
+Caxton's distributed architecture requires comprehensive security measures to
+protect agent communications, prevent unauthorized access, and ensure data
+confidentiality. With the coordination-first architecture (ADR-0014) and
+distributed protocols (ADR-0015), we need clear security boundaries and
+authentication mechanisms.
+
+The security model must balance strong protection with operational simplicity,
+avoiding complexity that would violate our minimal core philosophy (ADR-0004).
 
 ## Decision
 
 ### Security Layers
 
 #### 1. Inter-Node Communication (mTLS)
+
 All communication between Caxton instances uses mutual TLS authentication:
 
 ```rust
@@ -54,6 +59,7 @@ impl NodeSecurity {
 ```
 
 #### 2. Agent Authentication
+
 Agents are authenticated using capability-based security:
 
 ```rust
@@ -79,6 +85,7 @@ pub struct SignedCapabilities {
 ```
 
 #### 3. Agent-to-Agent Authorization
+
 Fine-grained authorization using capability tokens:
 
 ```rust
@@ -121,6 +128,7 @@ impl MessageRouter {
 ### Secret Management
 
 #### 1. Node Secrets
+
 ```yaml
 # /etc/caxton/node-security.yaml
 node:
@@ -136,6 +144,7 @@ node:
 ```
 
 #### 2. Agent Secrets (via MCP Tools)
+
 ```rust
 pub trait SecretProvider: Send + Sync {
     async fn get_secret(&self, key: &str) -> Result<SecretValue>;
@@ -156,6 +165,7 @@ impl Agent {
 ### Network Security
 
 #### 1. SWIM Gossip Encryption
+
 ```rust
 pub struct SecureGossip {
     // Encrypt gossip payloads
@@ -185,6 +195,7 @@ impl SecureGossip {
 ```
 
 #### 2. Transport Security
+
 - All external APIs use TLS 1.3 minimum
 - HTTP/2 with ALPN negotiation
 - Optional QUIC transport for better performance
@@ -193,6 +204,7 @@ impl SecureGossip {
 ### Access Control
 
 #### 1. Management API Authentication
+
 ```rust
 pub enum AuthMethod {
     // API key authentication
@@ -221,6 +233,7 @@ impl ManagementApi {
 ```
 
 #### 2. Role-Based Access Control (RBAC)
+
 ```rust
 pub struct Role {
     name: String,
@@ -402,6 +415,7 @@ security:
 ## Consequences
 
 ### Positive
+
 - **Strong Security**: Multiple layers of protection
 - **Zero-Trust Model**: No implicit trust between components
 - **Audit Trail**: Complete security event logging
@@ -409,11 +423,13 @@ security:
 - **Minimal Attack Surface**: WASM isolation limits damage
 
 ### Negative
+
 - **Operational Complexity**: Certificate management required
 - **Performance Overhead**: TLS and encryption costs
 - **Initial Setup**: CA and certificate generation needed
 
 ### Neutral
+
 - Industry-standard security practices
 - Similar to Kubernetes/Consul security models
 - Requires security-conscious deployment
@@ -421,16 +437,19 @@ security:
 ## Alternatives Considered
 
 ### Plain TCP with Application-Level Security
+
 - **Pros**: Simpler, potentially faster
 - **Cons**: Vulnerable to network attacks
 - **Decision**: mTLS provides stronger guarantees
 
 ### Shared Secret Authentication
+
 - **Pros**: Simple to implement
 - **Cons**: Secret distribution problem
 - **Decision**: PKI provides better security
 
 ### External Auth Service (OAuth2/OIDC)
+
 - **Pros**: Centralized auth, enterprise integration
 - **Cons**: External dependency
 - **Decision**: Violates minimal core philosophy
@@ -449,6 +468,7 @@ security:
 - [ ] Document security procedures
 
 ## References
+
 - [mTLS Best Practices](https://www.cncf.io/blog/2021/07/13/mtls-in-practice/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [OWASP Security Guidelines](https://owasp.org/www-project-application-security-verification-standard/)

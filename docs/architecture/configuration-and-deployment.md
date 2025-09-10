@@ -2,7 +2,10 @@
 
 ## Overview
 
-This document specifies the comprehensive configuration architecture and deployment patterns for the Caxton Message Router. The design supports multiple deployment scenarios from development to large-scale production with hot-reloading and operational flexibility.
+This document specifies the comprehensive configuration architecture and
+deployment patterns for the Caxton Message Router. The design supports multiple
+deployment scenarios from development to large-scale production with
+hot-reloading and operational flexibility.
 
 ## Configuration Architecture
 
@@ -980,4 +983,6 @@ This configuration and deployment architecture provides:
 7. **Performance Tuning**: System optimization and configuration recommendations
 8. **Operational Tools**: Deployment scripts and performance tuning utilities
 
-The architecture enables smooth deployment and operation of the Caxton Message Router across diverse environments while maintaining high performance and reliability.
+The architecture enables smooth deployment and operation of the Caxton Message
+Router across diverse environments while maintaining high performance and
+reliability.

@@ -1,23 +1,27 @@
 # Agent Lifecycle Management
 
-Caxton provides comprehensive agent lifecycle management capabilities for deploying, managing, and maintaining WebAssembly agents in production environments.
+Caxton provides comprehensive agent lifecycle management capabilities for
+deploying, managing, and maintaining WebAssembly agents in production
+environments.
 
 ## Overview
 
 The Agent Lifecycle Management system provides:
 
 - **Secure WASM Deployment**: Deploy agents from validated WASM modules
-- **State Management**: Type-safe lifecycle transitions with comprehensive tracking
+- **State Management**: Type-safe lifecycle transitions with comprehensive
+  tracking
 - **Hot Reload**: Zero-downtime updates with multiple deployment strategies
 - **Resource Control**: Configurable memory and CPU limits with enforcement
 - **Fault Isolation**: Failed agents don't affect other agents in the system
-- **Validation Pipeline**: Comprehensive WASM module validation before activation
+- **Validation Pipeline**: Comprehensive WASM module validation before
+  activation
 
 ## Agent Lifecycle States
 
 Agents follow a well-defined state machine:
 
-```
+```text
 Unloaded → Loaded → Running ⇄ Draining → Stopped
                       ↓
                    Failed
@@ -57,6 +61,7 @@ let result = manager.deploy_agent(
 ### Deployment Strategies
 
 #### Immediate Deployment
+
 - Replaces agent instantly
 - Minimal deployment time
 - Brief service interruption
@@ -66,6 +71,7 @@ let config = DeploymentConfig::immediate();
 ```
 
 #### Rolling Deployment
+
 - Gradual replacement of instances
 - Configurable batch size
 - Maintains service availability
@@ -75,6 +81,7 @@ let config = DeploymentConfig::rolling(BatchSize::try_new(3)?);
 ```
 
 #### Blue-Green Deployment
+
 - Deploy to parallel environment
 - Switch traffic instantly
 - Easy rollback capability
@@ -84,6 +91,7 @@ let config = DeploymentConfig::new(DeploymentStrategy::BlueGreen);
 ```
 
 #### Canary Deployment
+
 - Deploy to subset of instances
 - Gradual traffic increase
 - Automatic rollback on issues
@@ -113,16 +121,19 @@ let result = manager.hot_reload_agent(
 ### Hot Reload Strategies
 
 #### Graceful Strategy
+
 - Allows current requests to complete
 - Starts new version in parallel
 - Switches after warmup period
 
 #### Traffic Splitting Strategy
+
 - Routes percentage of traffic to new version
 - Gradually increases traffic split
 - Monitors metrics for issues
 
 #### Parallel Strategy
+
 - Runs both versions simultaneously
 - Compares responses for validation
 - Switches after verification
@@ -284,28 +295,33 @@ impl AgentLifecycleManager {
 }
 ```
 
-For complete API documentation, see the [API Reference](../developer-guide/api-reference.md).
+For complete API documentation, see the
+[API Reference](../developer-guide/api-reference.md).
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Deployment Failures**
+### Deployment Failures
+
 - Check WASM module validation errors
 - Verify resource requirements are available
 - Ensure agent exports required functions
 
-**Hot Reload Issues**
+### Hot Reload Issues
+
 - Monitor traffic split and rollback triggers
 - Check version compatibility requirements
 - Verify new version passes health checks
 
-**Performance Problems**
+### Performance Problems
+
 - Review resource limit settings
 - Analyze agent message processing patterns
 - Check for memory leaks in agent code
 
-**State Transition Errors**
+### State Transition Errors
+
 - Ensure proper lifecycle state management
 - Check for concurrent operation conflicts
 - Review timeout configurations

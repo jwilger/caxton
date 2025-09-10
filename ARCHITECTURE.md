@@ -1,35 +1,36 @@
 # Caxton System Architecture
 
-**Version**: 1.0
-**Date**: 2025-08-04
-**Status**: Design Phase
+**Version**: 1.0 **Date**: 2025-08-04 **Status**: Design Phase
 
 ## Executive Summary
 
-Caxton is a production-ready multi-agent orchestration server that provides WebAssembly-based agent isolation, FIPA-compliant messaging, and comprehensive observability. This document defines the complete system architecture, domain model, and implementation patterns following type-driven development principles.
+Caxton is a production-ready multi-agent orchestration server that provides
+WebAssembly-based agent isolation, FIPA-compliant messaging, and comprehensive
+observability. This document defines the complete system architecture, domain
+model, and implementation patterns following type-driven development principles.
 
 ## Table of Contents
 
-1. [System Overview](#system-overview)
-2. [Domain Model](#domain-model)
-3. [Component Architecture](#component-architecture)
-4. [Agent Lifecycle Management](#agent-lifecycle-management)
-5. [FIPA Message Flow](#fipa-message-flow)
-6. [Security Architecture](#security-architecture)
-7. [Observability Integration](#observability-integration)
-8. [Performance & Scalability](#performance--scalability)
-9. [Type Safety & Error Handling](#type-safety--error-handling)
+01. [System Overview](#system-overview)
+02. [Domain Model](#domain-model)
+03. [Component Architecture](#component-architecture)
+04. [Agent Lifecycle Management](#agent-lifecycle-management)
+05. [FIPA Message Flow](#fipa-message-flow)
+06. [Security Architecture](#security-architecture)
+07. [Observability Integration](#observability-integration)
+08. [Performance & Scalability](#performance--scalability)
+09. [Type Safety & Error Handling](#type-safety--error-handling)
 10. [Deployment Architecture](#deployment-architecture)
 
 ## System Overview
 
 ### High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Management Layer                        │
 ├─────────────────┬───────────────────┬───────────────────────┤
-│   CLI Tool      │   Web Dashboard   │    gRPC/REST API     │
+│   CLI Tool      │   Web Dashboard   │    REST/HTTP API     │
 │   (caxton)      │   (Future)        │   (Management)       │
 └─────────────────┴───────────────────┴───────────────────────┘
                            │
@@ -78,18 +79,24 @@ Caxton is a production-ready multi-agent orchestration server that provides WebA
 
 ### Core Principles
 
-1. **Type-Driven Design**: All illegal states are unrepresentable through the type system
+1. **Type-Driven Design**: All illegal states are unrepresentable through the
+   type system
 2. **Observability First**: Every operation is traced, logged, and measured
 3. **WebAssembly Isolation**: Complete sandboxing between agents
 4. **FIPA Compliance**: Standard agent communication protocols
 5. **Minimal Core**: Small, focused core with rich extension ecosystem
-6. **Coordination Over State**: Use lightweight protocols instead of shared databases (see [ADR-0014](docs/adr/0014-coordination-first-architecture.md))
+6. **Coordination Over State**: Use lightweight protocols instead of shared
+   databases (see [ADR-0014](docs/adr/0014-coordination-first-architecture.md))
 
 ### Protocol Layering
 
-- **SWIM Protocol (Infrastructure)**: Handles cluster membership, failure detection, and routing information dissemination
-- **FIPA Protocol (Application)**: Manages semantic agent-to-agent messaging with conversation tracking
-- **Clear Separation**: These protocols operate at different layers and complement each other (see [ADR-0015](docs/adr/0015-distributed-protocol-architecture.md))
+- **SWIM Protocol (Infrastructure)**: Handles cluster membership, failure
+  detection, and routing information dissemination
+- **FIPA Protocol (Application)**: Manages semantic agent-to-agent messaging
+  with conversation tracking
+- **Clear Separation**: These protocols operate at different layers and
+  complement each other (see
+  [ADR-0015](docs/adr/0015-distributed-protocol-architecture.md))
 
 ## Domain Model
 
@@ -133,7 +140,10 @@ impl Agent<Running> {
         // Only running agents can be drained
     }
 
-    pub fn handle_message(&self, msg: FipaMessage) -> Result<(), ProcessingError> {
+    pub fn handle_message(
+        &self,
+        msg: FipaMessage
+    ) -> Result<(), ProcessingError> {
         // Only running agents can process messages
     }
 }
@@ -339,8 +349,15 @@ impl AgentRuntime {
 #[async_trait]
 pub trait MessageRouter: Send + Sync {
     async fn route(&self, message: FipaMessage) -> Result<(), RoutingError>;
-    async fn register_agent(&self, id: AgentId, agent: &Agent<Running>) -> Result<(), RegistrationError>;
-    async fn unregister_agent(&self, id: AgentId) -> Result<(), RegistrationError>;
+    async fn register_agent(
+        &self,
+        id: AgentId,
+        agent: &Agent<Running>
+    ) -> Result<(), RegistrationError>;
+    async fn unregister_agent(
+        &self,
+        id: AgentId
+    ) -> Result<(), RegistrationError>;
 }
 
 pub struct FipaMessageRouter {
@@ -352,7 +369,10 @@ pub struct FipaMessageRouter {
 
 impl FipaMessageRouter {
     #[instrument(skip(self, message))]
-    pub async fn route(&self, message: FipaMessage) -> Result<(), RoutingError> {
+    pub async fn route(
+        &self,
+        message: FipaMessage
+    ) -> Result<(), RoutingError> {
         // 1. Validate message
         self.validate_message(&message)?;
 
@@ -443,17 +463,28 @@ impl AgentLifecycleManager {
         config: DeploymentConfig
     ) -> Result<DeploymentId, DeploymentError> {
         // 1. Validation phase
-        self.update_deployment_state(deployment_id, DeploymentState::Validating).await?;
+        self.update_deployment_state(
+            deployment_id,
+            DeploymentState::Validating
+        ).await?;
         let validation_result = self.validate_agent(&config).await?;
 
         if !validation_result.passed {
-            return Err(DeploymentError::ValidationFailed(validation_result.errors));
+            return Err(DeploymentError::ValidationFailed(
+                validation_result.errors
+            ));
         }
 
         // 2. Begin canary deployment
-        self.update_deployment_state(deployment_id, DeploymentState::Deploying).await?;
+        self.update_deployment_state(
+            deployment_id,
+            DeploymentState::Deploying
+        ).await?;
 
-        if let DeploymentStrategy::Canary { stages, rollback_conditions } = &config.strategy {
+        if let DeploymentStrategy::Canary {
+            stages,
+            rollback_conditions
+        } = &config.strategy {
             for stage in stages {
                 // Deploy to percentage of traffic
                 self.deploy_canary_stage(deployment_id, stage).await?;
@@ -466,14 +497,22 @@ impl AgentLifecycleManager {
                 ).await?;
 
                 if monitoring_result.should_rollback {
-                    self.rollback_deployment(deployment_id, monitoring_result.reason).await?;
-                    return Err(DeploymentError::RolledBack(monitoring_result.reason));
+                    self.rollback_deployment(
+                        deployment_id,
+                        monitoring_result.reason
+                    ).await?;
+                    return Err(DeploymentError::RolledBack(
+                        monitoring_result.reason
+                    ));
                 }
             }
         }
 
         // 3. Complete deployment
-        self.update_deployment_state(deployment_id, DeploymentState::Running).await?;
+        self.update_deployment_state(
+            deployment_id,
+            DeploymentState::Running
+        ).await?;
         self.observability.record_deployment_completed(deployment_id);
 
         Ok(deployment_id)
@@ -566,7 +605,9 @@ impl ContractNetProtocol {
             conversation_id,
             reply_with: Some(ReplyWith::new()),
             in_reply_to: Some(InReplyTo::from(winning_proposal.id)),
-            content: MessageContent::Acceptance(winning_proposal.content.clone()),
+            content: MessageContent::Acceptance(
+                winning_proposal.content.clone()
+            ),
             ontology: Some(Ontology::ContractNet),
             language: Some(Language::Json),
             trace_id: Span::current().id().unwrap_or_default(),
@@ -587,7 +628,9 @@ impl ContractNetProtocol {
                     conversation_id,
                     reply_with: None,
                     in_reply_to: Some(InReplyTo::from(proposal.id)),
-                    content: MessageContent::Rejection("Proposal not selected".to_string()),
+                    content: MessageContent::Rejection(
+                        "Proposal not selected".to_string()
+                    ),
                     ontology: Some(Ontology::ContractNet),
                     language: Some(Language::Json),
                     trace_id: Span::current().id().unwrap_or_default(),
@@ -688,7 +731,10 @@ impl WasmSandbox {
 
         // Get WASM function
         let handle_message = self.instance
-            .get_typed_func::<(i32, i32), i32>(&mut self.store, "handle_message")?;
+            .get_typed_func::<(i32, i32), i32>(
+                &mut self.store,
+                "handle_message"
+            )?;
 
         // Allocate memory in WASM instance
         let memory = self.instance.get_memory(&mut self.store, "memory")
@@ -711,7 +757,8 @@ impl WasmSandbox {
         ).await??;
 
         // Check remaining fuel
-        let consumed_fuel = self.resource_limiter.max_cpu_millis() - self.store.get_fuel()?;
+        let consumed_fuel = self.resource_limiter.max_cpu_millis()
+            - self.store.get_fuel()?;
         self.resource_limiter.consume_cpu(consumed_fuel)?;
 
         // Handle result
@@ -720,7 +767,8 @@ impl WasmSandbox {
             1 => {
                 // Agent produced a response
                 let response_bytes = self.get_response_from_wasm(memory)?;
-                let response_message: FipaMessage = serde_json::from_slice(&response_bytes)?;
+                let response_message: FipaMessage =
+                    serde_json::from_slice(&response_bytes)?;
                 Ok(Some(response_message))
             },
             error_code => Err(SandboxError::AgentError(error_code)),
@@ -802,7 +850,11 @@ impl ObservabilityLayer {
         );
     }
 
-    pub fn record_message_metrics(&self, message: &FipaMessage, duration: Duration) {
+    pub fn record_message_metrics(
+        &self,
+        message: &FipaMessage,
+        duration: Duration
+    ) {
         // Histogram for message processing time
         self.metrics_registry.record_histogram(
             "caxton_message_processing_duration_seconds",
@@ -918,7 +970,10 @@ pub struct AgentPool {
 }
 
 impl AgentPool {
-    pub async fn get_agent(&self, agent_id: AgentId) -> Result<Agent<Running>, PoolError> {
+    pub async fn get_agent(
+        &self,
+        agent_id: AgentId
+    ) -> Result<Agent<Running>, PoolError> {
         let mut pool = self.available_agents.lock().await;
 
         if let Some(agents) = pool.get_mut(&agent_id) {
@@ -931,7 +986,10 @@ impl AgentPool {
         self.create_fresh_agent(agent_id).await
     }
 
-    pub async fn return_agent(&self, agent: Agent<Running>) -> Result<(), PoolError> {
+    pub async fn return_agent(
+        &self,
+        agent: Agent<Running>
+    ) -> Result<(), PoolError> {
         let mut pool = self.available_agents.lock().await;
         let agent_id = agent.id();
 
@@ -983,7 +1041,9 @@ pub enum AgentError {
     #[error("Agent {agent_id} not found")]
     NotFound { agent_id: AgentId },
 
-    #[error("Agent {agent_id} is in state {current_state}, cannot perform {operation}")]
+    #[error(
+        "Agent {agent_id} is in state {current_state}, cannot perform {operation}"
+    )]
     InvalidState {
         agent_id: AgentId,
         current_state: String,
@@ -1037,7 +1097,11 @@ where
     {
         self.map_err(|e| {
             let context = f();
-            tracing::error!(error = %e.into(), context = %context, "Operation failed");
+            tracing::error!(
+                error = %e.into(),
+                context = %context,
+                "Operation failed"
+            );
             e.into()
         })
     }
@@ -1118,7 +1182,7 @@ services:
   caxton-server:
     image: caxton/caxton:latest
     ports:
-      - "8080:8080"    # Management API
+      - "8080:8080"    # REST Management API
       - "9090:9090"    # Metrics endpoint
     environment:
       - CAXTON_CONFIG_PATH=/etc/caxton/config.yaml
@@ -1237,11 +1301,14 @@ spec:
 
 This architecture provides:
 
-1. **Type Safety**: Comprehensive domain modeling with phantom types and smart constructors
+1. **Type Safety**: Comprehensive domain modeling with phantom types and smart
+   constructors
 2. **Observability**: Built-in tracing, metrics, and structured logging
 3. **Security**: WebAssembly sandboxing with resource limits
 4. **Scalability**: Performance-optimized runtime with agent pooling
 5. **Reliability**: Comprehensive error handling and fault tolerance
 6. **Production Ready**: Full deployment and operational patterns
 
-The architecture follows type-driven development principles, making illegal states unrepresentable while providing comprehensive observability and security for production multi-agent systems.
+The architecture follows type-driven development principles, making illegal
+states unrepresentable while providing comprehensive observability and security
+for production multi-agent systems.

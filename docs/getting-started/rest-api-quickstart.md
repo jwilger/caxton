@@ -1,8 +1,7 @@
 # REST API Quick Start Guide
 
-**Last Updated**: 2025-01-14
-**Requirements**: Caxton server running on localhost:8080
-**Tools**: curl (or any HTTP client)
+**Last Updated**: 2025-01-14 **Requirements**: Caxton server running on
+localhost:8080 **Tools**: curl (or any HTTP client)
 
 ## Overview
 

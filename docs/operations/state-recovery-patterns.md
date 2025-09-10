@@ -1,23 +1,31 @@
 # State Recovery Patterns for Agents
 
 ## Overview
-This document outlines comprehensive patterns and procedures for recovering agent state after crashes, restarts, or failures. These patterns ensure system resilience and maintain operational continuity in production environments.
+
+This document outlines comprehensive patterns and procedures for recovering
+agent state after crashes, restarts, or failures. These patterns ensure system
+resilience and maintain operational continuity in production environments.
 
 ## Recovery Scenarios
 
 ### 1. Agent Crash Recovery
+
 When an individual agent crashes unexpectedly.
 
 ### 2. Orchestrator Restart
+
 When the orchestrator restarts (planned or unplanned).
 
 ### 3. Network Partition Recovery
+
 When agents reconnect after network isolation.
 
 ### 4. Partial System Failure
+
 When subsystems fail but the core remains operational.
 
 ### 5. Complete System Recovery
+
 When recovering from total system failure.
 
 ## State Recovery Patterns
@@ -25,9 +33,11 @@ When recovering from total system failure.
 ### Pattern 1: Checkpoint-Based Recovery
 
 #### Overview
+
 Agents periodically save state checkpoints that can be restored on restart.
 
 #### Implementation
+
 ```rust
 pub struct AgentCheckpoint {
     agent_id: AgentId,
@@ -69,6 +79,7 @@ impl Agent {
 #### Checkpoint Strategies
 
 ##### Time-Based Checkpointing
+
 ```rust
 pub struct TimeBasedCheckpointer {
     interval: Duration,
@@ -83,6 +94,7 @@ impl TimeBasedCheckpointer {
 ```
 
 ##### Event-Based Checkpointing
+
 ```rust
 pub struct EventBasedCheckpointer {
     event_threshold: usize,
@@ -99,9 +111,11 @@ impl EventBasedCheckpointer {
 ### Pattern 2: Event Sourcing Recovery
 
 #### Overview
+
 Reconstruct state by replaying events from the event log.
 
 #### Implementation
+
 ```rust
 pub struct EventSourcedRecovery {
     event_store: EventStore,
@@ -137,6 +151,7 @@ impl EventSourcedRecovery {
 ```
 
 #### Event Replay Optimization
+
 ```rust
 pub struct OptimizedEventReplay {
     batch_size: usize,
@@ -178,9 +193,11 @@ impl OptimizedEventReplay {
 ### Pattern 3: Conversation Recovery
 
 #### Overview
+
 Restore in-progress conversations and message contexts.
 
 #### Implementation
+
 ```rust
 pub struct ConversationRecovery {
     conversation_store: ConversationStore,
@@ -240,9 +257,11 @@ impl ConversationRecovery {
 ### Pattern 4: Task Recovery
 
 #### Overview
+
 Recover and resume incomplete tasks after agent restart.
 
 #### Implementation
+
 ```rust
 pub struct TaskRecovery {
     task_store: TaskStore,
@@ -316,9 +335,11 @@ impl TaskRecovery {
 ### Pattern 5: Distributed State Recovery
 
 #### Overview
+
 Coordinate state recovery across multiple agents and nodes.
 
 #### Implementation
+
 ```rust
 pub struct DistributedRecovery {
     coordinator: RecoveryCoordinator,
@@ -565,26 +586,31 @@ recovery_dashboard:
 ## Best Practices
 
 ### 1. Checkpoint Frequency
+
 - Balance between recovery time and overhead
 - More frequent for critical agents
 - Less frequent for stateless agents
 
 ### 2. State Minimization
+
 - Keep agent state minimal
 - Store only essential data
 - Use references for large objects
 
 ### 3. Idempotent Operations
+
 - Ensure operations can be safely retried
 - Use unique operation IDs
 - Check for duplicate processing
 
 ### 4. Graceful Degradation
+
 - Continue operating with reduced functionality
 - Prioritize critical operations
 - Queue non-critical work for later
 
 ### 5. Testing Recovery Paths
+
 - Regular disaster recovery drills
 - Automated chaos testing
 - Monitor recovery metrics
@@ -594,30 +620,34 @@ recovery_dashboard:
 ### Common Issues and Solutions
 
 #### Issue: Slow Recovery
-**Symptoms**: Recovery takes longer than RTO
-**Solutions**:
+
+**Symptoms**: Recovery takes longer than RTO **Solutions**:
+
 - Increase checkpoint frequency
 - Optimize event replay
 - Use parallel recovery
 - Add more snapshots
 
 #### Issue: State Inconsistency
-**Symptoms**: Agents have different views of state
-**Solutions**:
+
+**Symptoms**: Agents have different views of state **Solutions**:
+
 - Implement vector clocks
 - Use CRDTs for convergence
 - Add state reconciliation phase
 - Increase consistency checks
 
 #### Issue: Message Loss
-**Symptoms**: Missing messages after recovery
-**Solutions**:
+
+**Symptoms**: Missing messages after recovery **Solutions**:
+
 - Implement message persistence
 - Add acknowledgment tracking
 - Use reliable message queues
 - Implement replay from source
 
 ## References
+
 - [ADR-0013: State Management Architecture](../adr/0013-state-management-architecture.md)
 - [Agent Communication Pattern Catalog](../patterns/agent-communication-patterns.md)
 - [Disaster Recovery Planning](https://aws.amazon.com/disaster-recovery/)

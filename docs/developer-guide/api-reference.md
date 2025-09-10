@@ -1,60 +1,99 @@
 # API Reference
 
+**Last Updated**: 2025-01-14 **Implementation Status**: See
+[Implementation Status](../api/implementation-status.md) for details on what's
+currently available.
+
 Complete API documentation for Caxton management and control.
+
+> **Note**: This reference includes both implemented endpoints (marked with ✅)
+> and planned endpoints (marked with ⏳). Only endpoints marked with ✅ are
+> currently functional in Story 006 implementation.
 
 ## API Overview
 
-Caxton provides both gRPC and REST APIs for management operations. The gRPC API is the primary interface, with REST available as a gateway.
+Caxton provides a REST/HTTP API for all management operations, ensuring
+simplicity and compatibility with standard HTTP tooling.
 
 ### Base URLs
 
-- **gRPC**: `localhost:50051` (default)
-- **REST**: `http://localhost:8080/api/v1`
-- **WebSocket**: `ws://localhost:8080/ws`
+- **REST API**: `http://localhost:8080/api/v1`
+- **WebSocket**: `ws://localhost:8080/ws` ⏳ **PLANNED**
 
-### Authentication
+### Authentication ⏳ **PLANNED**
 
 Include authentication token in requests:
 
 ```bash
-# REST
 curl -H "X-Caxton-Token: your-token" http://localhost:8080/api/v1/agents
+```
 
-# gRPC
-grpcurl -H "authorization: Bearer your-token" localhost:50051 caxton.v1.AgentService/ListAgents
+## System API
+
+### Health Check ✅ **IMPLEMENTED**
+
+Check if the server is running and responsive.
+
+#### REST
+
+```bash
+GET /api/v1/health
+
+# Request
+curl http://localhost:8080/api/v1/health
+
+# Response
+{
+  "status": "healthy"
+}
 ```
 
 ## Agent Management API
 
-### Deploy Agent
+### Deploy Agent ✅ **IMPLEMENTED**
 
-Deploy a new WebAssembly agent with comprehensive lifecycle management.
+Deploy a new WebAssembly agent with resource constraints.
+
+> **Current Implementation**: Basic deployment with name, WASM module, and
+> resource limits. Advanced features like deployment strategies are planned for
+> future releases.
 
 #### REST
 
 ```bash
 POST /api/v1/agents
 
-# Request
+# Request (Current Implementation)
+curl -X POST http://localhost:8080/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-agent",
+    "wasm_module": "AGFzbQEAAAA=",
+    "resource_limits": {
+      "max_memory_bytes": 10485760,
+      "max_fuel": 1000000,
+      "max_execution_time_ms": 5000
+    }
+  }'
+
+# Response (Current Implementation)
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "my-agent",
+  "wasm_module": "AGFzbQEAAAA=",
+  "resource_limits": {
+    "max_memory_bytes": 10485760,
+    "max_fuel": 1000000,
+    "max_execution_time_ms": 5000
+  }
+}
+
+# Future Request Format (Planned)
 curl -X POST http://localhost:8080/api/v1/agents \
   -H "Content-Type: multipart/form-data" \
   -F "wasm=@agent.wasm" \
-  -F "config={\"name\":\"my-agent\",\"strategy\":\"immediate\",\"resources\":{\"memory\":\"50MB\",\"cpu\":\"100000\"}}"
-
-# Response
-{
-  "agent_id": "agent_123",
-  "name": "my-agent",
-  "status": "running",
-  "deployed_at": "2024-01-15T10:30:00Z",
-  "version": "1.0.0",
-  "deployment_id": "deploy_456",
-  "lifecycle_state": "running",
-  "resource_limits": {
-    "memory": "50MB",
-    "cpu_fuel": 100000
-  }
-}
+  -F "config={\"name\":\"my-agent\",\"strategy\":\"immediate\",\
+          \"resources\":{\"memory\":\"50MB\",\"cpu\":\"100000\"}}"
 ```
 
 #### Deployment Strategies
@@ -66,7 +105,7 @@ Available deployment strategies:
 - **`blue_green`**: Deploy to parallel environment, switch traffic
 - **`canary`**: Deploy to subset, gradually increase traffic
 
-### Hot Reload Agent
+### Hot Reload Agent ⏳ **PLANNED**
 
 Update an existing agent without downtime:
 
@@ -101,115 +140,90 @@ Agents progress through defined states:
 - **`stopped`**: Cleanly shut down
 - **`failed`**: Encountered error and terminated
 
-#### gRPC
-
-```protobuf
-service AgentService {
-  rpc DeployAgent(DeployAgentRequest) returns (DeployAgentResponse);
-}
-
-message DeployAgentRequest {
-  bytes wasm_module = 1;
-  AgentConfig config = 2;
-}
-
-message AgentConfig {
-  string name = 1;
-  ResourceLimits resources = 2;
-  map<string, string> environment = 3;
-  repeated string capabilities = 4;
-}
-
-message DeployAgentResponse {
-  string agent_id = 1;
-  AgentStatus status = 2;
-  google.protobuf.Timestamp deployed_at = 3;
-}
-```
-
-### List Agents
+### List Agents ✅ **IMPLEMENTED**
 
 Get a list of all deployed agents.
+
+> **Current Implementation**: Returns all agents as a simple array. Pagination
+> and filtering are planned for future releases.
 
 #### REST
 
 ```bash
-GET /api/v1/agents?status=running&limit=10&offset=0
+GET /api/v1/agents
 
-# Response
-{
-  "agents": [
-    {
-      "agent_id": "agent_123",
-      "name": "my-agent",
-      "status": "running",
-      "created_at": "2024-01-15T10:30:00Z",
-      "resources": {
-        "memory_used": "25MB",
-        "cpu_usage": 0.15
-      }
+# Request (Current Implementation)
+curl http://localhost:8080/api/v1/agents
+
+# Response (Current Implementation - Empty)
+[]
+
+# Response (Current Implementation - With Agents)
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "my-agent",
+    "wasm_module": "AGFzbQEAAAA=",
+    "resource_limits": {
+      "max_memory_bytes": 10485760,
+      "max_fuel": 1000000,
+      "max_execution_time_ms": 5000
     }
-  ],
-  "total": 42,
-  "next_offset": 10
-}
+  }
+]
+
+# Future Request Format (Planned with pagination)
+GET /api/v1/agents?status=running&limit=10&offset=0
 ```
 
-#### gRPC
-
-```protobuf
-message ListAgentsRequest {
-  AgentStatus status_filter = 1;
-  int32 limit = 2;
-  int32 offset = 3;
-}
-
-message ListAgentsResponse {
-  repeated Agent agents = 1;
-  int32 total = 2;
-}
-```
-
-### Get Agent Details
+### Get Agent Details ✅ **IMPLEMENTED**
 
 Retrieve detailed information about a specific agent.
+
+> **Current Implementation**: Returns basic agent information. Metrics and usage
+> statistics are planned for future releases.
 
 #### REST
 
 ```bash
 GET /api/v1/agents/{agent_id}
 
-# Response
+# Request (Current Implementation)
+curl http://localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
+
+# Response (Current Implementation - Success)
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "my-agent",
+  "wasm_module": "AGFzbQEAAAA=",
+  "resource_limits": {
+    "max_memory_bytes": 10485760,
+    "max_fuel": 1000000,
+    "max_execution_time_ms": 5000
+  }
+}
+
+# Response (Current Implementation - Not Found)
+{
+  "error": "Agent not found",
+  "details": {
+    "agent_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+
+# Future Response Format (Planned with metrics)
 {
   "agent_id": "agent_123",
   "name": "my-agent",
   "status": "running",
-  "version": "1.0.0",
-  "deployment": {
-    "strategy": "direct",
-    "deployed_at": "2024-01-15T10:30:00Z",
-    "deployed_by": "user@example.com"
-  },
-  "resources": {
-    "limits": {
-      "memory": "50MB",
-      "cpu": "100m"
-    },
-    "usage": {
-      "memory": "25MB",
-      "cpu": "50m"
-    }
-  },
   "metrics": {
     "messages_processed": 1542,
-    "messages_failed": 3,
-    "average_latency_ms": 12.5,
     "uptime_seconds": 3600
   }
 }
 ```
 
-### Update Agent
+### Update Agent ⏳ **PLANNED**
 
 Update an agent's configuration or code.
 
@@ -237,7 +251,7 @@ PUT /api/v1/agents/{agent_id}
 }
 ```
 
-### Stop Agent
+### Stop Agent ⏳ **PLANNED**
 
 Stop a running agent gracefully.
 
@@ -260,7 +274,7 @@ POST /api/v1/agents/{agent_id}/stop
 }
 ```
 
-### Remove Agent
+### Remove Agent ⏳ **PLANNED**
 
 Remove an agent from the system.
 
@@ -277,7 +291,7 @@ DELETE /api/v1/agents/{agent_id}
 }
 ```
 
-## Message API
+## Message API ⏳ **PLANNED**
 
 ### Send Message
 
@@ -306,32 +320,6 @@ POST /api/v1/messages
   "message_id": "msg_abc123",
   "status": "delivered",
   "delivered_at": "2024-01-15T10:30:00.123Z"
-}
-```
-
-#### gRPC
-
-```protobuf
-service MessageService {
-  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  rpc SendMessageAndWait(SendMessageRequest) returns (MessageReply);
-}
-
-message SendMessageRequest {
-  FipaMessage message = 1;
-  DeliveryOptions options = 2;
-}
-
-message FipaMessage {
-  string performative = 1;
-  string sender = 2;
-  string receiver = 3;
-  google.protobuf.Struct content = 4;
-  string conversation_id = 5;
-  string reply_with = 6;
-  string in_reply_to = 7;
-  string ontology = 8;
-  string language = 9;
 }
 ```
 
@@ -387,7 +375,7 @@ GET /api/v1/messages?conversation_id=conv_789&limit=50
 }
 ```
 
-## Task API
+## Task API ⏳ **PLANNED**
 
 ### Create Task
 
@@ -479,7 +467,7 @@ GET /api/v1/tasks/{task_id}
 }
 ```
 
-## Deployment API
+## Deployment API ⏳ **PLANNED**
 
 ### Create Deployment
 
@@ -575,7 +563,7 @@ POST /api/v1/deployments/{deployment_id}/rollback
 }
 ```
 
-## Metrics API
+## Metrics API ⏳ **PLANNED**
 
 ### Get System Metrics
 
@@ -714,6 +702,28 @@ ws.send(JSON.stringify({
 
 All APIs use consistent error responses:
 
+### Current Implementation ✅
+
+```json
+{
+  "error": "Error message",
+  "details": {
+    "field": "field_name",
+    "reason": "validation reason"
+  }
+}
+```
+
+### Implemented Error Codes
+
+| Error Type | HTTP Status | Description | Example |
+|------------|-------------|-------------|---------| | Validation Error | 400 |
+Invalid input data | Empty name, zero limits | | Invalid JSON | 400 | Malformed
+JSON request | Syntax errors | | Agent Not Found | 404 | Agent ID doesn't exist
+| Non-existent UUID |
+
+### Future Error Format ⏳ **PLANNED**
+
 ```json
 {
   "error": {
@@ -728,20 +738,16 @@ All APIs use consistent error responses:
 }
 ```
 
-### Error Codes
+### Planned Error Codes ⏳
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AGENT_NOT_FOUND` | 404 | Agent does not exist |
-| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
-| `INVALID_WASM` | 400 | Invalid WebAssembly module |
-| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
-| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
-| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Operation not permitted |
-| `RATE_LIMITED` | 429 | Rate limit exceeded |
-| `INTERNAL_ERROR` | 500 | Internal server error |
+| Code | HTTP Status | Description | |------|-------------|-------------| |
+`AGENT_ALREADY_EXISTS` | 409 | Agent name already in use | | `INVALID_WASM` |
+400 | Invalid WebAssembly module | | `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource
+limits exceeded | | `DEPLOYMENT_FAILED` | 500 | Deployment operation failed | |
+`MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered | |
+`UNAUTHORIZED` | 401 | Authentication required | | `FORBIDDEN` | 403 | Operation
+not permitted | | `RATE_LIMITED` | 429 | Rate limit exceeded | |
+`INTERNAL_ERROR` | 500 | Internal server error |
 
 ## SDK Examples
 
@@ -825,7 +831,7 @@ import (
 
 func main() {
     client := caxton.NewClient(
-        caxton.WithEndpoint("localhost:50051"),
+        caxton.WithEndpoint("http://localhost:8080"),
         caxton.WithAPIKey("your-api-key"),
     )
 
@@ -855,16 +861,13 @@ func main() {
 
 API rate limits per endpoint:
 
-| Endpoint | Rate Limit | Burst |
-|----------|------------|-------|
-| Agent deployment | 10/min | 20 |
-| Message sending | 1000/sec | 2000 |
-| Metrics queries | 100/min | 200 |
-| System operations | 50/min | 100 |
+| Endpoint | Rate Limit | Burst | |----------|------------|-------| | Agent
+deployment | 10/min | 20 | | Message sending | 1000/sec | 2000 | | Metrics
+queries | 100/min | 200 | | System operations | 50/min | 100 |
 
 Rate limit headers:
 
-```
+```text
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 950
 X-RateLimit-Reset: 1642248000

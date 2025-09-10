@@ -1,12 +1,15 @@
----
-layout: documentation
+______________________________________________________________________
+
+## layout: documentation
+
 title: "Anchor Links Demo"
 description: "Demo page showing anchor link functionality for long documents"
----
 
 # Anchor Links Demo
 
-This page demonstrates the anchor links functionality implemented for the Caxton documentation site. Anchor links provide deep-linking, smooth scrolling, and copy-to-clipboard functionality for better navigation of long documents.
+This page demonstrates the anchor links functionality implemented for the Caxton
+documentation site. Anchor links provide deep-linking, smooth scrolling, and
+copy-to-clipboard functionality for better navigation of long documents.
 
 ## Features Overview
 
@@ -14,18 +17,22 @@ The anchor links system provides several key features:
 
 ### Auto-Generated Anchor Links
 
-All headings (h2-h6) automatically receive anchor links that appear on hover. These links allow users to:
+All headings (h2-h6) automatically receive anchor links that appear on hover.
+These links allow users to:
+
 - Navigate directly to specific sections
 - Copy links to specific sections for sharing
 - Bookmark specific parts of documentation
 
 ### Smooth Scrolling Behavior
 
-When clicking anchor links, the page smoothly scrolls to the target section with proper offset to account for fixed headers.
+When clicking anchor links, the page smoothly scrolls to the target section with
+proper offset to account for fixed headers.
 
 ### Copy-to-Clipboard Functionality
 
 Users can copy anchor links using:
+
 - **Right-click**: Context menu to copy the full URL
 - **Ctrl+Click**: Copy link without navigation
 - **Visual Feedback**: Icon changes to checkmark when copied
@@ -33,11 +40,13 @@ Users can copy anchor links using:
 
 ## Table of Contents Generation
 
-The system automatically generates table of contents for documents with 3+ headings:
+The system automatically generates table of contents for documents with 3+
+headings:
 
 ### Manual TOC
 
 You can also manually create table of contents by adding:
+
 ```html
 <div class="table-of-contents">
   <h3>Contents</h3>
@@ -50,7 +59,8 @@ The TOC generator properly handles nested heading structures:
 
 #### Subsection Example
 
-This demonstrates how h4 headings are nested under h3 headings in the generated table of contents.
+This demonstrates how h4 headings are nested under h3 headings in the generated
+table of contents.
 
 ##### Deep Nesting
 
@@ -118,7 +128,8 @@ The anchor links system is built with:
 
 ## Testing Section Alpha
 
-This section tests the anchor link generation with various heading styles and content.
+This section tests the anchor link generation with various heading styles and
+content.
 
 ### Testing Section Beta
 
@@ -174,7 +185,8 @@ The anchor links system can handle dynamically added content:
 
 #### Event Integration
 
-The system integrates with existing page functionality and doesn't interfere with other JavaScript.
+The system integrates with existing page functionality and doesn't interfere
+with other JavaScript.
 
 ## Conclusion
 

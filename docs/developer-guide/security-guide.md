@@ -1,6 +1,8 @@
 # Security Developer Guide
 
-This guide covers security features and best practices for developing with Caxton. For the complete security architecture, see [ADR-0016: Security Architecture](../adr/0016-security-architecture.md).
+This guide covers security features and best practices for developing with
+Caxton. For the complete security architecture, see
+[ADR-0016: Security Architecture](../adr/0016-security-architecture.md).
 
 ## Overview
 

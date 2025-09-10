@@ -1,10 +1,8 @@
----
-title: API Reference
-layout: documentation
-description: Complete API documentation for Caxton management and control.
----
+______________________________________________________________________
 
-# API Reference
+## title: API Reference layout: documentation
+
+## description: Complete API documentation for Caxton management and control
 
 Complete API documentation for Caxton management and control.
 
@@ -13,6 +11,7 @@ Complete API documentation for Caxton management and control.
 The three most common operations:
 
 ### 1. Deploy an Agent
+
 ```bash
 # Set your environment
 export CAXTON_TOKEN="your-token-here"
@@ -27,6 +26,7 @@ curl -X POST "$CAXTON_API/agents" \
 ```
 
 ### 2. Send a Message
+
 ```bash
 # Send message to agent
 curl -X POST "$CAXTON_API/messages" \
@@ -41,6 +41,7 @@ curl -X POST "$CAXTON_API/messages" \
 ```
 
 ### 3. List All Agents
+
 ```bash
 # Get running agents
 curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
@@ -58,7 +59,6 @@ export CAXTON_TOKEN="your-token-here"
 # API endpoints
 export CAXTON_API="http://localhost:8080/api/v1"
 export CAXTON_WS="ws://localhost:8080/ws"
-export CAXTON_GRPC="localhost:50051"
 
 # Optional - Default values
 export CAXTON_TIMEOUT="30"
@@ -69,20 +69,18 @@ export CAXTON_RETRY_COUNT="3"
 
 All APIs return consistent error responses with these codes:
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AGENT_NOT_FOUND` | 404 | Agent does not exist |
-| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
-| `INVALID_WASM` | 400 | Invalid WebAssembly module |
-| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
-| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
-| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Operation not permitted |
-| `RATE_LIMITED` | 429 | Rate limit exceeded |
-| `INTERNAL_ERROR` | 500 | Internal server error |
+| Code | HTTP Status | Description | |------|-------------|-------------| |
+`AGENT_NOT_FOUND` | 404 | Agent does not exist | | `AGENT_ALREADY_EXISTS` | 409
+| Agent name already in use | | `INVALID_WASM` | 400 | Invalid WebAssembly
+module | | `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded | |
+`DEPLOYMENT_FAILED` | 500 | Deployment operation failed | |
+`MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered | |
+`UNAUTHORIZED` | 401 | Authentication required | | `FORBIDDEN` | 403 | Operation
+not permitted | | `RATE_LIMITED` | 429 | Rate limit exceeded | |
+`INTERNAL_ERROR` | 500 | Internal server error |
 
 **Error Response Format:**
+
 ```json
 {
   "error": {
@@ -95,12 +93,12 @@ All APIs return consistent error responses with these codes:
 
 ## API Overview
 
-Caxton provides both gRPC and REST APIs for management operations. The gRPC API is the primary interface, with REST available as a gateway.
+Caxton provides a REST/HTTP API for all management operations, ensuring
+simplicity and compatibility with standard HTTP tooling.
 
 ### Base URLs
 
-- **gRPC**: `localhost:50051` (default)
-- **REST**: `http://localhost:8080/api/v1`
+- **REST API**: `http://localhost:8080/api/v1`
 - **WebSocket**: `ws://localhost:8080/ws`
 
 ### Authentication
@@ -108,11 +106,7 @@ Caxton provides both gRPC and REST APIs for management operations. The gRPC API 
 Include authentication token in requests:
 
 ```bash
-# REST
 curl -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
-
-# gRPC
-grpcurl -H "authorization: Bearer $CAXTON_TOKEN" $CAXTON_GRPC caxton.v1.AgentService/ListAgents
 ```
 
 ## Agent Management API
@@ -137,7 +131,6 @@ curl -X POST "$CAXTON_API/agents" \
   "deployed_at": "2024-01-15T10:30:00Z"
 }
 ```
-
 
 ### List Agents
 
@@ -166,7 +159,6 @@ curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
   "total": 42
 }
 ```
-
 
 ### Get Agent Details
 
@@ -300,7 +292,6 @@ curl -X POST "$CAXTON_API/messages" \
   "status": "delivered"
 }
 ```
-
 
 ### Subscribe to Messages
 
@@ -644,7 +635,6 @@ ws.onmessage = (event) => {
 {"type": "system.alert", "message": "High memory usage"}
 ```
 
-
 ## Quick Examples
 
 ### Complete Agent Workflow
@@ -699,11 +689,13 @@ done
 ## Rate Limits & Headers
 
 **Rate Limits:**
+
 - Agent operations: 10/min
 - Message sending: 1000/sec
 - Metrics queries: 100/min
 
 **Check Rate Limits:**
+
 ```bash
 # Headers show remaining quota
 curl -I -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
@@ -714,6 +706,11 @@ curl -I -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
 
 ## Next Steps
 
-- [Message Protocols]({{ '/docs/developer-guide/message-protocols/' | relative_url }}) - FIPA protocol details
-- [WebAssembly Integration]({{ '/docs/developer-guide/wasm-integration/' | relative_url }}) - WASM specifics
-- [Testing Guide]({{ '/docs/developer-guide/testing/' | relative_url }}) - Testing strategies
+- \[Message Protocols\]({{ '/docs/developer-guide/message-protocols/' |
+  relative_url }})
+  - FIPA protocol details
+- \[WebAssembly Integration\]({{ '/docs/developer-guide/wasm-integration/' |
+  relative_url }})
+  - WASM specifics
+- \[Testing Guide\]({{ '/docs/developer-guide/testing/' | relative_url }}) -
+  Testing strategies

@@ -1,12 +1,16 @@
----
-title: Monitoring and Observability Guide
+______________________________________________________________________
+
+## title: Monitoring and Observability Guide
+
 layout: documentation
-description: Comprehensive monitoring and observability setup for Caxton multi-agent systems using OpenTelemetry, Prometheus, Jaeger, and custom dashboards.
----
+description: Comprehensive monitoring and observability setup for Caxton multi-agent
+  systems using OpenTelemetry, Prometheus, Jaeger, and custom dashboards
 
 # Monitoring and Observability Guide
 
-This guide covers setting up comprehensive monitoring and observability for Caxton multi-agent systems, including metrics collection, distributed tracing, log aggregation, alerting, and performance monitoring.
+This guide covers setting up comprehensive monitoring and observability for
+Caxton multi-agent systems, including metrics collection, distributed tracing,
+log aggregation, alerting, and performance monitoring.
 
 ## Observability Architecture
 
@@ -23,7 +27,8 @@ Caxton's observability stack is built on industry-standard tools:
 
 ### Configuration
 
-Caxton has built-in OpenTelemetry support that can be configured through the main configuration file:
+Caxton has built-in OpenTelemetry support that can be configured through the
+main configuration file:
 
 ```toml
 # caxton.toml
@@ -127,6 +132,7 @@ service:
 Caxton automatically exposes the following metrics categories:
 
 #### Runtime Metrics
+
 - `caxton_agents_total`: Total number of agents
 - `caxton_agents_active`: Currently active agents
 - `caxton_agent_executions_total`: Total agent executions
@@ -136,6 +142,7 @@ Caxton automatically exposes the following metrics categories:
 - `caxton_runtime_cpu_usage_ratio`: CPU utilization
 
 #### Message Protocol Metrics
+
 - `caxton_messages_sent_total`: FIPA messages sent
 - `caxton_messages_received_total`: FIPA messages received
 - `caxton_message_processing_duration_seconds`: Message processing time
@@ -143,12 +150,14 @@ Caxton automatically exposes the following metrics categories:
 - `caxton_message_errors_total`: Message processing errors
 
 #### HTTP API Metrics
+
 - `caxton_http_requests_total`: HTTP requests by method/status
 - `caxton_http_request_duration_seconds`: HTTP request duration
 - `caxton_http_active_connections`: Active HTTP connections
 - `caxton_websocket_connections`: Active WebSocket connections
 
 #### System Resource Metrics
+
 - `caxton_disk_usage_bytes`: Disk space usage
 - `caxton_network_bytes_total`: Network I/O
 - `caxton_file_descriptors`: Open file descriptors
@@ -215,6 +224,7 @@ scrape_configs:
 ### Trace Context Propagation
 
 Caxton automatically propagates trace context through:
+
 - HTTP headers (W3C Trace Context)
 - FIPA message metadata
 - Internal agent communications
@@ -668,22 +678,26 @@ receivers:
 Key performance indicators to monitor:
 
 1. **Throughput Metrics**:
+
    - Requests per second
    - Agent executions per second
    - Message processing rate
 
 2. **Latency Metrics**:
+
    - Request response time
    - Agent execution time
    - Message processing delay
 
 3. **Resource Utilization**:
+
    - CPU usage
    - Memory consumption
    - Disk I/O
    - Network I/O
 
 4. **Error Rates**:
+
    - HTTP error responses
    - Agent execution failures
    - Message processing errors
@@ -788,16 +802,19 @@ profile_types = ["cpu", "alloc_objects", "alloc_space", "inuse_objects", "inuse_
 ### Common Issues
 
 1. **Missing Metrics**:
+
    - Check OpenTelemetry collector configuration
    - Verify network connectivity
    - Review Prometheus scrape configuration
 
 2. **High Cardinality**:
+
    - Limit label values
    - Use recording rules for pre-aggregation
    - Implement metric sampling
 
 3. **Trace Sampling Issues**:
+
    - Adjust sampling rates
    - Check trace context propagation
    - Verify Jaeger storage capacity
@@ -820,4 +837,6 @@ curl 'http://prometheus:9090/api/v1/query?query=up'
 curl http://jaeger:16686/api/traces?service=caxton-runtime
 ```
 
-For more operational guidance, see the [Deployment Guide]({{ '/docs/operations/deployment/' | relative_url }}) and [Security Guide]({{ '/docs/operations/security/' | relative_url }}).
+For more operational guidance, see the \[Deployment Guide\]({{
+'/docs/operations/deployment/' | relative_url }}) and \[Security Guide\]({{
+'/docs/operations/security/' | relative_url }}).

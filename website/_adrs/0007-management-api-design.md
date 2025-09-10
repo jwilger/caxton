@@ -1,10 +1,8 @@
----
-title: "0007. Management API Design"
-date: 2025-08-03
-status: proposed
-layout: adr
+______________________________________________________________________
+
+## title: "0007. Management API Design" date: 2025-08-03 status: proposed layout: adr
+
 categories: [Architecture, Technology]
----
 
 # 0007. Management API Design
 
@@ -16,9 +14,14 @@ Proposed
 
 ## Context
 
-With Caxton's pivot to an application server architecture (ADR-0006), we need a well-designed management API that enables programmatic control of the multi-agent system. This API must be accessible to developers regardless of their language choice while maintaining the performance and type safety that Rust provides internally.
+With Caxton's pivot to an application server architecture (ADR-0006), we need a
+well-designed management API that enables programmatic control of the
+multi-agent system. This API must be accessible to developers regardless of
+their language choice while maintaining the performance and type safety that
+Rust provides internally.
 
 The API design must balance several concerns:
+
 - **Language agnostic**: Accessible from any programming language
 - **Performance**: Minimal overhead for high-frequency operations
 - **Type safety**: Preserve Rust's guarantees across the API boundary
@@ -27,7 +30,8 @@ The API design must balance several concerns:
 
 ## Decision Drivers
 
-- **Industry standards**: gRPC is the de facto standard for high-performance APIs
+- **Industry standards**: gRPC is the de facto standard for high-performance
+  APIs
 - **REST familiarity**: Many developers expect REST APIs for tooling integration
 - **Type safety**: Need to preserve Rust's type guarantees across API boundaries
 - **Performance requirements**: < 1ms overhead for local API calls
@@ -66,7 +70,8 @@ service CaxtonManagement {
 ### 3. API Design Principles
 
 **Resource-Oriented Design**:
-```
+
+```text
 /api/v1/agents                    # Agent collection
 /api/v1/agents/{id}              # Individual agent
 /api/v1/agents/{id}/messages     # Agent's messages
@@ -74,6 +79,7 @@ service CaxtonManagement {
 ```
 
 **Structured Error Handling**:
+
 ```protobuf
 message Error {
   string code = 1;        // Machine-readable error code
@@ -84,6 +90,7 @@ message Error {
 ```
 
 **OpenTelemetry Integration**:
+
 - Every API call creates a trace span
 - Propagate trace context via headers
 - Structured logging with trace correlation
@@ -111,16 +118,19 @@ message Error {
 ### Mitigation Strategies
 
 **Complexity**:
+
 - Single source of truth (protobuf definitions)
 - Automated gateway generation
 - Comprehensive testing of both protocols
 
 **Learning Curve**:
+
 - Excellent documentation with examples
 - Pre-built SDKs for popular languages
 - REST gateway for initial exploration
 
 **Debugging**:
+
 - gRPC reflection for runtime introspection
 - Request/response logging in development
 - Trace-based debugging tools
@@ -128,6 +138,7 @@ message Error {
 ## API Examples
 
 ### Deploy Agent (gRPC)
+
 ```rust
 let request = DeployAgentRequest {
     name: "processor".to_string(),
@@ -144,6 +155,7 @@ println!("Agent deployed: {}", response.agent_id);
 ```
 
 ### Deploy Agent (REST)
+
 ```bash
 curl -X POST https://localhost:8080/api/v1/agents \
   -H "Content-Type: application/json" \
@@ -159,6 +171,7 @@ curl -X POST https://localhost:8080/api/v1/agents \
 ```
 
 ### Subscribe to Messages (gRPC Streaming)
+
 ```rust
 let request = SubscribeRequest {
     filter: Some(MessageFilter {
@@ -174,6 +187,7 @@ while let Some(message) = stream.message().await? {
 ```
 
 ### Health Check with Tracing
+
 ```bash
 curl -X GET https://localhost:8080/api/v1/health \
   -H "X-Trace-Id: 550e8400-e29b-41d4-a716-446655440000"
@@ -192,13 +206,15 @@ curl -X GET https://localhost:8080/api/v1/health \
 ## Observability Integration
 
 Every API operation:
+
 1. Creates a trace span with operation details
 2. Logs structured data with trace correlation
 3. Updates Prometheus metrics
 4. Propagates context to downstream operations
 
 Example trace structure:
-```
+
+```text
 caxton.api.deploy_agent (1.2ms)
 ├── caxton.wasm.validate (0.3ms)
 ├── caxton.runtime.create (0.5ms)
@@ -209,7 +225,8 @@ caxton.api.deploy_agent (1.2ms)
 ## Related Decisions
 
 - ADR-0001: Observability-First Architecture - Defines tracing/metrics strategy
-- ADR-0006: Application Server Architecture - Established need for management API
+- ADR-0006: Application Server Architecture - Established need for management
+  API
 - ADR-0008: Agent Deployment Model - Uses this API for deployment operations
 - ADR-0009: CLI Tool Design - Uses the gRPC API
 

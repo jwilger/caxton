@@ -1,10 +1,12 @@
 # Clustering and Distributed Operations
 
-This guide covers running Caxton in a distributed cluster configuration for high availability and scalability.
+This guide covers running Caxton in a distributed cluster configuration for high
+availability and scalability.
 
 ## Overview
 
-Caxton uses a **coordination-first architecture** that requires no external dependencies like databases or message queues. Each Caxton instance:
+Caxton uses a **coordination-first architecture** that requires no external
+dependencies like databases or message queues. Each Caxton instance:
 
 - Maintains its own local state using embedded SQLite
 - Coordinates with other instances via the SWIM gossip protocol
@@ -12,6 +14,7 @@ Caxton uses a **coordination-first architecture** that requires no external depe
 - Handles network partitions gracefully with degraded mode operation
 
 For architectural details, see:
+
 - [ADR-0014: Coordination-First Architecture](../adr/0014-coordination-first-architecture.md)
 - [ADR-0015: Distributed Protocol Architecture](../adr/0015-distributed-protocol-architecture.md)
 
@@ -111,7 +114,8 @@ security:
       verify_peer: true
 ```
 
-See [ADR-0016: Security Architecture](../adr/0016-security-architecture.md) for details.
+See [ADR-0016: Security Architecture](../adr/0016-security-architecture.md) for
+details.
 
 ## Agent Distribution
 
@@ -172,6 +176,7 @@ caxton cluster watch
 Caxton handles network partitions gracefully:
 
 #### Majority Partition
+
 Nodes in the majority partition continue normal operations:
 
 ```bash
@@ -183,6 +188,7 @@ caxton cluster status
 ```
 
 #### Minority Partition
+
 Nodes in the minority enter degraded mode:
 
 ```bash
@@ -230,7 +236,9 @@ Agent startup P50         10ms        8.2ms     ✓
 Gossip convergence        <5s         2.1s      ✓
 ```
 
-See [ADR-0017: Performance Requirements](../adr/0017-performance-requirements.md) for targets.
+See
+[ADR-0017: Performance Requirements](../adr/0017-performance-requirements.md)
+for targets.
 
 ## Operations
 
@@ -250,7 +258,8 @@ caxton cluster upgrade --version v1.2.0
 # 5. Roll out to remaining nodes
 ```
 
-See [ADR-0018: Operational Procedures](../adr/0018-operational-procedures.md) for details.
+See [ADR-0018: Operational Procedures](../adr/0018-operational-procedures.md)
+for details.
 
 ### Backup and Recovery
 
