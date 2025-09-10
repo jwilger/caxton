@@ -2,9 +2,9 @@ ______________________________________________________________________
 
 ## title: Monitoring and Observability Guide
 
-layout: documentation
-description: Comprehensive monitoring and observability setup for Caxton multi-agent
-  systems using OpenTelemetry, Prometheus, Jaeger, and custom dashboards
+layout: documentation description: Comprehensive monitoring and observability
+setup for Caxton multi-agent systems using OpenTelemetry, Prometheus, Jaeger,
+and custom dashboards
 
 # Monitoring and Observability Guide
 

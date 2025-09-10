@@ -2,8 +2,8 @@ ______________________________________________________________________
 
 ## layout: documentation
 
-title: "Anchor Links Demo"
-description: "Demo page showing anchor link functionality for long documents"
+title: "Anchor Links Demo" description: "Demo page showing anchor link
+functionality for long documents"
 
 # Anchor Links Demo
 

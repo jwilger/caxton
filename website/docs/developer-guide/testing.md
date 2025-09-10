@@ -2,9 +2,9 @@ ______________________________________________________________________
 
 ## title: Testing Strategies and Best Practices
 
-layout: documentation
-description: Comprehensive guide to testing multi-agent systems in Caxton, including
-  unit tests, integration tests, and load testing strategies
+layout: documentation description: Comprehensive guide to testing multi-agent
+systems in Caxton, including unit tests, integration tests, and load testing
+strategies
 
 # Testing Strategies and Best Practices
 

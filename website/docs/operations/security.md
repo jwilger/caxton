@@ -2,10 +2,9 @@ ______________________________________________________________________
 
 ## title: Security Best Practices
 
-layout: documentation
-description: Comprehensive security guide for Caxton multi-agent systems covering
-  WebAssembly isolation, network security, authentication, secrets management, and
-  incident response
+layout: documentation description: Comprehensive security guide for Caxton
+multi-agent systems covering WebAssembly isolation, network security,
+authentication, secrets management, and incident response
 
 # Security Best Practices
 

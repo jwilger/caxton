@@ -2,9 +2,8 @@ ______________________________________________________________________
 
 ## title: Building Agents
 
-layout: documentation
-description: Comprehensive guide to developing WebAssembly agents for Caxton
-  multi-agent systems
+layout: documentation description: Comprehensive guide to developing WebAssembly
+agents for Caxton multi-agent systems
 
 # Building Agents
 

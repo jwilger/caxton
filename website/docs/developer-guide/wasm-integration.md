@@ -2,8 +2,8 @@ ______________________________________________________________________
 
 ## title: WebAssembly Integration Guide layout: documentation description: Complete guide to
 
-WebAssembly integration in Caxton, including agent development, sandboxing, and performance
-optimization
+WebAssembly integration in Caxton, including agent development, sandboxing, and
+performance optimization
 
 # WebAssembly Integration Guide
 
