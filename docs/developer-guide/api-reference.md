@@ -20,6 +20,15 @@ Complete API documentation for Caxton management and control.
 Caxton provides a REST/HTTP API for all management operations, ensuring
 simplicity and compatibility with standard HTTP tooling.
 
+### Agent Types
+
+Caxton supports two agent types:
+
+- **Configuration agents**: Defined in markdown files with YAML
+  frontmatter (primary experience)
+- **WebAssembly agents**: Compiled modules for advanced use cases requiring
+  custom algorithms
+
 ### Base URLs
 
 - **REST API**: `http://localhost:8080/api/v1`
@@ -55,24 +64,59 @@ curl http://localhost:8080/api/v1/health
 
 ## Agent Management API
 
-### Deploy Agent ✅ **IMPLEMENTED**
+### Deploy Configuration Agent ✅ **IMPLEMENTED**
 
-Deploy a new WebAssembly agent with resource constraints.
+Deploy a new configuration-driven agent defined in markdown with YAML
+frontmatter.
 
-> **Current Implementation**: Basic deployment with name, WASM module, and
-> resource limits. Advanced features like deployment strategies are planned for
-> future releases.
+> **Primary Experience**: Configuration agents provide the fastest path to agent
+> deployment with a 5-10 minute onboarding experience.
 
 #### REST
 
 ```bash
-POST /api/v1/agents
+POST /api/v1/agents/config
 
-# Request (Current Implementation)
-curl -X POST http://localhost:8080/api/v1/agents \
+# Request
+curl -X POST http://localhost:8080/api/v1/agents/config \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "my-agent",
+    "name": "data-analyzer",
+    "config": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\n  - report-generation\ntools:\n  - http_client\n  - csv_parser\nsystem_prompt: |\n  You are a data analysis expert.\n---\n\n# DataAnalyzer Agent\n\nSpecializes in data analysis tasks.",
+    "memory_enabled": true,
+    "memory_scope": "workspace"
+  }'
+
+# Response
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "data-analyzer",
+  "type": "configuration",
+  "status": "deployed",
+  "capabilities": ["data-analysis", "report-generation"],
+  "tools": ["http_client", "csv_parser"],
+  "memory_enabled": true,
+  "deployed_at": "2024-01-15T10:30:00Z"
+}
+```
+
+### Deploy WebAssembly Agent ✅ **IMPLEMENTED**
+
+Deploy a WebAssembly agent for advanced use cases requiring custom algorithms.
+
+> **Advanced Use Case**: WASM agents provide maximum flexibility and security
+> isolation for power users with complex algorithmic requirements.
+
+#### REST
+
+```bash
+POST /api/v1/agents/wasm
+
+# Request (Current Implementation)
+curl -X POST http://localhost:8080/api/v1/agents/wasm \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-wasm-agent",
     "wasm_module": "AGFzbQEAAAA=",
     "resource_limits": {
       "max_memory_bytes": 10485760,
@@ -84,7 +128,8 @@ curl -X POST http://localhost:8080/api/v1/agents \
 # Response (Current Implementation)
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "my-agent",
+  "name": "my-wasm-agent",
+  "type": "webassembly",
   "wasm_module": "AGFzbQEAAAA=",
   "resource_limits": {
     "max_memory_bytes": 10485760,
@@ -94,7 +139,7 @@ curl -X POST http://localhost:8080/api/v1/agents \
 }
 
 # Future Request Format (Planned)
-curl -X POST http://localhost:8080/api/v1/agents \
+curl -X POST http://localhost:8080/api/v1/agents/wasm \
   -H "Content-Type: multipart/form-data" \
   -F "wasm=@agent.wasm" \
   -F "config={\"name\":\"my-agent\",\"strategy\":\"immediate\",\
@@ -136,7 +181,14 @@ curl -X PUT http://localhost:8080/api/v1/agents/agent_123/reload \
 
 ### Agent Lifecycle States
 
-Agents progress through defined states:
+#### Configuration Agent States
+
+- **`deployed`**: Configuration parsed and agent ready
+- **`running`**: Actively processing messages via LLM orchestration
+- **`suspended`**: Temporarily paused
+- **`failed`**: Configuration error or runtime failure
+
+#### WebAssembly Agent States
 
 - **`unloaded`**: Not present in system
 - **`loaded`**: WASM module loaded, not executing
@@ -147,7 +199,7 @@ Agents progress through defined states:
 
 ### List Agents ✅ **IMPLEMENTED**
 
-Get a list of all deployed agents.
+Get a list of all deployed agents, both configuration and WebAssembly.
 
 > **Current Implementation**: Returns all agents as a simple array. Pagination
 > and filtering are planned for future releases.
@@ -163,12 +215,21 @@ curl http://localhost:8080/api/v1/agents
 # Response (Current Implementation - Empty)
 []
 
-# Response (Current Implementation - With Agents)
+# Response (Current Implementation - With Mixed Agents)
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "my-agent",
-    "wasm_module": "AGFzbQEAAAA=",
+    "name": "data-analyzer",
+    "type": "configuration",
+    "status": "running",
+    "capabilities": ["data-analysis", "report-generation"],
+    "memory_enabled": true
+  },
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "name": "custom-wasm-agent",
+    "type": "webassembly",
+    "status": "running",
     "resource_limits": {
       "max_memory_bytes": 10485760,
       "max_fuel": 1000000,
@@ -177,8 +238,8 @@ curl http://localhost:8080/api/v1/agents
   }
 ]
 
-# Future Request Format (Planned with pagination)
-GET /api/v1/agents?status=running&limit=10&offset=0
+# Future Request Format (Planned with filtering)
+GET /api/v1/agents?type=configuration&status=running&limit=10&offset=0
 ```
 
 ### Get Agent Details ✅ **IMPLEMENTED**
@@ -196,10 +257,25 @@ GET /api/v1/agents/{agent_id}
 # Request (Current Implementation)
 curl http://localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
 
-# Response (Current Implementation - Success)
+# Response (Configuration Agent)
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "my-agent",
+  "name": "data-analyzer",
+  "type": "configuration",
+  "status": "running",
+  "capabilities": ["data-analysis", "report-generation"],
+  "tools": ["http_client", "csv_parser"],
+  "memory_enabled": true,
+  "memory_scope": "workspace",
+  "config": "---\nname: DataAnalyzer\n..."
+}
+
+# Response (WebAssembly Agent)
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "name": "custom-wasm-agent",
+  "type": "webassembly",
+  "status": "running",
   "wasm_module": "AGFzbQEAAAA=",
   "resource_limits": {
     "max_memory_bytes": 10485760,
@@ -228,14 +304,38 @@ curl http://localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
 }
 ```
 
-### Update Agent ⏳ **PLANNED**
+### Update Configuration Agent ⏳ **PLANNED**
 
-Update an agent's configuration or code.
+Update a configuration agent's definition.
 
 #### REST
 
 ```bash
-PUT /api/v1/agents/{agent_id}
+PUT /api/v1/agents/config/{agent_id}
+
+# Request
+{
+  "config": "---\nname: DataAnalyzer\nversion: \"1.1.0\"\n...",
+  "memory_enabled": true,
+  "strategy": "immediate"
+}
+
+# Response
+{
+  "agent_id": "agent_123",
+  "status": "updated",
+  "version": "1.1.0"
+}
+```
+
+### Update WebAssembly Agent ⏳ **PLANNED**
+
+Update a WebAssembly agent's code or configuration.
+
+#### REST
+
+```bash
+PUT /api/v1/agents/wasm/{agent_id}
 
 # Request
 {
@@ -298,16 +398,30 @@ DELETE /api/v1/agents/{agent_id}
 
 ## Message API ⏳ **PLANNED**
 
-### Send Message
+### Send Message to Capability
 
-Send a FIPA message to an agent.
+Send a FIPA message to agents with specific capabilities (capability-based
+routing).
 
 #### REST
 
 ```bash
 POST /api/v1/messages
 
-# Request
+# Request (Capability-based routing)
+{
+  "performative": "request",
+  "sender": "client_001",
+  "capability": "data-analysis",
+  "content": {
+    "action": "analyze",
+    "data": {"dataset": "sales_q3.csv"}
+  },
+  "conversation_id": "conv_789",
+  "reply_with": "msg_001"
+}
+
+# Request (Direct agent addressing - still supported)
 {
   "performative": "request",
   "sender": "client_001",
@@ -324,6 +438,7 @@ POST /api/v1/messages
 {
   "message_id": "msg_abc123",
   "status": "delivered",
+  "delivered_to": ["agent_456"],
   "delivered_at": "2024-01-15T10:30:00.123Z"
 }
 ```
@@ -884,9 +999,95 @@ X-RateLimit-Remaining: 950
 X-RateLimit-Reset: 1642248000
 ```
 
+## Memory API ⏳ **PLANNED**
+
+Memory operations for configuration agents with embedded memory system.
+
+### Search Memory
+
+Semantically search agent memory for relevant context.
+
+#### REST
+
+```bash
+GET /api/v1/agents/{agent_id}/memory/search?query=customer%20data%20patterns&\
+    limit=10
+
+# Response
+{
+  "results": [
+    {
+      "entity_name": "CustomerAnalysisPattern",
+      "entity_type": "analysis_pattern",
+      "similarity": 0.92,
+      "observations": [
+        "Customers with repeat purchases show 85% higher lifetime value",
+        "Geographic clustering indicates regional preferences"
+      ],
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "total": 25,
+  "query_time_ms": 15
+}
+```
+
+### Add Memory
+
+Store new knowledge in agent memory.
+
+#### REST
+
+```bash
+POST /api/v1/agents/{agent_id}/memory/entities
+
+# Request
+{
+  "entities": [
+    {
+      "name": "Q3SalesInsight",
+      "entityType": "business_insight",
+      "observations": [
+        "Q3 sales increased 23% over Q2",
+        "Mobile channel drove 67% of growth",
+        "Customer acquisition cost decreased by 15%"
+      ]
+    }
+  ]
+}
+
+# Response
+{
+  "entities_created": 1,
+  "entity_ids": ["ent_abc123"],
+  "status": "success"
+}
+```
+
+### Get Memory Stats
+
+Get statistics about agent memory usage.
+
+#### REST
+
+```bash
+GET /api/v1/agents/{agent_id}/memory/stats
+
+# Response
+{
+  "total_entities": 1247,
+  "total_relations": 3891,
+  "memory_scope": "workspace",
+  "storage_used_mb": 12.5,
+  "last_updated": "2024-01-15T10:30:00Z",
+  "embedding_model": "all-MiniLM-L6-v2"
+}
+```
+
 ## Next Steps
 
+- [Building Agents](building-agents.md) - Configuration agent development guide
 - [Message Protocols](message-protocols.md) - FIPA protocol details
-- [Building Agents](building-agents.md) - Agent development guide
-- [WebAssembly Integration](wasm-integration.md) - WASM specifics
+- [Security Guide](security-guide.md) - Configuration agent security model
+- [WebAssembly Integration](wasm-integration.md) - Advanced WASM development
 - [Testing Guide](testing.md) - Testing strategies

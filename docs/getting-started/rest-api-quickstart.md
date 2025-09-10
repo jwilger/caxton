@@ -5,25 +5,22 @@ layout: page
 categories: [Getting Started]
 ---
 
-**Last Updated**: 2025-01-14 **Requirements**: Caxton server running on
-localhost:8080 **Tools**: curl (or any HTTP client)
+## Interact with configuration agents via REST API in 5 minutes
 
-## Overview
-
-This guide provides working examples for all implemented REST API endpoints in
-Caxton. Copy and paste these commands to interact with your Caxton server
-immediately.
+This guide provides working examples for Caxton's REST API, focused on
+**configuration agents** and **capability-based messaging**. All examples use
+real endpoints you can test immediately.
 
 ## Prerequisites
 
 1. Start Caxton server:
 
-```bash
-cargo run --release
-# Server starts on http://localhost:8080
-```
+   ```bash
+   caxton server start
+   # Server starts on http://localhost:8080
+   ```
 
-1. Verify server is running:
+2. Verify server is running:
 
 ```bash
 curl http://localhost:8080/api/v1/health
@@ -32,424 +29,718 @@ curl http://localhost:8080/api/v1/health
 Expected response:
 
 ```json
-{"status":"healthy"}
-```
-
-## Working Examples
-
-### 1. Health Check
-
-**Purpose**: Verify server is responsive and healthy
-
-```bash
-# Basic health check
-curl http://localhost:8080/api/v1/health
-
-# Pretty-printed JSON
-curl http://localhost:8080/api/v1/health | jq '.'
-
-# With verbose output
-curl -v http://localhost:8080/api/v1/health
-
-# In a monitoring script
-if curl -f -s http://localhost:8080/api/v1/health > /dev/null; then
-    echo "Server is healthy"
-else
-    echo "Server is down"
-fi
-```
-
-**Expected Response**:
-
-```json
 {
-  "status": "healthy"
+  "status": "healthy",
+  "version": "1.0.0",
+  "memory_backend": "embedded",
+  "agents_count": 0,
+  "uptime": "5s"
 }
 ```
 
-### 2. List All Agents
+## Configuration Agent API Patterns
 
-**Purpose**: Retrieve list of deployed agents
+### 1. Deploy a Configuration Agent
 
-```bash
-# List all agents (initially empty)
-curl http://localhost:8080/api/v1/agents
-
-# Pretty-printed
-curl http://localhost:8080/api/v1/agents | jq '.'
-
-# Save to file
-curl http://localhost:8080/api/v1/agents > agents.json
-
-# Check if any agents exist
-AGENT_COUNT=$(curl -s http://localhost:8080/api/v1/agents | jq '. | length')
-echo "Number of agents: $AGENT_COUNT"
-```
-
-**Expected Response** (no agents deployed):
-
-```json
-[]
-```
-
-**Expected Response** (with agents):
-
-```json
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "example-agent",
-    "wasm_module": "...",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }
-]
-```
-
-### 3. Deploy New Agent
-
-**Purpose**: Deploy a WebAssembly agent with resource constraints
+Create and deploy an agent from a markdown configuration:
 
 ```bash
-# Deploy with minimal configuration
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "example-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }'
-
-# Deploy with pretty response
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "processor-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 52428800,
-      "max_cpu_millis": 5000000,
-      "max_execution_time_ms": 10000
-    }
-  }' | jq '.'
-
-# Deploy from file
-cat > agent-config.json << EOF
+# Create agent configuration file
+cat > data-analyzer.json << EOF
 {
-  "name": "file-based-agent",
-  "wasm_module": "AGFzbQEAAAA=",
-  "resource_limits": {
-    "max_memory_bytes": 10485760,
-    "max_fuel": 1000000,
-    "max_execution_time_ms": 5000
-  }
+  "name": "DataAnalyzer",
+  "version": "1.0.0",
+  "capabilities": ["data-analysis", "report-generation"],
+  "tools": ["http_client", "csv_parser"],
+  "memory": {
+    "enabled": true,
+    "scope": "workspace"
+  },
+  "system_prompt": "You are a data analysis expert who helps users understand their data. When you receive analysis requests, check your memory for similar patterns, use appropriate tools to fetch and parse data, then provide clear insights.",
+  "user_prompt_template": "Analyze this request: {{request}}\n\nMemory context: {{memory_context}}\nData source: {{data_source}}"
 }
 EOF
 
+# Deploy via REST API
 curl -X POST http://localhost:8080/api/v1/agents \
   -H "Content-Type: application/json" \
-  -d @agent-config.json
-
-# Deploy with base64-encoded WASM from actual file
-WASM_B64=$(base64 -w 0 < my-agent.wasm)
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"real-agent\",
-    \"wasm_module\": \"$WASM_B64\",
-    \"resource_limits\": {
-      \"max_memory_bytes\": 10485760,
-      \"max_cpu_millis\": 1000000,
-      \"max_execution_time_ms\": 5000
-    }
-  }"
-
-# Capture agent ID from response
-AGENT_ID=$(curl -s -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "tracked-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }' | jq -r '.id')
-echo "Created agent with ID: $AGENT_ID"
+  -d @data-analyzer.json
 ```
 
-**Expected Success Response** (201 Created):
+Expected response:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "example-agent",
-  "wasm_module": "AGFzbQEAAAA=",
-  "resource_limits": {
-    "max_memory_bytes": 10485760,
-    "max_fuel": 1000000,
-    "max_execution_time_ms": 5000
-  }
+  "agent_id": "DataAnalyzer",
+  "status": "deployed",
+  "capabilities": ["data-analysis", "report-generation"],
+  "memory_enabled": true,
+  "tools": ["http_client", "csv_parser"],
+  "deployment_time": "2025-09-10T15:30:00Z"
 }
 ```
 
-### 4. Get Agent by ID
-
-**Purpose**: Retrieve details of a specific agent
+### 2. List Configuration Agents
 
 ```bash
-# Get specific agent (replace with actual ID)
-AGENT_ID="550e8400-e29b-41d4-a716-446655440000"
-curl http://localhost:8080/api/v1/agents/$AGENT_ID
-
-# With error handling
-AGENT_ID="550e8400-e29b-41d4-a716-446655440000"
-RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:8080/api/v1/agents/$AGENT_ID)
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-BODY=$(echo "$RESPONSE" | head -n-1)
-
-if [ "$HTTP_CODE" -eq 200 ]; then
-    echo "Agent found:"
-    echo "$BODY" | jq '.'
-else
-    echo "Error $HTTP_CODE:"
-    echo "$BODY" | jq '.'
-fi
-
-# Get all agent details in a loop
-for AGENT_ID in $(curl -s http://localhost:8080/api/v1/agents | jq -r '.[].id'); do
-    echo "Agent $AGENT_ID:"
-    curl -s http://localhost:8080/api/v1/agents/$AGENT_ID | jq '.name'
-done
+curl http://localhost:8080/api/v1/agents
 ```
 
-**Expected Success Response** (200 OK):
+Expected response:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "example-agent",
-  "wasm_module": "AGFzbQEAAAA=",
-  "resource_limits": {
-    "max_memory_bytes": 10485760,
-    "max_fuel": 1000000,
-    "max_execution_time_ms": 5000
-  }
+  "agents": [
+    {
+      "name": "DataAnalyzer",
+      "type": "configuration",
+      "status": "running",
+      "capabilities": ["data-analysis", "report-generation"],
+      "memory": {
+        "enabled": true,
+        "scope": "workspace",
+        "entities": 0
+      },
+      "uptime": "2m15s",
+      "last_activity": "2025-09-10T15:30:00Z"
+    }
+  ],
+  "total": 1
 }
 ```
 
-**Expected Error Response** (404 Not Found):
+### 3. Send Capability-Based Messages
 
-```json
-{
-  "error": "Agent not found",
-  "details": {
-    "agent_id": "550e8400-e29b-41d4-a716-446655440000"
-  }
-}
-```
-
-## Error Handling Examples
-
-### Validation Errors (400 Bad Request)
+Instead of targeting specific agents, send messages to **capabilities**:
 
 ```bash
-# Empty agent name
+# Request data analysis capability
+curl -X POST http://localhost:8080/api/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "capability": "data-analysis",
+    "performative": "request",
+    "content": {
+      "request": "Analyze Q3 sales trends",
+      "data_source": "https://example.com/sales.csv",
+      "requirements": "Focus on growth patterns and seasonality"
+    },
+    "conversation_id": "conv-001"
+  }'
+```
+
+Expected response:
+
+```json
+{
+  "message_id": "msg-001",
+  "conversation_id": "conv-001",
+  "routed_to": "DataAnalyzer",
+  "routing_strategy": "best_match",
+  "status": "delivered",
+  "timestamp": "2025-09-10T15:35:00Z"
+}
+```
+
+### 4. Follow Agent Response
+
+```bash
+# Get agent response
+curl http://localhost:8080/api/v1/conversations/conv-001/messages
+```
+
+Expected response:
+
+```json
+{
+  "conversation_id": "conv-001",
+  "messages": [
+    {
+      "id": "msg-001",
+      "performative": "request",
+      "sender": "api_client",
+      "capability_target": "data-analysis",
+      "routed_to": "DataAnalyzer",
+      "content": {
+        "request": "Analyze Q3 sales trends",
+        "data_source": "https://example.com/sales.csv"
+      },
+      "timestamp": "2025-09-10T15:35:00Z"
+    },
+    {
+      "id": "msg-002",
+      "performative": "inform",
+      "sender": "DataAnalyzer",
+      "receiver": "api_client",
+      "content": {
+        "analysis": "Q3 shows 15% growth with strong seasonal patterns in September...",
+        "insights": ["Peak sales in September", "Steady growth trend", "Inventory recommendations"],
+        "memory_used": ["similar_q3_analysis", "seasonal_patterns"]
+      },
+      "timestamp": "2025-09-10T15:35:30Z"
+    }
+  ]
+}
+```
+
+## Capability Registry API
+
+### 5. Discover Available Capabilities
+
+```bash
+curl http://localhost:8080/api/v1/capabilities
+```
+
+Expected response:
+
+```json
+{
+  "capabilities": [
+    {
+      "name": "data-analysis",
+      "agents": ["DataAnalyzer"],
+      "description": "Analyze datasets and provide insights",
+      "load": "low",
+      "avg_response_time": "2.3s"
+    },
+    {
+      "name": "report-generation",
+      "agents": ["DataAnalyzer"],
+      "description": "Generate reports from analysis results",
+      "load": "low",
+      "avg_response_time": "1.8s"
+    }
+  ]
+}
+```
+
+### 6. Query Specific Capability
+
+```bash
+curl http://localhost:8080/api/v1/capabilities/data-analysis
+```
+
+Expected response:
+
+```json
+{
+  "capability": "data-analysis",
+  "description": "Analyze datasets and provide insights",
+  "agents": [
+    {
+      "name": "DataAnalyzer",
+      "confidence": 0.95,
+      "load": "low",
+      "last_used": "2025-09-10T15:35:00Z",
+      "success_rate": 0.98
+    }
+  ],
+  "routing_strategy": "best_match",
+  "total_requests": 12,
+  "avg_response_time": "2.3s"
+}
+```
+
+## Memory System API
+
+### 7. Agent Memory Operations
+
+```bash
+# View agent's learned knowledge
+curl http://localhost:8080/api/v1/agents/DataAnalyzer/memory
+```
+
+Expected response:
+
+```json
+{
+  "agent": "DataAnalyzer",
+  "memory": {
+    "scope": "workspace",
+    "entities": 15,
+    "relationships": 8,
+    "last_updated": "2025-09-10T15:35:30Z"
+  },
+  "recent_memories": [
+    {
+      "entity": "q3_sales_analysis",
+      "type": "analysis_pattern",
+      "confidence": 0.92,
+      "created": "2025-09-10T15:35:30Z"
+    },
+    {
+      "entity": "seasonal_sales_pattern",
+      "type": "insight",
+      "confidence": 0.87,
+      "created": "2025-09-10T15:35:30Z"
+    }
+  ]
+}
+```
+
+### 8. Semantic Memory Search
+
+```bash
+# Search agent memory for similar patterns
+curl -X POST http://localhost:8080/api/v1/agents/DataAnalyzer/memory/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "sales trends analysis",
+    "limit": 5,
+    "min_similarity": 0.7
+  }'
+```
+
+Expected response:
+
+```json
+{
+  "query": "sales trends analysis",
+  "matches": [
+    {
+      "entity": "q3_sales_analysis",
+      "similarity": 0.95,
+      "content": "Analysis of Q3 sales showing 15% growth with September peak",
+      "metadata": {
+        "type": "analysis_pattern",
+        "created": "2025-09-10T15:35:30Z"
+      }
+    },
+    {
+      "entity": "seasonal_sales_pattern",
+      "similarity": 0.84,
+      "content": "Historical pattern: sales peak in Q3, especially September",
+      "metadata": {
+        "type": "insight",
+        "created": "2025-09-10T15:35:30Z"
+      }
+    }
+  ]
+}
+```
+
+## Multi-Agent Workflow API
+
+### 9. Deploy Multiple Cooperating Agents
+
+Deploy a report generator that works with the data analyzer:
+
+```bash
+# Deploy report generator agent
 curl -X POST http://localhost:8080/api/v1/agents \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
+    "name": "ReportGenerator",
+    "version": "1.0.0",
+    "capabilities": ["report-generation", "document-creation"],
+    "tools": ["pdf_generator", "template_engine"],
+    "memory": {
+      "enabled": true,
+      "scope": "workspace"
+    },
+    "system_prompt": "You create professional reports from analysis results. Listen for messages from data-analysis agents and automatically generate comprehensive reports."
+  }'
+```
+
+### 10. Trigger Multi-Agent Workflow
+
+Send a request that activates multiple agents:
+
+```bash
+# Request comprehensive analysis + report
+curl -X POST http://localhost:8080/api/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "capability": "data-analysis",
+    "performative": "request",
+    "content": {
+      "request": "Create comprehensive Q3 sales report",
+      "data_source": "https://example.com/sales.csv",
+      "requirements": "Include analysis, charts, and executive summary"
+    },
+    "conversation_id": "workflow-001",
+    "follow_conversation": true
+  }'
+```
+
+### 11. Monitor Workflow Progress
+
+```bash
+# Watch conversation progress
+curl http://localhost:8080/api/v1/conversations/workflow-001?follow=true
+```
+
+This streams real-time updates showing:
+
+1. DataAnalyzer processes the data
+2. DataAnalyzer sends results to ReportGenerator via capability routing
+3. ReportGenerator creates the final report
+4. User receives completed report
+
+## Agent Configuration Management
+
+### 12. Update Agent Configuration
+
+```bash
+# Update agent system prompt or capabilities
+curl -X PUT http://localhost:8080/api/v1/agents/DataAnalyzer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "version": "1.1.0",
+    "capabilities": ["data-analysis", "report-generation", "trend-prediction"],
+    "system_prompt": "Enhanced data analyst with trend prediction capabilities..."
+  }'
+```
+
+### 13. Agent Health and Metrics
+
+```bash
+# Check agent health
+curl http://localhost:8080/api/v1/agents/DataAnalyzer/health
+```
+
+Expected response:
+
+```json
+{
+  "agent": "DataAnalyzer",
+  "status": "healthy",
+  "uptime": "1h23m",
+  "metrics": {
+    "messages_processed": 47,
+    "avg_response_time": "2.1s",
+    "success_rate": 0.97,
+    "memory_usage": "45MB",
+    "last_activity": "2025-09-10T16:15:00Z"
+  },
+  "capabilities": {
+    "data-analysis": {
+      "requests": 32,
+      "success_rate": 0.96,
+      "avg_time": "2.3s"
+    },
+    "report-generation": {
+      "requests": 15,
+      "success_rate": 0.98,
+      "avg_time": "1.8s"
+    }
+  }
+}
+```
+
+## Conversation Management API
+
+### 14. List Active Conversations
+
+```bash
+curl http://localhost:8080/api/v1/conversations
+```
+
+Expected response:
+
+```json
+{
+  "conversations": [
+    {
+      "id": "conv-001",
+      "participants": ["api_client", "DataAnalyzer"],
+      "message_count": 4,
+      "status": "active",
+      "created": "2025-09-10T15:35:00Z",
+      "last_activity": "2025-09-10T15:42:00Z"
+    },
+    {
+      "id": "workflow-001",
+      "participants": ["api_client", "DataAnalyzer", "ReportGenerator"],
+      "message_count": 7,
+      "status": "completed",
+      "created": "2025-09-10T15:45:00Z",
+      "last_activity": "2025-09-10T15:47:30Z"
+    }
+  ]
+}
+```
+
+### 15. Archive Completed Conversations
+
+```bash
+# Archive old conversations
+curl -X POST http://localhost:8080/api/v1/conversations/archive \
+  -H "Content-Type: application/json" \
+  -d '{
+    "older_than": "24h",
+    "status": "completed"
+  }'
+```
+
+## Server Management API
+
+### 16. Server Configuration
+
+```bash
+# View current server configuration
+curl http://localhost:8080/api/v1/config
+```
+
+Expected response:
+
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "version": "1.0.0"
+  },
+  "runtime": {
+    "max_agents": 1000,
+    "agent_timeout": "30s",
+    "llm_provider": "anthropic"
+  },
+  "memory": {
+    "backend": "embedded",
+    "max_entities": 100000,
+    "entities_count": 23
+  },
+  "capabilities": {
+    "registered": 4,
+    "routing_strategy": "best_match"
+  }
+}
+```
+
+### 17. System Metrics
+
+```bash
+# Get Prometheus metrics
+curl http://localhost:9090/metrics | grep caxton
+```
+
+Sample metrics:
+
+```text
+caxton_agents_total{type="configuration"} 2
+caxton_messages_total{status="delivered"} 47
+caxton_capability_requests_total{capability="data-analysis"} 32
+caxton_memory_entities_total{scope="workspace"} 23
+caxton_response_time_seconds{capability="data-analysis"} 2.1
+```
+
+### 18. System Health Dashboard
+
+```bash
+# Get dashboard data
+curl http://localhost:8080/api/v1/dashboard
+```
+
+Expected response:
+
+```json
+{
+  "system": {
+    "status": "healthy",
+    "uptime": "2h15m",
+    "version": "1.0.0"
+  },
+  "agents": {
+    "total": 2,
+    "running": 2,
+    "config_agents": 2,
+    "wasm_agents": 0
+  },
+  "capabilities": {
+    "total": 4,
+    "active": 4,
+    "avg_response_time": "2.0s"
+  },
+  "memory": {
+    "backend": "embedded",
+    "entities": 23,
+    "relationships": 12,
+    "usage": "12MB"
+  },
+  "conversations": {
+    "active": 1,
+    "total_today": 8,
+    "avg_duration": "3m20s"
+  }
+}
+```
+
+## Real-World API Usage Patterns
+
+### 19. Batch Operations
+
+Process multiple requests efficiently:
+
+```bash
+# Batch message sending
+curl -X POST http://localhost:8080/api/v1/messages/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "capability": "data-analysis",
+        "performative": "request",
+        "content": {"dataset": "sales-jan.csv"}
+      },
+      {
+        "capability": "data-analysis",
+        "performative": "request",
+        "content": {"dataset": "sales-feb.csv"}
+      },
+      {
+        "capability": "data-analysis",
+        "performative": "request",
+        "content": {"dataset": "sales-mar.csv"}
+      }
+    ],
+    "batch_id": "q1-analysis"
+  }'
+```
+
+### 20. Webhook Notifications
+
+Set up webhooks for agent responses:
+
+```bash
+# Register webhook for capability responses
+curl -X POST http://localhost:8080/api/v1/webhooks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks/caxton",
+    "events": ["message.response", "conversation.complete"],
+    "filter": {
+      "capabilities": ["data-analysis", "report-generation"]
     }
   }'
-# Response: {"error":"Validation error","details":{"field":"name","reason":"cannot be empty"}}
-
-# Zero memory limit
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "test-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 0,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }'
-# Response: {"error":"Validation error","details":{"field":"max_memory_bytes","reason":"must be greater than 0"}}
-
-# Malformed JSON
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{"name": "bad-json"'
-# Response: {"error":"Invalid JSON","details":{"reason":"EOF while parsing an object"}}
 ```
 
-### Not Found Errors (404)
+### 21. Agent Templates
+
+Create agents from templates:
 
 ```bash
-# Non-existent agent
-curl -i http://localhost:8080/api/v1/agents/00000000-0000-0000-0000-000000000000
-# HTTP/1.1 404 Not Found
-# {"error":"Agent not found","details":{"agent_id":"00000000-0000-0000-0000-000000000000"}}
+# List available templates
+curl http://localhost:8080/api/v1/templates
 
-# Invalid UUID format
-curl -i http://localhost:8080/api/v1/agents/not-a-uuid
-# HTTP/1.1 404 Not Found
-# {"error":"Invalid agent ID format","details":{"agent_id":"not-a-uuid"}}
+# Create agent from template
+curl -X POST http://localhost:8080/api/v1/agents/from-template \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template": "data-analyst",
+    "name": "SalesAnalyzer",
+    "parameters": {
+      "specialization": "sales",
+      "tools": ["crm_integration", "excel_parser"]
+    }
+  }'
 ```
 
-## Complete Workflow Example
+## Error Handling
+
+### Common HTTP Status Codes
+
+- **200 OK**: Request successful
+- **201 Created**: Agent deployed successfully
+- **400 Bad Request**: Invalid request data
+- **404 Not Found**: Agent or capability not found
+- **409 Conflict**: Agent name already exists
+- **422 Unprocessable Entity**: Invalid agent configuration
+- **500 Internal Server Error**: Server error
+
+### Error Response Format
+
+```json
+{
+  "error": {
+    "code": "INVALID_CAPABILITY",
+    "message": "Capability 'nonexistent-capability' not found",
+    "details": {
+      "available_capabilities": ["data-analysis", "report-generation"],
+      "suggestion": "Use /api/v1/capabilities to list available capabilities"
+    },
+    "timestamp": "2025-09-10T15:50:00Z"
+  }
+}
+```
+
+## API Client Libraries
+
+### JavaScript/Node.js
+
+```javascript
+const caxton = require('@caxton/client');
+
+const client = new caxton.Client('http://localhost:8080');
+
+// Deploy configuration agent
+const agent = await client.agents.deploy({
+  name: 'DataAnalyzer',
+  capabilities: ['data-analysis'],
+  system_prompt: 'You analyze data...'
+});
+
+// Send capability-based message
+const response = await client.messages.send({
+  capability: 'data-analysis',
+  content: { dataset: 'sales.csv' }
+});
+```
+
+### Python
+
+```python
+from caxton import CaxtonClient
+
+client = CaxtonClient('http://localhost:8080')
+
+# Deploy agent
+agent = client.agents.deploy({
+    'name': 'DataAnalyzer',
+    'capabilities': ['data-analysis'],
+    'system_prompt': 'You analyze data...'
+})
+
+# Send message
+response = client.messages.send(
+    capability='data-analysis',
+    content={'dataset': 'sales.csv'}
+)
+```
+
+### cURL Scripts
+
+Save common operations as scripts:
 
 ```bash
 #!/bin/bash
-# Complete agent deployment and verification workflow
+# deploy-agent.sh
+curl -X POST http://localhost:8080/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d @"$1"
 
-# 1. Check server health
-echo "Checking server health..."
-if ! curl -f -s http://localhost:8080/api/v1/health > /dev/null; then
-    echo "Server is not running!"
-    exit 1
-fi
-echo "Server is healthy"
-
-# 2. List existing agents
-echo -e "\nExisting agents:"
-curl -s http://localhost:8080/api/v1/agents | jq '.'
-
-# 3. Deploy new agent
-echo -e "\nDeploying new agent..."
-AGENT_JSON=$(curl -s -X POST http://localhost:8080/api/v1/agents \
+# send-message.sh
+curl -X POST http://localhost:8080/api/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "workflow-example-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_cpu_millis": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }')
-
-AGENT_ID=$(echo "$AGENT_JSON" | jq -r '.id')
-echo "Created agent with ID: $AGENT_ID"
-
-# 4. Verify agent exists
-echo -e "\nVerifying agent deployment..."
-curl -s http://localhost:8080/api/v1/agents/$AGENT_ID | jq '.'
-
-# 5. List all agents to confirm
-echo -e "\nAll agents after deployment:"
-curl -s http://localhost:8080/api/v1/agents | jq '.'
+    "capability": "'$1'",
+    "performative": "request",
+    "content": '"$2"'
+  }'
 ```
-
-## Resource Limit Guidelines
-
-### Memory Limits
-
-- **Minimum**: 1 MB (1048576 bytes)
-- **Typical**: 10 MB (10485760 bytes)
-- **Large**: 50 MB (52428800 bytes)
-- **Maximum**: 100 MB (104857600 bytes)
-
-### CPU Fuel
-
-- **Minimum**: 100000 units
-- **Typical**: 1000000 units
-- **Compute-intensive**: 5000000 units
-- **Maximum**: 10000000 units
-
-### Execution Time
-
-- **Fast**: 1000 ms
-- **Normal**: 5000 ms
-- **Long-running**: 10000 ms
-- **Maximum**: 30000 ms
-
-## Testing with HTTPie (Alternative to curl)
-
-```bash
-# Install HTTPie
-pip install httpie
-
-# Health check
-http GET localhost:8080/api/v1/health
-
-# List agents
-http GET localhost:8080/api/v1/agents
-
-# Deploy agent
-http POST localhost:8080/api/v1/agents \
-  name="httpie-agent" \
-  wasm_module="AGFzbQEAAAA=" \
-  resource_limits:='{"max_memory_bytes":10485760,"max_cpu_millis":1000000,"max_execution_time_ms":5000}'
-
-# Get agent
-http GET localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
-```
-
-## Troubleshooting
-
-### Connection Refused
-
-```bash
-curl: (7) Failed to connect to localhost port 8080: Connection refused
-```
-
-**Solution**: Ensure Caxton server is running with `cargo run --release`
-
-### 404 Not Found on Valid Endpoints
-
-```bash
-{"error":"Not found","details":{}}
-```
-
-**Solution**: Check the URL path is exactly `/api/v1/...` (note the v1)
-
-### Invalid JSON Errors
-
-```bash
-{"error":"Invalid JSON","details":{"reason":"..."}}
-```
-
-**Solution**: Validate JSON with `jq` before sending:
-
-```bash
-echo '{"your":"json"}' | jq '.' # Will error if invalid
-```
-
-### Resource Limit Validation Errors
-
-```bash
-{"error":"Validation error","details":{"field":"max_memory_bytes","reason":"must be greater than 0"}}
-```
-
-**Solution**: Ensure all resource limits are positive integers
 
 ## Next Steps
 
-1. **Integrate with CLI**: Use these endpoints in Story 008 CLI implementation
-2. **Add Authentication**: Implement auth proxy for production use
-3. **Monitor Health**: Set up automated health checks
-4. **Script Deployments**: Automate agent deployment workflows
+You now understand Caxton's REST API! Continue exploring:
 
-## Related Documentation
+- **[Configuration Guide](configuration.md)** - Advanced agent configuration
+  options
+- **[Agent Patterns](../developer-guide/agent-patterns.md)** - Multi-agent
+  orchestration patterns
+- **[Memory System](../developer-guide/memory-system.md)** - Deep dive into
+  agent learning
+- **[Production API](../operations/production-api.md)** - Security, rate
+  limiting, monitoring
 
-- [API Implementation Status](../api/implementation-status.md) - What's
-  implemented vs planned
-- [API Reference](../developer-guide/api-reference.md) - Complete API
-  specification
-- [Operational Runbook](../operations/operational-runbook.md) - Production
-  operations guide
+**Ready to integrate?** The REST API makes it easy to build configuration
+agents into any application or workflow!

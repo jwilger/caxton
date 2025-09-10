@@ -6,46 +6,51 @@ categories: [Operations]
 ---
 
 This runbook provides step-by-step procedures for operating Caxton in
-production.
+production with the embedded, zero-dependency architecture (ADRs 28-30).
 
 ## Quick Reference
 
-| Situation | Command | Page | |-----------|---------|------| | Server not
-responding | `curl http://localhost:8080/api/v1/health` |
-[REST API Health](#rest-api-health-checks) | | Deploy agent via API |
-`curl -X POST /api/v1/agents` | [Agent Deployment](#rest-api-agent-deployment) |
-| List deployed agents | `curl /api/v1/agents` |
-[Agent Management](#rest-api-agent-management) | | Node down |
-`caxton cluster members` | [Node Failure](#node-failure) | | High latency |
-`caxton cluster performance` | [Performance Issues](#performance-degradation) |
-| Network partition | `caxton cluster detect-partition` |
-[Partition Handling](#network-partition) | | Upgrade cluster |
-`caxton cluster upgrade` | [Rolling Upgrade](#rolling-upgrade) | | Emergency
-stop | `caxton emergency stop` | [Emergency Procedures](#emergency-procedures) |
+| Situation | Command | Page |
+|-----------|---------|------|
+| Server not responding | `curl http://localhost:8080/api/v1/health` | [Health Checks](#health-checks) |
+| Deploy config agent | Create markdown file in agents/ | [Config Agent Deployment](#config-agent-deployment) |
+| Deploy WASM agent | `curl -X POST /api/v1/agents` | [WASM Agent Deployment](#wasm-agent-deployment) |
+| List agents | `curl /api/v1/agents` | [Agent Management](#agent-management) |
+| Memory performance | `caxton memory stats` | [Memory Optimization](#memory-performance) |
+| Backup embedded data | `caxton backup --embedded` | [Backup Procedures](#backup-procedures) |
+| Hot-reload config | `caxton reload --agent <name>` | [Config Agent Operations](#config-agent-operations) |
+| Emergency stop | `caxton shutdown` | [Emergency Procedures](#emergency-procedures) |
 
-## REST API Operations (Story 006 - Current Implementation)
+## Core Operations
 
-### REST API Health Checks
+### Health Checks
 
-**Purpose**: Verify REST API server is running and responsive
+**Purpose**: Verify Caxton server is running and responsive with embedded
+architecture
 
 #### Basic Health Check
 
 ```bash
-# Check if API is responding
+# Check server health (embedded architecture)
 curl http://localhost:8080/api/v1/health
 
 # Expected response:
-# {"status":"healthy"}
+# {"status":"healthy","memory_backend":"embedded","agents":5}
 
-# Automated monitoring script
+# Check embedded memory system
+curl http://localhost:8080/api/v1/health/memory
+
+# Expected response:
+# {"status":"healthy","sqlite_status":"ok","embedding_model":"loaded"}
+
+# Automated monitoring script for zero-dependency deployment
 #!/bin/bash
 while true; do
     if curl -f -s http://localhost:8080/api/v1/health > /dev/null; then
-        echo "$(date): API healthy"
+        echo "$(date): Caxton healthy"
     else
-        echo "$(date): API DOWN - alerting..."
-        # Send alert via your monitoring system
+        echo "$(date): Caxton DOWN - checking single process..."
+        ps aux | grep caxton
     fi
     sleep 30
 done
@@ -54,629 +59,814 @@ done
 #### Troubleshooting API Issues
 
 ```bash
-# If health check fails:
+# If health check fails (embedded architecture troubleshooting):
 
-# 1. Check if server process is running
+# 1. Check if single Caxton process is running
 ps aux | grep caxton
 
 # 2. Check if port 8080 is listening
 netstat -tlnp | grep 8080
 
-# 3. Check server logs
+# 3. Check embedded storage integrity
+caxton storage verify --sqlite-path ./data/caxton.db
+
+# 4. Check embedding model status
+caxton memory model-status
+
+# 5. Check server logs
 tail -f /var/log/caxton/caxton.log
 
-# 4. Restart server if needed
-cargo run --release
+# 6. Restart server (zero-dependency)
+caxton start
 # OR with systemd:
 systemctl restart caxton
 ```
 
-### REST API Agent Deployment
+## Agent Operations
 
-**Purpose**: Deploy WebAssembly agents via REST API
+### Config Agent Deployment
 
-#### Deploy Agent
+**Purpose**: Deploy configuration-driven agents (ADR-0028) - the primary
+user experience
+
+#### Deploy Config Agent (Primary Method)
 
 ```bash
-# Basic deployment
-curl -X POST http://localhost:8080/api/v1/agents \
+# 1. Create agent configuration file
+cat > agents/data-analyzer.md << 'EOF'
+---
+name: DataAnalyzer
+version: "1.0.0"
+capabilities:
+  - data-analysis
+  - report-generation
+tools:
+  - http_client
+  - csv_parser
+parameters:
+  max_file_size: "10MB"
+system_prompt: |
+  You are a data analysis expert who helps users understand their data.
+---
+
+# DataAnalyzer Agent
+
+This agent specializes in data analysis and can fetch data from URLs,
+parse various formats, and generate visualizations.
+EOF
+
+# 2. Hot-reload the agent (zero-downtime deployment)
+caxton agents reload data-analyzer
+
+# 3. Verify deployment
+caxton agents list | grep DataAnalyzer
+
+# 4. Test agent capability
+curl -X POST http://localhost:8080/api/v1/agents/data-analyzer/message \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "production-agent-1",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }'
+  -d '{"message": "Analyze sales data at example.com/data.csv"}'
+```
 
-# Deploy with error handling
-deploy_agent() {
+#### Deploy Config Agent with Error Handling
+
+```bash
+deploy_config_agent() {
     local AGENT_NAME=$1
-    local RESPONSE=$(curl -s -w "\n%{http_code}" \
-      -X POST http://localhost:8080/api/v1/agents \
-      -H "Content-Type: application/json" \
-      -d "{
-        \"name\": \"$AGENT_NAME\",
-        \"wasm_module\": \"AGFzbQEAAAA=\",
-        \"resource_limits\": {
-          \"max_memory_bytes\": 10485760,
-          \"max_fuel\": 1000000,
-          \"max_execution_time_ms\": 5000
-        }
-      }")
+    local AGENT_FILE=$2
 
-    local HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-    local BODY=$(echo "$RESPONSE" | head -n-1)
+    # Validate configuration file
+    if ! caxton agents validate "$AGENT_FILE"; then
+        echo "ERROR: Invalid agent configuration"
+        return 1
+    fi
 
-    if [ "$HTTP_CODE" -eq 201 ]; then
-        echo "Agent deployed successfully:"
-        echo "$BODY" | jq '.'
+    # Deploy with hot-reload
+    if caxton agents deploy "$AGENT_FILE" --hot-reload; then
+        echo "Config agent '$AGENT_NAME' deployed successfully"
+        caxton agents status "$AGENT_NAME"
     else
-        echo "Deployment failed with code $HTTP_CODE:"
-        echo "$BODY" | jq '.'
+        echo "Deployment failed for '$AGENT_NAME'"
         return 1
     fi
 }
 
 # Usage
-deploy_agent "my-agent"
+deploy_config_agent "data-analyzer" "agents/data-analyzer.md"
 ```
 
 #### Common Deployment Errors
 
-| Error | Cause | Solution | |-------|-------|----------| | 400 Bad Request |
-Empty agent name | Provide non-empty name (1-64 chars) | | 400 Bad Request |
-Zero resource limits | Set all limits > 0 | | 400 Bad Request | Malformed JSON |
-Validate JSON syntax | | 404 Not Found | Wrong endpoint | Use `/api/v1/agents`
-exactly |
+#### Common Config Agent Deployment Errors
 
-### REST API Agent Management
+| Error | Cause | Solution |
+|-------|-------|----------|
+| YAML Parse Error | Invalid frontmatter syntax | Validate YAML structure |
+| Missing Required Field | name, capabilities missing | Add required YAML fields |
+| Invalid Tool Reference | Unknown tool in tools list | Check available tools with `caxton tools list` |
+| Capability Conflict | Agent name conflicts with existing | Choose unique agent name |
+| File Not Found | Agent file path incorrect | Verify file exists in agents/ directory |
 
-**Purpose**: Monitor and manage deployed agents
+### WASM Agent Deployment (Advanced Use Cases)
+
+**Purpose**: Deploy compiled WebAssembly agents for power users requiring
+custom algorithms
+
+#### Deploy WASM Agent
+
+```bash
+# Compile your agent to WASM first (example with Rust)
+cargo build --target wasm32-wasi --release
+cp target/wasm32-wasi/release/my-agent.wasm ./
+
+# Deploy via REST API
+curl -X POST http://localhost:8080/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"name\": \"custom-algorithm-agent\",
+    \"wasm_module\": \"$(base64 -w0 my-agent.wasm)\",
+    \"resource_limits\": {
+      \"max_memory_bytes\": 10485760,
+      \"max_fuel\": 1000000,
+      \"max_execution_time_ms\": 5000
+    }
+  }"
+```
+
+### Agent Management
+
+**Purpose**: Monitor and manage both config and WASM agents
 
 #### List All Agents
 
 ```bash
-# Get all deployed agents
+# Get all agents (config and WASM)
 curl http://localhost:8080/api/v1/agents | jq '.'
 
-# Count deployed agents
-AGENT_COUNT=$(curl -s http://localhost:8080/api/v1/agents | jq '. | length')
-echo "Total agents: $AGENT_COUNT"
+# Filter by agent type
+caxton agents list --type config
+caxton agents list --type wasm
 
-# Monitor agent deployments
-watch -n 5 'curl -s http://localhost:8080/api/v1/agents | jq ".[].name"'
+# Count agents by type
+CONFIG_COUNT=$(caxton agents list --type config --count)
+WASM_COUNT=$(caxton agents list --type wasm --count)
+echo "Config agents: $CONFIG_COUNT, WASM agents: $WASM_COUNT"
+
+# Monitor agent status
+watch -n 5 'caxton agents status --summary'
 ```
 
 #### Get Agent Details
 
 ```bash
-# Get specific agent
+# Get specific agent details
+AGENT_NAME="data-analyzer"
+caxton agents show "$AGENT_NAME"
+
+# Get agent via REST API (both config and WASM)
 AGENT_ID="550e8400-e29b-41d4-a716-446655440000"
 curl http://localhost:8080/api/v1/agents/$AGENT_ID | jq '.'
 
-# Check if agent exists
+# Check agent health and capabilities
 check_agent() {
-    local AGENT_ID=$1
-    if curl -f -s http://localhost:8080/api/v1/agents/$AGENT_ID \
-      > /dev/null; then
-        echo "Agent $AGENT_ID exists"
+    local AGENT_NAME=$1
+    if caxton agents ping "$AGENT_NAME"; then
+        echo "Agent $AGENT_NAME is healthy"
+        caxton agents capabilities "$AGENT_NAME"
         return 0
     else
-        echo "Agent $AGENT_ID not found"
+        echo "Agent $AGENT_NAME is not responding"
         return 1
     fi
 }
 ```
 
-### REST API Production Limitations
+## Config Agent Operations
 
-**Current implementation (Story 006) has these limitations:**
+**Purpose**: Hot-reload and manage configuration-driven agents
 
-1. **No Authentication**:
-
-   - Run only in trusted networks
-   - Use reverse proxy with auth (nginx/Apache)
-
-2. **No Agent Lifecycle Control**:
-
-   - Cannot stop/update agents via API
-   - Requires server restart for changes
-
-3. **No Rate Limiting**:
-
-   - Implement at proxy layer
-   - Monitor for abuse
-
-4. **Basic Error Handling**:
-
-   - Only 400 and 404 errors implemented
-   - No retry mechanisms
-
-### REST API Security Hardening
-
-Until authentication is implemented:
+### Config Agent Hot-Reload
 
 ```bash
-# 1. Restrict to localhost only
-# In your reverse proxy config:
-location /api/v1/ {
-    allow 127.0.0.1;
-    deny all;
-    proxy_pass http://localhost:8080;
-}
+# Reload single agent after config changes
+caxton agents reload data-analyzer
 
-# 2. Add basic auth at proxy layer
-htpasswd -c /etc/nginx/.htpasswd caxton-admin
+# Reload all config agents
+caxton agents reload --all-config
 
-# nginx config:
-location /api/v1/ {
-    auth_basic "Caxton API";
-    auth_basic_user_file /etc/nginx/.htpasswd;
-    proxy_pass http://localhost:8080;
-}
+# Validate config before reload
+caxton agents validate agents/data-analyzer.md
+if [ $? -eq 0 ]; then
+    caxton agents reload data-analyzer
+else
+    echo "Configuration validation failed"
+fi
 
-# 3. Rate limit at proxy
-limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+# Monitor reload status
+caxton agents reload-status data-analyzer
+```
 
-location /api/v1/ {
-    limit_req zone=api burst=20;
-    proxy_pass http://localhost:8080;
-}
+### Config Agent Development Workflow
+
+```bash
+# Development mode with auto-reload
+caxton agents watch agents/ --auto-reload
+
+# Test agent locally
+caxton agents test data-analyzer --input "Analyze this CSV data"
+
+# Check agent logs
+caxton agents logs data-analyzer --tail 50
+
+# Debug agent capabilities
+caxton agents debug data-analyzer --show-tools
+```
+
+## Memory Performance
+
+**Purpose**: Monitor and optimize embedded memory system (ADR-0030)
+
+### Embedded Memory Operations
+
+```bash
+# Check memory system status
+caxton memory status
+# Output:
+# SQLite database: healthy (1.2MB)
+# Embedding model: All-MiniLM-L6-v2 loaded
+# Entities: 1,247 stored
+# Relations: 3,891 connections
+# Vector cache: 89% hit rate
+
+# Memory system statistics
+caxton memory stats --detailed
+# Semantic search latency P99: 15ms
+# Graph traversal P99: 8ms
+# Storage usage: 45MB total
+# Memory baseline: 203MB (embedding model)
+
+# Optimize memory performance
+caxton memory optimize --vacuum-sqlite --rebuild-index
+
+# Monitor memory queries
+caxton memory monitor --show-slow-queries
+```
+
+### Memory System Scaling
+
+```bash
+# Check if approaching embedded limits
+caxton memory limits-check
+# Entity count: 85,000 / 100,000 (85% of recommended limit)
+# WARNING: Consider external backend migration
+
+# Migrate to external backend if needed
+caxton memory migrate --to qdrant --config qdrant.yaml
+# OR
+caxton memory migrate --to neo4j --config neo4j.yaml
+
+# Export memory data for backup/migration
+caxton memory export --format json --output memory-backup.json
 ```
 
 ## Initial Setup
 
-### Prerequisites Checklist
+### Prerequisites Checklist (Zero-Dependency Deployment)
 
-- [ ] Rust toolchain installed (for REST API server)
-- [ ] TLS certificates generated (for future clustering)
-- [ ] Network ports open (8080 for REST API, 7946, 9090)
-- [ ] Storage directories created
-- [ ] Configuration files in place
-- [ ] Monitoring endpoints configured
+- [ ] Caxton binary installed (single executable)
+- [ ] Port 8080 available (REST API)
+- [ ] Write permissions for data directory
+- [ ] ~200MB RAM for embedding model
+- [ ] Agents directory created (for config agents)
+- [ ] Optional: Reverse proxy for production (nginx/caddy)
 
 ### First-Time Bootstrap
 
-#### REST API Server (Current - Story 006)
+#### Zero-Dependency Server Bootstrap
 
 ```bash
 #!/bin/bash
-# Start REST API server
+# Bootstrap Caxton with embedded architecture
 
-# 1. Build the server
-cargo build --release
+# 1. Initialize data directory
+caxton init --data-dir ./data --agents-dir ./agents
 
-# 2. Run the server
-./target/release/caxton
+# 2. Start server (embedded memory loads automatically)
+caxton start --port 8080 --data-dir ./data
 
-# 3. Verify it's running
+# 3. Verify embedded systems
 curl http://localhost:8080/api/v1/health
+# Expected: {"status":"healthy","memory_backend":"embedded"}
 
-# 4. Deploy first agent
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "bootstrap-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }'
-```
-
-#### Future Cluster Bootstrap (Not Yet Implemented)
-
-```bash
-#!/bin/bash
-# Bootstrap new cluster
-
-# 1. Generate certificates
-caxton security init-ca --output /etc/caxton/certs/
-
-# 2. Create configuration
-cat > /etc/caxton/config.yaml << EOF
-coordination:
-  cluster:
-    bind_addr: 0.0.0.0:7946
-    bootstrap_expect: 3
-security:
-  cluster:
-    mtls:
-      enabled: true
-      ca_cert: /etc/caxton/certs/ca.crt
+# 4. Deploy first config agent
+cat > agents/greeter.md << 'EOF'
+---
+name: Greeter
+version: "1.0.0"
+capabilities:
+  - greeting
+tools: []
+system_prompt: |
+  You are a friendly greeter who welcomes users.
+---
+# Greeter Agent
+I help welcome users to Caxton!
 EOF
 
-# 3. Start seed node
-caxton server start --bootstrap --config /etc/caxton/config.yaml
+# 5. Load the agent
+caxton agents reload greeter
+caxton agents list
 ```
 
-## Common Operations
+#### Production Configuration
 
-### Node Failure
+```bash
+#!/bin/bash
+# Production deployment with embedded architecture
+
+# 1. Create production configuration
+cat > caxton.yaml << 'EOF'
+server:
+  port: 8080
+  host: "0.0.0.0"
+  data_dir: "/var/lib/caxton/data"
+  agents_dir: "/var/lib/caxton/agents"
+
+memory:
+  backend: "embedded"  # SQLite + Candle
+  sqlite_path: "memory.db"
+  embedding_model: "all-MiniLM-L6-v2"
+  cleanup_interval: "1h"
+
+logging:
+  level: "info"
+  file: "/var/log/caxton/caxton.log"
+
+monitoring:
+  metrics_port: 9090
+  health_check_interval: "30s"
+EOF
+
+# 2. Create systemd service
+sudo tee /etc/systemd/system/caxton.service << 'EOF'
+[Unit]
+Description=Caxton Multi-Agent Server
+After=network.target
+
+[Service]
+Type=simple
+User=caxton
+Group=caxton
+ExecStart=/usr/local/bin/caxton start --config /etc/caxton/caxton.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 3. Enable and start
+sudo systemctl enable caxton
+sudo systemctl start caxton
+```
+
+## Troubleshooting
+
+### Server Failure (Single Process)
 
 #### Detection
 
 ```bash
-# Check node status
-caxton cluster members
+# Check server process status
+ps aux | grep caxton
+sudo systemctl status caxton
 
-# If node shows as 'failed' or 'suspect':
-NODE-ID    STATUS    LAST-SEEN    AGENTS
-node-2     suspect   45s ago      38
+# Check if process crashed:
+# SERVER: stopped    SINCE: 45s ago    AGENTS: 12 (suspended)
 ```
 
 #### Diagnosis
 
 ```bash
-# 1. Try to ping the node
-ping node-2.example.com
+# 1. Check system resources
+top -bn1 | head -5
+df -h /var/lib/caxton/
 
-# 2. Check if Caxton process is running
-ssh node-2 'systemctl status caxton'
+# 2. Check embedded database integrity
+caxton storage verify --sqlite-path /var/lib/caxton/data/memory.db
 
-# 3. Check system resources
-ssh node-2 'top -bn1 | head -5'
+# 3. Check embedding model status
+ls -la /var/lib/caxton/models/
 
-# 4. Review logs
-ssh node-2 'tail -100 /var/log/caxton/caxton.log'
+# 4. Review logs for crashes
+tail -100 /var/log/caxton/caxton.log | grep -E "ERROR|PANIC|crash"
 ```
 
 #### Recovery
 
 ```bash
 # Option 1: Restart the service
-ssh node-2 'systemctl restart caxton'
+sudo systemctl restart caxton
 
-# Option 2: Rejoin cluster manually
-ssh node-2 'caxton server start --join node-1:7946'
+# Option 2: Repair embedded database if corrupted
+caxton storage repair --sqlite-path /var/lib/caxton/data/memory.db
+sudo systemctl start caxton
 
-# Option 3: If unrecoverable, remove and replace
-caxton cluster remove --node node-2 --force
-# Then bootstrap new node
+# Option 3: Restore from backup if needed
+caxton restore --backup /backups/caxton-latest.tar.gz
+sudo systemctl start caxton
+
+# Verify recovery
+caxton agents list
+caxton memory status
 ```
 
-### Performance Degradation
+### Memory Performance Issues
 
 #### Detection
 
 ```bash
-# Check performance metrics
-caxton cluster performance
+# Check memory system performance
+caxton memory stats
 
-# If latencies exceed targets:
-METRIC                TARGET    ACTUAL    STATUS
-Message routing P99   1ms       12.3ms    ✗ DEGRADED
+# If performance degrades:
+METRIC                    TARGET    ACTUAL    STATUS
+Semantic search P99       50ms      150ms     ✗ DEGRADED
+SQLite query P99          20ms      80ms      ✗ DEGRADED
+Embedding generation      100/s     25/s      ✗ DEGRADED
 ```
 
 #### Diagnosis
 
 ```bash
-# 1. Check message queue depth
-caxton queue stats
-# Queue depth > 10000 indicates backlog
+# 1. Check embedded database performance
+caxton memory diagnose --show-slow-queries
+# QUERY-TYPE        AVG-LATENCY    COUNT
+# semantic_search   120ms          1,247
+# graph_traversal   85ms           892
 
-# 2. Identify slow agents
-caxton agents slow --threshold 100ms
-# AGENT-ID          AVG-LATENCY    P99-LATENCY
-# processor-5       250ms          1.2s
+# 2. Check SQLite database size and fragmentation
+du -h /var/lib/caxton/data/memory.db
+sqlite3 /var/lib/caxton/data/memory.db "PRAGMA integrity_check;"
 
-# 3. Check resource utilization
-caxton resources
-# NODE      CPU    MEMORY    AGENTS
-# node-1    89%    7.2GB     3421
+# 3. Check embedding model memory usage
+caxton memory model-stats
+# MODEL: All-MiniLM-L6-v2
+# MEMORY: 245MB (baseline: 203MB)
+# CACHE_HIT_RATE: 67% (target: >85%)
+
+# 4. Check if approaching embedded limits
+caxton memory capacity-check
+# ENTITIES: 95,000 / 100,000 (95% - approaching limit)
 ```
 
 #### Mitigation
 
 ```bash
-# 1. Suspend slow agents
-caxton agent suspend processor-5
+# 1. Optimize embedded database
+caxton memory optimize --vacuum --reindex
 
-# 2. Scale horizontally
-caxton cluster add-node new-node:7946
+# 2. Clear embedding cache and rebuild
+caxton memory cache-clear --rebuild
 
-# 3. Rebalance agents
-caxton cluster rebalance --strategy least-loaded
+# 3. Clean up old/unused entities
+caxton memory cleanup --remove-orphaned --older-than 30d
 
-# 4. Clear message backlog if needed
-caxton queue drain --timeout 60s
+# 4. If at capacity limits, migrate to external backend
+if [ $(caxton memory capacity-check --percentage) -gt 90 ]; then
+    echo "Migrating to external backend..."
+    caxton memory migrate --to qdrant --config production-qdrant.yaml
+fi
 ```
 
-### Network Partition
+### Data Corruption
 
 #### Detection
 
 ```bash
-# Check for partitions
-caxton cluster detect-partition
+# Check data integrity
+caxton storage verify --deep
 
-# Output if partitioned:
-WARNING: Network partition detected
-Partition A: [node-1, node-2] (majority)
-Partition B: [node-3] (minority)
+# Output if corrupted:
+ERROR: Data corruption detected
+SQLite database: 3 corrupted pages
+Embedding vectors: 127 orphaned entries
 ```
 
-#### During Partition
-
-**On Majority Side:**
+#### Automatic Recovery
 
 ```bash
-# Verify majority status
-caxton cluster status
-# Status: HEALTHY (majority partition)
+# Enable safe mode (read-only) during corruption
+caxton storage safe-mode --enable
 
-# Continue operations normally
-# Minority nodes marked as failed after timeout
+# Status check in safe mode
+caxton status
+# Status: SAFE_MODE (read-only)
+# Agents: 12 suspended
+# Memory: Corruption detected, repairs needed
 ```
 
-**On Minority Side:**
+#### Repair Process
 
 ```bash
-# Check degraded mode
-caxton cluster status
-# Status: DEGRADED (minority partition)
-# Operations: READ-ONLY
-# Queued writes: 142
+# 1. Attempt automatic repair
+caxton storage repair --auto
 
-# Monitor queue growth
-watch -n 5 'caxton queue stats'
-```
+# 2. If auto-repair fails, restore from backup
+caxton storage restore --backup \
+  /backups/caxton-$(date -d yesterday +%Y%m%d).tar.gz
 
-#### Healing Partition
+# 3. Verify repair success
+caxton storage verify --full
+# [INFO] Repair completed successfully
+# [INFO] SQLite integrity: OK
+# [INFO] Embedding vectors: 98,547 verified
 
-```bash
-# 1. Fix network issue
-# (resolve firewall/routing/dns problem)
-
-# 2. Verify connectivity restored
-caxton cluster ping node-3
-
-# 3. Monitor automatic healing
-caxton cluster watch
-# [INFO] Partition healed, merging state
-# [INFO] Replaying 142 queued messages
-# [INFO] Cluster synchronized
-
-# 4. Verify consistency
-caxton cluster verify
+# 4. Disable safe mode and resume
+caxton storage safe-mode --disable
+caxton agents resume --all
 ```
 
 ## Maintenance Procedures
 
-### Rolling Upgrade
+### Server Upgrade (Single Process)
 
 #### Pre-Upgrade Checklist
 
-- [ ] Backup completed
+- [ ] Embedded data backup completed
+- [ ] Config agents backed up
 - [ ] Upgrade tested in staging
-- [ ] Rollback plan documented
-- [ ] Maintenance window scheduled
+- [ ] Rollback binary available
+- [ ] Minimal downtime window scheduled (~30 seconds)
 
 #### Upgrade Process
 
 ```bash
-# 1. Start upgrade coordinator
-caxton cluster upgrade start --version v1.2.0
+# 1. Create backup before upgrade
+caxton backup --embedded --output /backups/pre-upgrade-$(date +%Y%m%d).tar.gz
 
-# 2. Upgrade will proceed automatically:
-# - Select canary node
-# - Drain traffic from canary
-# - Upgrade canary
-# - Monitor for 24h (or --canary-duration)
-# - Proceed with remaining nodes
+# 2. Stop server gracefully
+sudo systemctl stop caxton
+# Graceful shutdown: agents suspended, memory synced
 
-# 3. Monitor progress
-caxton cluster upgrade status
-# PHASE: Rolling upgrade
-# PROGRESS: 2/5 nodes upgraded
-# CANARY: Healthy for 23h 45m
-# ETA: 45 minutes
+# 3. Replace binary
+sudo cp /tmp/caxton-v1.2.0 /usr/local/bin/caxton
+sudo chmod +x /usr/local/bin/caxton
 
-# 4. If issues detected, rollback
-caxton cluster upgrade rollback
+# 4. Start with embedded data migration if needed
+sudo systemctl start caxton
+# Auto-migrates embedded schema if needed
+
+# 5. Verify upgrade
+caxton version
+caxton storage verify
+caxton agents list
+
+# 6. Monitor for issues
+tail -f /var/log/caxton/caxton.log
 ```
 
-### Backup and Recovery
+### Backup Procedures
 
-#### Scheduled Backup
+#### Embedded Data Backup
 
 ```bash
-# Create full backup
-caxton backup create \
-  --type full \
-  --destination s3://backups/caxton/$(date +%Y%m%d)/ \
+# Full backup of embedded systems
+caxton backup --embedded \
+  --output /backups/caxton-$(date +%Y%m%d-%H%M).tar.gz \
   --compress
 
-# Verify backup
-caxton backup verify --id backup-20240115-0200
+# Backup includes:
+# - SQLite database
+# - Embedding model cache
+# - Config agent definitions
+# - Server configuration
+
+# Automated daily backup
+crontab -e
+# Add: 0 2 * * * /usr/local/bin/caxton backup --embedded --output \
+#   /backups/daily/caxton-$(date +\%Y\%m\%d).tar.gz
+
+# Verify backup integrity
+caxton backup verify /backups/caxton-20250110-0200.tar.gz
 ```
 
 #### Recovery from Backup
 
 ```bash
-# 1. Stop cluster
-caxton cluster stop --all
+# 1. Stop server
+sudo systemctl stop caxton
 
-# 2. Restore from backup
-caxton backup restore \
-  --id backup-20240115-0200 \
+# 2. Clear current data
+sudo rm -rf /var/lib/caxton/data/*
+sudo rm -rf /var/lib/caxton/agents/*
+
+# 3. Restore from backup
+caxton restore /backups/caxton-20250110-0200.tar.gz \
   --target /var/lib/caxton/
 
-# 3. Start cluster
-caxton cluster start --verify
+# 4. Verify restore
+caxton storage verify --full
+caxton agents validate-all
+
+# 5. Start server
+sudo systemctl start caxton
+
+# 6. Verify all agents loaded
+caxton agents list
+caxton memory status
 ```
 
-### Certificate Rotation
+### Config Agent Maintenance
 
 ```bash
-# 1. Check certificate expiry
-caxton security cert-status
-# NODE-ID    EXPIRES-IN    STATUS
-# node-1     25 days       WARNING
-# node-2     25 days       WARNING
+# 1. Validate all config agents
+caxton agents validate-all
+# Reports any YAML syntax errors or missing tools
 
-# 2. Generate new certificates
-caxton security rotate-certs \
-  --ca-cert /etc/caxton/ca.crt \
-  --ca-key /etc/caxton/ca.key
+# 2. Update agent tool permissions
+caxton agents audit-tools --show-unused
+# Lists tools declared but not used
 
-# 3. Rolling restart with new certs
-caxton cluster rolling-restart --reason cert-rotation
+# 3. Backup config agents separately
+tar -czf /backups/agents-$(date +%Y%m%d).tar.gz /var/lib/caxton/agents/
+
+# 4. Update all agents from git repository
+cd /var/lib/caxton/agents/
+git pull origin main
+caxton agents reload --all-config
 ```
 
 ## Emergency Procedures
 
-### Emergency Stop
+### Emergency Shutdown
 
 ```bash
-# Stop all agents immediately
-caxton emergency stop --all-agents
+# Graceful emergency stop
+caxton shutdown --graceful --timeout 30s
+# Suspends agents, flushes memory, saves state
 
-# Stop entire cluster
-caxton emergency stop --cluster
+# Immediate emergency stop
+caxton shutdown --immediate
+# Force kills server process
 
-# Stop with state preservation
-caxton emergency stop --preserve-state --dump-to /backup/emergency/
+# Emergency stop with state dump
+caxton shutdown --dump-state --output /backup/emergency/$(date +%s).tar.gz
 ```
 
-### Data Corruption Recovery
+### Embedded Data Recovery
 
 ```bash
-# 1. Identify corrupted node
-caxton cluster verify --deep
-# ERROR: Node-2 state corruption detected
+# 1. Detect corruption level
+caxton storage diagnose --corruption-level
+# CORRUPTION_LEVEL: HIGH (75% of data affected)
 
-# 2. Isolate corrupted node
-caxton cluster isolate --node node-2
+# 2. Enable safe mode
+caxton storage safe-mode --enable
 
-# 3. Rebuild from peers
-caxton cluster rebuild --node node-2 --from-peers
+# 3. Attempt graduated recovery
+if [ $(caxton storage corruption-level) -lt 25 ]; then
+    # Light corruption: repair in place
+    caxton storage repair --in-place
+else
+    # Heavy corruption: restore from backup
+    caxton restore --latest-backup --verify
+fi
 
-# 4. Verify and rejoin
-caxton cluster verify --node node-2
-caxton cluster rejoin --node node-2
+# 4. Verify recovery
+caxton storage verify --comprehensive
 ```
 
-### Memory Exhaustion
+### Memory System Crisis
 
 ```bash
-# 1. Identify memory usage
-caxton memory stats
-# NODE      USED     LIMIT    AGENTS
-# node-1    15.2GB   16GB     4521
+# 1. Check memory usage breakdown
+caxton memory usage --detailed
+# COMPONENT          USAGE    LIMIT     STATUS
+# Embedding model    203MB    -         OK
+# SQLite cache       45MB     100MB     OK
+# Entity store       156MB    500MB     OK
+# Vector cache       89MB     200MB     OK
 
-# 2. Suspend low-priority agents
-caxton agents suspend --priority low
+# 2. If approaching limits, emergency cleanup
+if [ $(caxton memory usage --percentage) -gt 95 ]; then
+    # Emergency memory cleanup
+    caxton memory cleanup --aggressive --force
+    caxton memory cache-clear --all
+fi
 
-# 3. Force garbage collection
-caxton memory gc --aggressive
-
-# 4. If still critical, shed load
-caxton cluster shed-load --percentage 20
+# 3. If still critical, migrate to external backend
+caxton memory emergency-migrate --to qdrant --minimal-downtime
 ```
 
 ## Monitoring and Alerting
 
-### Key Metrics to Watch
+### Key Metrics to Watch (Embedded Architecture)
 
 ```bash
-# Cluster health
-curl -s localhost:9090/metrics | grep caxton_cluster_
-# caxton_cluster_nodes_alive 5
-# caxton_cluster_nodes_failed 0
-# caxton_cluster_gossip_latency_ms 1.2
+# Server health (single process)
+curl -s localhost:9090/metrics | grep caxton_server_
+# caxton_server_uptime_seconds 86400
+# caxton_server_restarts_total 0
+# caxton_server_memory_usage_bytes 256000000
 
-# Agent performance
+# Embedded memory system
+curl -s localhost:9090/metrics | grep caxton_memory_
+# caxton_memory_entities_total 12450
+# caxton_memory_relations_total 38912
+# caxton_memory_search_latency_p99 0.023
+# caxton_memory_sqlite_size_bytes 45678912
+
+# Agent performance (config + WASM)
 curl -s localhost:9090/metrics | grep caxton_agent_
-# caxton_agent_message_latency_p99 0.067
-# caxton_agent_crashes_total 0
-# caxton_agent_memory_used_bytes 5242880
-
-# System resources
-curl -s localhost:9090/metrics | grep caxton_system_
-# caxton_system_cpu_usage_percent 34.5
-# caxton_system_memory_available_bytes 8589934592
+# caxton_agent_config_count 8
+# caxton_agent_wasm_count 2
+# caxton_agent_reload_success_total 156
+# caxton_agent_response_latency_p99 0.089
 ```
 
 ### Alert Response
 
 #### Critical Alerts
 
-##### Cluster Split Brain
+##### Memory System Failure
 
 ```bash
 # Immediate response
-caxton cluster detect-partition --resolve-strategy manual
+caxton memory emergency-diagnosis
 
-# Identify correct partition
-caxton cluster compare-state
+# Check specific failure mode
+caxton storage verify --quick
 
-# Force resolution
-caxton cluster resolve-partition --prefer majority
+# Initiate recovery
+if caxton storage can-repair; then
+    caxton storage repair --emergency
+else
+    caxton restore --latest-backup --force
+fi
 ```
 
-##### Agent Storm (Cascading Failures)
+##### Config Agent Failures
 
 ```bash
-# Stop cascade
-caxton circuit-breaker activate --all
+# Stop problematic agents
+caxton agents suspend --failing-only
 
-# Identify root cause
-caxton trace --error-cascade --last 5m
+# Identify configuration issues
+caxton agents diagnose --show-errors
 
-# Gradual recovery
-caxton circuit-breaker reset --gradual --duration 10m
+# Gradual restart with validation
+caxton agents reload --validate-first --gradual
 ```
 
-## Troubleshooting
-
-### Debug Commands
+### Debug Commands (Embedded Architecture)
 
 ```bash
-# Trace specific conversation
-caxton trace --conversation-id abc-123
+# Trace agent conversations
+caxton trace --agent data-analyzer --conversation-id abc-123
 
-# Profile agent performance
-caxton profile --agent processor-1 --duration 60s
+# Profile memory system performance
+caxton memory profile --duration 60s --include-queries
 
-# Dump system state
-caxton debug dump --output debug-$(date +%s).tar.gz
+# Dump complete system state
+caxton debug dump --embedded --output debug-$(date +%s).tar.gz
 
-# Analyze message patterns
-caxton analyze messages --pattern "timeout|error" --last 1h
+# Analyze config agent patterns
+caxton agents analyze --pattern "error|timeout" --last 1h
 
-# Check configuration drift
-caxton config diff --baseline /etc/caxton/config.yaml
+# Check configuration consistency
+caxton config verify --agents-dir /var/lib/caxton/agents/
+
+# SQLite database analysis
+caxton storage analyze --show-indexes --show-fragmentation
 ```
 
-### Common Issues
+### Common Issues (Embedded Architecture)
 
-| Symptom | Likely Cause | Solution | |---------|--------------|----------| |
-Agents not discovered | Gossip not converging | Check network, increase
-gossip_interval | | High memory usage | Message queue backlog | Check slow
-agents, increase throughput | | Cluster won't form | mTLS mismatch | Verify
-certificates on all nodes | | Degraded performance | Resource exhaustion | Add
-nodes or reduce agent count | | Messages lost | Partition during write | Check
-partition logs, replay from queue |
+| Symptom | Likely Cause | Solution |
+|---------|--------------|----------|
+| Config agents not loading | YAML syntax error | Run `caxton agents validate-all` |
+| Slow memory searches | SQLite fragmentation | Run `caxton memory optimize --vacuum` |
+| High memory usage | Embedding cache full | Run `caxton memory cache-clear` |
+| Server won't start | Data corruption | Run `caxton storage verify --repair` |
+| Agent hot-reload fails | File permissions | Check write access to agents/ directory |
+| Performance degraded | Approaching capacity limits | Check `caxton memory capacity-check` |
 
-## Best Practices
+## Best Practices (Embedded Architecture)
 
-1. **Always backup before upgrades**
-2. **Test in staging first**
-3. **Monitor key metrics continuously**
-4. **Document all changes**
-5. **Keep runbook updated**
-6. **Practice emergency procedures**
-7. **Maintain 20% resource headroom**
+1. **Backup embedded data daily** (automated cron job)
+2. **Monitor SQLite database size** (approaching 100K entities limit)
+3. **Validate config agents before deployment** (YAML lint)
+4. **Use semantic versioning for agent configs** (track changes)
+5. **Monitor memory system performance** (search latency)
+6. **Plan external backend migration** (before hitting capacity)
+7. **Test hot-reload in staging** (validate config changes)
+8. **Maintain embedding cache efficiency** (>85% hit rate)
 
 ## References
 
-- [Clustering Guide](../user-guide/clustering.md)
-- [Performance Requirements](../adr/0017-performance-requirements.md)
-- [Security Architecture](../adr/0016-security-architecture.md)
-- [Coordination-First Architecture](../adr/0014-coordination-first-architecture.md)
+- [Configuration Agent Guide](../user-guide/config-agents.md)
+- [Embedded Memory System](../adr/0030-embedded-memory-system.md)
+- [Configuration-Driven Architecture](../adr/0028-configuration-driven-agent-architecture.md)
+- [FIPA Lightweight Messaging](../adr/0029-fipa-acl-lightweight-messaging.md)
+- [Performance Tuning](performance-tuning.md)
+- [Agent Lifecycle Management](agent-lifecycle-management.md)

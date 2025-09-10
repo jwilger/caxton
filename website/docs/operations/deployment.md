@@ -1,63 +1,173 @@
 ---
 title: "Production Deployment Guide"
 layout: documentation
-description: "Comprehensive guide for deploying Caxton multi-agent systems in production environments with high availability, load balancing, and backup strategies"
+description: "Deploy Caxton from zero-dependency embedded setup to enterprise scale with embedded memory and configuration-driven agents"
 date: 2025-09-10
 categories: [Website]
 ---
 
-This guide covers deploying Caxton multi-agent systems in production
-environments, including system requirements, installation methods, configuration
-best practices, and operational considerations.
+Deploy Caxton using the zero-dependency embedded approach that scales from
+single binary to enterprise infrastructure without architectural changes.
 
-## System Requirements
+## Deployment Philosophy
 
-### Minimum Requirements
+Caxton follows a **grow-with-you architecture**:
 
-- **CPU**: 4 cores (x86_64 or ARM64)
-- **Memory**: 8 GB RAM
-- **Storage**: 50 GB SSD
+1. **Start Simple**: Single binary with embedded memory (SQLite + local embeddings)
+2. **Scale Gradually**: Add external backends when you exceed ~100K entities
+3. **Enterprise Ready**: Multi-tenant, cloud-native deployment for large scale
+
+## Zero-Dependency Embedded Deployment
+
+### Minimum Requirements (Embedded)
+
+Perfect for getting started and small-to-medium deployments:
+
+- **CPU**: 2 cores (x86_64 or ARM64)
+- **Memory**: 4 GB RAM (including ~200MB for embedding model)
+- **Storage**: 10 GB SSD
+- **Network**: Any internet connection
+- **OS**: Linux, macOS, or Windows
+- **External Dependencies**: **NONE** - works immediately
+
+### Recommended Requirements (Embedded)
+
+For production workloads up to 100K entities:
+
+- **CPU**: 4+ cores with good single-thread performance
+- **Memory**: 8+ GB RAM
+- **Storage**: 50+ GB SSD (for agent memory growth)
 - **Network**: 1 Gbps connection
 - **OS**: Linux (Ubuntu 22.04+, RHEL 8+, CentOS 8+)
 
-### Recommended Requirements
+### Enterprise Scale Requirements
+
+When you outgrow embedded memory (~100K entities):
 
 - **CPU**: 16+ cores with AVX2 support
 - **Memory**: 32+ GB RAM
 - **Storage**: 200+ GB NVMe SSD
 - **Network**: 10 Gbps connection with low latency
-- **OS**: Ubuntu 22.04 LTS or RHEL 9
+- **External**: Neo4j/Qdrant clusters, Kubernetes infrastructure
 
-### WebAssembly Runtime Requirements
+## Quick Start (Zero Dependencies)
 
-- **WASI Support**: Full WASI preview 1 compatibility
-- **Memory Management**: Support for linear memory up to 4GB per instance
-- **Multi-threading**: WASM threads support for concurrent agent execution
-- **Security**: Sandboxing with capability-based security model
+### Single Binary Deployment
 
-## Installation Methods
-
-### Docker Deployment
-
-#### Single Node Setup
+Get running in under 5 minutes with zero external dependencies:
 
 ```bash
-# Pull the official Caxton image
-docker pull caxton/caxton:latest
+# Download and run - that's it!
+curl -L https://releases.caxton.dev/latest/caxton-linux -o caxton
+chmod +x caxton
+./caxton serve
 
-# Create data directory
-mkdir -p /opt/caxton/data
+# Caxton is now running with:
+# - Embedded SQLite memory
+# - Local embedding model (downloads automatically)
+# - Configuration agent runtime
+# - Web UI at http://localhost:8080
+```
 
-# Run Caxton container
+### Docker Deployment (Embedded)
+
+#### Single Container Setup
+
+```bash
+# Pull and run - embedded memory included
 docker run -d \
-  --name caxton-runtime \
+  --name caxton \
+  -p 8080:8080 \
+  -v caxton-data:/var/lib/caxton \
+  caxton/caxton:latest
+
+# Zero configuration required
+# Memory and agents persist in caxton-data volume
+```
+
+### Configuration Agent Deployment
+
+Deploy your first agent in minutes:
+
+```bash
+# 1. Create your agent file
+cat > my-agent.md << 'EOF'
+---
+name: MyFirstAgent
+capabilities: [greeting, help]
+tools: [http_client]
+memory_enabled: true
+system_prompt: |
+  You are a helpful assistant who greets users and provides basic help.
+---
+
+# My First Agent
+
+I can greet users and provide helpful information.
+EOF
+
+# 2. Deploy agent
+./caxton agent deploy my-agent.md
+
+# 3. Test agent (via API or Web UI)
+curl -X POST http://localhost:8080/api/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "capability": "greeting",
+    "content": {"message": "Hello!"}
+  }'
+```
+
+**That's it!** Your agent is running with:
+
+- Embedded memory (no external database)
+- Automatic context awareness
+- Zero configuration overhead
+
+## Scaling to External Backends
+
+### When to Scale Beyond Embedded
+
+**Consider external backends when you reach:**
+
+- 100K+ entities in memory
+- Need for multi-node deployments
+- Advanced analytics requirements
+- Enterprise compliance needs
+
+### Neo4j Backend (Graph Memory)
+
+```yaml
+# caxton.yaml
+memory:
+  backend: neo4j
+  neo4j:
+    uri: bolt://neo4j:7687
+    username: neo4j
+    password: ${NEO4J_PASSWORD}
+    database: caxton
+```
+
+### Qdrant Backend (Vector Memory)
+
+```yaml
+# caxton.yaml
+memory:
+  backend: qdrant
+  qdrant:
+    url: http://qdrant:6333
+    collection: caxton_memory
+    vector_size: 384
+```
+
   --restart unless-stopped \
   -p 8080:8080 \
   -p 9090:9090 \
   -v /opt/caxton/data:/data \
   -e CAXTON_CONFIG_PATH=/data/config.toml \
   caxton/caxton:latest
-```
+
+```bash
 
 #### Docker Compose Configuration
 

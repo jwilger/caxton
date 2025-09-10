@@ -518,6 +518,116 @@ proptest! {
 }
 ```
 
+## Configuration Agent Testing
+
+Configuration agents require different testing strategies than WebAssembly agents
+since they're defined in markdown with YAML frontmatter.
+
+### Schema Validation Testing
+
+Test YAML frontmatter structure and required fields:
+
+```bash
+# Test agent schema validation
+caxton validate my-agent.md
+
+# Test specific schema fields
+caxton validate --check-capabilities my-agent.md
+caxton validate --check-tools my-agent.md
+caxton validate --check-prompts my-agent.md
+```
+
+### Prompt Testing
+
+Test system prompts and templates with various inputs:
+
+```yaml
+# test-prompts.yaml
+tests:
+  - name: "basic_request"
+    input:
+      request: "analyze sales data"
+      context: "Q3 sales figures"
+    expected_includes:
+      - "sales"
+      - "analysis"
+      - "Q3"
+
+  - name: "memory_integration"
+    input:
+      request: "what patterns do you see?"
+      memory_results:
+        - entity: "PrevAnalysis"
+          observations: ["Growth trend identified"]
+    expected_includes:
+      - "Growth trend"
+      - "previous analysis"
+```
+
+Run prompt tests:
+
+```bash
+caxton test prompts my-agent.md \
+  --test-file test-prompts.yaml \
+  --model-endpoint http://localhost:8080
+```
+
+### Tool Integration Testing
+
+Test agent tool access and permissions:
+
+```bash
+# Test tool availability
+caxton test tools my-agent.md
+
+# Test tool permissions
+caxton test permissions my-agent.md \
+  --deny-tool http_client \
+  --expect-failure
+
+# Test tool responses with mocked data
+caxton test tools my-agent.md \
+  --mock-responses tools/mock-responses.json
+```
+
+### Memory System Testing
+
+Test agent memory functionality:
+
+```bash
+# Test memory operations
+caxton test memory my-agent.md \
+  --operations "store,search,retrieve" \
+  --test-entities test-entities.json
+
+# Test memory scope isolation
+caxton test memory-isolation \
+  --agent1 my-agent.md \
+  --agent2 other-agent.md \
+  --expect-separate-scopes
+
+# Test memory performance
+caxton test memory-performance my-agent.md \
+  --entity-count 1000 \
+  --search-queries 100
+```
+
+### Configuration Agent Integration Testing
+
+Test complete agent behavior in realistic scenarios:
+
+```bash
+# Deploy and test agent workflow
+caxton test integration my-agent.md \
+  --scenario scenarios/data-analysis.yaml \
+  --timeout 60s
+
+# Test with real external services
+caxton test integration my-agent.md \
+  --scenario scenarios/api-integration.yaml \
+  --environment staging
+```
+
 ## Integration Testing
 
 ### Multi-Agent Communication Testing

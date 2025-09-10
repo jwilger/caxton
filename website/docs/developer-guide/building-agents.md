@@ -1,156 +1,188 @@
 ---
 title: "Building Agents"
 layout: documentation
-description: "Comprehensive guide to developing WebAssembly agents for Caxton multi-agent systems"
+description: "Complete guide to building agents for Caxton: configuration-first development with optional WebAssembly power"
 date: 2025-09-10
 categories: [Website]
 ---
 
-Learn how to create production-ready WebAssembly agents that integrate
-seamlessly with the Caxton multi-agent orchestration platform.
+Learn how to create agents for Caxton using the configuration-first approach
+that gets you running in 5-10 minutes, with WebAssembly available when you
+need custom algorithms.
 
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Development Environment](#development-environment)
+- [Configuration Agents (Primary)](#configuration-agents-primary)
 - [Creating Your First Agent](#creating-your-first-agent)
-- [Agent Lifecycle](#agent-lifecycle)
-- [FIPA Message Protocol](#fipa-message-protocol)
-- [Testing Agents](#testing-agents)
-- [Debugging](#debugging)
-- [Performance Optimization](#performance-optimization)
+- [Agent Capabilities and Tools](#agent-capabilities-and-tools)
+- [Memory Integration](#memory-integration)
+- [Message Communication](#message-communication)
+- [Testing and Debugging](#testing-and-debugging)
+- [WebAssembly Agents (Power Users)](#webassembly-agents-power-users)
 - [Examples](#examples)
 
 ## Introduction
 
-Caxton agents are WebAssembly (WASM) modules that run in isolated sandboxes
-within the Caxton orchestration server. Each agent operates independently while
-participating in coordinated multi-agent workflows through the Foundation for
-Intelligent Physical Agents (FIPA) messaging protocol.
+Caxton supports two types of agents designed for different use cases:
 
-### Key Benefits
+**Configuration Agents (90% of use cases)**: Defined in markdown files with
+YAML frontmatter. No compilation required - edit and deploy in minutes.
 
-- **Isolation**: Each agent runs in its own secure WebAssembly sandbox
-- **Performance**: < 50μs message routing overhead
-- **Language Agnostic**: Write agents in any language that compiles to
-  WebAssembly
-- **Observable**: Built-in OpenTelemetry support for tracing and metrics
-- **Scalable**: Dynamic resource allocation and horizontal scaling
+**WebAssembly Agents (10% of use cases)**: Compiled modules for custom
+algorithms and maximum performance.
 
-### Agent Architecture
+### Configuration-First Benefits
+
+- **5-10 minute onboarding**: Create and deploy agents immediately
+- **Zero compilation**: Edit markdown files and see changes instantly
+- **Version control friendly**: Text-based definitions easy to diff and merge
+- **Community sharing**: Copy and modify agents from others
+- **Built-in memory**: Automatic context and learning without external databases
+- **Tool integration**: Secure access to external services through MCP
+
+### Hybrid Architecture
 
 ```text
 ┌─────────────────────────────────────┐
 │            Caxton Server            │
 ├─────────────────────────────────────┤
-│  Agent Sandbox (WASM Runtime)      │
+│  Configuration Agents (Primary)    │
 │  ┌─────────────────────────────┐    │
-│  │        Your Agent           │    │
+│  │    Markdown + YAML          │    │
 │  │  ┌─────────────────────┐    │    │
-│  │  │   Message Handler   │    │    │
-│  │  │   State Manager     │    │    │
-│  │  │   Business Logic    │    │    │
-│  │  │   Tool Integrations │    │    │
+│  │  │   System Prompt     │    │    │
+│  │  │   Capabilities      │    │    │
+│  │  │   Tools Access      │    │    │
+│  │  │   Memory Enabled    │    │    │
 │  │  └─────────────────────┘    │    │
 │  └─────────────────────────────┘    │
 ├─────────────────────────────────────┤
-│      Message Router & Protocol     │
-│      Resource Manager              │
-│      Observability Layer           │
+│  WebAssembly Agents (Power Users)  │
+│  ┌─────────────────────────────┐    │
+│  │    Compiled Modules         │    │
+│  │  (Custom algorithms only)   │    │
+│  └─────────────────────────────┘    │
+├─────────────────────────────────────┤
+│  Capability Router & Memory        │
+│  Embedded SQLite + Local Models    │
+│  MCP Tool Integration              │
 └─────────────────────────────────────┘
 ```
 
-## Prerequisites
+## Configuration Agents (Primary)
 
-### Required Knowledge
+Configuration agents are the recommended way to build agents for Caxton.
+They require no compilation and can be created in minutes.
 
-- **Rust Programming**: Primary supported language for agent development
-- **WebAssembly Concepts**: Understanding of WASM compilation and runtime
-- **Message-Passing Systems**: Experience with actor model or similar patterns
-- **Protocol Understanding**: Basic familiarity with FIPA ACL or similar agent
-  communication
+### Prerequisites
 
-### Optional Knowledge
+**Required Knowledge**:
 
-- **Distributed Systems**: Helpful for complex multi-agent coordination
-- **OpenTelemetry**: For advanced observability and debugging
-- **MCP Protocol**: For external tool integrations
+- **Markdown writing**: Basic markdown syntax
+- **YAML configuration**: Simple key-value configuration
+- **Prompt engineering**: Crafting effective system prompts
+
+**Optional Knowledge**:
+
+- **MCP Tools**: For external system integration
+- **OpenTelemetry**: For advanced observability
 
 ### System Requirements
 
-- **Rust Toolchain**: Version 1.70+ with WebAssembly target
+- **Text Editor**: Any markdown-compatible editor
 - **Caxton Server**: Development or production installation
-- **Development Tools**: IDE with Rust and WASM support
-
-## Development Environment
-
-### Install Rust and WebAssembly Target
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Add WebAssembly target
-rustup target add wasm32-wasi
-
-# Install helpful tools
-cargo install wasm-pack
-cargo install cargo-generate
-```
-
-### Project Setup
-
-```bash
-# Create new agent project
-cargo new --lib my_agent
-cd my_agent
-
-# Configure Cargo.toml for WASM
-cat >> Cargo.toml << EOF
-
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-caxton-agent = "0.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.0", features = ["rt"] }
-
-[dependencies.web-sys]
-version = "0.3"
-features = []
-EOF
-```
-
-### IDE Configuration
-
-#### VS Code Setup
-
-```json
-// .vscode/settings.json
-{
-  "rust-analyzer.cargo.target": "wasm32-wasi",
-  "rust-analyzer.checkOnSave.allTargets": false,
-  "rust-analyzer.cargo.features": ["wasm"]
-}
-```
-
-#### IntelliJ/CLion Setup
-
-```xml
-<!-- .idea/codeStyles/Project.xml -->
-<component name="ProjectCodeStyleConfiguration">
-  <option name="PREFERRED_PROJECT_CODE_STYLE" value="Default" />
-  <option name="USE_PER_PROJECT_SETTINGS" value="true" />
-  <option name="TARGET_TRIPLE" value="wasm32-wasi" />
-</component>
-```
+- **No compilation tools needed**
 
 ## Creating Your First Agent
 
-### Basic Agent Structure
+### Configuration Agent Structure
+
+Create a simple data analyzer agent in under 5 minutes:
+
+```yaml
+---
+name: DataAnalyzer
+version: "1.0.0"
+capabilities:
+  - data-analysis
+  - csv-processing
+  - report-generation
+tools:
+  - http_client
+  - csv_parser
+  - chart_generator
+memory_enabled: true
+memory_scope: workspace
+parameters:
+  max_file_size: "10MB"
+  supported_formats: ["csv", "json", "xlsx"]
+  timeout_seconds: 30
+system_prompt: |
+  You are a data analysis expert who helps users understand their data through:
+
+  - Fetching data from URLs using http_client
+  - Parsing CSV, JSON, and Excel files with csv_parser
+  - Creating visualizations with chart_generator
+  - Providing statistical summaries and insights
+
+  Always:
+  - Validate data quality before analysis
+  - Explain your methodology clearly
+  - Suggest actionable insights
+  - Save findings to memory for future reference
+
+user_prompt_template: |
+  DATA ANALYSIS REQUEST: {{request}}
+
+  Available context from memory: {{memory_context}}
+  Data source: {{data_source}}
+  Requirements: {{requirements}}
+
+  Please analyze the data and provide insights.
+---
+
+# DataAnalyzer Agent
+
+I specialize in analyzing data and creating meaningful insights from CSV, JSON, and Excel files.
+
+## What I Can Do
+
+- **Data Import**: Fetch data from URLs or analyze uploaded files
+- **Quality Assessment**: Check for missing values, outliers, and data integrity
+- **Statistical Analysis**: Generate descriptive statistics, correlations, and trends
+- **Visualizations**: Create charts, graphs, and dashboards
+- **Memory Integration**: Remember patterns and insights from previous analyses
+
+## Usage Examples
+
+Ask me to:
+- "Analyze the sales data at https://example.com/Q3-sales.csv"
+- "Compare this quarter's performance to previous analyses"
+- "Create a dashboard showing key metrics and trends"
+- "Find patterns in customer behavior data"
+
+## Memory and Learning
+
+I automatically save successful analysis patterns, interesting findings, and user preferences to help with future requests.
+```
+
+### File Structure
+
+Save as `data-analyzer.md` in your agents directory:
+
+```text
+project/
+├── agents/
+│   ├── data-analyzer.md
+│   ├── email-assistant.md
+│   └── report-generator.md
+├── tools/
+│   └── mcp-configs/
+└── caxton.yaml
+```
+
+### Basic WebAssembly Agent Structure
 
 Create a simple echo agent that responds to messages:
 

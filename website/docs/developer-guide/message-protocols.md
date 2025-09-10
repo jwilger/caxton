@@ -422,6 +422,64 @@ patterns without the complexity of full academic FIPA implementations.
 
 ## Advanced Features
 
+### Capability-Based Routing
+
+Caxton supports capability-based messaging where messages are routed to agents
+based on their declared capabilities rather than specific agent addresses.
+
+#### Sending to Capabilities
+
+Instead of sending to specific agents:
+
+```json
+{
+  "performative": "request",
+  "sender": "client_001",
+  "capability": "data-analysis",
+  "content": {
+    "action": "analyze_trends",
+    "dataset": "sales_q3.csv"
+  },
+  "conversation_id": "conv_789"
+}
+```
+
+The message router finds agents that provide the "data-analysis" capability
+and routes the message appropriately.
+
+#### Capability Declaration
+
+Configuration agents declare capabilities in their YAML frontmatter:
+
+```yaml
+---
+name: AdvancedAnalyzer
+capabilities:
+  - data-analysis
+  - report-generation
+  - trend-prediction
+---
+```
+
+WebAssembly agents declare capabilities in code:
+
+```rust
+impl Agent for AnalyzerAgent {
+    fn capabilities(&self) -> Vec<Capability> {
+        vec![
+            Capability::Custom("data-analysis".to_string()),
+            Capability::Custom("report-generation".to_string()),
+        ]
+    }
+}
+```
+
+#### Routing Strategies
+
+- **Single Agent**: Route to best-matching agent
+- **Load Balanced**: Distribute across all capable agents
+- **Broadcast**: Send to all agents with the capability
+
 *For complex implementations that require detailed conversation management,
 message validation, and error handling patterns, see the
 [Advanced FIPA Implementation Guide](/docs/advanced/fipa-advanced).*

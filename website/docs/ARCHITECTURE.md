@@ -6,127 +6,240 @@ date: 2025-09-10
 categories: [Website]
 ---
 
+> **🚧 Implementation Status**
+>
+> This architecture documentation serves as the comprehensive technical
+> specification for the Caxton multi-agent system. All components and features
+> described represent the target system design based on ADRs 28-30 and serve as
+> acceptance criteria for ongoing development.
+>
+> **Current State**: Domain modeling and foundational architecture
+> **Target**: Full hybrid agent platform with configuration-driven primary experience
+
 ## Why These Design Choices?
 
-Caxton's architecture prioritizes **security**, **interoperability**, and
-**observability** to solve common problems in multi-agent systems:
+Caxton's architecture prioritizes **rapid development**, **zero configuration**,
+and **production scalability** to solve common problems in multi-agent systems:
 
-- **WebAssembly sandboxing** prevents malicious agents from compromising your
-  system
-- **FIPA protocols** ensure agents from different vendors can work together
-- **OpenTelemetry integration** gives you the visibility needed to debug and
-  optimize complex agent interactions
+- **Configuration-driven agents** enable 5-10 minute onboarding vs hours of compilation
+- **Embedded memory system** provides zero-dependency setup while scaling to
+  external backends
+- **Capability-based routing** ensures loose coupling and easy scaling
+- **Hybrid architecture** supports simple config agents and advanced WebAssembly
+  modules
 
 This document provides a technical overview of how these pieces work together to
-create a robust multi-agent platform.
+create a configuration-first agent platform.
 
 ______________________________________________________________________
 
-Caxton is a distributed multi-agent platform built on WebAssembly sandboxing,
-FIPA (Foundation for Intelligent Physical Agents) message protocols, and
-comprehensive observability. The platform enables secure execution of agents
-written in multiple programming languages while providing standardized
-communication and monitoring capabilities.
+Caxton is a hybrid multi-agent platform built on configuration-driven agent development,
+embedded memory systems, and lightweight FIPA-ACL messaging. The platform enables
+rapid agent creation through markdown configuration files while providing WebAssembly
+sandboxing for advanced use cases that require custom algorithms.
 
 ## Architecture Overview
 
 The Caxton platform is designed around five core architectural principles:
 
-1. **Isolation**: WebAssembly-based sandboxing ensures secure agent execution
-2. **Communication**: FIPA-compliant message protocols enable standardized agent
-   interaction
-3. **Observability**: OpenTelemetry integration provides comprehensive
-   monitoring
-4. **Flexibility**: Multi-language runtime support accommodates diverse agent
-   implementations
-5. **Coordination Over State**: Lightweight protocols instead of shared
-   databases (see [ADR-0014](/adrs/0014-coordination-first-architecture))
+1. **Configuration-First**: Markdown + YAML agents for 90% of use cases,
+   WebAssembly for power users
+2. **Embedded Memory**: SQLite + local embeddings provide zero-config memory
+   with scaling options
+3. **Capability Routing**: Agents request capabilities, not specific agents,
+   enabling loose coupling
+4. **Hybrid Execution**: Configuration agents orchestrate through LLMs,
+   WebAssembly agents run compiled code
+5. **Zero Dependencies**: Works immediately without external databases or
+   complex infrastructure
 
-## WebAssembly Agent Isolation
+See [ADR-0028](/adr/0028-configuration-driven-agent-architecture),
+[ADR-0029](/adr/0029-fipa-acl-lightweight-messaging), and
+[ADR-0030](/adr/0030-embedded-memory-system) for detailed rationales.
 
-<div data-diagram="wasmIsolation" class="architecture-diagram-container"></div>
+## Hybrid Agent Architecture
 
-### Sandbox Architecture
+<div data-diagram="hybridAgents" class="architecture-diagram-container"></div>
 
-Each agent runs in a dedicated WebAssembly sandbox that provides:
+### Configuration Agents (Primary - 90% of use cases)
+
+Configuration agents are defined in markdown files with YAML frontmatter and
+require no compilation:
+
+```yaml
+---
+name: DataAnalyzer
+capabilities: [data-analysis, report-generation]
+tools: [http_client, csv_parser, chart_generator]
+memory_enabled: true
+parameters:
+  max_file_size: "10MB"
+system_prompt: |
+  You are a data analysis expert who helps users understand their data.
+---
+```
+
+**Execution Model**: Configuration agents run in the host runtime through LLM
+orchestration. The runtime:
+
+- Formats incoming FIPA messages into natural language prompts
+- Provides tool access through secure MCP servers
+- Parses agent responses back into FIPA message format
+- Manages conversation context and memory integration
+
+### WebAssembly Agents (Power Users - 10% of use cases)
+
+WebAssembly agents provide sandboxed execution for custom algorithms:
 
 - **Memory Isolation**: Agents cannot access each other's memory spaces
 - **Resource Limits**: CPU and memory consumption is strictly controlled
 - **System Call Filtering**: Only approved system calls are permitted
 - **Network Restrictions**: Network access is mediated through the runtime
 
-### Security Boundaries
+**Performance Characteristics**:
 
-The isolation model implements multiple security boundaries:
+- **Startup Time**: < 100ms per agent (faster than containers)
+- **Memory Overhead**: ~2MB baseline per sandbox
+- **Message Latency**: < 1ms for local communication
+- **Throughput**: 10,000+ messages/second per agent
 
-Each agent runs in its own isolated WebAssembly sandbox, preventing malicious
-agents from accessing other agents' data or system resources. The Caxton runtime
-manages all communication between agents through a secure message bus.
+**When to Use WebAssembly**: Choose WebAssembly agents when you need:
 
-### Performance Characteristics
+- Custom algorithms not available through tools
+- Maximum performance for CPU-intensive operations
+- Integration with existing C/C++/Rust libraries
+- Deterministic execution guarantees
 
-These numbers show why WebAssembly is ideal for multi-agent systems:
+## Capability-Based Messaging
 
-- **Startup Time**: < 100ms per agent *(faster than containers, enabling dynamic
-  agent scaling)*
-- **Memory Overhead**: ~2MB baseline per sandbox *(minimal footprint allows
-  thousands of concurrent agents)*
-- **Message Latency**: < 1ms for local communication *(near-native performance
-  for agent coordination)*
-- **Throughput**: 10,000+ messages/second per agent *(sufficient for real-time
-  collaborative tasks)*
+<div data-diagram="capabilityRouting" class="architecture-diagram-container"></div>
 
-## FIPA Message Flow
+### Lightweight FIPA-ACL Protocol
 
-<div data-diagram="fipaMessageFlow" class="architecture-diagram-container"></div>
+Caxton implements a simplified FIPA-ACL messaging system optimized for
+configuration-driven agents:
 
-### Message Protocol Stack
+#### Core Communication Patterns (1.0 Scope)
 
-The FIPA (Foundation for Intelligent Physical Agents) protocol stack provides
-standardized communication between agents. FIPA is an IEEE standard that defines
-how autonomous agents should communicate, making it possible for agents from
-different developers to work together seamlessly:
+- **REQUEST**: Ask agent to perform action
+- **INFORM**: Share information
+- **QUERY**: Ask for information
+- **FAILURE**: Indicate action failed
+- **NOT_UNDERSTOOD**: Message not comprehensible
+- **PROPOSE**: Suggest action/value
+- **ACCEPT_PROPOSAL**: Agree to proposal
+- **REJECT_PROPOSAL**: Decline proposal
 
-#### ACL (Agent Communication Language)
+#### Capability-Based Routing
 
-ACL defines the message types and structure for agent communication:
-
-- **Performatives**: REQUEST, INFORM, PROPOSE, ACCEPT, REJECT, CFP (Call for
-  Proposals), CANCEL, QUERY
-- **Content Languages**: JSON, XML, Custom ontologies
-- **Conversation Management**: Thread tracking and correlation for multi-step
-  interactions
-
-#### Message Structure
+Instead of addressing specific agents, messages target **capabilities**:
 
 ```json
 {
   "performative": "request",
-  "sender": "agent_123",
-  "receiver": "agent_456",
+  "capability": "data-analysis",
   "content": {
-    "action": "process_data",
-    "parameters": {...}
+    "action": "analyze_sales_data",
+    "data_url": "https://example.com/sales.csv"
   },
   "conversation_id": "conv_789",
-  "reply_with": "msg_001",
-  "in_reply_to": null,
-  "ontology": "caxton-v1",
-  "language": "json",
-  "protocol": "fipa-request"
+  "routing_strategy": "best_match"
 }
 ```
 
-### Contract Net Protocol
+**Routing Strategies**:
 
-The Contract Net Protocol enables distributed task coordination:
+- **best_match**: Route to highest-scoring agent for the capability
+- **broadcast**: Send to all agents providing the capability
+- **load_balanced**: Distribute across capable agents
 
-1. **Call for Proposals (CFP)**: Initiator broadcasts task requirements
-2. **Proposal Submission**: Capable agents submit bids with cost/time estimates
-3. **Proposal Evaluation**: Initiator evaluates proposals using selection
-   criteria
-4. **Award Contract**: Best proposal receives ACCEPT, others get REJECT
-5. **Task Execution**: Winner executes task and reports results via INFORM
+### Configuration Agent Integration
+
+The runtime seamlessly integrates FIPA messaging with configuration agents:
+
+**Incoming Message Processing**:
+
+1. FIPA message received by runtime
+2. Runtime formats message as natural language prompt
+3. Configuration agent processes using LLM orchestration
+4. Runtime parses response back to FIPA format
+
+**Example Prompt Generation**:
+
+```text
+You received a REQUEST for data-analysis capability:
+"Please analyze the sales data at https://example.com/sales.csv"
+
+Using your available tools (http_client, csv_parser, chart_generator),
+process this request and provide your analysis.
+```
+
+### Deferred Features (Post-1.0)
+
+Advanced patterns not needed for initial release:
+
+- Contract Net Protocol (CFP bidding)
+- Advanced negotiation (CONFIRM, DISCONFIRM, CANCEL)
+- Subscription-based messaging
+- Cross-instance message routing
+
+## Embedded Memory System
+
+<div data-diagram="embeddedMemory" class="architecture-diagram-container"></div>
+
+### Hybrid Memory Architecture
+
+Caxton provides a **zero-configuration embedded memory system** that scales to
+external backends as needed:
+
+#### Default Implementation: SQLite + Candle
+
+**Embedded Backend (Default)**:
+
+- SQLite for structured entity-relationship storage
+- Local embedding model (All-MiniLM-L6-v2, ~23MB) for semantic search
+- Zero external dependencies - works immediately out of the box
+- Suitable for single-node deployments up to ~100K entities
+
+**Performance Characteristics**:
+
+- Semantic search: 10-50ms for 100K entities
+- Graph traversal: 5-20ms for typical queries
+- Memory usage: ~200MB baseline for embedding model
+- Storage: ~2.5KB per entity (including embedding)
+
+#### External Backends (Optional)
+
+**When to Upgrade**:
+
+- Beyond 100K entities for optimal performance
+- Multi-node deployments requiring shared memory
+- Advanced graph analytics needs
+
+**Supported Backends**:
+
+- **Neo4j**: Advanced graph database for complex relationship queries
+- **Qdrant**: High-performance vector database for semantic search
+- **Custom backends**: Pluggable architecture allows additional implementations
+
+#### Agent Memory Integration
+
+Configuration agents can be memory-enabled through their YAML configuration:
+
+```yaml
+---
+name: DataAnalyzer
+memory_enabled: true
+memory_scope: workspace  # agent-only, workspace, or global
+---
+```
+
+**Automatic Knowledge Management**:
+
+- **Search**: Agents automatically search memory for relevant context before responding
+- **Incorporate**: Past solutions and patterns are included in responses
+- **Store**: New knowledge from successful interactions is automatically stored
+- **Learn**: Agents improve over time through accumulated experience
 
 ### Message Bus Implementation
 

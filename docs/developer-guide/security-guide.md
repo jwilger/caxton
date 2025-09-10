@@ -13,21 +13,84 @@ Caxton. For the complete security architecture, see
 
 Caxton implements defense-in-depth with multiple security layers:
 
-1. **Inter-node Security**: mTLS for cluster communication
-2. **Agent Isolation**: WebAssembly sandboxing
-3. **Message Security**: Authentication and authorization
+1. **Configuration Agent Security**: Tool access control and permission management
+2. **MCP Server Isolation**: WebAssembly sandboxing for tool implementations
+3. **Message Security**: Capability-based routing and authorization
 4. **API Security**: Multiple authentication methods
-5. **Audit Logging**: Comprehensive security event tracking
+5. **Memory Security**: Embedded memory system with access controls
+6. **Audit Logging**: Comprehensive security event tracking
+
+### Security Model for Configuration Agents
+
+Configuration agents (defined in markdown with YAML frontmatter) represent the
+primary user experience. Security is implemented through:
+
+- **Tool Permission Management**: Agents declare required tools and capabilities
+- **MCP Server Sandboxing**: Actual functionality runs in isolated WebAssembly containers
+- **Memory Access Controls**: Agent memory is scoped and access-controlled
+- **Message Authentication**: All inter-agent communication is authenticated
+
+### Security Model for WebAssembly Agents
+
+WebAssembly agents provide additional security isolation for advanced use cases
+requiring custom algorithms:
+
+- **Direct WASM Sandboxing**: Agents run in isolated WebAssembly environments
+- **Resource Limits**: Memory and CPU constraints enforced at runtime
+- **Capability-based Access**: Fine-grained permission system
 
 ## Agent Security
 
-### WebAssembly Isolation
+### Configuration Agent Security (Primary)
 
-Every agent runs in a secure WebAssembly sandbox:
+Configuration agents are secured through tool permission management and MCP
+server isolation:
+
+```yaml
+---
+name: DataAnalyzer
+version: "1.0.0"
+capabilities:
+  - data-analysis
+  - report-generation
+
+# Tool permissions (enforced at runtime)
+tools:
+  - http_client        # HTTP requests via MCP server
+  - csv_parser         # File parsing via MCP server
+  - database_reader    # Database access via MCP server
+
+# Memory settings
+memory:
+  enabled: true
+  scope: workspace     # Shared within workspace
+  max_entities: 10000  # Prevent memory abuse
+
+# Security constraints
+security:
+  rate_limit: 100/minute
+  require_auth: true
+  allowed_capabilities: ["data-analysis", "report-generation"]
+---
+
+# Agent implementation in markdown...
+```
+
+Security is enforced through:
+
+- **Tool Allowlist**: Only declared tools are accessible
+- **MCP Server Isolation**: Tools run in WebAssembly sandboxes
+- **Memory Scope Control**: Agent memory is workspace or agent-scoped
+- **Rate Limiting**: Prevents abuse of agent resources
+- **Capability Validation**: Runtime verification of declared capabilities
+
+### WebAssembly Agent Security (Advanced)
+
+For advanced use cases, WebAssembly agents provide direct isolation:
 
 ```rust
-// Agent configuration with security limits
-let config = AgentConfig {
+// WASM agent configuration with security limits
+let config = WasmAgentConfig {
     // Memory limits prevent exhaustion
     memory_limit: 50 * 1024 * 1024,  // 50MB
 
@@ -44,10 +107,35 @@ let config = AgentConfig {
 
 ### Agent Capabilities
 
-Agents declare their required capabilities:
+#### Configuration Agent Capabilities
+
+Configuration agents declare capabilities in their YAML frontmatter:
+
+```yaml
+---
+name: CustomerAnalyzer
+capabilities:
+  - message-send      # Can send FIPA messages
+  - message-receive   # Can receive FIPA messages
+  - tool-access       # Can use declared tools
+  - memory-read       # Can read from agent memory
+  - memory-write      # Can write to agent memory
+
+tools:
+  - database_reader   # Specific tool capability
+  - email_sender     # Another tool capability
+---
+```
+
+Capabilities are validated when agents attempt to use them. The runtime
+prevents unauthorized operations.
+
+#### WebAssembly Agent Capabilities
+
+WASM agents declare capabilities in code:
 
 ```rust
-// In your agent code
+// In your WASM agent code
 #[agent_capabilities]
 pub fn declare_capabilities() -> Vec<Capability> {
     vec![
@@ -69,10 +157,37 @@ pub fn handle_message(msg: Message) -> Result<Response> {
 
 ### Secure Agent Deployment
 
-Sign and verify agents before deployment:
+#### Configuration Agent Deployment
+
+Configuration agents are deployed directly from markdown files:
 
 ```bash
-# Sign your agent with your private key
+# Deploy configuration agent with validation
+caxton deploy config-agent.md \
+  --validate-schema \
+  --check-capabilities \
+  --verify-tools
+
+# Deploy with restricted permissions
+caxton deploy config-agent.md \
+  --memory-scope workspace \
+  --rate-limit 50/minute \
+  --audit-mode strict
+```
+
+Security validations include:
+
+- **Schema Validation**: YAML frontmatter must be valid
+- **Capability Verification**: Declared capabilities must be available
+- **Tool Authorization**: Requested tools must be permitted
+- **Memory Scope**: Memory access is properly scoped
+
+#### WebAssembly Agent Deployment
+
+For WASM agents, signing and verification are recommended:
+
+```bash
+# Sign your WASM agent with your private key
 caxton agent sign \
   --wasm my-agent.wasm \
   --key ~/.caxton/keys/developer.key \
@@ -104,26 +219,52 @@ let verified = verifier.verify(signed_message)?;
 
 ### Message Authorization
 
-Control which agents can communicate:
+Control agent communication through capability-based policies:
 
 ```yaml
 # Agent authorization policy
 authorization:
   agent_id: order-processor
 
-  # Who can send messages to this agent
+  # Capabilities this agent provides
+  provides_capabilities:
+    - order-processing
+    - inventory-check
+    - payment-validation
+
+  # Who can request these capabilities
+  capability_access:
+    order-processing:
+      allowed_requesters:
+        - customer-interface
+        - pattern: "admin-*"
+    inventory-check:
+      allowed_requesters:
+        - "*"  # Public capability
+
+  # Rate limiting per capability
+  rate_limits:
+    order-processing: 50/minute
+    inventory-check: 200/minute
+
+  # Message authentication requirements
+  require_authentication: true
+  require_conversation_tracking: true
+```
+
+#### Legacy Agent-to-Agent Authorization
+
+Direct agent communication (still supported):
+
+```yaml
+# Traditional agent-to-agent policy
+authorization:
+  agent_id: order-processor
+
   allowed_senders:
     - inventory-manager
     - payment-processor
-    - pattern: "customer-*"  # Wildcard patterns
-
-  # Rate limiting per sender
-  rate_limits:
-    default: 100/minute
-    payment-processor: 1000/minute
-
-  # Required message signatures
-  require_signatures: true
+    - pattern: "customer-*"
 ```
 
 ### Encrypted Communication
@@ -145,6 +286,82 @@ let decrypted = decrypt_message(
     &encrypted,
     &private_key,
 )?;
+```
+
+## Memory Security
+
+Configuration agents use the embedded memory system with built-in security controls:
+
+### Memory Scope Control
+
+```yaml
+---
+name: CustomerAgent
+memory:
+  enabled: true
+  scope: workspace      # Options: agent, workspace, global
+  max_entities: 10000   # Prevent memory exhaustion
+  max_relations: 50000  # Limit relationship complexity
+---
+```
+
+Memory scoping provides isolation:
+
+- **Agent scope**: Private memory, only this agent can access
+- **Workspace scope**: Shared within workspace, multiple agents can access
+- **Global scope**: System-wide shared memory (admin-only)
+
+### Memory Access Controls
+
+```rust
+// Memory operations are automatically access-controlled
+use caxton::memory::{MemoryClient, AccessError};
+
+let client = MemoryClient::for_agent("customer-agent").await?;
+
+// This will fail if agent lacks memory-write capability
+match client.store_entity(entity).await {
+    Ok(id) => println!("Stored entity: {}", id),
+    Err(AccessError::InsufficientCapability) => {
+        // Agent needs memory-write capability
+    },
+    Err(AccessError::ScopeViolation) => {
+        // Agent trying to access out-of-scope memory
+    },
+}
+```
+
+### Memory Encryption
+
+Sensitive data in memory is automatically encrypted:
+
+```yaml
+# Memory encryption settings
+memory:
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation: "24h"
+
+  # Classify sensitive data
+  sensitive_patterns:
+    - "password"
+    - "api_key"
+    - "credit_card"
+    - pattern: "ssn:\\d{3}-\\d{2}-\\d{4}"
+```
+
+### Memory Audit Trail
+
+All memory operations are logged:
+
+```rust
+// Memory operations generate audit logs automatically
+client.store_entity(sensitive_data).await?;
+// AUDIT: Agent customer-agent stored entity customer_data_001
+
+client.search_memory("customer preferences").await?;
+// AUDIT: Agent customer-agent searched memory for "customer preferences"
 ```
 
 ## API Security
@@ -555,18 +772,32 @@ mod security_tests {
 
 Before deploying to production:
 
-- [ ] All agents signed and verified
-- [ ] mTLS enabled for cluster communication
+### Configuration Agents
+
+- [ ] Agent YAML schemas validated
+- [ ] Tool allowlists properly configured
+- [ ] Memory scopes appropriately set
+- [ ] Capability declarations verified
+- [ ] Rate limiting configured
+- [ ] MCP servers properly sandboxed
+
+### WebAssembly Agents (if used)
+
+- [ ] All WASM agents signed and verified
+- [ ] Resource limits configured
+- [ ] Capability enforcement active
+
+### System-wide Security
+
 - [ ] API authentication configured
-- [ ] Rate limiting enabled
 - [ ] Audit logging active
 - [ ] Secrets externalized
-- [ ] Resource limits set
 - [ ] Input validation implemented
 - [ ] Security tests passing
 - [ ] Certificates not expired
 - [ ] RBAC policies defined
-- [ ] Network policies configured
+- [ ] Memory encryption enabled
+- [ ] Capability-based routing configured
 
 ## References
 

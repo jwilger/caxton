@@ -1,17 +1,16 @@
 ---
 layout: documentation
-title: "Caxton Roadmap - Multi-Agent Isolation Platform"
-description: "Comprehensive development roadmap for Caxton's multi-agent isolation and orchestration platform with progress tracking and milestone visualization."
+title: "Caxton Roadmap - Configuration-Driven Agent Platform"
+description: "Development roadmap for Caxton's configuration-first agent platform, from 5-10 minute onboarding to enterprise scale."
 permalink: /docs/roadmap/
 nav_order: 3
 date: 2025-09-10
 categories: [Website]
 ---
 
-
-Our roadmap outlines the strategic development phases for Caxton's multi-agent
-isolation platform, from foundational security features to enterprise-scale
-production capabilities.
+Our roadmap outlines the strategic development of Caxton's configuration-driven
+agent platform, from rapid agent development to production-scale deployments
+with embedded memory and zero external dependencies.
 
 <div class="roadmap-progress-container" id="roadmap-container">
     <!-- Progress visualization will be injected here by JavaScript -->
@@ -25,144 +24,146 @@ the platform's scope.
 
 ### Development Philosophy
 
-- **Security First**: Every feature is designed with isolation and security as
-  primary concerns
-- **Incremental Delivery**: Each phase delivers tangible value while preparing
-  for future capabilities
-- **Production Ready**: Focus on reliability, performance, and enterprise-grade
-  features
-- **Open Source**: Transparent development with community input and
-  contributions
+- **Configuration First**: 5-10 minute onboarding with markdown agents as the
+  primary experience
+- **Zero Dependencies**: Embedded memory and single-binary deployment
+  eliminate infrastructure complexity
+- **Hybrid Architecture**: Config agents for rapid development, WebAssembly
+  for power users
+- **Production Ready**: Scale from embedded to external backends without
+  architectural changes
+- **Open Source**: Community-driven development with transparent
+  decision-making
 
 ## Phase Details
 
-### V1.0 Isolation Core (Q1 2025)
+### V1.0 Configuration-First Core (Q1 2025)
 
-### Target Completion: March 2025 | Progress: 75%
+### Target Completion: March 2025 | Progress: 15%
 
-The foundation phase establishes core isolation mechanisms and security
-frameworks that will underpin all future development.
+The foundation phase delivers the configuration-driven agent experience with
+embedded memory and zero external dependencies.
 
 #### Key Features
 
-- **Container-Based Isolation**: Robust sandboxing for agent execution
-  environments
-- **Resource Constraints**: CPU, memory, and I/O limitations per agent instance
-- **Process Sandboxing**: Operating system-level isolation and permission
-  management
-- **Basic Monitoring**: Essential logging and resource usage tracking
-- **Security Framework**: Authentication, authorization, and audit logging
+- **Configuration Agents**: Markdown + YAML agent definition with 5-10
+  minute onboarding
+- **Embedded Memory**: SQLite + local embedding models (All-MiniLM-L6-v2)
+  for zero-config memory
+- **Capability-Based Routing**: Agents request capabilities, not specific
+  agents
+- **Lightweight FIPA-ACL**: Simplified messaging optimized for configuration
+  agents
+- **Single Binary Deployment**: No external dependencies, works immediately
+  out of the box
 
 #### Milestones
 
-- [x] Container Isolation Foundation
-- [x] Process Sandboxing
-- [x] Resource Constraints
-- [ ] Security Framework
-- [ ] Basic Monitoring
+- [ ] Configuration Agent Runtime
+- [ ] Embedded Memory System (SQLite + Candle)
+- [ ] Capability-Based Message Router
+- [ ] Agent Lifecycle Management
+- [ ] Basic Observability
 
 #### Technical Deliverables
 
-- Core isolation engine with container orchestration
-- Security policy enforcement system
-- Resource management and quotas
-- Basic observability and logging infrastructure
-- API foundation for agent lifecycle management
+- Configuration agent execution runtime with LLM orchestration
+- Embedded memory backend with semantic search
+- Capability registry and routing engine
+- Agent deployment and hot-reload capabilities
+- Basic logging and metrics with OpenTelemetry
 
 ______________________________________________________________________
 
-### V2.0 Heterogeneous Agents (Q3 2025)
+### V2.0 Hybrid Architecture (Q3 2025)
 
-### Target Completion: September 2025 | Progress: 25%
+### Target Completion: September 2025 | Progress: 5%
 
-This phase expands Caxton's capabilities to support diverse agent types and
-sophisticated orchestration patterns.
+This phase adds WebAssembly agent support and advanced features while
+maintaining the configuration-first experience.
 
 #### Key Features
 
-- **Multi-Language Support**: Python, JavaScript, Go, Rust, and custom runtime
-  support
-- **Agent Communication Protocol**: Secure inter-agent messaging and data
-  exchange
-- **Dynamic Scaling**: Automatic scaling based on workload and resource
-  availability
-- **Cross-Platform Compatibility**: Linux, macOS, and Windows deployment support
-- **Performance Optimization**: Enhanced resource utilization and execution
-  efficiency
+- **WebAssembly Agent Support**: Compiled agents for custom algorithms and
+  maximum performance
+- **Advanced Memory Features**: Graph traversal algorithms, temporal tracking,
+  confidence decay
+- **External Backend Support**: Neo4j and Qdrant backends for large-scale deployments
+- **Advanced Messaging**: Contract Net Protocol, subscription patterns,
+  cross-instance routing
+- **Developer Experience**: Hot-reload development, agent templates, migration utilities
 
 #### Milestones
 
-- [ ] Multi-Language Support
-- [ ] Agent Communication Protocol
-- [ ] Dynamic Scaling
-- [ ] Cross-Platform Compatibility
+- [ ] WebAssembly Runtime Integration
+- [ ] External Memory Backends
+- [ ] Advanced FIPA-ACL Features
+- [ ] Developer Tooling
 - [ ] Performance Optimization
 
 #### Technical Deliverables
 
-- Multi-runtime execution engine
-- Inter-agent communication framework
-- Auto-scaling orchestrator
-- Cross-platform deployment tools
-- Performance monitoring and optimization tools
+- WebAssembly sandbox runtime with security isolation
+- Neo4j and Qdrant backend implementations
+- Contract Net Protocol and advanced negotiation patterns
+- Agent template library and development tools
+- Performance monitoring and auto-scaling capabilities
 
 ______________________________________________________________________
 
-### V3.0 Production Scale (Q1 2026)
+### V3.0 Enterprise Scale (Q1 2026)
 
-### Target Completion: March 2026 | Progress: 5%
+### Target Completion: March 2026 | Progress: 0%
 
-The final phase transforms Caxton into an enterprise-ready platform with
-advanced features for production deployments.
+The final phase delivers enterprise-grade features while preserving the
+configuration-first development experience.
 
 #### Key Features
 
-- **Enterprise Features**: Role-based access control, audit trails, compliance
-  reporting
-- **Advanced Analytics**: Comprehensive performance metrics and business
-  intelligence
-- **High Availability**: Clustering, failover, and disaster recovery
-  capabilities
-- **Auto-scaling Infrastructure**: Kubernetes integration and cloud-native
-  deployment
-- **Production Hardening**: Security enhancements, performance tuning, and
-  stability improvements
+- **Multi-Tenant Support**: Isolated workspaces with shared infrastructure efficiency
+- **Enterprise Memory**: Advanced analytics, compliance, and audit capabilities
+- **Cloud-Native Deployment**: Kubernetes operators, auto-scaling, high availability
+- **Marketplace Integration**: Agent template marketplace, community sharing, certification
+- **Advanced Security**: RBAC, audit trails, compliance reporting, enterprise SSO
 
 #### Milestones
 
-- [ ] Enterprise Features
-- [ ] Advanced Analytics
-- [ ] High Availability
-- [ ] Auto-scaling Infrastructure
-- [ ] Production Hardening
+- [ ] Multi-Tenant Architecture
+- [ ] Enterprise Memory Analytics
+- [ ] Cloud-Native Operations
+- [ ] Agent Marketplace
+- [ ] Enterprise Security
 
 #### Technical Deliverables
 
-- Enterprise management console
-- Analytics and reporting dashboard
-- High availability clustering
-- Kubernetes operators and helm charts
-- Production deployment guides and tools
+- Multi-tenant workspace isolation and resource management
+- Business intelligence dashboard with memory analytics
+- Kubernetes operators and helm charts with auto-scaling
+- Community marketplace with agent template sharing
+- Enterprise security framework with audit and compliance
 
 ## Technical Architecture Evolution
 
-### Phase 1: Foundation
+### Phase 1: Configuration-First Foundation
 
-- Monolithic core with plugin architecture
-- Local deployment focus
-- Basic REST API
+- Single binary deployment with embedded memory
+- Configuration agent runtime with LLM orchestration
+- Capability-based routing with lightweight FIPA-ACL
+- Basic REST API for management
 
-### Phase 2: Distribution
+### Phase 2: Hybrid Scale
 
-- Microservices architecture
-- Distributed deployment capabilities
+- WebAssembly runtime integration for power users
+- External memory backends (Neo4j, Qdrant) for scale
+- Advanced messaging patterns and cross-instance routing
 - GraphQL API with real-time subscriptions
 
-### Phase 3: Scale
+### Phase 3: Enterprise Ready
 
-- Cloud-native architecture
-- Multi-tenant capabilities
-- Enterprise API gateway
+- Multi-tenant architecture with workspace isolation
+- Cloud-native deployment with Kubernetes operators
+- Enterprise security and compliance framework
+- Agent marketplace and community features
 
 ## Community and Ecosystem
 
@@ -192,22 +193,22 @@ advanced features for production deployments.
 ### Phase 1 Targets
 
 - 1,000+ GitHub stars
-- 100+ production deployments
-- Sub-100ms agent startup time
-- 99.9% uptime in reference deployments
+- 100+ production deployments using config agents
+- 5-10 minute onboarding for new users
+- 99.9% uptime with zero external dependencies
 
 ### Phase 2 Targets
 
 - 5,000+ GitHub stars
 - 500+ production deployments
-- Support for 10+ programming languages
-- 10,000+ agents in single deployment
+- Support for config + WebAssembly hybrid agents
+- 100K+ entities in embedded memory deployments
 
 ### Phase 3 Targets
 
 - 10,000+ GitHub stars
 - 1,000+ enterprise customers
-- 99.99% uptime SLA
+- Multi-tenant SaaS platform capability
 - 1M+ agents across all deployments
 
 ## Get Involved

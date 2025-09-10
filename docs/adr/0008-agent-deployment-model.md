@@ -1,7 +1,8 @@
 ---
 title: "ADR-0008: Agent Deployment"
 date: 2025-08-03
-status: proposed
+status: superseded
+superseded_by: "ADR-0028: Configuration-Driven Agent Architecture"
 layout: adr
 categories: [Architecture]
 ---
@@ -9,7 +10,12 @@ categories: [Architecture]
 
 ## Status
 
-Proposed
+**Superseded** by [ADR-0028: Configuration-Driven Agent Architecture](0028-configuration-driven-agent-architecture.md)
+
+This ADR defined complex deployment strategies for compiled WASM modules.
+ADR-0028 shifts the primary user experience to configuration-driven agents
+(markdown files), which require a completely different deployment model based
+on configuration files rather than binary modules.
 
 ## Context
 

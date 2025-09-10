@@ -5,22 +5,34 @@ layout: page
 categories: [api, implementation]
 ---
 
-**Last Updated**: 2025-01-14 **Story**: 006 - REST Management API **Status**:
-MINIMAL VIABLE IMPLEMENTATION
+**Last Updated**: 2025-09-10 **Story**: Configuration-Driven Agent API
+**Status**: ARCHITECTURE UPDATED - REQUIRES IMPLEMENTATION
 
 ## Overview
 
-This document tracks the current implementation status of Caxton's REST API
-endpoints. It provides operations teams and API consumers with a clear
-understanding of what functionality is available in production versus what
-remains to be implemented.
+This document tracks the implementation status of Caxton's REST API endpoints
+following the architectural shift to configuration-driven agents (ADR-0028).
+Configuration agents are now the primary user experience, with WASM agents
+available for advanced use cases requiring custom algorithms.
+
+**Major Architecture Change**: The API now prioritizes configuration-driven
+agents defined as markdown files with YAML frontmatter, providing 5-10 minute
+onboarding versus the previous 2-4 hour WASM compilation workflow.
 
 ## Implementation Summary
 
-| Category | Implemented | Planned | Coverage |
-|----------|------------|---------|----------| | Agent Management | 4 | 8 | 50%
-| | Message API | 0 | 3 | 0% | | Task API | 0 | 3 | 0% | | Deployment API | 0 |
-3 | 0% | | Metrics API | 0 | 2 | 0% | | **Total** | **4** | **19** | **21%** |
+| Category | Implemented | Planned | Coverage | Priority |
+|----------|------------|---------|----------|----------|
+| Config Agent Management | 0 | 8 | 0% | **HIGH** |
+| Capability Registration | 0 | 4 | 0% | **HIGH** |
+| Memory System Integration | 0 | 5 | 0% | **HIGH** |
+| Configuration Validation | 0 | 3 | 0% | **MEDIUM** |
+| Legacy WASM Management | 4 | 8 | 50% | **LOW** |
+| FIPA Messaging API | 0 | 6 | 0% | **MEDIUM** |
+| **Total** | **4** | **34** | **12%** |
+
+**Note**: Legacy WASM agent endpoints remain functional but are now secondary.
+Priority focuses on configuration-driven agent capabilities.
 
 ## Implemented Endpoints (Production Ready)
 
@@ -66,46 +78,83 @@ remains to be implemented.
 - **Error Handling**: Structured JSON error response for missing agents
 - **Tests**: Both success and 404 scenarios covered
 
-## Not Yet Implemented (Planned)
+## Priority Implementation Areas
 
-### ⏳ Agent Management (Extended)
+### 🔥 Configuration Agent Management (HIGH PRIORITY)
 
-- `PUT /api/v1/agents/{id}` - Update agent configuration
-- `DELETE /api/v1/agents/{id}` - Remove agent
-- `POST /api/v1/agents/{id}/stop` - Graceful shutdown
-- `PUT /api/v1/agents/{id}/reload` - Hot reload
+**Primary User Experience** - Configuration-driven agents using markdown + YAML
 
-### ⏳ Message API
+- `POST /api/v1/config-agents` - Deploy configuration agent from markdown
+- `GET /api/v1/config-agents` - List configuration agents
+- `GET /api/v1/config-agents/{id}` - Get configuration agent details
+- `PUT /api/v1/config-agents/{id}` - Update agent configuration
+- `DELETE /api/v1/config-agents/{id}` - Remove configuration agent
+- `POST /api/v1/config-agents/{id}/restart` - Restart configuration agent
+- `GET /api/v1/config-agents/{id}/logs` - Stream agent execution logs
+- `POST /api/v1/config-agents/validate` - Validate agent configuration
 
-- `POST /api/v1/messages` - Send FIPA message
-- `GET /api/v1/messages` - Query message history
-- `WebSocket /ws` - Real-time message streaming
+### 🔥 Capability Registration & Discovery (HIGH PRIORITY)
 
-### ⏳ Task API
+**Capability-Based Routing** - As defined in ADR-0029
 
-- `POST /api/v1/tasks` - Create task
-- `POST /api/v1/tasks/{id}/distribute` - Distribute via Contract Net
-- `GET /api/v1/tasks/{id}` - Get task status
+- `POST /api/v1/capabilities` - Register agent capability
+- `GET /api/v1/capabilities` - Discover available capabilities
+- `GET /api/v1/capabilities/{capability}` - Find agents providing capability
+- `DELETE /api/v1/capabilities/{agent_id}/{capability}` - Unregister capability
 
-### ⏳ Deployment API
+### 🔥 Memory System Integration (HIGH PRIORITY)
 
-- `POST /api/v1/deployments` - Create deployment
-- `GET /api/v1/deployments/{id}` - Monitor deployment
-- `POST /api/v1/deployments/{id}/rollback` - Rollback deployment
+**Embedded Memory API** - Based on ADR-0030 (SQLite + Candle)
 
-### ⏳ Metrics API
+- `POST /api/v1/memory/entities` - Store entity in agent memory
+- `GET /api/v1/memory/search` - Semantic search across memories
+- `POST /api/v1/memory/relations` - Create entity relationships
+- `GET /api/v1/memory/graph/{entity_id}` - Traverse memory graph
+- `DELETE /api/v1/memory/{agent_id}` - Clear agent memory
 
-- `GET /api/v1/metrics/system` - System-wide metrics
-- `GET /api/v1/metrics/agents/{id}` - Agent-specific metrics
+### 🟡 Configuration Validation (MEDIUM PRIORITY)
+
+**Development Experience** - Help users create valid configurations
+
+- `POST /api/v1/validate/config` - Validate YAML configuration syntax
+- `POST /api/v1/validate/capabilities` - Verify capability declarations
+- `GET /api/v1/templates` - List configuration templates
+
+### 🟡 FIPA Messaging API (MEDIUM PRIORITY)
+
+**Agent Communication** - Lightweight FIPA-ACL per ADR-0029
+
+- `POST /api/v1/messages` - Send FIPA message to capability
+- `GET /api/v1/messages/conversations/{id}` - Get conversation history
+- `WebSocket /ws/messages` - Real-time message streaming
+- `GET /api/v1/conversations` - List active conversations
+- `POST /api/v1/conversations/{id}/close` - Close conversation
+- `DELETE /api/v1/conversations/cleanup` - Clean up stale conversations
+
+### ⚪ Legacy WASM Management (LOW PRIORITY)
+
+**Advanced Users Only** - Compiled module support maintained
+
+- `PUT /api/v1/agents/{id}` - Update WASM agent
+- `DELETE /api/v1/agents/{id}` - Remove WASM agent
+- `POST /api/v1/agents/{id}/stop` - Graceful WASM shutdown
+- `PUT /api/v1/agents/{id}/reload` - Hot reload WASM module
 
 ## Critical Gaps for Production
 
-### 🔴 Authentication & Authorization
+### 🔴 Configuration Agent Runtime
 
-- **Impact**: No access control
-- **Risk**: HIGH - Any client can deploy/manage agents
-- **Mitigation**: Run only in trusted networks
-- **Target Story**: TBD
+- **Impact**: No implementation for config agent execution
+- **Risk**: HIGH - Primary user experience unavailable
+- **Mitigation**: Continue using WASM agents only
+- **Target Story**: Configuration Agent Runtime Foundation
+
+### 🔴 Authentication & Authorization for Config Agents
+
+- **Impact**: No access control for configuration deployment
+- **Risk**: HIGH - Any client can deploy arbitrary agent configurations
+- **Mitigation**: Run only in trusted networks, validate all configurations
+- **Target Story**: Config Agent Security Model
 
 ### 🔴 Rate Limiting
 

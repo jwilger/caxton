@@ -1,13 +1,28 @@
 # Caxton System Architecture
 
-**Version**: 1.0 **Date**: 2025-08-04 **Status**: Design Phase
+**Version**: 2.0 **Date**: 2025-09-10 **Status**: Design Phase
+
+> **🚧 Implementation Status**
+>
+> This architecture document serves as the technical specification and
+> acceptance criteria for development. The system design reflects ADRs 28-30
+> architectural decisions and represents the target implementation goals.
+>
+> **Current State**: Type system and domain modeling foundation
+> **Implementation Progress**: Core domain types and architectural
+> patterns being established
+>
+> All features and components described represent planned functionality aligned
+with the hybrid agent architecture vision.
 
 ## Executive Summary
 
 Caxton is a production-ready multi-agent orchestration server that provides
-WebAssembly-based agent isolation, FIPA-compliant messaging, and comprehensive
-observability. This document defines the complete system architecture, domain
-model, and implementation patterns following type-driven development principles.
+**configuration-driven agents** as the primary user experience, with optional
+WebAssembly isolation for advanced use cases. The system offers FIPA-compliant
+messaging, embedded memory capabilities, and comprehensive observability. This
+document defines the complete hybrid architecture, domain model, and
+implementation patterns following type-driven development principles.
 
 ## Table of Contents
 
@@ -24,7 +39,7 @@ model, and implementation patterns following type-driven development principles.
 
 ## System Overview
 
-### High-Level Architecture
+### High-Level Hybrid Architecture
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -44,20 +59,43 @@ model, and implementation patterns following type-driven development principles.
 │  └─────────────────┬─────────────────────────────────────┘ │
 │                    │                                       │
 │  ┌─────────────────▼─────────────────────────────────────┐ │
-│  │            Agent Runtime Environment                  │ │
+│  │         Hybrid Agent Runtime Environment             │ │
 │  │                                                       │ │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │ │
-│  │  │Agent A  │  │Agent B  │  │Agent C  │  │Agent N  │ │ │
-│  │  │(WASM)   │  │(WASM)   │  │(WASM)   │  │(WASM)   │ │ │
-│  │  │Sandbox  │  │Sandbox  │  │Sandbox  │  │Sandbox  │ │ │
-│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘ │ │
-│  │       └────────────┼────────────┼────────────┘      │ │
-│  │                    │            │                   │ │
-│  │  ┌─────────────────▼────────────▼─────────────────┐ │ │
-│  │  │           FIPA Message Bus                    │ │ │
-│  │  │  • Message Routing  • Protocol Handling      │ │ │
-│  │  │  • Conversation Mgmt • Error Recovery        │ │ │
-│  │  └───────────────────────────────────────────────┘ │ │
+│  │ Configuration Agents (Primary UX - 5-10 min setup)   │ │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐     │ │
+│  │  │Config A    │  │Config B    │  │Config C    │     │ │
+│  │  │(YAML+MD)   │  │(YAML+MD)   │  │(YAML+MD)   │     │ │
+│  │  │Host Runtime│  │Host Runtime│  │Host Runtime│     │ │
+│  │  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘     │ │
+│  │         │               │               │           │ │
+│  │ WASM Agents (Advanced Use Cases)                     │ │
+│  │  ┌─────────┐            │            ┌─────────┐    │ │
+│  │  │Agent X  │            │            │Agent Z  │    │ │
+│  │  │(WASM)   │            │            │(WASM)   │    │ │
+│  │  │Sandbox  │            │            │Sandbox  │    │ │
+│  │  └────┬────┘            │            └────┬────┘    │ │
+│  │       └─────────────────┼─────────────────┘         │ │
+│  │                         │                           │ │
+│  │  ┌─────────────────────▼─────────────────────────┐  │ │
+│  │  │      Capability-Based FIPA Message Router     │  │ │
+│  │  │  • Capability Routing • Conversation Mgmt     │  │ │
+│  │  │  • Protocol Handling  • Error Recovery        │  │ │
+│  │  └─────────────────────────────────────────────────┘  │ │
+│  │                                                       │ │
+│  │  ┌─────────────────────────────────────────────────┐  │ │
+│  │  │           MCP Tool Sandboxes (WASM)            │  │ │
+│  │  │  • HTTP Client    • CSV Parser                 │  │ │
+│  │  │  • Chart Gen      • File System                │  │ │
+│  │  │  • Database       • Custom Tools                │  │ │
+│  │  └─────────────────────────────────────────────────┘  │ │
+│  └─────────────────────────────────────────────────────┘ │
+│                                                           │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │           Embedded Memory System                   │ │
+│  │  • SQLite + Candle (Default)                      │ │
+│  │  • Entity-Relationship Storage                    │ │
+│  │  • Semantic Search (All-MiniLM-L6-v2)            │ │
+│  │  • Optional External Backends                     │ │
 │  └─────────────────────────────────────────────────────┘ │
 │                                                           │
 │  ┌─────────────────────────────────────────────────────┐ │
@@ -66,41 +104,95 @@ model, and implementation patterns following type-driven development principles.
 │  │  • Metrics (Prometheus)                           │ │
 │  │  • Distributed Tracing (OpenTelemetry)           │ │
 │  └─────────────────────────────────────────────────────┘ │
-│                                                           │
-│  ┌─────────────────────────────────────────────────────┐ │
-│  │           Coordination Layer                       │ │
-│  │  • Cluster Membership (SWIM Protocol)            │ │
-│  │  • Agent Registry (Gossip)                       │ │
-│  │  • Local State (SQLite)                          │ │
-│  │  • Partition Detection & Handling                │ │
-│  └─────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Core Principles
 
-1. **Type-Driven Design**: All illegal states are unrepresentable through the
+1. **Configuration First**: 5-10 minute agent creation through YAML+Markdown
+   files (ADR-0028)
+2. **Hybrid Runtime**: Configuration agents for 90% of use cases, WASM for
+   custom algorithms
+3. **Type-Driven Design**: All illegal states are unrepresentable through the
    type system
-2. **Observability First**: Every operation is traced, logged, and measured
-3. **WebAssembly Isolation**: Complete sandboxing between agents
-4. **FIPA Compliance**: Standard agent communication protocols
-5. **Minimal Core**: Small, focused core with rich extension ecosystem
-6. **Coordination Over State**: Use lightweight protocols instead of shared
-   databases (see [ADR-0014](docs/adr/0014-coordination-first-architecture.md))
+4. **Observability First**: Every operation is traced, logged, and measured
+5. **Zero Dependencies by Default**: Zero external dependencies by default, with
+   pluggable external backends available for scaling (ADR-0030)
+6. **Capability-Based Messaging**: Lightweight FIPA with capability routing
+   (ADR-0029)
+7. **Security Through Isolation**: MCP tools run in WASM sandboxes, not
+   configuration agents
+8. **Pluggable LLM Integration**: Users can integrate any LLM/SLM API through
+   configurable provider system. OpenAI chat completion provided as default
+   reference implementation
 
-### Protocol Layering
+### Agent Types and User Journey
 
-- **SWIM Protocol (Infrastructure)**: Handles cluster membership, failure
-  detection, and routing information dissemination
-- **FIPA Protocol (Application)**: Manages semantic agent-to-agent messaging
-  with conversation tracking
-- **Clear Separation**: These protocols operate at different layers and
-  complement each other (see
-  [ADR-0015](docs/adr/0015-distributed-protocol-architecture.md))
+> **🚧 Planned Feature**
+> These agent types represent the target user experience designed in ADR-28.
+> Implementation is in progress following type-driven development principles.
+
+**Configuration Agents (Primary - 90% of use cases)**:
+
+- **Definition**: Markdown files with YAML frontmatter
+- **Capabilities**: Declare what they can do (e.g., "data-analysis")
+- **Tools**: Allowlist of MCP tools they can access
+- **Runtime**: Executed in host process with LLM orchestration
+- **Setup Time**: 5-10 minutes from idea to working agent
+- **Security**: Tools run in WASM sandboxes, not the agent logic
+
+**WASM Agents (Advanced - 10% of use cases)**:
+
+- **Definition**: Compiled WebAssembly modules
+- **Use Cases**: Custom algorithms, performance-critical logic, proprietary
+  code
+- **Languages**: Rust, JavaScript, Python, Go, or any WASM-compatible language
+- **Runtime**: Executed in isolated WASM sandboxes with resource limits
+- **Setup Time**: 2-4 hours including compilation toolchain setup
 
 ## Domain Model
 
-### Core Domain Types
+### Configuration Agent Domain Model
+
+```yaml
+# Example Configuration Agent Definition
+---
+name: DataAnalyzer
+version: "1.0.0"
+capabilities:
+  - data-analysis
+  - report-generation
+tools:
+  - http_client
+  - csv_parser
+  - chart_generator
+memory:
+  enabled: true
+  scope: workspace
+parameters:
+  max_file_size: "10MB"
+  supported_formats: ["csv", "json", "xlsx"]
+system_prompt: |
+  You are a data analysis expert who helps users understand their data.
+  You can fetch data from URLs, parse various formats, and create
+  visualizations.
+user_prompt_template: |
+  Analyze the following data request: {{request}}
+
+  Available data: {{context}}
+  User requirements: {{requirements}}
+---
+
+# DataAnalyzer Agent
+
+This agent specializes in data analysis tasks and can:
+- Fetch data from HTTP endpoints
+- Parse CSV, JSON, and Excel files
+- Generate charts and visualizations
+- Provide statistical summaries
+```
+
+### WASM Agent Domain Model (Advanced Use Cases)
 
 ```rust
 // Agent Identity and Lifecycle
@@ -522,162 +614,262 @@ impl AgentLifecycleManager {
 
 ## FIPA Message Flow
 
-### Protocol Implementation
+### Capability-Based Messaging (ADR-0029)
+
+The Caxton messaging system implements a lightweight FIPA-ACL protocol
+optimized for configuration-driven agents with capability-based routing rather
+than agent-specific addressing.
+
+#### Message Structure
 
 ```rust
-pub struct ContractNetProtocol {
-    conversation_manager: Arc<ConversationManager>,
-    message_router: Arc<dyn MessageRouter>,
-    timeout_manager: Arc<TimeoutManager>,
+#[derive(Debug, Clone)]
+pub struct FipaMessage {
+    pub id: MessageId,
+    pub performative: Performative,
+    pub sender: AgentId,
+
+    // Capability-based addressing
+    pub target_capability: Capability,
+    pub conversation_id: ConversationId,
+
+    pub reply_with: Option<ReplyWith>,
+    pub in_reply_to: Option<InReplyTo>,
+    pub content: MessageContent,
+    pub ontology: Option<Ontology>,
+    pub language: Option<Language>,
+
+    // Observability context
+    pub trace_id: TraceId,
+    pub span_id: SpanId,
+    pub timestamp: SystemTime,
 }
 
-impl ContractNetProtocol {
-    #[instrument(skip(self, task))]
-    pub async fn initiate_contract_net(
+#[derive(Debug, Clone, PartialEq)]
+pub enum Performative {
+    // Basic Communication (1.0 scope)
+    Request,
+    Inform,
+    Query,
+
+    // Simple Negotiation
+    Propose,
+    AcceptProposal,
+    RejectProposal,
+
+    // Error Handling
+    Failure,
+    NotUnderstood,
+
+    // Deferred to post-1.0
+    // Cfp, ConfirmProposal, etc.
+}
+```
+
+#### Capability-Based Routing
+
+Instead of sending messages to specific agents, messages target capabilities:
+
+```rust
+pub struct CapabilityRouter {
+    capability_registry: Arc<CapabilityRegistry>,
+    conversation_manager: Arc<ConversationManager>,
+    config_agent_runtime: Arc<ConfigAgentRuntime>,
+    wasm_agent_runtime: Arc<WasmAgentRuntime>,
+}
+
+impl CapabilityRouter {
+    #[instrument(skip(self, message))]
+    pub async fn route_by_capability(
         &self,
-        initiator: AgentId,
-        task: Task,
-        participants: NonEmpty<AgentId>
-    ) -> Result<ContractResult, ProtocolError> {
-        let conversation_id = ConversationId::new();
-        let span = tracing::info_span!(
-            "contract_net_protocol",
-            %conversation_id,
-            %initiator,
-            participant_count = participants.len()
-        );
-        let _enter = span.enter();
+        message: FipaMessage
+    ) -> Result<(), RoutingError> {
+        // 1. Find agents that provide the target capability
+        let capable_agents = self.capability_registry
+            .find_agents_with_capability(&message.target_capability)
+            .await?;
 
-        // 1. Create conversation
-        let conversation = Conversation {
-            id: conversation_id,
-            initiator,
-            participants: participants.clone(),
-            protocol: InteractionProtocol::ContractNet,
-            state: ConversationState::Initiated,
-            messages: Vec::new(),
-            created_at: SystemTime::now(),
-            expires_at: Some(SystemTime::now() + Duration::from_secs(300)),
-        };
-
-        self.conversation_manager.create_conversation(conversation).await?;
-
-        // 2. Send Call for Proposals
-        let cfp_message = FipaMessage {
-            id: MessageId::new(),
-            performative: Performative::Cfp,
-            sender: initiator,
-            receiver: AgentId::broadcast(), // Special broadcast ID
-            conversation_id,
-            reply_with: Some(ReplyWith::new()),
-            in_reply_to: None,
-            content: MessageContent::Task(task),
-            ontology: Some(Ontology::ContractNet),
-            language: Some(Language::Json),
-            trace_id: Span::current().id().unwrap_or_default(),
-            span_id: SpanId::new(),
-            timestamp: SystemTime::now(),
-        };
-
-        // Broadcast to all participants
-        for participant in &participants {
-            let mut participant_message = cfp_message.clone();
-            participant_message.receiver = *participant;
-            self.message_router.route(participant_message).await?;
+        if capable_agents.is_empty() {
+            return Err(RoutingError::NoCapabilityProviders {
+                capability: message.target_capability,
+            });
         }
 
-        // 3. Collect proposals with timeout
-        let proposals = self.collect_proposals(
-            conversation_id,
-            participants.len(),
-            Duration::from_secs(30)
-        ).await?;
-
-        // 4. Evaluate and select winner
-        let winning_proposal = self.evaluate_proposals(proposals)?;
-
-        // 5. Send accept-proposal to winner
-        let accept_message = FipaMessage {
-            id: MessageId::new(),
-            performative: Performative::AcceptProposal,
-            sender: initiator,
-            receiver: winning_proposal.sender,
-            conversation_id,
-            reply_with: Some(ReplyWith::new()),
-            in_reply_to: Some(InReplyTo::from(winning_proposal.id)),
-            content: MessageContent::Acceptance(
-                winning_proposal.content.clone()
-            ),
-            ontology: Some(Ontology::ContractNet),
-            language: Some(Language::Json),
-            trace_id: Span::current().id().unwrap_or_default(),
-            span_id: SpanId::new(),
-            timestamp: SystemTime::now(),
+        // 2. Select routing strategy based on message type
+        let selected_agents = match message.performative {
+            Performative::Request | Performative::Query => {
+                // Route to single best-match agent
+                vec![self.select_best_agent(&capable_agents, &message).await?]
+            },
+            Performative::Inform => {
+                // Broadcast to all interested agents
+                capable_agents
+            },
+            _ => capable_agents,
         };
 
-        self.message_router.route(accept_message).await?;
+        // 3. Route to selected agents
+        for agent_id in selected_agents {
+            let mut agent_message = message.clone();
+            agent_message.receiver = agent_id;
 
-        // 6. Send reject-proposal to others
-        for proposal in &proposals {
-            if proposal.sender != winning_proposal.sender {
-                let reject_message = FipaMessage {
-                    id: MessageId::new(),
-                    performative: Performative::RejectProposal,
-                    sender: initiator,
-                    receiver: proposal.sender,
-                    conversation_id,
-                    reply_with: None,
-                    in_reply_to: Some(InReplyTo::from(proposal.id)),
-                    content: MessageContent::Rejection(
-                        "Proposal not selected".to_string()
-                    ),
-                    ontology: Some(Ontology::ContractNet),
-                    language: Some(Language::Json),
-                    trace_id: Span::current().id().unwrap_or_default(),
-                    span_id: SpanId::new(),
-                    timestamp: SystemTime::now(),
-                };
-
-                self.message_router.route(reject_message).await?;
+            // Determine agent type and route accordingly
+            if self.config_agent_runtime.has_agent(agent_id).await? {
+                self.route_to_config_agent(agent_message).await?;
+            } else if self.wasm_agent_runtime.has_agent(agent_id).await? {
+                self.route_to_wasm_agent(agent_message).await?;
+            } else {
+                return Err(RoutingError::AgentNotFound(agent_id));
             }
         }
 
-        // 7. Complete conversation
-        self.conversation_manager.complete_conversation(
-            conversation_id,
-            ConversationOutcome::ContractAwarded {
-                winner: winning_proposal.sender,
-                task: task.clone(),
-            }
-        ).await?;
+        Ok(())
+    }
 
-        Ok(ContractResult {
-            conversation_id,
-            winner: winning_proposal.sender,
-            proposal: winning_proposal,
-        })
+    async fn route_to_config_agent(
+        &self,
+        message: FipaMessage
+    ) -> Result<(), RoutingError> {
+        // Convert FIPA message to natural language prompt for config agent
+        let prompt_context = self.format_message_as_prompt(&message).await?;
+
+        // Execute config agent with message context
+        let agent_response = self.config_agent_runtime
+            .execute_agent(message.receiver, prompt_context)
+            .await?;
+
+        // Parse agent response for FIPA performatives
+        if let Some(response_message) = self.parse_agent_response(
+            &agent_response,
+            &message
+        ).await? {
+            self.route_by_capability(response_message).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn format_message_as_prompt(
+        &self,
+        message: &FipaMessage
+    ) -> Result<String, RoutingError> {
+        match message.performative {
+            Performative::Request => {
+                format!(
+                    "A user is requesting: {}\n\nPlease help them by {}.",
+                    message.content.as_text(),
+                    message.target_capability.description()
+                )
+            },
+            Performative::Query => {
+                format!(
+                    "A user is asking: {}\n\nPlease provide information using your {} capability.",
+                    message.content.as_text(),
+                    message.target_capability.description()
+                )
+            },
+            Performative::Inform => {
+                format!(
+                    "Information update: {}\n\nPlease process this information in the context of {}.",
+                    message.content.as_text(),
+                    message.target_capability.description()
+                )
+            },
+            _ => {
+                format!(
+                    "Message ({}): {}\n\nPlease respond appropriately using your {} capability.",
+                    message.performative.as_str(),
+                    message.content.as_text(),
+                    message.target_capability.description()
+                )
+            },
+        }
     }
 }
 ```
 
 ## Security Architecture
 
-### WebAssembly Sandboxing
+### Hybrid Security Model
+
+The Caxton security model balances ease of use with robust isolation by
+applying sandboxing where it matters most - at the tool level rather than
+agent level for configuration agents.
+
+#### Configuration Agent Security
+
+Configuration agents run in the host runtime without WebAssembly isolation
+because:
+
+- They contain only orchestration logic (no direct system access)
+- All dangerous operations are delegated to MCP tools
+- They operate through LLM calls that are naturally constrained
+- Rapid development requires minimal friction
+
+#### MCP Tool Sandboxing (Primary Security Boundary)
+
+All actual system access happens through MCP (Model Context Protocol) tools
+that run in isolated WebAssembly sandboxes:
 
 ```rust
-pub struct WasmSandbox {
+pub struct McpToolSandbox {
     engine: wasmtime::Engine,
-    store: wasmtime::Store<WasmContext>,
+    store: wasmtime::Store<McpContext>,
     instance: wasmtime::Instance,
     resource_limiter: ResourceLimiter,
+    capability_allowlist: CapabilityAllowlist,
 }
 
 #[derive(Debug)]
-pub struct WasmContext {
-    agent_id: AgentId,
+pub struct McpContext {
+    tool_id: ToolId,
+    requesting_agent: AgentId,
     resource_limits: ResourceLimits,
-    mcp_tools: Arc<McpToolRegistry>,
+    allowed_capabilities: CapabilityAllowlist,
     observability: Arc<ObservabilityLayer>,
+}
+
+impl McpToolSandbox {
+    pub fn new(
+        tool_id: ToolId,
+        wasm_bytes: &[u8],
+        capabilities: CapabilityAllowlist,
+        resource_limits: ResourceLimits
+    ) -> Result<Self, SandboxError> {
+        // Create engine with security configurations
+        let mut config = wasmtime::Config::new();
+        config.wasm_simd(false);  // Disable SIMD for security
+        config.wasm_reference_types(false);  // Disable ref types
+        config.wasm_bulk_memory(false);  // Disable bulk memory
+        config.consume_fuel(true);  // Enable fuel for CPU limiting
+
+        let engine = wasmtime::Engine::new(&config)?;
+
+        // Create store with resource limits
+        let context = McpContext {
+            tool_id,
+            requesting_agent: AgentId::system(),
+            resource_limits: resource_limits.clone(),
+            allowed_capabilities: capabilities,
+            observability: Arc::new(ObservabilityLayer::new()),
+        };
+
+        let mut store = wasmtime::Store::new(&engine, context);
+        store.limiter(|ctx| &mut ctx.resource_limits);
+        store.set_fuel(resource_limits.max_cpu_millis.into())?;
+
+        // Load and instantiate module with host function restrictions
+        let module = wasmtime::Module::new(&engine, wasm_bytes)?;
+        let instance = wasmtime::Instance::new(&mut store, &module, &[])?;
+
+        Ok(Self {
+            engine,
+            store,
+            instance,
+            resource_limiter: ResourceLimiter::new(resource_limits),
+            capability_allowlist: capabilities,
+        })
+    }
 }
 
 impl WasmSandbox {
@@ -817,6 +1009,209 @@ impl ResourceLimiter {
 }
 ```
 
+## Embedded Memory System (ADR-0030)
+
+> **🚧 Planned Feature**
+> The embedded memory system represents a key architectural component from
+> ADR-30. SQLite + Candle implementation is being developed as part of the core
+> platform functionality.
+
+### Zero-Configuration Memory Architecture
+
+Caxton provides an embedded memory system that works immediately without
+external dependencies by default. Embedded backend scales to 100K+ entities,
+with optional migration to external backends (Neo4j, Qdrant) for larger
+deployments.
+
+#### Default: SQLite + Candle Implementation
+
+The embedded backend combines SQLite for structured storage with local
+embedding models for semantic search:
+
+```rust
+pub struct EmbeddedMemorySystem {
+    db: Arc<SqlitePool>,
+    embeddings: Arc<CandleEmbeddings>,
+    entity_store: Arc<EntityStore>,
+    relation_store: Arc<RelationStore>,
+    semantic_search: Arc<SemanticSearchEngine>,
+}
+
+pub struct CandleEmbeddings {
+    model: SentenceEmbeddingsModel,  // All-MiniLM-L6-v2
+    tokenizer: Arc<Tokenizer>,
+    device: Device,
+}
+
+impl EmbeddedMemorySystem {
+    pub fn new(db_path: &Path) -> Result<Self, MemoryError> {
+        // Initialize SQLite with vector extension
+        let db = SqlitePool::connect(&format!("sqlite://{}", db_path.display()))
+            .await?;
+
+        // Load All-MiniLM-L6-v2 embedding model (~23MB)
+        let embeddings = CandleEmbeddings::load_model("all-MiniLM-L6-v2")?;
+
+        // Initialize storage layers
+        let entity_store = Arc::new(EntityStore::new(db.clone()));
+        let relation_store = Arc::new(RelationStore::new(db.clone()));
+        let semantic_search = Arc::new(
+            SemanticSearchEngine::new(db.clone(), embeddings.clone())
+        );
+
+        Ok(Self {
+            db,
+            embeddings,
+            entity_store,
+            relation_store,
+            semantic_search,
+        })
+    }
+
+    #[instrument(skip(self))]
+    pub async fn store_entity(
+        &self,
+        entity: Entity
+    ) -> Result<EntityId, MemoryError> {
+        // Generate embeddings for entity observations
+        let embedding = self.embeddings
+            .encode_observations(&entity.observations)
+            .await?;
+
+        // Store entity with embedding
+        let entity_id = self.entity_store
+            .create_entity(&entity, embedding)
+            .await?;
+
+        // Update semantic search index
+        self.semantic_search
+            .index_entity(entity_id, &entity, embedding)
+            .await?;
+
+        Ok(entity_id)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn semantic_search(
+        &self,
+        query: &str,
+        limit: usize,
+        min_similarity: f32
+    ) -> Result<Vec<EntityMatch>, MemoryError> {
+        // Generate query embedding
+        let query_embedding = self.embeddings.encode_text(query).await?;
+
+        // Perform vector similarity search
+        let matches = self.semantic_search
+            .find_similar(query_embedding, limit, min_similarity)
+            .await?;
+
+        Ok(matches)
+    }
+}
+```
+
+#### Agent Memory Integration
+
+Configuration agents can enable memory through their YAML configuration:
+
+```yaml
+---
+name: DataAnalyzer
+memory:
+  enabled: true
+  scope: workspace  # agent-only, workspace, or global
+  auto_store: true  # Automatically store successful interactions
+  search_limit: 10
+  min_similarity: 0.7
+---
+```
+
+#### Memory Scopes and Isolation
+
+- **Agent-only**: Private memory per agent instance (isolated namespace)
+- **Workspace**: Shared memory within a project/workspace context
+- **Global**: System-wide shared knowledge base across all agents
+
+#### Performance Characteristics
+
+**Embedded Backend Performance**:
+
+- **Semantic search**: 10-50ms for 100K entities
+- **Graph traversal**: 5-20ms for typical relationship queries
+- **Memory usage**: ~200MB baseline (embedding model + cache)
+- **Storage**: ~2.5KB per entity (including 384-dim embedding)
+- **Scaling limit**: Embedded backend scales to 100K+ entities, with optional
+  migration to external backends for larger deployments
+
+#### Pluggable Backend Architecture
+
+For larger deployments requiring scale beyond 100K+ entities, external backends
+can be configured as pluggable alternatives:
+
+```rust
+pub enum MemoryBackend {
+    Embedded(EmbeddedMemorySystem),
+    Neo4j(Neo4jBackend),
+    Qdrant(QdrantBackend),
+    Custom(Box<dyn MemoryBackend>),
+}
+
+pub trait MemoryBackend: Send + Sync {
+    async fn store_entity(&self, entity: Entity) -> Result<EntityId, MemoryError>;
+    async fn find_entities(&self, query: &EntityQuery) -> Result<Vec<Entity>, MemoryError>;
+    async fn store_relation(&self, relation: Relation) -> Result<RelationId, MemoryError>;
+    async fn semantic_search(&self, query: &str, limit: usize) -> Result<Vec<EntityMatch>, MemoryError>;
+    async fn export_data(&self) -> Result<MemoryExport, MemoryError>;
+    async fn import_data(&self, data: MemoryImport) -> Result<(), MemoryError>;
+}
+```
+
+#### Migration and Data Portability
+
+The memory system provides standard JSON export/import functionality:
+
+```rust
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MemoryExport {
+    pub entities: Vec<Entity>,
+    pub relations: Vec<Relation>,
+    pub metadata: ExportMetadata,
+    pub version: String,
+}
+
+impl EmbeddedMemorySystem {
+    pub async fn export_all(&self) -> Result<MemoryExport, MemoryError> {
+        let entities = self.entity_store.get_all_entities().await?;
+        let relations = self.relation_store.get_all_relations().await?;
+
+        Ok(MemoryExport {
+            entities,
+            relations,
+            metadata: ExportMetadata::new(),
+            version: "1.0".to_string(),
+        })
+    }
+
+    pub async fn import_from_export(&self, export: MemoryExport) -> Result<(), MemoryError> {
+        // Validate version compatibility
+        self.validate_export_version(&export.version)?;
+
+        // Import entities with new embeddings
+        for entity in export.entities {
+            self.store_entity(entity).await?;
+        }
+
+        // Import relations
+        for relation in export.relations {
+            self.relation_store.create_relation(relation).await?;
+        }
+
+        Ok(())
+    }
+}
+```
+
 ## Observability Integration
 
 ### Structured Logging and Tracing
@@ -913,13 +1308,30 @@ pub struct PerformanceEvent {
 
 ## Performance & Scalability
 
-### Scalability Targets
+### Hybrid Performance Characteristics
 
-- **Single Instance**: 1,000+ concurrent agents
-- **Message Throughput**: 100,000+ messages/second
-- **Latency**: < 1ms p99 for local message routing
-- **Memory Efficiency**: < 1MB per idle agent
-- **Startup Time**: < 100ms for new agent deployment
+**Configuration Agents (Primary UX)**:
+
+- **Startup Time**: < 50ms (YAML parsing + prompt loading)
+- **Memory Efficiency**: < 100KB per idle config agent
+- **Message Latency**: ~10-100ms (includes LLM orchestration)
+- **Throughput**: 100-1,000 messages/second per agent (LLM dependent)
+- **Concurrent Agents**: 10,000+ config agents per instance
+
+**WASM Agents (Advanced Use Cases)**:
+
+- **Startup Time**: < 100ms (WASM instantiation)
+- **Memory Efficiency**: < 1MB per idle WASM agent
+- **Message Latency**: < 1ms p99 for local processing
+- **Throughput**: 100,000+ messages/second (native-like performance)
+- **Concurrent Agents**: 1,000+ WASM agents per instance
+
+**Memory System Performance**:
+
+- **Semantic Search**: 10-50ms for 100K entities (embedded backend)
+- **Entity Storage**: 5-20ms per entity with embeddings
+- **Memory Baseline**: ~200MB (All-MiniLM-L6-v2 model)
+- **Scaling Limit**: 100K entities recommended for embedded backend
 
 ### Performance Optimizations
 
@@ -1172,10 +1584,31 @@ impl Percentage {
 
 ## Deployment Architecture
 
-### Production Deployment Pattern
+### Zero-Dependency Deployment (Default)
+
+Caxton is designed for immediate deployment with zero external dependencies by
+default, providing a complete working system out of the box:
+
+```bash
+# Simple deployment - works immediately
+caxton server start
+
+# Or with Docker
+docker run -p 8080:8080 -v ./agents:/var/lib/caxton/agents caxton/caxton:latest
+```
+
+**What happens automatically**:
+
+- SQLite database created in `/var/lib/caxton/memory.db`
+- All-MiniLM-L6-v2 embedding model downloaded (~23MB)
+- Agent registry initialized
+- Memory system ready for use
+- Configuration agents can be deployed immediately
+
+### Configuration-First Deployment
 
 ```yaml
-# docker-compose.yml for production deployment
+# docker-compose.yml for configuration-driven agents
 version: '3.8'
 
 services:
@@ -1187,31 +1620,20 @@ services:
     environment:
       - CAXTON_CONFIG_PATH=/etc/caxton/config.yaml
       - RUST_LOG=info
+      # Optional: External observability
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:14268
     volumes:
       - ./config/caxton.yaml:/etc/caxton/config.yaml:ro
-      - caxton-data:/var/lib/caxton
+      - ./agents:/var/lib/caxton/agents:ro  # Configuration agents
+      - caxton-data:/var/lib/caxton        # Embedded SQLite + memory
     healthcheck:
       test: ["CMD", "caxton", "health"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
-    depends_on:
-      - postgres
-      - jaeger
 
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=caxton
-      - POSTGRES_USER=caxton
-      - POSTGRES_PASSWORD=secure_password
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
+  # Optional: External observability (not required)
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
@@ -1219,10 +1641,53 @@ services:
       - "14268:14268"  # HTTP collector
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    profiles: ["observability"]
 
 volumes:
-  caxton-data:
-  postgres-data:
+  caxton-data:  # Only volume needed - contains SQLite DB and embeddings
+```
+
+### Enterprise Deployment with Pluggable External Backends
+
+For larger deployments requiring scale beyond the embedded backend's 100K+
+entity capacity, external backends provide seamless migration paths:
+
+```yaml
+version: '3.8'
+
+services:
+  caxton-server:
+    image: caxton/caxton:latest
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      - CAXTON_MEMORY_BACKEND=neo4j
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password
+      # Or: CAXTON_MEMORY_BACKEND=qdrant
+      # QDRANT_URL=http://qdrant:6333
+    volumes:
+      - ./agents:/var/lib/caxton/agents:ro
+      - caxton-config:/var/lib/caxton
+    depends_on:
+      - neo4j
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+    ports:
+      - "7474:7474"  # Web interface
+      - "7687:7687"  # Bolt protocol
+    volumes:
+      - neo4j-data:/data
+
+volumes:
+  caxton-config:
+  neo4j-data:
 ```
 
 ### Kubernetes Deployment
@@ -1299,16 +1764,54 @@ spec:
 
 ## Summary
 
-This architecture provides:
+The Caxton hybrid architecture delivers on the promise of **5-10 minute agent
+creation** while maintaining production-grade capabilities:
 
-1. **Type Safety**: Comprehensive domain modeling with phantom types and smart
-   constructors
-2. **Observability**: Built-in tracing, metrics, and structured logging
-3. **Security**: WebAssembly sandboxing with resource limits
-4. **Scalability**: Performance-optimized runtime with agent pooling
-5. **Reliability**: Comprehensive error handling and fault tolerance
-6. **Production Ready**: Full deployment and operational patterns
+### Core Value Propositions
 
-The architecture follows type-driven development principles, making illegal
-states unrepresentable while providing comprehensive observability and security
-for production multi-agent systems.
+1. **Configuration-First Experience**: 90% of agents are created through
+   YAML+Markdown files, eliminating compilation complexity
+2. **Zero Dependencies**: Embedded SQLite+Candle memory system works
+   immediately without external setup
+3. **Hybrid Runtime**: Simple config agents for most use cases, WASM for
+   advanced algorithms
+4. **Security Through Isolation**: MCP tools run in WASM sandboxes while
+   config agents provide rapid development
+5. **Capability-Based Messaging**: Lightweight FIPA messaging with capability
+   routing instead of agent-specific addressing
+6. **Production Ready**: Comprehensive observability, error handling, and
+   deployment patterns
+
+### When to Use Each Agent Type
+
+**Choose Configuration Agents when**:
+
+- Building orchestration workflows
+- Combining prompts with tool calls
+- Rapid prototyping and iteration needed
+- No custom algorithms required
+- 5-10 minute setup time acceptable
+
+**Choose WASM Agents when**:
+
+- Custom algorithms or proprietary logic needed
+- Performance-critical processing required
+- Language-agnostic development desired
+- Full isolation and resource limits needed
+- 2-4 hour setup time acceptable
+
+### Architecture Alignment
+
+This architecture aligns with modern agent platform trends:
+
+- **Claude Code's success**: Proven configuration-driven approach with 100+
+  community agents
+- **Developer Experience**: Prioritizes accessibility over complexity
+- **Type-Driven Design**: All illegal states remain unrepresentable through
+  Rust's type system
+- **Observability First**: Every operation traced, logged, and measured
+- **Production Scale**: Supports growth from embedded to external backends
+
+The hybrid approach enables the **best of both worlds**: rapid configuration-
+based development for most use cases, with full WASM power for advanced
+scenarios.

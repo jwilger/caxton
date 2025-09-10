@@ -10,27 +10,48 @@ Complete API documentation for Caxton management and control.
 
 ## Quick Start
 
-The three most common operations:
+The three most common operations with configuration agents (5-10 minute setup):
 
-### 1. Deploy an Agent
+### 1. Deploy a Configuration Agent
 
 ```bash
 # Set your environment
 export CAXTON_TOKEN="your-token-here"
 export CAXTON_API="http://localhost:8080/api/v1"
 
-# Deploy agent
-curl -X POST "$CAXTON_API/agents" \
+# Deploy configuration agent (primary experience)
+curl -X POST "$CAXTON_API/agents/config" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "data-analyzer",
+    "config": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\nsystem_prompt: |\n  You are a data analysis expert.\n---\n\n# DataAnalyzer Agent\n\nSpecializes in data analysis tasks.",
+    "memory_enabled": true
+  }'
+
+# Deploy WebAssembly agent (advanced use case)
+curl -X POST "$CAXTON_API/agents/wasm" \
   -H "X-Caxton-Token: $CAXTON_TOKEN" \
   -H "Content-Type: multipart/form-data" \
   -F "wasm=@agent.wasm" \
-  -F 'config={"name":"my-agent","resources":{"memory":"50MB"}}'
+  -F 'config={"name":"my-wasm-agent","resources":{"memory":"50MB"}}'
 ```
 
-### 2. Send a Message
+### 2. Send a Message to Capability
 
 ```bash
-# Send message to agent
+# Send message via capability-based routing (recommended)
+curl -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "sender": "client_001",
+    "capability": "data-analysis",
+    "content": {"action": "analyze", "data": {"dataset": "sales_q3.csv"}}
+  }'
+
+# Send message to specific agent (still supported)
 curl -X POST "$CAXTON_API/messages" \
   -H "X-Caxton-Token: $CAXTON_TOKEN" \
   -H "Content-Type: application/json" \
@@ -45,9 +66,13 @@ curl -X POST "$CAXTON_API/messages" \
 ### 3. List All Agents
 
 ```bash
-# Get running agents
+# Get all agents (configuration and WebAssembly)
 curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
-  "$CAXTON_API/agents?status=running"
+  "$CAXTON_API/agents"
+
+# Filter by type
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents?type=configuration&status=running"
 ```
 
 ## Environment Setup
@@ -113,22 +138,55 @@ curl -H "X-Caxton-Token: $CAXTON_TOKEN" "$CAXTON_API/agents"
 
 ## Agent Management API
 
-### Deploy Agent
+Caxton supports two agent types:
 
-Deploy a new WebAssembly agent to the server.
+- **Configuration agents**: Primary experience, markdown-based (5-10 minute deployment)
+- **WebAssembly agents**: Advanced use case for custom algorithms
+
+### Deploy Configuration Agent
+
+Deploy a configuration agent defined in markdown with YAML frontmatter.
 
 ```bash
-# Deploy agent
-curl -X POST "$CAXTON_API/agents" \
+# Deploy configuration agent (primary experience)
+curl -X POST "$CAXTON_API/agents/config" \
   -H "X-Caxton-Token: $CAXTON_TOKEN" \
-  -H "Content-Type: multipart/form-data" \
-  -F "wasm=@agent.wasm" \
-  -F 'config={"name":"my-agent","resources":{"memory":"50MB"}}'
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "data-analyzer",
+    "config": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\nsystem_prompt: |\n  You are a data analysis expert.\n---\n\n# DataAnalyzer Agent\n\nSpecializes in data analysis tasks.",
+    "memory_enabled": true,
+    "memory_scope": "workspace"
+  }'
 
 # Response
 {
   "agent_id": "agent_123",
-  "name": "my-agent",
+  "name": "data-analyzer",
+  "type": "configuration",
+  "status": "deployed",
+  "capabilities": ["data-analysis"],
+  "deployed_at": "2024-01-15T10:30:00Z"
+}
+```
+
+### Deploy WebAssembly Agent
+
+Deploy a WebAssembly agent for advanced use cases.
+
+```bash
+# Deploy WASM agent (advanced use case)
+curl -X POST "$CAXTON_API/agents/wasm" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: multipart/form-data" \
+  -F "wasm=@agent.wasm" \
+  -F 'config={"name":"my-wasm-agent","resources":{"memory":"50MB"}}'
+
+# Response
+{
+  "agent_id": "agent_456",
+  "name": "my-wasm-agent",
+  "type": "webassembly",
   "status": "running",
   "deployed_at": "2024-01-15T10:30:00Z"
 }
@@ -147,12 +205,21 @@ curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
 curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
   "$CAXTON_API/agents?status=running&limit=10&offset=0"
 
-# Response
+# Response (Mixed agent types)
 {
   "agents": [
     {
       "agent_id": "agent_123",
-      "name": "my-agent",
+      "name": "data-analyzer",
+      "type": "configuration",
+      "status": "running",
+      "capabilities": ["data-analysis"],
+      "memory_enabled": true
+    },
+    {
+      "agent_id": "agent_456",
+      "name": "my-wasm-agent",
+      "type": "webassembly",
       "status": "running",
       "memory_used": "25MB",
       "cpu_usage": 0.15
@@ -263,10 +330,21 @@ curl -X DELETE "$CAXTON_API/agents/agent_123?force=true" \
 
 ### Send Message
 
-Send a FIPA message to an agent.
+Send a FIPA message using capability-based routing or direct agent addressing.
 
 ```bash
-# Send request message
+# Send message via capability-based routing (recommended)
+curl -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "sender": "client_001",
+    "capability": "data-analysis",
+    "content": {"action": "analyze", "data": {"dataset": "sales_q3.csv"}}
+  }'
+
+# Send message to specific agent (still supported)
 curl -X POST "$CAXTON_API/messages" \
   -H "X-Caxton-Token: $CAXTON_TOKEN" \
   -H "Content-Type: application/json" \
@@ -347,6 +425,92 @@ curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
     }
   ],
   "total": 150
+}
+```
+
+## Memory API
+
+Configuration agents with embedded memory system support.
+
+### Search Agent Memory
+
+Semantically search agent memory for relevant context.
+
+```bash
+# Search agent memory
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/agent_123/memory/search?query=customer%20patterns&limit=10"
+
+# Search with filters
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/agent_123/memory/search?query=sales&entity_type=insight&limit=5"
+
+# Response
+{
+  "results": [
+    {
+      "entity_name": "Q3SalesInsight",
+      "entity_type": "business_insight",
+      "similarity": 0.92,
+      "observations": [
+        "Q3 sales increased 23% over Q2",
+        "Mobile channel drove 67% of growth"
+      ],
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "total": 25,
+  "query_time_ms": 15
+}
+```
+
+### Add to Agent Memory
+
+Store new knowledge in agent memory.
+
+```bash
+# Add memory entity
+curl -X POST "$CAXTON_API/agents/agent_123/memory/entities" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entities": [
+      {
+        "name": "Q4Forecast",
+        "entityType": "business_forecast",
+        "observations": [
+          "Projected 15% growth in Q4",
+          "Holiday season expected to boost sales",
+          "New product launch planned for December"
+        ]
+      }
+    ]
+  }'
+
+# Response
+{
+  "entities_created": 1,
+  "entity_ids": ["ent_abc123"]
+}
+```
+
+### Get Memory Statistics
+
+Get agent memory usage statistics.
+
+```bash
+# Memory stats
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/agent_123/memory/stats"
+
+# Response
+{
+  "total_entities": 1247,
+  "total_relations": 3891,
+  "memory_scope": "workspace",
+  "storage_used_mb": 12.5,
+  "last_updated": "2024-01-15T10:30:00Z",
+  "embedding_model": "all-MiniLM-L6-v2"
 }
 ```
 
@@ -639,14 +803,51 @@ ws.onmessage = (event) => {
 
 ## Quick Examples
 
-### Complete Agent Workflow
+### Complete Agent Workflow (Configuration Agent)
 
 ```bash
-# 1. Deploy agent
-AGENT_ID=$(curl -s -X POST "$CAXTON_API/agents" \
+# 1. Deploy configuration agent (5-10 minute setup)
+AGENT_ID=$(curl -s -X POST "$CAXTON_API/agents/config" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "data-processor",
+    "config": "---\nname: DataProcessor\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - csv_parser\nsystem_prompt: |\n  You process data efficiently.\n---\n\n# DataProcessor Agent",
+    "memory_enabled": true
+  }' | jq -r '.agent_id')
+
+# 2. Send work request via capability routing
+MSG_ID=$(curl -s -X POST "$CAXTON_API/messages" \
+  -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "performative": "request",
+    "capability": "data-analysis",
+    "content": {"action": "analyze", "data": "sample_data.csv"}
+  }' | jq -r '.message_id')
+
+# 3. Check agent status
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/$AGENT_ID"
+
+# 4. Check memory usage
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents/$AGENT_ID/memory/stats"
+
+# 5. Get metrics
+curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/metrics/agents/$AGENT_ID"
+```
+
+### Complete Agent Workflow (WebAssembly Agent)
+
+```bash
+# 1. Deploy WASM agent (for advanced use cases)
+AGENT_ID=$(curl -s -X POST "$CAXTON_API/agents/wasm" \
   -H "X-Caxton-Token: $CAXTON_TOKEN" \
   -F "wasm=@agent.wasm" \
-  -F 'config={"name":"worker"}' | jq -r '.agent_id')
+  -F 'config={"name":"math-worker","resources":{"memory":"50MB"}}' \
+  | jq -r '.agent_id')
 
 # 2. Send work request
 MSG_ID=$(curl -s -X POST "$CAXTON_API/messages" \
@@ -655,7 +856,7 @@ MSG_ID=$(curl -s -X POST "$CAXTON_API/messages" \
   -d "{
     \"performative\": \"request\",
     \"receiver\": \"$AGENT_ID\",
-    \"content\": {\"action\": \"process\", \"data\": \"hello\"}
+    \"content\": {\"operation\": \"fibonacci\", \"n\": 10}
   }" | jq -r '.message_id')
 
 # 3. Check agent status
@@ -670,21 +871,37 @@ curl -H "X-Caxton-Token: $CAXTON_TOKEN" \
 ### Batch Operations
 
 ```bash
-# Deploy multiple agents
+# Deploy multiple configuration agents
 for i in {1..3}; do
-  curl -X POST "$CAXTON_API/agents" \
+  curl -X POST "$CAXTON_API/agents/config" \
     -H "X-Caxton-Token: $CAXTON_TOKEN" \
-    -F "wasm=@agent.wasm" \
-    -F "config={\"name\":\"worker-$i\"}"
+    -H "Content-Type: application/json" \
+    -d "{
+      \"name\": \"worker-$i\",
+      \"config\": \"---\\nname: Worker$i\\nversion: \\\"1.0.0\\\"\\ncapabilities:\\n  - task-processing\\ntools:\\n  - http_client\\nsystem_prompt: |\\n  You are worker $i.\\n---\\n\\n# Worker Agent $i\",
+      \"memory_enabled\": true
+    }"
 done
 
-# Send messages to all agents
-for agent in $(curl -s -H "X-Caxton-Token: $CAXTON_TOKEN" \
-  "$CAXTON_API/agents" | jq -r '.agents[].agent_id'); do
+# Send messages via capability routing (load balanced)
+for i in {1..10}; do
   curl -X POST "$CAXTON_API/messages" \
     -H "X-Caxton-Token: $CAXTON_TOKEN" \
     -H "Content-Type: application/json" \
-    -d "{\"performative\":\"request\",\"receiver\":\"$agent\"}"
+    -d "{
+      \"performative\": \"request\",
+      \"capability\": \"task-processing\",
+      \"content\": {\"task_id\": \"task_$i\", \"data\": \"sample_$i\"}
+    }"
+done
+
+# Send messages to specific agents
+for agent in $(curl -s -H "X-Caxton-Token: $CAXTON_TOKEN" \
+  "$CAXTON_API/agents?type=configuration" | jq -r '.agents[].agent_id'); do
+  curl -X POST "$CAXTON_API/messages" \
+    -H "X-Caxton-Token: $CAXTON_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"performative\":\"request\",\"receiver\":\"$agent\",\"content\":{\"ping\":\"hello\"}}"
 done
 ```
 

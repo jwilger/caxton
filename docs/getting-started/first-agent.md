@@ -1,756 +1,634 @@
 ---
-title: "Building Your First Agent"
+title: "Create Your First Config Agent"
 date: 2025-09-10
 layout: page
 categories: [Getting Started]
 ---
 
-Learn how to create WebAssembly agents for Caxton in your preferred programming
-language.
+> **🚧 Implementation Status**
+>
+> This tutorial represents the intended configuration agent development
+> experience from ADR-28. The YAML schema and agent deployment workflow
+> described here serves as acceptance criteria for implementation.
+>
+> **Target**: 5-minute configuration-driven agent creation
+> **Status**: Agent format specification and runtime being developed
 
-## Agent Basics
+## Build intelligent agents in 5 minutes using configuration files
 
-Every Caxton agent must:
+This guide teaches you to create **configuration agents** - the primary way to
+build agents in Caxton. No compilation, no complex toolchains, just markdown
+files with YAML frontmatter.
 
-1. Export a `handle_message` function
-2. Accept FIPA-formatted messages
-3. Return valid FIPA responses (or null)
-4. Compile to WebAssembly
+## Configuration Agent Fundamentals
+
+Every configuration agent consists of:
+
+1. **YAML frontmatter** - Agent metadata, capabilities, and configuration
+2. **Markdown content** - Documentation and usage examples
+3. **System prompts** - Instructions defining agent behavior
+4. **Capability declarations** - What the agent can do
+5. **Tool integrations** - External services the agent can use
 
 ## Agent Lifecycle
 
-Agents follow a managed lifecycle:
+Configuration agents follow a simple lifecycle:
 
-- **Deployment**: WASM modules are validated and loaded
-- **Execution**: Agents process messages in isolated sandboxes
-- **Management**: Hot reload enables zero-downtime updates
-- **Monitoring**: Resource usage and health are tracked
+- **Creation**: Write markdown file with YAML configuration
+- **Deployment**: `caxton agent deploy agent.md` validates and loads
+- **Execution**: Agent processes capability-based messages via LLM orchestration
+- **Learning**: Agent stores successful patterns in embedded memory
+- **Updates**: Edit config file and redeploy for instant changes
 
-For production deployment and management, see
-[Agent Lifecycle Management](../operations/agent-lifecycle-management.md).
+## Your First Agent: Task Manager
 
-## JavaScript Agent
+Let's create a task management agent that helps users organize and track work.
 
-### Simple Echo Agent
+### 1. Create the Agent File
 
-Create `echo-agent.js`:
+Create `task-manager.md`:
 
-```javascript
-// Echo agent that responds to any message
-export function handle_message(message_bytes) {
-    // Parse the incoming message
-    const message = JSON.parse(new TextDecoder().decode(message_bytes));
+```yaml
+---
+name: TaskManager
+version: "1.0.0"
+description: "Intelligent task management and productivity assistant"
+capabilities:
+  - task-management
+  - productivity-coaching
+  - time-tracking
+tools:
+  - calendar_integration
+  - notification_service
+  - file_storage
+memory:
+  enabled: true
+  scope: workspace
+  retention: "30d"
+parameters:
+  max_tasks_per_user: 100
+  default_priority: "medium"
+  time_zone: "UTC"
+system_prompt: |
+  You are TaskManager, an intelligent productivity assistant. Your role is to help
+  users organize, prioritize, and complete their work effectively.
 
-    console.log(`[${message.receiver}] Received from ${message.sender}: ${message.content.text}`);
+  Core responsibilities:
+  1. Create, update, and track tasks with proper metadata
+  2. Suggest priorities based on deadlines and importance
+  3. Provide productivity coaching and time management advice
+  4. Learn user preferences and adapt recommendations
+  5. Integrate with calendars and notification systems
 
-    // Create response
-    const response = {
-        performative: 'inform',
-        sender: message.receiver,  // Our ID
-        receiver: message.sender,   // Reply to sender
-        conversation_id: message.conversation_id,
-        in_reply_to: message.id,
-        content: {
-            text: `Echo: ${message.content.text}`,
-            timestamp: Date.now()
-        }
-    };
+  When processing task requests:
+  - Always check memory for user preferences and past patterns
+  - Suggest realistic timelines based on task complexity
+  - Offer productivity tips relevant to the task type
+  - Store successful task completion patterns for future reference
 
-    // Return encoded response
-    return new TextEncoder().encode(JSON.stringify(response));
-}
+  Personality: Encouraging, organized, and practical. Help users feel accomplished.
 
-// Optional: Handle agent initialization
-export function init() {
-    console.log("Echo agent initialized");
-    return 0;  // Success
-}
+user_prompt_template: |
+  Task Request: {{request}}
 
-// Optional: Handle agent shutdown
-export function shutdown() {
-    console.log("Echo agent shutting down");
-    return 0;  // Success
-}
+  User Context: {{user_context}}
+  Current Tasks: {{current_tasks}}
+  Relevant Memory: {{memory_context}}
+  Deadline Information: {{deadlines}}
+
+  Please help with this task management request.
+---
+
+## TaskManager Agent
+
+An intelligent task management assistant that helps you stay organized and productive.
+
+## Features
+
+- **Smart Task Creation**: Automatically categorize and prioritize tasks
+- **Deadline Tracking**: Monitor due dates and send proactive reminders
+- **Productivity Coaching**: Suggest optimal work patterns and time management
+- **Learning**: Adapts to your working style and preferences over time
+- **Integration**: Works with calendars, notifications, and file storage
+
+## Usage Examples
+
+### Basic Task Management
+- "Add a task to review the Q3 budget by Friday"
+- "Show me all high-priority tasks this week"
+- "Mark the presentation task as completed"
+
+### Productivity Coaching
+- "Help me prioritize my tasks for tomorrow"
+- "I'm feeling overwhelmed, can you help organize my workload?"
+- "What's the best time to schedule deep work based on my patterns?"
+
+### Smart Suggestions
+- "Suggest a realistic timeline for this project"
+- "Break down this large task into manageable steps"
+- "What tasks are similar to ones I've completed successfully before?"
+
+## Memory-Powered Learning
+
+The TaskManager learns from your interactions:
+- **Work patterns**: When you're most productive
+- **Task preferences**: How you like to organize work
+- **Success factors**: What helps you complete tasks effectively
+- **Time estimates**: How long different types of tasks actually take
+
+This learning makes the agent more helpful over time.
 ```
 
-### Compile to WebAssembly
-
-Using [Javy](https://github.com/bytecodealliance/javy):
+### 2. Deploy Your Agent
 
 ```bash
-# Install Javy
-npm install -g @bytecodealliance/javy
+# Deploy the task manager
+caxton agent deploy task-manager.md
 
-# Compile to WASM
-javy compile echo-agent.js -o echo-agent.wasm
-
-# Deploy to Caxton
-caxton deploy echo-agent.wasm --name echo
+# Verify it's running
+caxton agent list
 ```
 
-### Advanced: Stateful Agent
+Expected output:
 
-```javascript
-// Stateful counter agent
-let counter = 0;
-const state = new Map();
-
-export function handle_message(message_bytes) {
-    const message = JSON.parse(new TextDecoder().decode(message_bytes));
-
-    switch(message.performative) {
-        case 'request':
-            return handleRequest(message);
-        case 'query':
-            return handleQuery(message);
-        case 'subscribe':
-            return handleSubscribe(message);
-        default:
-            return handleUnknown(message);
-    }
-}
-
-function handleRequest(message) {
-    const { action, params } = message.content;
-
-    switch(action) {
-        case 'increment':
-            counter += params.amount || 1;
-            break;
-        case 'decrement':
-            counter -= params.amount || 1;
-            break;
-        case 'reset':
-            counter = 0;
-            break;
-    }
-
-    return createResponse(message, {
-        status: 'success',
-        counter: counter
-    });
-}
-
-function handleQuery(message) {
-    return createResponse(message, {
-        counter: counter,
-        state: Object.fromEntries(state)
-    });
-}
-
-function createResponse(originalMessage, content) {
-    const response = {
-        performative: 'inform',
-        sender: originalMessage.receiver,
-        receiver: originalMessage.sender,
-        conversation_id: originalMessage.conversation_id,
-        in_reply_to: originalMessage.id,
-        content: content
-    };
-
-    return new TextEncoder().encode(JSON.stringify(response));
-}
+```text
+NAME         TYPE     STATUS    CAPABILITIES
+TaskManager  config   running   task-management, productivity-coaching
 ```
 
-## Python Agent
+### 3. Interact with Your Agent
 
-### Setup
-
-First, install the Python to WASM compiler:
+Send capability-based messages:
 
 ```bash
-pip install wasmtime-py pyodide-build
-```
-
-### Simple Agent
-
-Create `weather_agent.py`:
-
-```python
-import json
-import random
-from datetime import datetime
-
-class WeatherAgent:
-    """Simulated weather information agent"""
-
-    def __init__(self):
-        self.cities = {
-            'london': {'temp_base': 15, 'variance': 5},
-            'new_york': {'temp_base': 20, 'variance': 8},
-            'tokyo': {'temp_base': 18, 'variance': 6},
-            'sydney': {'temp_base': 22, 'variance': 4}
-        }
-
-    def get_weather(self, city):
-        """Generate simulated weather data"""
-        if city.lower() not in self.cities:
-            return None
-
-        city_data = self.cities[city.lower()]
-        temp = city_data['temp_base'] + random.uniform(-city_data['variance'], city_data['variance'])
-
-        return {
-            'city': city,
-            'temperature': round(temp, 1),
-            'unit': 'celsius',
-            'conditions': random.choice(['sunny', 'cloudy', 'rainy', 'partly cloudy']),
-            'humidity': random.randint(30, 80),
-            'timestamp': datetime.now().isoformat()
-        }
-
-# Global agent instance
-agent = WeatherAgent()
-
-def handle_message(message_bytes):
-    """Main message handler for Caxton"""
-    try:
-        # Decode and parse message
-        message = json.loads(message_bytes.decode('utf-8'))
-
-        # Handle different performatives
-        if message['performative'] == 'query':
-            return handle_query(message)
-        elif message['performative'] == 'request':
-            return handle_request(message)
-        else:
-            return create_not_understood(message)
-
-    except Exception as e:
-        return create_failure(message, str(e))
-
-def handle_query(message):
-    """Handle weather queries"""
-    content = message.get('content', {})
-    city = content.get('city')
-
-    if not city:
-        return create_failure(message, "No city specified")
-
-    weather = agent.get_weather(city)
-
-    if weather:
-        response = {
-            'performative': 'inform',
-            'sender': message['receiver'],
-            'receiver': message['sender'],
-            'conversation_id': message.get('conversation_id'),
-            'in_reply_to': message.get('id'),
-            'content': {
-                'weather': weather
-            }
-        }
-    else:
-        response = {
-            'performative': 'failure',
-            'sender': message['receiver'],
-            'receiver': message['sender'],
-            'conversation_id': message.get('conversation_id'),
-            'in_reply_to': message.get('id'),
-            'content': {
-                'error': f"Unknown city: {city}"
-            }
-        }
-
-    return json.dumps(response).encode('utf-8')
-
-def create_not_understood(message):
-    """Create not-understood response"""
-    response = {
-        'performative': 'not-understood',
-        'sender': message['receiver'],
-        'receiver': message['sender'],
-        'conversation_id': message.get('conversation_id'),
-        'in_reply_to': message.get('id'),
-        'content': {
-            'error': f"Unknown performative: {message['performative']}"
-        }
-    }
-    return json.dumps(response).encode('utf-8')
-
-def create_failure(message, error):
-    """Create failure response"""
-    response = {
-        'performative': 'failure',
-        'sender': message.get('receiver', 'unknown'),
-        'receiver': message.get('sender', 'unknown'),
-        'conversation_id': message.get('conversation_id'),
-        'in_reply_to': message.get('id'),
-        'content': {
-            'error': error
-        }
-    }
-    return json.dumps(response).encode('utf-8')
-```
-
-### Compile and Deploy
-
-```bash
-# Compile to WASM
-pyodide build weather_agent.py -o weather_agent.wasm
-
-# Deploy
-caxton deploy weather_agent.wasm --name weather-service
-
-# Test it
+# Add a task
 caxton message send \
-  --to weather-service \
-  --performative query \
-  --content '{"city": "London"}'
-```
-
-## Go Agent
-
-### Setup
-
-```bash
-# Install TinyGo (Go to WASM compiler)
-wget https://github.com/tinygo-org/tinygo/releases/download/v0.30.0/tinygo_0.30.0_amd64.deb
-sudo dpkg -i tinygo_0.30.0_amd64.deb
-```
-
-### Calculator Agent
-
-Create `calculator_agent.go`:
-
-```go
-package main
-
-import (
-    "encoding/json"
-    "fmt"
-    "math"
-)
-
-// Message represents a FIPA message
-type Message struct {
-    Performative   string                 `json:"performative"`
-    Sender         string                 `json:"sender"`
-    Receiver       string                 `json:"receiver"`
-    ConversationID string                 `json:"conversation_id"`
-    ReplyWith      string                 `json:"reply_with,omitempty"`
-    InReplyTo      string                 `json:"in_reply_to,omitempty"`
-    Content        map[string]interface{} `json:"content"`
-}
-
-//export handle_message
-func handle_message(messagePtr *byte, messageLen int) (*byte, int) {
-    // Convert pointer to byte slice
-    messageBytes := make([]byte, messageLen)
-    for i := 0; i < messageLen; i++ {
-        messageBytes[i] = *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(messagePtr)) + uintptr(i)))
-    }
-
-    // Parse message
-    var msg Message
-    if err := json.Unmarshal(messageBytes, &msg); err != nil {
-        return nil, 0
-    }
-
-    // Handle calculation requests
-    if msg.Performative == "request" {
-        response := processCalculation(msg)
-        responseBytes, _ := json.Marshal(response)
-        return &responseBytes[0], len(responseBytes)
-    }
-
-    return nil, 0
-}
-
-func processCalculation(msg Message) Message {
-    operation, _ := msg.Content["operation"].(string)
-    operands, _ := msg.Content["operands"].([]interface{})
-
-    var result float64
-    var err error
-
-    switch operation {
-    case "add":
-        result = add(operands)
-    case "multiply":
-        result = multiply(operands)
-    case "power":
-        if len(operands) == 2 {
-            base, _ := operands[0].(float64)
-            exp, _ := operands[1].(float64)
-            result = math.Pow(base, exp)
-        }
-    default:
-        err = fmt.Errorf("unknown operation: %s", operation)
-    }
-
-    response := Message{
-        Performative:   "inform",
-        Sender:         msg.Receiver,
-        Receiver:       msg.Sender,
-        ConversationID: msg.ConversationID,
-        InReplyTo:      msg.ReplyWith,
-    }
-
-    if err != nil {
-        response.Performative = "failure"
-        response.Content = map[string]interface{}{
-            "error": err.Error(),
-        }
-    } else {
-        response.Content = map[string]interface{}{
-            "result": result,
-            "operation": operation,
-        }
-    }
-
-    return response
-}
-
-func add(operands []interface{}) float64 {
-    sum := 0.0
-    for _, op := range operands {
-        if val, ok := op.(float64); ok {
-            sum += val
-        }
-    }
-    return sum
-}
-
-func multiply(operands []interface{}) float64 {
-    product := 1.0
-    for _, op := range operands {
-        if val, ok := op.(float64); ok {
-            product *= val
-        }
-    }
-    return product
-}
-
-func main() {
-    // Required for WASM
-}
-```
-
-### Compile and Deploy
-
-```bash
-# Compile with TinyGo
-tinygo build -o calculator.wasm -target wasi calculator_agent.go
-
-# Deploy
-caxton deploy calculator.wasm --name calculator
-
-# Test
-caxton message send \
-  --to calculator \
+  --capability "task-management" \
   --performative request \
-  --content '{"operation": "add", "operands": [5, 3, 2]}'
+  --content '{
+    "request": "Add a task to prepare slides for Monday presentation",
+    "user_context": "Working on quarterly review",
+    "deadline": "2025-09-15T09:00:00Z"
+  }'
+
+# Get productivity advice
+caxton message send \
+  --capability "productivity-coaching" \
+  --performative query \
+  --content '{
+    "request": "Help me organize my work for this week",
+    "current_tasks": ["presentation", "budget review", "team meeting prep"],
+    "context": "Feeling a bit overwhelmed"
+  }'
 ```
 
-## Rust Agent
-
-### Setup
-
-```toml
-# Cargo.toml
-[package]
-name = "rust-agent"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-wasm-bindgen = "0.2"
-
-[lib]
-crate-type = ["cdylib"]
-
-[profile.release]
-opt-level = "z"
-lto = true
-```
-
-### Smart Contract Agent
-
-Create `src/lib.rs`:
-
-```rust
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use wasm_bindgen::prelude::*;
-
-#[derive(Serialize, Deserialize)]
-struct Message {
-    performative: String,
-    sender: String,
-    receiver: String,
-    conversation_id: Option<String>,
-    in_reply_to: Option<String>,
-    content: serde_json::Value,
-}
-
-#[derive(Default)]
-struct ContractState {
-    balances: HashMap<String, u64>,
-    total_supply: u64,
-}
-
-static mut STATE: Option<ContractState> = None;
-
-#[no_mangle]
-pub extern "C" fn init() -> i32 {
-    unsafe {
-        STATE = Some(ContractState {
-            balances: HashMap::new(),
-            total_supply: 1_000_000,
-        });
-    }
-    0 // Success
-}
-
-#[no_mangle]
-pub extern "C" fn handle_message(ptr: *const u8, len: usize) -> *const u8 {
-    let bytes = unsafe { std::slice::from_raw_parts(ptr, len) };
-
-    let message: Message = match serde_json::from_slice(bytes) {
-        Ok(msg) => msg,
-        Err(_) => return std::ptr::null(),
-    };
-
-    let response = match message.performative.as_str() {
-        "request" => handle_request(message),
-        "query" => handle_query(message),
-        _ => create_not_understood(message),
-    };
-
-    match response {
-        Some(resp) => {
-            let json = serde_json::to_vec(&resp).unwrap();
-            Box::into_raw(json.into_boxed_slice()) as *const u8
-        }
-        None => std::ptr::null(),
-    }
-}
-
-fn handle_request(msg: Message) -> Option<Message> {
-    let state = unsafe { STATE.as_mut()? };
-
-    let action = msg.content.get("action")?.as_str()?;
-
-    match action {
-        "transfer" => {
-            let from = msg.content.get("from")?.as_str()?;
-            let to = msg.content.get("to")?.as_str()?;
-            let amount = msg.content.get("amount")?.as_u64()?;
-
-            // Perform transfer
-            let from_balance = state.balances.entry(from.to_string()).or_insert(0);
-            if *from_balance < amount {
-                return create_failure(msg, "Insufficient balance");
-            }
-
-            *from_balance -= amount;
-            *state.balances.entry(to.to_string()).or_insert(0) += amount;
-
-            Some(Message {
-                performative: "inform".to_string(),
-                sender: msg.receiver,
-                receiver: msg.sender,
-                conversation_id: msg.conversation_id,
-                in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-                content: serde_json::json!({
-                    "status": "success",
-                    "from": from,
-                    "to": to,
-                    "amount": amount,
-                }),
-            })
-        }
-        "mint" => {
-            let to = msg.content.get("to")?.as_str()?;
-            let amount = msg.content.get("amount")?.as_u64()?;
-
-            *state.balances.entry(to.to_string()).or_insert(0) += amount;
-            state.total_supply += amount;
-
-            Some(Message {
-                performative: "inform".to_string(),
-                sender: msg.receiver,
-                receiver: msg.sender,
-                conversation_id: msg.conversation_id,
-                in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-                content: serde_json::json!({
-                    "status": "success",
-                    "minted": amount,
-                    "to": to,
-                    "total_supply": state.total_supply,
-                }),
-            })
-        }
-        _ => create_not_understood(msg),
-    }
-}
-
-fn handle_query(msg: Message) -> Option<Message> {
-    let state = unsafe { STATE.as_ref()? };
-
-    let query_type = msg.content.get("type")?.as_str()?;
-
-    match query_type {
-        "balance" => {
-            let account = msg.content.get("account")?.as_str()?;
-            let balance = state.balances.get(account).unwrap_or(&0);
-
-            Some(Message {
-                performative: "inform".to_string(),
-                sender: msg.receiver,
-                receiver: msg.sender,
-                conversation_id: msg.conversation_id,
-                in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-                content: serde_json::json!({
-                    "account": account,
-                    "balance": balance,
-                }),
-            })
-        }
-        "total_supply" => {
-            Some(Message {
-                performative: "inform".to_string(),
-                sender: msg.receiver,
-                receiver: msg.sender,
-                conversation_id: msg.conversation_id,
-                in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-                content: serde_json::json!({
-                    "total_supply": state.total_supply,
-                }),
-            })
-        }
-        _ => create_not_understood(msg),
-    }
-}
-
-fn create_not_understood(msg: Message) -> Option<Message> {
-    Some(Message {
-        performative: "not-understood".to_string(),
-        sender: msg.receiver,
-        receiver: msg.sender,
-        conversation_id: msg.conversation_id,
-        in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-        content: serde_json::json!({
-            "error": "Message not understood",
-        }),
-    })
-}
-
-fn create_failure(msg: Message, error: &str) -> Option<Message> {
-    Some(Message {
-        performative: "failure".to_string(),
-        sender: msg.receiver,
-        receiver: msg.sender,
-        conversation_id: msg.conversation_id,
-        in_reply_to: Some(msg.conversation_id.unwrap_or_default()),
-        content: serde_json::json!({
-            "error": error,
-        }),
-    })
-}
-```
-
-### Compile and Deploy
+### 4. Watch the Agent Learn
 
 ```bash
-# Build for WASM
-cargo build --target wasm32-wasi --release
+# Follow agent activity
+caxton logs TaskManager --follow
+```
 
-# Deploy
-caxton deploy target/wasm32-wasi/release/rust_agent.wasm --name token-contract
+You'll see the agent:
 
-# Test minting
-caxton message send \
-  --to token-contract \
-  --performative request \
-  --content '{"action": "mint", "to": "alice", "amount": 1000}'
+- Searching memory for relevant patterns
+- Storing new task management insights
+- Adapting recommendations based on past interactions
 
-# Query balance
-caxton message send \
-  --to token-contract \
-  --performative query \
-  --content '{"type": "balance", "account": "alice"}'
+```text
+[TaskManager] Searching memory: "presentation task patterns"
+[TaskManager] Found 3 similar tasks from memory
+[TaskManager] Applying learned timing: "presentation prep usually takes 3-4 hours"
+[TaskManager] Storing new pattern: "quarterly_presentation_workflow"
+```
+
+## Advanced Configuration Patterns
+
+### Multi-Capability Agent
+
+Create an agent that handles multiple related capabilities:
+
+```yaml
+---
+name: CustomerSupport
+version: "2.0.0"
+capabilities:
+  - customer-inquiry
+  - order-tracking
+  - technical-support
+  - escalation-management
+tools:
+  - crm_system
+  - knowledge_base
+  - email_service
+  - ticket_system
+memory:
+  enabled: true
+  scope: global  # Share knowledge across all support interactions
+system_prompt: |
+  You are a customer support specialist with access to multiple systems.
+  Route inquiries appropriately and escalate when needed.
+
+  For each capability:
+  - customer-inquiry: Handle general questions and provide information
+  - order-tracking: Look up order status and shipping information
+  - technical-support: Troubleshoot product issues and provide solutions
+  - escalation-management: Route complex issues to human agents
+
+  Always check memory for similar issues and their resolutions.
+---
+```
+
+### Workflow Orchestration Agent
+
+Create an agent that coordinates other agents:
+
+```yaml
+---
+name: ProjectOrchestrator
+version: "1.0.0"
+capabilities:
+  - project-coordination
+  - workflow-management
+memory:
+  enabled: true
+  scope: workspace
+system_prompt: |
+  You coordinate complex projects by delegating tasks to other agents.
+
+  When you receive project requests:
+  1. Break down the project into subtasks
+  2. Send subtasks to appropriate capabilities
+  3. Monitor progress and coordinate between agents
+  4. Aggregate results into final deliverable
+
+  Use capability-based messaging to delegate work:
+  - Send data analysis tasks to "data-analysis" capability
+  - Send document creation to "document-generation" capability
+  - Send notifications via "notification-service" capability
+---
+```
+
+### Memory-Intensive Learning Agent
+
+Create an agent optimized for learning and knowledge building:
+
+```yaml
+---
+name: KnowledgeAssistant
+version: "1.0.0"
+capabilities:
+  - knowledge-search
+  - learning-assistance
+  - information-synthesis
+tools:
+  - web_search
+  - document_parser
+  - citation_manager
+memory:
+  enabled: true
+  scope: global
+  semantic_search: true
+  relationship_tracking: true
+parameters:
+  max_search_results: 10
+  citation_style: "APA"
+system_prompt: |
+  You are a knowledge assistant that helps users learn and research topics.
+
+  Your unique strength is building and connecting knowledge over time:
+  1. Search your memory for related concepts and prior research
+  2. Identify knowledge gaps and suggest research directions
+  3. Synthesize information from multiple sources
+  4. Store new insights and their relationships to existing knowledge
+  5. Build semantic maps of interconnected concepts
+
+  Always explain how new information connects to what you've learned before.
+---
+```
+
+## Configuration Schema Reference
+
+### Required Fields
+
+```yaml
+name: string              # Unique agent identifier
+version: string          # Semantic version
+capabilities: [string]   # What the agent can do
+system_prompt: string    # Core behavior instructions
+```
+
+### Optional Configuration
+
+```yaml
+description: string                # Human-readable description
+tools: [string]                   # External services to use
+memory:
+  enabled: boolean                # Enable persistent memory
+  scope: "agent"|"workspace"|"global"  # Memory sharing level
+  retention: string             # How long to keep memories
+  semantic_search: boolean      # Enable vector search
+  relationship_tracking: boolean # Track entity relationships
+parameters:                       # Custom agent parameters
+  key: value
+user_prompt_template: string     # Template for user interactions
+conversation:
+  max_turns: integer            # Conversation length limit
+  timeout: string              # Response timeout
+security:
+  restricted_tools: [string]    # Limit tool access
+  max_memory_usage: string     # Memory usage limit
+```
+
+### Capability Naming
+
+Use descriptive, hyphenated capability names:
+
+- `data-analysis`, `report-generation`
+- `customer-support`, `order-tracking`
+- `code-review`, `documentation-writing`
+- `project-management`, `task-scheduling`
+
+This enables precise capability-based routing.
+
+### Memory Configuration
+
+Choose memory scope based on use case:
+
+- **agent**: Private to this agent instance
+- **workspace**: Shared within a project or team
+- **global**: Shared across all agents (use carefully)
+
+### Tool Integration
+
+List external tools your agent needs:
+
+```yaml
+tools:
+  - http_client          # Web requests
+  - database_connection  # Database access
+  - email_service       # Email sending
+  - file_storage        # File operations
+  - calendar_integration # Calendar access
+  - notification_service # Push notifications
 ```
 
 ## Testing Your Agent
 
-### Unit Testing
-
-Test your agent logic before deployment:
-
-```javascript
-// test-agent.js
-import { handle_message } from './echo-agent.js';
-
-function test_echo() {
-    const testMessage = {
-        performative: 'inform',
-        sender: 'test-sender',
-        receiver: 'echo-agent',
-        content: { text: 'Hello' }
-    };
-
-    const input = new TextEncoder().encode(JSON.stringify(testMessage));
-    const output = handle_message(input);
-    const response = JSON.parse(new TextDecoder().decode(output));
-
-    console.assert(response.content.text === 'Echo: Hello');
-    console.log('✓ Echo test passed');
-}
-
-test_echo();
-```
-
-### Integration Testing
-
-Test with Caxton running:
+### Unit Testing Agent Responses
 
 ```bash
-# Deploy test agent
-caxton deploy my-agent.wasm --name test-agent
+# Test basic functionality
+caxton agent test task-manager.md \
+  --scenario "basic_task_creation" \
+  --input '{
+    "request": "Add task: Review contract by Thursday",
+    "user_context": "Legal team member"
+  }'
 
-# Send test messages
-caxton test agent test-agent --suite basic
+# Test memory integration
+caxton agent test task-manager.md \
+  --scenario "memory_recall" \
+  --input '{
+    "request": "What tasks have I completed this week?",
+    "user_context": "Weekly review"
+  }' \
+  --with-memory
+```
 
-# Custom test script
-cat > test.sh << 'EOF'
-#!/bin/bash
-# Send message and check response
-RESPONSE=$(caxton message send \
-  --to test-agent \
-  --performative request \
-  --content '{"test": true}' \
-  --wait-reply \
-  --timeout 5s)
+### Load Testing
 
-echo "$RESPONSE" | jq '.content.status' | grep -q "success"
-EOF
+```bash
+# Test under concurrent load
+caxton load-test \
+  --agent TaskManager \
+  --capability task-management \
+  --concurrent-requests 10 \
+  --duration 60s
+```
 
-chmod +x test.sh
-./test.sh
+### Memory Performance
+
+```bash
+# Check memory system performance
+caxton memory stats TaskManager
+
+# View agent learning patterns
+caxton memory inspect TaskManager --relationships
+```
+
+## Deployment Strategies
+
+### Blue-Green Deployment
+
+Update agents without downtime:
+
+```bash
+# Deploy new version alongside current
+caxton agent deploy task-manager-v2.md --strategy blue-green
+
+# Test new version
+caxton agent test TaskManager-v2
+
+# Switch traffic to new version
+caxton agent promote TaskManager-v2
+```
+
+### A/B Testing
+
+Compare agent versions:
+
+```bash
+# Deploy variant for testing
+caxton agent deploy task-manager-variant.md \
+  --strategy a-b-test \
+  --traffic-split 20
+
+# Monitor performance differences
+caxton agent compare TaskManager TaskManager-variant
+```
+
+## Debugging and Monitoring
+
+### View Agent Activity
+
+```bash
+# Real-time logs
+caxton logs TaskManager --follow --level debug
+
+# Conversation history
+caxton conversations list --agent TaskManager
+
+# Memory operations
+caxton memory logs TaskManager --operations
+```
+
+### Performance Metrics
+
+```bash
+# Response time statistics
+caxton metrics TaskManager --capability task-management
+
+# Memory usage trends
+caxton metrics TaskManager --memory --time-range 1d
+
+# Success/failure rates
+caxton metrics TaskManager --error-rates --groupby capability
+```
+
+### Health Checks
+
+```bash
+# Verify agent health
+caxton agent health TaskManager
+
+# Run diagnostic tests
+caxton agent diagnose TaskManager --comprehensive
+
+# Check capability routing
+caxton capability test task-management
 ```
 
 ## Best Practices
 
-1. **Handle All Performatives**: Always handle unknown performatives gracefully
-2. **Validate Input**: Check message format and content before processing
-3. **Use Structured Logging**: Log important events for debugging
-4. **Implement Timeouts**: Don't block indefinitely on operations
-5. **Minimize State**: Keep agent state minimal and consider persistence
-6. **Error Handling**: Return appropriate FIPA error responses
-7. **Resource Limits**: Be mindful of memory and CPU usage
-8. **Idempotency**: Make operations idempotent where possible
+### 1. Design for Capabilities
+
+Think in terms of **what** your agent can do, not just **who** it is:
+
+```yaml
+# Good: Specific, actionable capabilities
+capabilities:
+  - document-analysis
+  - compliance-checking
+  - risk-assessment
+
+# Avoid: Generic or overlapping capabilities
+capabilities:
+  - general-assistant
+  - helpful-agent
+```
+
+### 2. Write Clear System Prompts
+
+Be specific about behavior and responsibilities:
+
+```yaml
+system_prompt: |
+  You are a financial analyst specializing in risk assessment.
+
+  When analyzing documents:
+  1. Identify potential financial risks and compliance issues
+  2. Quantify risk levels using standard metrics
+  3. Suggest mitigation strategies based on industry best practices
+  4. Reference relevant regulations and standards
+
+  Always provide confidence levels for your assessments.
+```
+
+### 3. Use Memory Strategically
+
+Enable memory for agents that benefit from learning:
+
+```yaml
+memory:
+  enabled: true
+  scope: workspace        # Share knowledge within team
+  retention: "90d"       # Keep relevant timeframe
+  semantic_search: true  # Find related past experiences
+```
+
+### 4. Design for Composability
+
+Create agents that work well with others:
+
+```yaml
+system_prompt: |
+  When your analysis is complete, send results to agents with
+  "report-generation" capability for document creation.
+
+  Use capability-based messaging to coordinate with other agents.
+```
+
+### 5. Test Thoroughly
+
+Validate agent behavior before deployment:
+
+```bash
+# Test core functionality
+caxton agent validate task-manager.md
+
+# Test capability routing
+caxton capability validate task-management
+
+# Test memory integration
+caxton memory validate TaskManager
+```
+
+## Troubleshooting Common Issues
+
+### Agent Won't Deploy
+
+```bash
+# Check YAML syntax
+caxton agent validate task-manager.md --strict
+
+# Verify capability names
+caxton capability list --available
+
+# Check tool availability
+caxton tools list --status
+```
+
+### Messages Not Routing
+
+```bash
+# Debug capability routing
+caxton capability debug task-management
+
+# Check agent registration
+caxton agent status TaskManager --capabilities
+
+# Verify message format
+caxton message validate --performative request --content '{...}'
+```
+
+### Memory Not Working
+
+```bash
+# Check memory backend status
+caxton memory status
+
+# Verify memory permissions
+caxton memory permissions TaskManager
+
+# Test memory operations
+caxton memory test TaskManager --basic-operations
+```
+
+### Performance Issues
+
+```bash
+# Profile agent execution
+caxton profile TaskManager --capability task-management
+
+# Check resource usage
+caxton resources TaskManager --live
+
+# Analyze memory patterns
+caxton memory analyze TaskManager --performance
+```
 
 ## Next Steps
 
-- [Message Protocol Guide](../developer-guide/message-protocols.md) - Deep dive
-  into FIPA protocols
-- [API Reference](../developer-guide/api-reference.md) - Complete API
-  documentation
-- [Testing Guide](../developer-guide/testing.md) - Comprehensive testing
-  strategies
-- [Production Deployment](../operations/production-deployment.md) - Deploy to
-  production
+You now understand configuration agents! Continue learning:
+
+- **[Configuration Reference](configuration.md)** - Complete YAML schema
+- **[Agent Patterns](../developer-guide/agent-patterns.md)** - Advanced
+  composition patterns
+- **[Memory System Guide](../developer-guide/memory-system.md)** - Deep dive into
+  agent learning
+- **[API Integration](rest-api-quickstart.md)** - REST API usage patterns
+- **[WASM Agents](../developer-guide/wasm-agents.md)** - When you need custom computation
+
+**Ready to build?** Start with simple single-capability agents, then compose
+them into powerful multi-agent workflows!

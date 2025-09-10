@@ -1,7 +1,8 @@
 ---
 title: "ADR-0003: FIPA Messaging"
 date: 2025-01-31
-status: accepted
+status: superseded
+superseded_by: "ADR-0029: FIPA-ACL Lightweight Messaging"
 layout: adr
 categories: [Architecture, Technology]
 ---
@@ -9,7 +10,11 @@ categories: [Architecture, Technology]
 
 ## Status
 
-Accepted
+**Superseded** by [ADR-0029: FIPA-ACL Lightweight Messaging](0029-fipa-acl-lightweight-messaging.md)
+
+This ADR established FIPA messaging for compiled WASM agents. ADR-0029
+updates the FIPA approach specifically for configuration-driven agents with a
+lightweight, capability-based messaging system.
 
 ## Context
 

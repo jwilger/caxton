@@ -1,7 +1,8 @@
 ---
 title: "ADR-0012: Pragmatic FIPA"
 date: 2025-08-08
-status: accepted
+status: superseded
+superseded_by: "ADR-0029: FIPA-ACL Lightweight Messaging"
 layout: adr
 categories: [Architecture]
 ---
@@ -9,7 +10,12 @@ categories: [Architecture]
 
 ## Status
 
-Accepted
+**Superseded** by [ADR-0029: FIPA-ACL Lightweight Messaging](0029-fipa-acl-lightweight-messaging.md)
+
+This ADR defined a pragmatic FIPA subset for compiled WASM agents. ADR-0029
+provides an updated lightweight FIPA implementation specifically optimized
+for configuration-driven agents with capability-based routing and simplified
+interaction patterns.
 
 ## Relationship to ADR-0003
 

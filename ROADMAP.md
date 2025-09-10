@@ -11,7 +11,7 @@ community build amazing agents and workflows.
 
 ## Development Phases
 
-### Phase 1: Minimal Core (V1.0) - Q1 2025
+### Phase 1: Minimal Core (V1.0)
 
 **Goal**: Ship a production-ready orchestration server with baseline
 performance.
@@ -50,7 +50,7 @@ performance.
 - Graphical debugging tools
 - Performance optimizations beyond baseline
 
-### Phase 2: Patterns & Performance (V2.0) - Q3 2025
+### Phase 2: Patterns & Performance (V2.0)
 
 **Goal**: Double performance and provide pattern libraries (not in core).
 
@@ -99,7 +99,7 @@ performance.
 - Agent hierarchies
 - Automatic scaling
 
-### Phase 3: Scale & Ecosystem (V3.0) - Q1 2026
+### Phase 3: Scale & Ecosystem (V3.0)
 
 **Goal**: Enable planet-scale agent systems through composability.
 
