@@ -2,9 +2,9 @@
 
 ## Overview
 
-## Current Development Focus: Story 005 - FIPA ACL Message
+## Current Development Focus: Domain Modeling Experiment
 
-Protocol Implementation ✅
+Starting fresh with comprehensive domain modeling approach
 
 ## Story Priority Levels
 
@@ -21,26 +21,23 @@ ______________________________________________________________________
 
 ### P0 - Critical Foundation
 
-- [X] Story 001: WebAssembly Runtime Foundation
-- [X] Story 002: Core Message Router ✅ (Performance: 236K msgs/sec - See
-  docs/story-002-verification-report.md)
-- [x] **Story 053: Code Quality Enforcement** - Systematically remove temporary
+- [ ] Story 001: WebAssembly Runtime Foundation
+- [ ] Story 002: Core Message Router
+- [ ] Story 053: Code Quality Enforcement - Systematically remove temporary
   clippy allow attributes and establish stricter code hygiene standards to
-  prevent future accumulation of warnings ✅ (COMPLETED - PR #8 merged:
-  comprehensive code quality enforcement implemented with clippy compliance,
-  pre-commit hooks, and CI quality gates)
-- [x] Story 051: Full CI/CD Pipeline Setup - Set up comprehensive GitHub Actions
+  prevent future accumulation of warnings
+- [ ] Story 051: Full CI/CD Pipeline Setup - Set up comprehensive GitHub Actions
   CI build pipeline to test on all supported platforms (Linux, macOS, Windows)
   with matrix testing, security scanning, and automated releases
-- [x] Story 052: Dependency Vulnerability Resolution - Address the
+- [ ] Story 052: Dependency Vulnerability Resolution - Address the
   GitHub-detected dependency vulnerability to maintain security posture and
   prepare for production deployment
-- [x] Story 004: Local State Storage ✅ (COMPLETED)
+- [ ] Story 004: Local State Storage
 
 ### P1 - Essential Features
 
-- [x] Story 005: FIPA-ACL Message Protocol ✅ (COMPLETED)
-- [x] Story 006: REST Management API ✅ (COMPLETED - All acceptance criteria met)
+- [ ] Story 005: FIPA-ACL Message Protocol
+- [ ] Story 006: REST Management API
 - [ ] Story 007: REST API Gateway
 - [ ] Story 008: CLI Tool
 - [ ] Story 009: OpenTelemetry Integration
@@ -172,12 +169,12 @@ agents **So that** agents can communicate without knowing infrastructure details
 
 **Acceptance Criteria:**
 
-- [x] Agents can be deployed from WASM modules ✅
-- [x] Agent state transitions follow defined lifecycle
-  (Unloaded→Loaded→Running→Draining→Stopped) ✅
-- [x] Resource limits are set during deployment ✅
-- [x] Failed agents don't affect other agents ✅
-- [x] Deployment validates WASM modules before activation ✅
+- [ ] Agents can be deployed from WASM modules
+- [ ] Agent state transitions follow defined lifecycle
+  (Unloaded→Loaded→Running→Draining→Stopped)
+- [ ] Resource limits are set during deployment
+- [ ] Failed agents don't affect other agents
+- [ ] Deployment validates WASM modules before activation
 
 **Definition of Done:**
 
@@ -320,13 +317,13 @@ tool
 
 **Acceptance Criteria:**
 
-- [x] REST API endpoints implemented for agent management (POST /agents, GET
+- [ ] REST API endpoints implemented for agent management (POST /agents, GET
   /agents, GET /agents/{id}, DELETE /agents/{id})
-- [x] Health and status endpoints respond correctly (GET /health)
+- [ ] Health and status endpoints respond correctly (GET /health)
 - [ ] Message operations available for debugging (POST /agents/{id}/messages,
   GET /messages)
-- [x] Shared Rust types between server and CLI ensure compile-time type safety
-- [x] HTTP status codes and JSON error responses provide clear operation results
+- [ ] Shared Rust types between server and CLI ensure compile-time type safety
+- [ ] HTTP status codes and JSON error responses provide clear operation results
 - [ ] Version headers support future compatibility (X-Caxton-CLI-Version)
 
 **Definition of Done:**
