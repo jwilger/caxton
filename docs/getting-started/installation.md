@@ -1,4 +1,9 @@
-# Installation Guide
+---
+title: "Installation Guide"
+date: 2025-09-10
+layout: page
+categories: [Getting Started]
+---
 
 Caxton is a standalone server application that orchestrates multi-agent systems.
 This guide covers all installation methods.

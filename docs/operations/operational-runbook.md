@@ -1,4 +1,9 @@
-# Operational Runbook
+---
+title: "Operational Runbook"
+date: 2025-01-15
+layout: page
+categories: [Operations]
+---
 
 This runbook provides step-by-step procedures for operating Caxton in
 production.

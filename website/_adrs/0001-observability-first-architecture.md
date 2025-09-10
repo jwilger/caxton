@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0001. Observability-First Architecture" date: 2025-07-31 status: proposed layout: adr
-
-## categories: [Architecture]
-
-# 0001. Observability-First Architecture
+---
+title: "0001. Observability-First Architecture"
+date: 2025-07-31
+status: proposed
+layout: adr
+categories: [Architecture]
+---
 
 Date: 2025-01-31
 

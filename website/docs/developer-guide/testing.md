@@ -1,12 +1,10 @@
-______________________________________________________________________
-
-## title: Testing Strategies and Best Practices
-
-layout: documentation description: Comprehensive guide to testing multi-agent
-systems in Caxton, including unit tests, integration tests, and load testing
-strategies
-
-# Testing Strategies and Best Practices
+---
+title: "Testing Strategies and Best Practices"
+layout: documentation
+description: "Comprehensive guide to testing multi-agent systems in Caxton, including unit tests, integration tests, and load testing strategies"
+date: 2025-09-10
+categories: [Website]
+---
 
 Testing multi-agent systems presents unique challenges due to their distributed,
 asynchronous, and interactive nature. This guide provides comprehensive

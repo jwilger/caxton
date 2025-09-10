@@ -1,8 +1,10 @@
-______________________________________________________________________
-
-## title: "0009. CLI Tool Design" date: 2025-08-03 status: proposed layout: adr categories: [Technology]
-
-# 0009. CLI Tool Design
+---
+title: "0009. CLI Tool Design"
+date: 2025-08-03
+status: proposed
+layout: adr
+categories: [Technology]
+---
 
 Date: 2025-08-03
 

@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: FIPA Message Protocols layout: documentation
-
-## description: Comprehensive guide to FIPA message protocols used in Caxton for agent communication
-
-# Message Protocols for Service Communication
+---
+title: "FIPA Message Protocols"
+layout: documentation
+description: "Comprehensive guide to FIPA message protocols used in Caxton for agent communication"
+date: 2025-09-10
+categories: [Website]
+---
 
 This guide explains how to send messages between services in Caxton using
 FIPA-based protocols. Think of it as a standardized way for your services to

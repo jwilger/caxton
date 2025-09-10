@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0006. Application Server Architecture" date: 2025-08-03 status: proposed layout: adr
-
+---
+title: "0006. Application Server Architecture"
+date: 2025-08-03
+status: proposed
+layout: adr
 categories: [Architecture]
-
-# 0006. Application Server Architecture
+---
 
 Date: 2025-08-03
 

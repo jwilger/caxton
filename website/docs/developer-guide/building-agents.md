@@ -1,11 +1,10 @@
-______________________________________________________________________
-
-## title: Building Agents
-
-layout: documentation description: Comprehensive guide to developing WebAssembly
-agents for Caxton multi-agent systems
-
-# Building Agents
+---
+title: "Building Agents"
+layout: documentation
+description: "Comprehensive guide to developing WebAssembly agents for Caxton multi-agent systems"
+date: 2025-09-10
+categories: [Website]
+---
 
 Learn how to create production-ready WebAssembly agents that integrate
 seamlessly with the Caxton multi-agent orchestration platform.

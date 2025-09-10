@@ -1,11 +1,10 @@
-______________________________________________________________________
-
-## title: WebAssembly Integration Guide layout: documentation description: Complete guide to
-
-WebAssembly integration in Caxton, including agent development, sandboxing, and
-performance optimization
-
-# WebAssembly Integration Guide
+---
+title: "WebAssembly Integration Guide"
+layout: documentation
+description: "Complete guide to WebAssembly integration in Caxton, including agent development, sandboxing, and performance optimization"
+date: 2025-09-10
+categories: [Website]
+---
 
 WebAssembly (WASM) provides the secure sandboxing foundation for Caxton's
 multi-agent system. This comprehensive guide covers everything from basic agent

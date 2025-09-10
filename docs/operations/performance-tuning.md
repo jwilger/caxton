@@ -1,4 +1,9 @@
-# Performance Tuning Guide
+---
+title: "Performance Tuning Guide"
+date: 2025-01-15
+layout: page
+categories: [Operations]
+---
 
 This guide provides detailed instructions for optimizing Caxton performance. For
 performance targets and requirements, see

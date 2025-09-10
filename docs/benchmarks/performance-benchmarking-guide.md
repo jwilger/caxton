@@ -1,4 +1,9 @@
-# Performance Benchmarking Suite
+---
+title: "Performance Benchmarking Suite"
+date: 2025-01-14
+layout: page
+categories: [Benchmarks, Performance]
+---
 
 ## Overview
 

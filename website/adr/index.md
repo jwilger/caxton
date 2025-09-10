@@ -1,8 +1,10 @@
-______________________________________________________________________
-
-## layout: adr-index title: Architecture Decision Records permalink: /adr/
-
-# Architecture Decision Records
+---
+layout: adr-index
+title: "Architecture Decision Records"
+permalink: /adr/
+date: 2025-09-10
+categories: [Website]
+---
 
 This is a log of all architecture decisions made for the Caxton project. These
 ADRs document the key architectural choices, their context, and the reasoning

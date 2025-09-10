@@ -1,8 +1,10 @@
-______________________________________________________________________
-
-## layout: adr title: "0014. Coordination-First Architecture" status: proposed date: 2025-08-09
-
-# ADR-0014: Coordination-First Architecture
+---
+layout: adr
+title: "0014. Coordination-First Architecture"
+status: proposed
+date: 2025-08-09
+categories: [Architecture]
+---
 
 ## Status
 

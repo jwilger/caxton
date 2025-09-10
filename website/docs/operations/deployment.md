@@ -1,12 +1,10 @@
-______________________________________________________________________
-
-## title: Production Deployment Guide
-
-layout: documentation description: Comprehensive guide for deploying Caxton
-multi-agent systems in production environments with high availability, load
-balancing, and backup strategies
-
-# Production Deployment Guide
+---
+title: "Production Deployment Guide"
+layout: documentation
+description: "Comprehensive guide for deploying Caxton multi-agent systems in production environments with high availability, load balancing, and backup strategies"
+date: 2025-09-10
+categories: [Website]
+---
 
 This guide covers deploying Caxton multi-agent systems in production
 environments, including system requirements, installation methods, configuration

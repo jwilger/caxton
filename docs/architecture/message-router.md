@@ -1,4 +1,10 @@
-# Message Router Architecture
+---
+title: "Message Router Architecture"
+date: 2025-01-14
+layout: page
+categories: [architecture, message-router]
+---
+
 
 ## Overview
 

@@ -1,4 +1,9 @@
-# Message Router Component Interaction Diagrams
+---
+title: "Component Interaction Diagrams"
+date: 2025-01-14
+layout: page
+categories: [architecture, diagrams]
+---
 
 ## Overview
 

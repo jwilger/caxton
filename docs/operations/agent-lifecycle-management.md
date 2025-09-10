@@ -1,4 +1,9 @@
-# Agent Lifecycle Management
+---
+title: "Agent Lifecycle Management"
+date: 2025-01-15
+layout: page
+categories: [Operations]
+---
 
 Caxton provides comprehensive agent lifecycle management capabilities for
 deploying, managing, and maintaining WebAssembly agents in production

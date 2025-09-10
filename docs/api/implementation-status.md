@@ -1,4 +1,9 @@
-# REST API Implementation Status
+---
+title: "REST API Implementation Status"
+date: 2025-01-14
+layout: page
+categories: [api, implementation]
+---
 
 **Last Updated**: 2025-01-14 **Story**: 006 - REST Management API **Status**:
 MINIMAL VIABLE IMPLEMENTATION

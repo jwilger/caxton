@@ -1,4 +1,9 @@
-# Security Developer Guide
+---
+title: "Security Developer Guide"
+date: 2025-01-14
+layout: page
+categories: [Developer Guide, Security]
+---
 
 This guide covers security features and best practices for developing with
 Caxton. For the complete security architecture, see

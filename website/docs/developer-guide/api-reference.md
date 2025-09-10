@@ -1,8 +1,10 @@
-______________________________________________________________________
-
-## title: API Reference layout: documentation
-
-## description: Complete API documentation for Caxton management and control
+---
+title: "API Reference"
+layout: documentation
+description: "Complete API documentation for Caxton management and control"
+date: 2025-09-10
+categories: [Website]
+---
 
 Complete API documentation for Caxton management and control.
 

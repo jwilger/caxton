@@ -1,4 +1,9 @@
-# Caxton Testing Strategy
+---
+title: "Caxton Testing Strategy"
+date: 2025-01-10
+layout: page
+categories: [Development]
+---
 
 ## Overview
 

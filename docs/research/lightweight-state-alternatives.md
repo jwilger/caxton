@@ -1,4 +1,10 @@
-# Lightweight State Management Alternatives for Caxton
+---
+title: "Lightweight State Management Alternatives"
+date: 2025-01-15
+layout: page
+categories: [Research]
+---
+
 
 ## Executive Summary
 

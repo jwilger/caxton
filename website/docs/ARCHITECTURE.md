@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: System Architecture layout: documentation
-
-## description: Comprehensive technical architecture documentation for the Caxton
-
-## multi-agent system platform
+---
+title: "System Architecture"
+layout: documentation
+description: "Comprehensive technical architecture documentation for the Caxton multi-agent system platform"
+date: 2025-09-10
+categories: [Website]
+---
 
 ## Why These Design Choices?
 

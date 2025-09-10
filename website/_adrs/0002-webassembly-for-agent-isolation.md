@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0002. WebAssembly for Agent Isolation" date: 2025-07-31 status: proposed layout: adr
-
-## categories: [Architecture, Technology]
-
-# 0002. WebAssembly for Agent Isolation
+---
+title: "0002. WebAssembly for Agent Isolation"
+date: 2025-07-31
+status: proposed
+layout: adr
+categories: [Architecture, Technology]
+---
 
 Date: 2025-01-31
 

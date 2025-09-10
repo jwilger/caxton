@@ -1,11 +1,11 @@
-______________________________________________________________________
-
-## title: "0010. External Agent Routing API" date: 2025-08-03 status: proposed layout: adr
-
-categories: [Architecture, Technology] deciders: \[Platform Systems Architect,
-UX Research Expert, Async Rust Expert, Observability Expert\]
-
-# 0010. External Agent Routing API
+---
+title: "0010. External Agent Routing API"
+date: 2025-08-03
+status: proposed
+layout: adr
+categories: [Architecture, Technology]
+deciders: [Platform Systems Architect, UX Research Expert, Async Rust Expert, Observability Expert]
+---
 
 Date: 2025-01-03 Status: Proposed Deciders: Platform Systems Architect, UX
 Research Expert, Async Rust Expert, Observability Expert

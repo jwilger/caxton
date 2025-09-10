@@ -1,4 +1,9 @@
-# Story 002: Core Message Router - Detailed Specification Document
+---
+title: "Core Message Router - Detailed Specification"
+date: 2025-01-15
+layout: page
+categories: [Specifications]
+---
 
 ## Executive Summary
 

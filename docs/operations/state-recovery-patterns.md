@@ -1,4 +1,9 @@
-# State Recovery Patterns for Agents
+---
+title: "State Recovery Patterns for Agents"
+date: 2025-01-15
+layout: page
+categories: [Operations]
+---
 
 ## Overview
 

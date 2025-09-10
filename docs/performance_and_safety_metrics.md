@@ -1,4 +1,9 @@
-# Performance and Safety Metrics Report
+---
+title: "Performance and Safety Metrics Report"
+date: 2025-08-10
+layout: page
+categories: [Performance]
+---
 
 **Date:** August 10, 2025 **Project:** Caxton Type System Improvements
 **Analysis Type:** Post-Implementation Metrics

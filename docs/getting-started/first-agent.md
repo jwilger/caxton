@@ -1,4 +1,9 @@
-# Building Your First Agent
+---
+title: "Building Your First Agent"
+date: 2025-09-10
+layout: page
+categories: [Getting Started]
+---
 
 Learn how to create WebAssembly agents for Caxton in your preferred programming
 language.

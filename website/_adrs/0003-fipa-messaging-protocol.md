@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0003. FIPA Messaging Protocol" date: 2025-07-31 status: proposed layout: adr
-
+---
+title: "0003. FIPA Messaging Protocol"
+date: 2025-07-31
+status: proposed
+layout: adr
 categories: [Architecture, Technology]
-
-# 0003. FIPA Messaging Protocol
+---
 
 Date: 2025-01-31
 

@@ -1,12 +1,13 @@
-______________________________________________________________________
+---
+layout: documentation
+title: "Caxton Roadmap - Multi-Agent Isolation Platform"
+description: "Comprehensive development roadmap for Caxton's multi-agent isolation and orchestration platform with progress tracking and milestone visualization."
+permalink: /docs/roadmap/
+nav_order: 3
+date: 2025-09-10
+categories: [Website]
+---
 
-## layout: documentation title: "Caxton Roadmap - Multi-Agent Isolation Platform" description
-
-"Comprehensive development roadmap for Caxton's multi-agent isolation and
-orchestration platform with progress tracking and milestone visualization."
-permalink: /docs/roadmap/ nav_order: 3
-
-# Caxton Development Roadmap
 
 Our roadmap outlines the strategic development phases for Caxton's multi-agent
 isolation platform, from foundational security features to enterprise-scale

@@ -1,4 +1,9 @@
-# Coordination-First Architecture Overview
+---
+title: "Coordination-First Architecture Overview"
+date: 2025-01-14
+layout: page
+categories: [architecture, coordination]
+---
 
 This document provides a comprehensive overview of Caxton's coordination-first
 architecture, which eliminates external dependencies while providing distributed

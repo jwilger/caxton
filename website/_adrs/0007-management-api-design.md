@@ -1,10 +1,10 @@
-______________________________________________________________________
-
-## title: "0007. Management API Design" date: 2025-08-03 status: proposed layout: adr
-
+---
+title: "0007. Management API Design"
+date: 2025-08-03
+status: proposed
+layout: adr
 categories: [Architecture, Technology]
-
-# 0007. Management API Design
+---
 
 Date: 2025-08-03
 

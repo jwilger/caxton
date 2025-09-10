@@ -1,6 +1,11 @@
-# API Reference
+---
+title: "API Reference"
+date: 2025-01-14
+layout: page
+categories: [Developer Guide]
+---
 
-**Last Updated**: 2025-01-14 **Implementation Status**: See
+**Implementation Status**: See
 [Implementation Status](../api/implementation-status.md) for details on what's
 currently available.
 
@@ -717,10 +722,10 @@ All APIs use consistent error responses:
 ### Implemented Error Codes
 
 | Error Type | HTTP Status | Description | Example |
-|------------|-------------|-------------|---------| | Validation Error | 400 |
-Invalid input data | Empty name, zero limits | | Invalid JSON | 400 | Malformed
-JSON request | Syntax errors | | Agent Not Found | 404 | Agent ID doesn't exist
-| Non-existent UUID |
+|------------|-------------|-------------|---------|
+| Validation Error | 400 | Invalid input data | Empty name, zero limits |
+| Invalid JSON | 400 | Malformed JSON request | Syntax errors |
+| Agent Not Found | 404 | Agent ID doesn't exist | Non-existent UUID |
 
 ### Future Error Format ⏳ **PLANNED**
 
@@ -740,14 +745,17 @@ JSON request | Syntax errors | | Agent Not Found | 404 | Agent ID doesn't exist
 
 ### Planned Error Codes ⏳
 
-| Code | HTTP Status | Description | |------|-------------|-------------| |
-`AGENT_ALREADY_EXISTS` | 409 | Agent name already in use | | `INVALID_WASM` |
-400 | Invalid WebAssembly module | | `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource
-limits exceeded | | `DEPLOYMENT_FAILED` | 500 | Deployment operation failed | |
-`MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered | |
-`UNAUTHORIZED` | 401 | Authentication required | | `FORBIDDEN` | 403 | Operation
-not permitted | | `RATE_LIMITED` | 429 | Rate limit exceeded | |
-`INTERNAL_ERROR` | 500 | Internal server error |
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
+| `INVALID_WASM` | 400 | Invalid WebAssembly module |
+| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
+| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
+| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
+| `UNAUTHORIZED` | 401 | Authentication required |
+| `FORBIDDEN` | 403 | Operation not permitted |
+| `RATE_LIMITED` | 429 | Rate limit exceeded |
+| `INTERNAL_ERROR` | 500 | Internal server error |
 
 ## SDK Examples
 
@@ -861,9 +869,12 @@ func main() {
 
 API rate limits per endpoint:
 
-| Endpoint | Rate Limit | Burst | |----------|------------|-------| | Agent
-deployment | 10/min | 20 | | Message sending | 1000/sec | 2000 | | Metrics
-queries | 100/min | 200 | | System operations | 50/min | 100 |
+| Endpoint | Rate Limit | Burst |
+|----------|------------|-------|
+| Agent deployment | 10/min | 20 |
+| Message sending | 1000/sec | 2000 |
+| Metrics queries | 100/min | 200 |
+| System operations | 50/min | 100 |
 
 Rate limit headers:
 

@@ -1,4 +1,10 @@
-# Message Router - O(1) Routing Algorithm Design
+---
+title: "O(1) Routing Algorithm Design"
+date: 2025-01-14
+layout: page
+categories: [architecture, routing, algorithms]
+---
+
 
 ## Overview
 

@@ -1,6 +1,10 @@
-______________________________________________________________________
-
-## layout: documentation title: Documentation permalink: /docs/
+---
+title: "Documentation"
+layout: documentation
+permalink: /docs/
+date: 2025-09-10
+categories: [Website]
+---
 
 <div align="center">
   <img src="{{ '/assets/img/logo.svg' | relative_url }}"

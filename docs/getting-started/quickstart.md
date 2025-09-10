@@ -1,4 +1,9 @@
-# Quick Start Guide
+---
+title: "Quick Start Guide"
+date: 2025-09-10
+layout: page
+categories: [Getting Started]
+---
 
 Get a multi-agent system running in under 3 minutes.
 

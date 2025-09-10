@@ -1,4 +1,9 @@
-# Security Guide for Caxton Deployment and Operations
+---
+title: "Security Guide for Deployment and Operations"
+date: 2025-01-15
+layout: page
+categories: [Operations]
+---
 
 ## Overview
 
