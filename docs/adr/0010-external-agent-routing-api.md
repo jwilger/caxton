@@ -1,5 +1,5 @@
 ---
-title: "ADR-0010: External Agent Routing API"
+title: "ADR-0010: External Agent Routing"
 date: 2025-08-03
 status: proposed
 layout: adr
@@ -13,8 +13,8 @@ Proposed
 
 ## Deciders
 
-Platform Systems Architect, UX Research Expert, Async Rust Expert,
-Observability Expert
+Platform Systems Architect, UX Research Expert, Async Rust Expert, Observability
+Expert
 
 ## Context and Problem Statement
 
@@ -187,26 +187,9 @@ debugging" philosophy.
 
 ## Implementation Notes
 
-### Phase 1: Core External Routing
-
-- gRPC service definition and server implementation
-- Actor-per-agent concurrency model
-- Basic job tracking and lifecycle management
-- API key authentication for development
-
-### Phase 2: Production Features
-
-- REST gateway via grpc-gateway
-- mTLS and RBAC authorization
-- Advanced observability and debugging APIs
-- Performance optimizations and benchmarking
-
-### Phase 3: Advanced Patterns
-
-- Streaming invocation patterns
-- Batch job processing
-- Advanced rate limiting and quotas
-- Integration with cloud provider auth systems
+This ADR defines the architectural decision for external agent routing.
+Implementation will follow the standard development process with appropriate
+technical design and TDD practices.
 
 ## Links
 

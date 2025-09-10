@@ -1,10 +1,11 @@
 ---
-title: "ADR-0003: FIPA Messaging Protocol"
+title: "ADR-0003: FIPA Messaging"
 date: 2025-01-31
 status: accepted
 layout: adr
 categories: [Architecture, Technology]
 ---
+
 
 ## Status
 
@@ -83,41 +84,19 @@ Key aspects:
 - **Pros**: Modern, good for pub-sub
 - **Cons**: Designed for client-server, not peer-to-peer agents
 
-## Implementation Example
+## Implementation Considerations
 
-```rust
-// FIPA message structure
-pub struct FipaMessage {
-    performative: Performative,
-    sender: AgentId,
-    receiver: AgentId,
-    content: Vec<u8>,
-    language: Option<String>,
-    ontology: Option<String>,
-    protocol: Option<String>,
-    conversation_id: Option<ConversationId>,
-    reply_with: Option<MessageId>,
-    in_reply_to: Option<MessageId>,
-}
+The FIPA messaging approach requires:
 
-pub enum Performative {
-    Request,
-    Inform,
-    QueryIf,
-    Subscribe,
-    Propose,
-    AcceptProposal,
-    RejectProposal,
-    // ... other FIPA performatives
-}
-
-// High-level builder API
-let msg = FipaMessage::request()
-    .sender(agent_id)
-    .receiver(other_agent)
-    .content("What is the weather?")
-    .build();
-```
+- **Message structure standardization**: All agent messages must include
+  FIPA-standard fields such as performative, sender, receiver, and conversation
+  context
+- **Performative semantics**: The system must support standard FIPA
+  performatives (request, inform, propose, etc.) with their defined meanings
+- **Conversation correlation**: Messages must be linkable through conversation
+  IDs and reply relationships to support multi-turn interactions
+- **Developer experience balance**: While maintaining FIPA compliance, provide
+  simplified APIs for common messaging patterns to reduce complexity
 
 ## References
 

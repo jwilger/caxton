@@ -1,10 +1,11 @@
 ---
-title: "ADR-0021: Atomic Primitives Exception for Internal Counters"
+title: "ADR-0021: Atomic Primitives"
 date: 2025-01-31
 status: accepted
 layout: adr
 categories: [Architecture]
 ---
+
 
 ## Status
 
@@ -31,23 +32,11 @@ tracking.
 4. **Public API Protected**: All public methods use domain types (MemoryBytes,
    CpuFuel)
 
-### Current Usage
+### Usage Pattern
 
-```rust
-// Internal struct - not public
-struct ResourceManager {
-    total_memory: Arc<AtomicUsize>,  // Primitive atomic
-    total_fuel: Arc<AtomicU64>,       // Primitive atomic
-}
-
-// Public API - uses domain types
-impl ResourceManager {
-    pub fn get_total_memory_usage(&self) -> MemoryBytes {
-        MemoryBytes::try_new(self.total_memory.load(Ordering::SeqCst))
-            .unwrap_or(MemoryBytes::zero())
-    }
-}
-```
+Atomic primitives remain as private implementation details within domain-aware
+structures, while all public APIs continue to use validated domain types. This
+preserves both performance and type safety.
 
 ## Consequences
 
@@ -65,18 +54,12 @@ impl ResourceManager {
 
 ### Alternative Considered
 
-We considered creating atomic wrapper types:
-
-```rust
-pub struct AtomicMemoryBytes(AtomicUsize);
-pub struct AtomicCpuFuel(AtomicU64);
-```
-
-This was rejected because:
+We considered creating atomic wrapper types that would enforce domain validation
+at the atomic level. This was rejected because:
 
 - Added complexity without significant safety benefit
-- Performance overhead in critical paths
-- Atomics are never exposed publicly anyway
+- Performance overhead in critical paths where atomics are used
+- Atomics are never exposed publicly anyway, so domain boundaries remain intact
 
 ## Guidelines
 

@@ -1,5 +1,5 @@
 ---
-title: "ADR-0019: Primitives Only at System Boundaries"
+title: "ADR-0019: Primitives at Boundaries"
 date: 2025-08-09
 status: accepted
 layout: adr
@@ -29,29 +29,19 @@ All internal APIs must use domain types exclusively.
 
 ### Boundary Examples
 
-#### ✅ Acceptable Primitive Usage
+#### Acceptable Primitive Usage
 
-```rust
-// System boundary - wasmtime API
-store.set_fuel(max_fuel.into_inner())
+- **System Integration**: External library APIs requiring primitive types
+- **Performance-Critical Counters**: Atomic operations with primitives for
+  efficiency
+- **Serialization**: Automatic conversion to primitives during data marshaling
+- **User Input/Output**: Interface boundaries with external systems
 
-// Atomic counters - internal implementation detail
-total_memory: Arc<AtomicUsize>
+#### Unacceptable Primitive Usage
 
-// Serialization boundary
-#[derive(Serialize)]
-pub struct Config {
-    max_agents: MaxAgents, // Serializes to primitive
-}
-```
-
-#### ❌ Unacceptable Primitive Usage
-
-```rust
-// Internal API - must use domain types
-pub fn allocate_memory(&self, agent_id: Uuid, bytes: usize) // WRONG
-pub fn allocate_memory(&self, agent_id: AgentId, bytes: MemoryBytes) // CORRECT
-```
+- **Internal APIs**: All internal function signatures must use domain types
+- **Business Logic**: Domain operations should never operate on raw primitives
+- **Configuration**: Internal configuration should use validated domain types
 
 ## Consequences
 

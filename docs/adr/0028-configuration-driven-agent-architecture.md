@@ -1,10 +1,11 @@
 ---
-title: "ADR-0028: Configuration-Driven Agent Architecture"
+title: "ADR-0028: Config Agents"
 date: 2025-09-09
 status: accepted
 layout: adr
 categories: [Architecture]
 ---
+
 
 ## Status
 
@@ -97,75 +98,19 @@ Ask me to:
 - "Summarize the key metrics in this dataset"
 ```
 
-### Agent Runtime Architecture
+### Architecture Overview
 
-```rust
-pub enum Agent {
-    Config(ConfigAgent),
-    Wasm(WasmAgent),     // For power users
-}
+The system will support two types of agents:
 
-pub struct ConfigAgent {
-    pub metadata: AgentMetadata,
-    pub capabilities: Vec<Capability>,
-    pub tools: Vec<ToolPermission>,
-    pub prompts: PromptSet,
-    pub parameters: HashMap<String, Value>,
-}
+- **Configuration agents**: Defined in markdown files with YAML frontmatter,
+  executed in the host runtime through LLM orchestration
+- **WASM agents**: Compiled modules for power users requiring custom algorithms,
+  executed in sandboxed WebAssembly runtime
 
-// Agents execute in the host runtime, not WASM
-impl ConfigAgentRuntime {
-    pub async fn execute_agent(
-        &self,
-        agent: &ConfigAgent,
-        message: Message
-    ) -> Result<Response> {
-        // 1. Format prompts with message context
-        // 2. Call LLM with system + user prompts
-        // 3. Parse tool calls from LLM response
-        // 4. Execute allowed tools through MCP servers
-        // 5. Return formatted response
-    }
-}
-```
-
-### WebAssembly MCP Tools
-
-The actual functionality comes from WebAssembly MCP servers:
-
-```rust
-pub struct WasmMcpServer {
-    module: WasmModule,
-    sandbox: SecuritySandbox,
-    capabilities: Vec<ToolCapability>,
-}
-
-// MCP servers run in WASM for isolation
-impl WasmMcpServer {
-    pub async fn invoke_tool(
-        &self,
-        tool: &str,
-        params: ToolParameters
-    ) -> Result<ToolResponse> {
-        // Execute in isolated WASM sandbox
-        // Provide controlled access to host APIs
-        // Return sanitized results
-    }
-}
-```
-
-### Power User Path
-
-Users who need custom logic can still write full WASM agents:
-
-```rust
-// For complex cases requiring custom algorithms
-pub struct WasmAgent {
-    module: WasmModule,
-    sandbox: AgentSandbox,
-    resources: ResourceLimits,
-}
-```
+**Security model**: Configuration agents orchestrate through LLM calls while
+actual functionality is provided by WebAssembly MCP servers running in isolated
+sandboxes. This maintains security isolation where it matters most while
+enabling rapid agent development.
 
 ## Consequences
 
@@ -193,28 +138,16 @@ pub struct WasmAgent {
 - Create template library covering 80% of common agent patterns
 - Document clear guidelines for when to use config vs WASM
 
-## Implementation Plan
+## Implementation Approach
 
-### Phase 1: Core Configuration Runtime
+The implementation will focus on three core areas:
 
-1. YAML schema definition and validation
-2. Prompt templating engine
-3. Tool permission system
-4. Agent lifecycle management for config agents
-
-### Phase 2: Developer Experience
-
-1. Agent template library
-2. Hot-reload development server
-3. Configuration validation tools
-4. Migration utilities from WASM patterns
-
-### Phase 3: Advanced Features
-
-1. A/B testing between config variants
-2. Performance monitoring and optimization
-3. Advanced prompt engineering tools
-4. Community marketplace integration
+1. **Configuration Runtime**: YAML schema validation, prompt templating, and
+   tool permission systems
+2. **Developer Experience**: Agent templates, hot-reload development, and
+   migration utilities from WASM patterns
+3. **Community Features**: A/B testing, performance monitoring, and marketplace
+   integration
 
 ## Alignment with Existing ADRs
 

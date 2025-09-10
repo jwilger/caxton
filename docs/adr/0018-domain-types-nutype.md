@@ -1,5 +1,5 @@
 ---
-title: "ADR-0018: Use Domain Types with nutype to Eliminate Primitive Obsession"
+title: "ADR-0018: Domain Types"
 date: 2025-08-09
 status: accepted
 layout: adr
@@ -26,26 +26,24 @@ domain concepts like agent IDs, memory sizes, CPU fuel, etc. This led to:
 We will use the `nutype` crate to create strongly-typed domain types for all
 domain concepts, following the "Parse Don't Validate" paradigm.
 
-### Domain Types Created
+### Domain Types Adopted
 
-- `AgentId` - Wraps UUID for agent identification
-- `AgentName` - Validated string (1-255 chars)
-- `HostFunctionName` - Validated string (1-100 chars)
-- `MemoryBytes` - Validated memory size (max 1GB)
-- `CpuFuel` - Validated CPU units (max 1 billion)
-- `MessageSize` - Validated message size (max 10MB)
-- `MaxAgents` - Validated agent count (1-10000)
-- `MaxImportFunctions` - Validated import count (1-1000)
-- `MessageCount` - Counter with increment operations
-- `ExecutionTime` - Duration wrapper for execution times
+Strong typing replaces primitive obsession for core domain concepts:
 
-### Implementation Patterns
+- **Identity Types**: Agent IDs and names with validation constraints
+- **Resource Types**: Memory sizes, CPU units, and message sizes with limits
+- **Configuration Types**: Agent counts and function limits with boundaries
+- **Operational Types**: Counters and execution times with appropriate semantics
 
-1. Types with validation use `try_new()` returning `Result<T, TError>`
-2. Types without validation use `new()` returning `T`
-3. All types derive appropriate traits: Debug, Clone, Serialize, Deserialize
-4. Helper methods provided for common conversions (e.g.,
-   `MemoryBytes::from_mb()`)
+### Type Construction Patterns
+
+Domain types use consistent construction patterns:
+
+- **Validated Types**: Construction may fail, requiring error handling
+- **Simple Types**: Direct construction for types without validation constraints
+- **Trait Derivation**: Common traits (Debug, Clone, serialization) derived
+  automatically
+- **Conversion Helpers**: Convenience methods for common unit conversions
 
 ## Consequences
 

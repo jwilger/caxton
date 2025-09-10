@@ -1,10 +1,11 @@
 ---
-title: "ADR-0029: FIPA-ACL Lightweight Messaging"
+title: "ADR-0029: FIPA Messaging"
 date: 2025-09-09
 status: accepted
 layout: adr
 categories: [Architecture]
 ---
+
 
 ## Status
 
@@ -40,244 +41,100 @@ We will implement a **lightweight FIPA-ACL messaging system** optimized for
 configuration-driven agents, with capability-based routing and deferred Contract
 Net Protocol implementation.
 
-### Core Message Structure
+### Message Structure Principles
 
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FipaMessage {
-    /// FIPA performative (intent of the message)
-    pub performative: Performative,
+FIPA messages will include:
 
-    /// Sending agent identifier
-    pub sender: AgentId,
+- **Performative**: Communicative intent (REQUEST, INFORM, QUERY, etc.)
+- **Capability-based addressing**: Messages target capabilities, not specific
+  agents
+- **Conversation tracking**: Thread context maintained across exchanges
+- **Standard metadata**: Protocol, language, ontology fields for
+  interoperability
 
-    /// Target capability (not specific agent)
-    pub capability: Capability,
+### Supported Communication Patterns (1.0 Scope)
 
-    /// Message content (natural language or structured data)
-    pub content: MessageContent,
+**Basic Communication**:
 
-    /// Conversation tracking
-    pub conversation_id: ConversationId,
-    pub reply_with: Option<MessageId>,
-    pub in_reply_to: Option<MessageId>,
+- REQUEST: Ask agent to perform action
+- INFORM: Share information
+- QUERY: Ask for information
 
-    /// Protocol and routing metadata
-    pub protocol: Protocol,
-    pub language: String,        // Default: "en"
-    pub ontology: Option<String>,
-    pub reply_by: Option<Instant>,
-}
-```
+**Error Handling**:
 
-### Supported Performatives (1.0 Scope)
+- FAILURE: Indicate action failed
+- NOT_UNDERSTOOD: Message not comprehensible
 
-```rust
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum Performative {
-    // Basic communication
-    REQUEST,        // Ask agent to perform action
-    INFORM,         // Share information
-    QUERY,          // Ask for information
+**Simple Negotiation**:
 
-    // Error handling
-    FAILURE,        // Indicate action failed
-    NOT_UNDERSTOOD, // Message not comprehensible
+- PROPOSE: Suggest action/value
+- ACCEPT_PROPOSAL: Agree to proposal
+- REJECT_PROPOSAL: Decline proposal
 
-    // Simple negotiation (no bidding)
-    PROPOSE,        // Suggest action/value
-    ACCEPT_PROPOSAL, // Agree to proposal
-    REJECT_PROPOSAL, // Decline proposal
-}
-```
+**Deferred Features (Post-1.0)**:
 
-### Deferred Performatives (Post-1.0)
-
-```rust
-// Contract Net Protocol - deferred to post-1.0
-pub enum DeferredPerformatives {
-    CFP,            // Call for Proposals (bidding)
-    CONFIRM,        // Confirm understanding
-    DISCONFIRM,     // Disconfirm understanding
-    CANCEL,         // Cancel previous request
-    SUBSCRIBE,      // Subscribe to notifications
-    // ... other advanced performatives
-}
-```
+- Contract Net Protocol (CFP, bidding)
+- Advanced negotiation patterns (CONFIRM, DISCONFIRM, CANCEL)
+- Subscription-based messaging
 
 ### Capability-Based Routing
 
-Instead of addressing specific agents, messages target capabilities:
+Instead of addressing specific agents, messages target capabilities. Agents
+declare what they can do (e.g., "data-analysis", "report-generation"), and the
+message router finds suitable agents based on requested capabilities rather than
+specific agent identities.
 
-```yaml
-# Example config agent declaring capabilities
----
-name: DataAnalyzer
-capabilities:
-  - data-analysis      # Can analyze datasets
-  - report-generation  # Can create reports
-  - chart-creation     # Can make visualizations
----
-```
+**Routing Strategies**:
 
-```rust
-// Message routing based on capabilities
-pub struct MessageRouter {
-    capability_registry: CapabilityRegistry,
-    conversation_manager: ConversationManager,
-}
-
-impl MessageRouter {
-    pub async fn route_message(&self, msg: FipaMessage) -> Result<Vec<AgentId>> {
-        // Find agents that provide the requested capability
-        let candidates = self.capability_registry
-            .get_agents_with_capability(&msg.capability)
-            .await?;
-
-        // Route to single agent or multiple based on protocol
-        match msg.protocol {
-            Protocol::SingleRecipient => Ok(vec![self.select_best_match(candidates)?]),
-            Protocol::Broadcast => Ok(candidates),
-        }
-    }
-}
-```
+- **Single recipient**: Route to best-matching agent for the capability
+- **Broadcast**: Send to all agents that provide the capability
+- **Load balancing**: Distribute requests across capable agents
 
 ### Configuration Agent Integration
 
-Config agents participate in FIPA messaging through the runtime:
+Configuration-driven agents participate in FIPA messaging through their runtime
+environment. The agent runtime formats incoming FIPA messages into natural
+language prompts that config agents can understand, and parses their responses
+back into FIPA message format.
 
-```rust
-impl ConfigAgentRuntime {
-    pub async fn handle_fipa_message(
-        &self,
-        agent: &ConfigAgent,
-        msg: FipaMessage
-    ) -> Result<Option<FipaMessage>> {
-        // Create context-aware prompt
-        let prompt = self.format_fipa_prompt(agent, &msg)?;
+**Key Integration Points**:
 
-        // Get LLM response
-        let response = self.llm_client.complete(prompt).await?;
-
-        // Parse response into FIPA message (if any)
-        self.parse_fipa_response(response, &msg.conversation_id)
-    }
-
-    fn format_fipa_prompt(&self, agent: &ConfigAgent, msg: &FipaMessage) -> String {
-        format!(
-            "{system_prompt}\n\n\
-            You received a {performative} message about {capability}:\n\
-            Content: {content}\n\n\
-            Respond appropriately using one of: INFORM, REQUEST, QUERY, \
-            PROPOSE, ACCEPT_PROPOSAL, REJECT_PROPOSAL, FAILURE, NOT_UNDERSTOOD\n\n\
-            If you cannot help, respond with FAILURE and explain why.\n\
-            If the message is unclear, respond with NOT_UNDERSTOOD.",
-
-            system_prompt = agent.prompts.system_prompt,
-            performative = msg.performative,
-            capability = msg.capability,
-            content = msg.content
-        )
-    }
-}
-```
+- **Prompt formatting**: Convert FIPA messages to natural language context
+- **Response parsing**: Extract FIPA performatives from agent responses
+- **Conversation continuity**: Maintain thread context across exchanges
+- **Error handling**: Guide agents to use appropriate failure responses
 
 ### Conversation Management
 
-```rust
-#[derive(Debug, Clone)]
-pub struct Conversation {
-    pub id: ConversationId,
-    pub participants: HashSet<AgentId>,
-    pub protocol: Protocol,
-    pub messages: Vec<FipaMessage>,
-    pub state: ConversationState,
-    pub created_at: Instant,
-    pub last_activity: Instant,
-}
+The system maintains conversation context across multi-turn message exchanges.
+Each conversation tracks participants, message history, protocol state, and
+activity timestamps.
 
-pub struct ConversationManager {
-    conversations: DashMap<ConversationId, Conversation>,
-    cleanup_interval: Duration,
-}
+**Core Capabilities**:
 
-impl ConversationManager {
-    pub async fn track_message(&self, msg: &FipaMessage) -> Result<()> {
-        let mut conversation = self.get_or_create_conversation(&msg.conversation_id).await?;
+- **Thread tracking**: Link messages into conversation threads
+- **Participant management**: Track which agents are involved in each
+  conversation
+- **Reply chain linking**: Connect request/response message pairs
+- **Cleanup automation**: Remove stale conversations based on configurable
+  timeouts
+- **State management**: Track conversation progress and protocol state
 
-        // Add participants
-        conversation.participants.insert(msg.sender.clone());
+### Usage Scenarios
 
-        // Link reply chains
-        if let Some(reply_to) = &msg.in_reply_to {
-            conversation.link_reply(msg.clone(), reply_to.clone())?;
-        }
+**Request-Response Pattern**: Agent A sends a REQUEST to the "data-analysis"
+capability asking for Q3 sales analysis. The system routes this to Agent B (a
+data analyzer), which responds with an INFORM message containing the analysis
+results. The conversation_id links these messages into a coherent thread.
 
-        // Update activity timestamp
-        conversation.last_activity = Instant::now();
+**Capability Discovery**: Agents can QUERY capabilities to discover what
+services are available. For example, querying "image-processing" returns
+information about supported formats from all agents that provide image
+processing capabilities.
 
-        Ok(())
-    }
-
-    // Cleanup stale conversations
-    pub async fn cleanup_stale_conversations(&self, max_age: Duration) -> Result<u32> {
-        let cutoff = Instant::now() - max_age;
-        let mut removed = 0;
-
-        self.conversations.retain(|_id, conversation| {
-            if conversation.last_activity < cutoff {
-                removed += 1;
-                false
-            } else {
-                true
-            }
-        });
-
-        Ok(removed)
-    }
-}
-```
-
-### Example Usage Patterns
-
-#### Simple Request-Response
-
-```rust
-// Agent A requests data analysis
-let request = FipaMessage {
-    performative: Performative::REQUEST,
-    sender: agent_a_id,
-    capability: Capability::new("data-analysis"),
-    content: MessageContent::text("Please analyze sales data from Q3"),
-    conversation_id: ConversationId::new(),
-    reply_with: Some(MessageId::new()),
-    // ... other fields
-};
-
-// Agent B (data analyzer) responds
-let response = FipaMessage {
-    performative: Performative::INFORM,
-    sender: agent_b_id,
-    capability: Capability::new("data-analysis"),
-    content: MessageContent::structured(analysis_results),
-    conversation_id: request.conversation_id,
-    in_reply_to: request.reply_with,
-    // ... other fields
-};
-```
-
-#### Capability Discovery
-
-```rust
-// Query what agents can handle image processing
-let query = FipaMessage {
-    performative: Performative::QUERY,
-    capability: Capability::new("image-processing"),
-    content: MessageContent::text("What image formats do you support?"),
-    // ... routing finds all agents with image-processing capability
-};
-```
+**Simple Negotiation**: An agent can PROPOSE a solution or value, and other
+agents can ACCEPT_PROPOSAL or REJECT_PROPOSAL, enabling basic collaborative
+decision-making without complex bidding protocols.
 
 ## Consequences
 

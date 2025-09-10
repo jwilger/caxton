@@ -1,10 +1,11 @@
 ---
-title: "ADR-0027: Single Codebase Architecture"
+title: "ADR-0027: Single Codebase"
 date: 2025-09-08
 status: accepted
 layout: adr
 categories: [Architecture, Organization]
 ---
+
 
 ## Status
 

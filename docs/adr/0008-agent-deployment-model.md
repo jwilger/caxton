@@ -1,5 +1,5 @@
 ---
-title: "ADR-0008: Agent Deployment Model"
+title: "ADR-0008: Agent Deployment"
 date: 2025-08-03
 status: proposed
 layout: adr
@@ -146,25 +146,17 @@ enum DeploymentState {
 
 ### 5. Rollback Mechanism
 
-Instant rollback with state preservation:
+Instant rollback capability with state preservation:
 
-```rust
-async fn rollback_deployment(deployment_id: &str) -> Result<()> {
-    // 1. Stop routing messages to new version
-    router.disable_agent(deployment_id).await?;
+- **Traffic diversion**: Immediately stop routing messages to problematic
+  version
+- **Message draining**: Complete processing of in-flight messages with timeout
+- **Previous version restoration**: Restore message routing to last known good
+  version
+- **Resource cleanup**: Clean up failed deployment resources and state
 
-    // 2. Drain in-flight messages (max 30s)
-    drain_messages(deployment_id).await?;
-
-    // 3. Restore previous version routing
-    router.enable_previous_version(deployment_id).await?;
-
-    // 4. Clean up failed deployment
-    cleanup_deployment(deployment_id).await?;
-
-    Ok(())
-}
-```
+Rollback operations complete in seconds, minimizing impact of problematic
+deployments.
 
 ## Consequences
 
@@ -205,82 +197,50 @@ async fn rollback_deployment(deployment_id: &str) -> Result<()> {
 - Backward-compatible message formats
 - State versioning and migration tools
 
-## Deployment Examples
+## User Experience Principles
 
-### Simple Development Deployment
+**Simple Development Workflow**:
 
-```bash
-caxton deploy agent processor.wasm
-✓ Validation passed (0.8s)
-✓ Agent deployed (0.2s)
-→ Agent ID: proc-v2-7f8d9
-→ Receiving messages
-```
+- Single-command deployment for development scenarios
+- Fast validation and deployment feedback (sub-second for simple agents)
+- Clear success/failure indicators with actionable error messages
 
-### Production Canary Deployment
+**Production Safety**:
 
-```bash
-caxton deploy agent processor.wasm --strategy canary
-✓ Validation passed (0.8s)
-✓ Canary 5% started (0.2s)
-→ Monitoring for 5 minutes...
-  ✓ Error rate: 0.01% (threshold: 1%)
-  ✓ P99 latency: 12ms (threshold: 100ms)
-✓ Promoting to 25%...
-```
+- Progressive rollout strategies with automatic monitoring
+- Real-time health checks and performance metrics
+- Automatic rollback triggers based on configurable thresholds
 
-### Emergency Rollback
+**Emergency Response**:
 
-```bash
-caxton rollback proc-v2-7f8d9
-✓ Messages diverted (0.1s)
-✓ Draining in-flight (2.3s)
-✓ Previous version restored (0.1s)
-→ Rollback complete in 2.5s
-```
+- Instant rollback capability for critical issues
+- Clear status reporting throughout rollback process
+- Minimal downtime (target: under 3 seconds for rollback completion)
 
 ## Observability
 
-Every deployment emits:
+Every deployment provides comprehensive observability:
 
-**Metrics**:
+**Metrics Collection**:
 
-```text
-caxton_deployment_duration_seconds{strategy="canary", status="success"}
-caxton_deployment_validation_time_seconds{stage="sandbox"}
-caxton_deployment_rollback_total{reason="high_error_rate"}
-caxton_agent_version_active{agent="processor", version="v2"}
-```
+- Deployment duration and success rates by strategy type
+- Validation timing for each pipeline stage
+- Rollback frequency and triggering conditions
+- Active agent versions and deployment status
 
-**Traces**:
+**Distributed Tracing**:
 
-```text
-deployment.create (25.3s)
-├── validation.static (0.3s)
-├── validation.sandbox (2.1s)
-├── validation.contracts (0.5s)
-├── canary.5_percent (300s)
-├── canary.25_percent (600s)
-└── deployment.finalize (0.2s)
-```
+- End-to-end deployment operation tracing
+- Validation pipeline stage instrumentation
+- Canary rollout phase tracking with timing data
+- Rollback operation trace correlation
 
-**Structured Logs**:
+**Structured Logging**:
 
-```json
-{
-  "timestamp": "2024-11-20T10:30:00Z",
-  "level": "info",
-  "deployment_id": "dep-123",
-  "agent_id": "processor",
-  "version": "v2",
-  "stage": "canary",
-  "percentage": 25,
-  "metrics": {
-    "error_rate": 0.01,
-    "p99_latency_ms": 12
-  }
-}
-```
+- Deployment lifecycle events with full context
+- Stage transitions with timing and health metrics
+- Error conditions with actionable diagnostic information
+- Audit trail for compliance and debugging
 
 ## Related Decisions
 

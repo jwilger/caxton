@@ -1,5 +1,5 @@
 ---
-title: "ADR-0005: MCP for External Tools"
+title: "ADR-0005: MCP External Tools"
 date: 2025-01-31
 status: proposed
 layout: adr
@@ -89,48 +89,14 @@ Key aspects:
 - **Pros**: Standard for WASM system access
 - **Cons**: Limited to system calls, not general tools
 
-## Implementation Example
+## Integration Model
 
-```rust
-// Host provides MCP access to agents
-impl HostFunctions for CaxtonHost {
-    async fn mcp_call(
-        &self,
-        agent_id: AgentId,
-        tool_name: &str,
-        params: Value,
-    ) -> Result<Value, ToolError> {
-        // Record tool invocation event
-        self.events.record(Event::ToolInvoked {
-            agent: agent_id,
-            tool: tool_name.to_string(),
-            params: params.clone(),
-        });
+The MCP integration follows a capability-based security model where:
 
-        // Check permissions
-        if !self.can_access_tool(agent_id, tool_name) {
-            return Err(ToolError::Unauthorized);
-        }
-
-        // Execute tool
-        let result = self.mcp_client.call(tool_name, params).await?;
-
-        // Record completion event
-        self.events.record(Event::ToolCompleted {
-            agent: agent_id,
-            tool: tool_name.to_string(),
-            result: result.clone(),
-        });
-
-        Ok(result)
-    }
-}
-
-// Agent-side usage
-let weather = mcp_call("weather", json!({
-    "location": "Seattle"
-})).await?;
-```
+- Agents request tools through a standardized interface
+- The host manages authentication, authorization, and event recording
+- Tools are isolated from agents through the protocol boundary
+- All tool interactions are observable through structured events
 
 ## Security Model
 

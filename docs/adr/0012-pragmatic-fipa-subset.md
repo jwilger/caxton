@@ -1,5 +1,5 @@
 ---
-title: "ADR-0012: Pragmatic FIPA Subset"
+title: "ADR-0012: Pragmatic FIPA"
 date: 2025-08-08
 status: accepted
 layout: adr
@@ -155,37 +155,12 @@ stateless WebAssembly modules. **Why**: Container orchestration handles
 - Still message-passing coordination
 - Still using proven interaction patterns
 
-## Implementation Example
+## Conceptual Comparison
 
-### What FIPA Wants
-
-```xml
-<fipa-message ontology="logistics-ontology" language="fipa-sl">
-  <performative>REQUEST</performative>
-  <content>
-    ((action
-      (agent-identifier :name dispatcher@platform)
-      (deliver
-        :item (package :id pkg-123 :weight 5kg)
-        :destination (location :address "123 Main St"))))
-  </content>
-</fipa-message>
-```
-
-### What We Actually Do
-
-```json
-{
-  "performative": "request",
-  "sender": "dispatcher",
-  "receiver": "delivery-agent",
-  "content": {
-    "action": "deliver",
-    "package_id": "pkg-123",
-    "destination": "123 Main St"
-  }
-}
-```
+Our pragmatic approach chooses JSON over FIPA's semantic languages (SL, KIF) and
+complex ontologies. This results in significantly simpler message formats that
+developers can immediately understand and work with using standard tooling,
+while preserving the core communication patterns that make FIPA valuable.
 
 ## Guidelines for Future Decisions
 

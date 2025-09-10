@@ -1,10 +1,11 @@
 ---
-title: "ADR-0026: Simplified Management API Protocol"
+title: "ADR-0026: Management API"
 date: 2025-09-08
 status: accepted
 layout: adr
 categories: [Architecture, Technology]
 ---
+
 
 ## Status
 

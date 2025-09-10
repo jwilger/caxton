@@ -137,23 +137,10 @@ If the answer to #1 is yes, it doesn't belong in core.
 
 ## Example: Workflow Orchestration
 
-Users want workflow orchestration. Instead of building it into core:
-
-```rust
-// This is an agent pattern, not core
-pub struct WorkflowEngine {
-    caxton: Arc<dyn AgentHost>,
-}
-
-impl WorkflowEngine {
-    pub async fn execute(&self, workflow: Workflow) {
-        // Uses Caxton server APIs to:
-        // - Spawn coordinator agent
-        // - Route messages based on workflow
-        // - Track state through events
-    }
-}
-```
+Users want workflow orchestration. Instead of building it into core, workflow
+engines would be implemented as agents that use the server's basic capabilities
+(message routing, agent spawning, event tracking) to provide higher-level
+orchestration patterns.
 
 ## References
 

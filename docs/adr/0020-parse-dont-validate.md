@@ -1,10 +1,11 @@
 ---
-title: "ADR-0020: Parse Don't Validate Paradigm"
+title: "ADR-0020: Parse Don't Validate"
 date: 2025-01-31
 status: accepted
 layout: adr
 categories: [Architecture]
 ---
+
 
 ## Status
 
@@ -27,31 +28,9 @@ Adopt the "Parse Don't Validate" paradigm:
 2. Use types that make invalid states unrepresentable
 3. Once parsed into a domain type, the value is guaranteed valid
 
-### Implementation Strategy
-
-#### Construction Patterns
-
-```rust
-// Types with validation - can fail
-let name = AgentName::try_new(input)?; // Validates 1-255 chars
-
-// Types without validation - always succeed
-let id = AgentId::new(uuid); // UUID is always valid
-
-// After construction, the value is guaranteed valid
-process_agent(name); // No validation needed here
-```
-
-#### Validation Rules in Types
-
-```rust
-#[nutype(
-    validate(len_char_min = 1, len_char_max = 255),
-    derive(Debug, Clone, Serialize, Deserialize),
-)]
-pub struct AgentName(String);
-// Invalid AgentName cannot exist after construction
-```
+This paradigm shift moves validation from usage sites to construction time,
+ensuring that invalid data cannot exist within the system once it passes the
+initial parsing phase.
 
 ## Consequences
 
@@ -69,27 +48,15 @@ pub struct AgentName(String);
 - **Type Proliferation**: Need many specific types instead of primitives
 - **Learning Curve**: Developers must understand the paradigm
 
-### Examples
+### Conceptual Change
 
-#### Before (Validate)
+**Before**: Functions validated inputs at every usage site, leading to scattered
+validation logic and the possibility of invalid states existing throughout the
+system.
 
-```rust
-fn process_memory(bytes: usize) -> Result<()> {
-    if bytes > MAX_MEMORY {
-        return Err("Invalid memory size");
-    }
-    // Use bytes...
-}
-```
-
-#### After (Parse)
-
-```rust
-fn process_memory(bytes: MemoryBytes) -> Result<()> {
-    // bytes is guaranteed valid, just use it
-    allocate(bytes);
-}
-```
+**After**: Data is parsed into validated domain types at system boundaries. Once
+constructed, these types guarantee validity, eliminating the need for repeated
+validation checks.
 
 ## References
 

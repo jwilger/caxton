@@ -1,10 +1,11 @@
 ---
-title: "ADR-0030: Embedded Memory System with Pluggable Backends"
+title: "ADR-0030: Embedded Memory"
 date: 2025-09-09
 status: accepted
 layout: adr
 categories: [Architecture]
 ---
+
 
 ## Status
 
@@ -48,300 +49,88 @@ backend and optional external backends for scale.
 
 ### Default Implementation: SQLite + Candle
 
-**Core Architecture:**
+The embedded memory backend combines SQLite for structured storage with local
+embedding models for semantic search. This provides a zero-configuration
+solution that works immediately without external dependencies.
 
-```rust
-pub trait MemoryBackend: Send + Sync {
-    async fn store_entity(&self, entity: Entity) -> Result<EntityId>;
-    async fn create_relation(&self, relation: Relation) -> Result<RelationId>;
-    async fn semantic_search(&self, query: &str, limit: usize) -> Result<Vec<Entity>>;
-    async fn graph_traversal(&self, start: EntityId, depth: u32) -> Result<Graph>;
-    async fn cleanup_stale(&self, max_age: Duration) -> Result<u32>;
-}
+**Storage Model**:
 
-#[derive(Clone)]
-pub struct EmbeddedMemoryBackend {
-    db: Arc<SqlitePool>,
-    embeddings: Arc<RwLock<EmbeddingIndex>>,
-    encoder: Arc<SentenceTransformer>,
-}
-```
-
-**Storage Schema:**
-
-```sql
--- Core entities table
-CREATE TABLE entities (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    observations TEXT NOT NULL,  -- JSON array of strings
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    valid_from INTEGER,
-    valid_to INTEGER,
-    version INTEGER DEFAULT 1,
-    changed_by TEXT
-);
-
--- Entity relationships
-CREATE TABLE relations (
-    id TEXT PRIMARY KEY,
-    from_entity TEXT NOT NULL REFERENCES entities(id),
-    to_entity TEXT NOT NULL REFERENCES entities(id),
-    relation_type TEXT NOT NULL,
-    strength REAL DEFAULT 1.0,
-    confidence REAL DEFAULT 1.0,
-    metadata TEXT,  -- JSON object
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    valid_from INTEGER,
-    valid_to INTEGER,
-    UNIQUE(from_entity, to_entity, relation_type)
-);
-
--- Vector embeddings (using sqlite-vec extension)
-CREATE VIRTUAL TABLE entity_embeddings USING vec0(
-    entity_id TEXT PRIMARY KEY,
-    embedding FLOAT[384]  -- All-MiniLM-L6-v2 dimensions
-);
-
--- Indexes for performance
-CREATE INDEX idx_entities_type ON entities(entity_type);
-CREATE INDEX idx_entities_created ON entities(created_at);
-CREATE INDEX idx_relations_from ON relations(from_entity);
-CREATE INDEX idx_relations_to ON relations(to_entity);
-CREATE INDEX idx_relations_type ON relations(relation_type);
-```
+- **Entities**: Named knowledge items with typed observations and temporal
+  validity
+- **Relations**: Typed connections between entities with strength and confidence
+  scores
+- **Embeddings**: Vector representations for semantic similarity search
+- **Temporal tracking**: Version history and validity periods for knowledge
+  evolution
 
 ### Local Embedding Model
 
-#### Model Selection: All-MiniLM-L6-v2
-
-- Size: ~23MB ONNX model
-- Dimensions: 384
-- Performance: ~1000 embeddings/second on CPU
-- Quality: Excellent for semantic similarity
-
-```rust
-pub struct SentenceTransformer {
-    session: OrtSession,
-    tokenizer: Tokenizer,
-    max_length: usize,
-}
-
-impl SentenceTransformer {
-    pub fn new() -> Result<Self> {
-        let model_bytes = include_bytes!("../models/all-MiniLM-L6-v2.onnx");
-        let session = OrtSession::from_bytes(model_bytes)?;
-        let tokenizer = Tokenizer::from_pretrained("sentence-transformers/all-MiniLM-L6-v2")?;
-
-        Ok(Self {
-            session,
-            tokenizer,
-            max_length: 512,
-        })
-    }
-
-    pub async fn encode(&self, texts: &[String]) -> Result<Vec<Vec<f32>>> {
-        // Tokenize input texts
-        let inputs = self.tokenizer.encode_batch(texts, true)?;
-
-        // Run inference
-        let outputs = self.session.run(inputs).await?;
-
-        // Extract embeddings with pooling
-        Ok(self.mean_pooling(outputs))
-    }
-}
-```
+**Model Selection**: All-MiniLM-L6-v2 provides the optimal balance of size
+(~23MB), performance (~1000 embeddings/second on CPU), and quality for semantic
+similarity tasks. The 384-dimensional embeddings enable effective semantic
+search while maintaining reasonable resource requirements.
 
 ### Agent Memory Integration
 
-Config agents access memory through their runtime context:
+Configuration agents can be enabled with memory capabilities through their YAML
+configuration. Memory-enabled agents automatically:
 
-```yaml
-# Agent configuration
----
-name: CustomerSupportAgent
-memory_enabled: true
-memory_scope: workspace  # 'global', 'workspace', or 'agent-only'
-memory_cleanup: "30d"    # Cleanup entities older than 30 days
-system_prompt: |
-  You are a customer support agent. Before responding:
+1. **Search** memory for relevant context before responding
+2. **Incorporate** past solutions and patterns into their responses
+3. **Store** new knowledge from successful interactions
+4. **Maintain** conversation history and learned patterns
 
-  1. Search your memory for similar customer issues
-  2. Use past solutions to inform your response
-  3. Store new solutions for future reference
+**Memory Scopes**:
 
-  Your memory contains customer interactions, solutions, and patterns.
----
-```
+- **Agent-only**: Private memory per agent instance
+- **Workspace**: Shared memory within a workspace or project
+- **Global**: System-wide shared knowledge base
 
-**Runtime Integration:**
-
-```rust
-impl ConfigAgentRuntime {
-    pub async fn execute_with_memory(
-        &self,
-        agent: &ConfigAgent,
-        message: Message
-    ) -> Result<Response> {
-        // 1. Search memory for relevant context
-        let context = self.memory
-            .semantic_search(&message.content, 5)
-            .await?;
-
-        // 2. Format prompt with memory context
-        let prompt = self.format_prompt_with_memory(agent, &message, &context)?;
-
-        // 3. Get LLM response
-        let response = self.llm_client.complete(prompt).await?;
-
-        // 4. Extract and store new knowledge
-        if let Some(knowledge) = self.extract_knowledge(&response)? {
-            self.memory.store_entity(knowledge).await?;
-        }
-
-        Ok(response)
-    }
-
-    async fn extract_knowledge(&self, response: &str) -> Result<Option<Entity>> {
-        // Use LLM to extract structured knowledge from responses
-        let extraction_prompt = format!(
-            "Extract key facts and solutions from this response as structured data:\n\n{}",
-            response
-        );
-
-        let extracted = self.llm_client.complete(extraction_prompt).await?;
-        self.parse_knowledge_extraction(extracted)
-    }
-}
-```
+**Automatic Knowledge Management**: The runtime extracts valuable information
+from agent interactions and stores it for future reference, enabling agents to
+learn and improve over time without manual knowledge engineering.
 
 ### Pluggable Backend Architecture
 
-**Configuration-Based Backend Selection:**
+The memory system supports multiple backend implementations through
+configuration:
 
-```yaml
-# caxton.yaml - Default (embedded)
-memory:
-  backend: embedded
-  settings:
-    storage_path: "./caxton-memory.db"
-    embedding_model: "all-MiniLM-L6-v2"
-    cleanup_interval: "24h"
-    max_entities: 100000
+**Embedded Backend (Default)**:
 
----
-# caxton.yaml - External Neo4j
-memory:
-  backend: neo4j
-  settings:
-    uri: "bolt://localhost:7687"
-    username: "neo4j"
-    password: "${NEO4J_PASSWORD}"
-    database: "caxton"
+- SQLite + local embedding model
+- Zero external dependencies
+- Suitable for single-node deployments up to ~100K entities
 
----
-# caxton.yaml - External Qdrant
-memory:
-  backend: qdrant
-  settings:
-    url: "http://localhost:6333"
-    collection: "caxton-memory"
-    vector_size: 384
-```
+**External Backends (Optional)**:
 
-**Backend Implementation:**
+- **Neo4j**: Graph database for complex relationship queries
+- **Qdrant**: Dedicated vector database for high-performance semantic search
+- **Custom backends**: Pluggable architecture allows additional implementations
 
-```rust
-pub enum MemoryBackend {
-    Embedded(EmbeddedMemoryBackend),
-    Neo4j(Neo4jBackend),
-    Qdrant(QdrantBackend),
-}
-
-impl MemoryBackend {
-    pub async fn from_config(config: MemoryConfig) -> Result<Self> {
-        match config.backend.as_str() {
-            "embedded" => {
-                let backend = EmbeddedMemoryBackend::new(config.settings).await?;
-                Ok(MemoryBackend::Embedded(backend))
-            }
-            "neo4j" => {
-                let backend = Neo4jBackend::new(config.settings).await?;
-                Ok(MemoryBackend::Neo4j(backend))
-            }
-            "qdrant" => {
-                let backend = QdrantBackend::new(config.settings).await?;
-                Ok(MemoryBackend::Qdrant(backend))
-            }
-            _ => Err(MemoryError::UnsupportedBackend(config.backend)),
-        }
-    }
-}
-```
+**Backend Selection**: Configured through `caxton.yaml` with backend-specific
+settings. System automatically initializes the appropriate backend
+implementation at startup.
 
 ### Performance Characteristics
 
-**Embedded SQLite + Candle:**
+**Embedded Performance**:
 
-- **Semantic search**: 10-50ms for 100K entities
-- **Graph traversal**: 5-20ms for typical 3-hop queries
-- **Storage overhead**: ~1KB per entity + 1.5KB for embedding
-- **Memory usage**: ~200MB for model + active index
-- **Startup time**: ~100ms to load embedding model
+- Semantic search: 10-50ms for 100K entities
+- Graph traversal: 5-20ms for typical queries
+- Memory usage: ~200MB baseline for embedding model
+- Storage: ~2.5KB per entity (including embedding)
 
-**Scaling Thresholds:**
+**Scaling Guidance**:
 
-- **Embedded works well up to**: 100K entities, 1M relations
-- **Consider external backends beyond**: 1M entities, 10M relations
+- **Embedded backend**: Effective up to ~100K entities, 1M relations
+- **External backends**: Recommended beyond 1M entities for optimal performance
 
 ### Migration and Data Portability
 
-**Export/Import Support:**
-
-```rust
-pub struct MemoryExporter {
-    backend: Arc<dyn MemoryBackend>,
-}
-
-impl MemoryExporter {
-    pub async fn export_to_json(&self, path: &Path) -> Result<()> {
-        let entities = self.backend.get_all_entities().await?;
-        let relations = self.backend.get_all_relations().await?;
-
-        let export = MemoryExport {
-            version: "1.0",
-            created_at: Utc::now(),
-            entities,
-            relations,
-        };
-
-        serde_json::to_writer_pretty(File::create(path)?, &export)?;
-        Ok(())
-    }
-
-    pub async fn import_from_json(&self, path: &Path) -> Result<ImportResult> {
-        let export: MemoryExport = serde_json::from_reader(File::open(path)?)?;
-
-        // Validate compatibility
-        self.validate_import(&export)?;
-
-        // Import entities and relations
-        for entity in export.entities {
-            self.backend.store_entity(entity).await?;
-        }
-
-        for relation in export.relations {
-            self.backend.create_relation(relation).await?;
-        }
-
-        Ok(ImportResult::success(export.entities.len(), export.relations.len()))
-    }
-}
-```
+The memory system provides standard JSON export/import functionality for
+migrating between backend implementations or creating backups. This ensures data
+portability and enables smooth transitions from embedded to external backends as
+systems scale.
 
 ## Consequences
 

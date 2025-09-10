@@ -1,5 +1,5 @@
 ---
-title: "ADR-0011: Capability Registration in Code"
+title: "ADR-0011: Capability Registration"
 date: 2025-08-08
 status: accepted
 layout: adr
@@ -86,16 +86,9 @@ The manifest schema enforces this with `additionalProperties: false`.
 
 ## Implementation
 
-```rust
-impl Agent for MyAgent {
-    async fn initialize(&mut self, ctx: &AgentContext) -> Result<()> {
-        // Capabilities registered here, not in manifest
-        ctx.register_capability("data_processing").await?;
-        ctx.register_capability("ml_inference").await?;
-        Ok(())
-    }
-}
-```
+Capabilities will be registered programmatically during agent initialization
+rather than declared in manifest files. This ensures that capability
+registration is coupled with the actual agent implementation code.
 
 ## References
 
