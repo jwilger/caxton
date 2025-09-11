@@ -61,152 +61,13 @@ Expected output:
 Caxton 1.0.0 (embedded memory: SQLite + all-MiniLM-L6-v2)
 ```
 
-### Container Installation
-
-#### Docker
-
-```bash
-# Run Caxton in Docker (embedded memory persisted)
-docker run -d \
-  --name caxton \
-  -p 8080:8080 \
-  -p 9090:9090 \
-  -v caxton-data:/data \
-  caxton/caxton:latest
-
-# Verify container is running
-docker ps | grep caxton
-```
-
-#### Docker Compose
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-services:
-  caxton:
-    image: caxton/caxton:latest
-    ports:
-      - "8080:8080"
-      - "9090:9090"
-    volumes:
-      - caxton-data:/data
-      - ./config.yaml:/etc/caxton/config.yaml:ro
-    environment:
-      - CAXTON_CONFIG=/etc/caxton/config.yaml
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "caxton", "health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  caxton-data:
-    driver: local
-```
-
-Start with:
-
-```bash
-docker-compose up -d
-```
-
-#### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: caxton
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: caxton
-  template:
-    metadata:
-      labels:
-        app: caxton
-    spec:
-      containers:
-      - name: caxton
-        image: caxton/caxton:latest
-        ports:
-        - containerPort: 8080
-        - containerPort: 9090
-        volumeMounts:
-        - name: caxton-data
-          mountPath: /data
-        - name: config
-          mountPath: /etc/caxton/config.yaml
-          subPath: config.yaml
-        env:
-        - name: CAXTON_CONFIG
-          value: /etc/caxton/config.yaml
-        resources:
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-          requests:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-      volumes:
-      - name: caxton-data
-        persistentVolumeClaim:
-          claimName: caxton-pvc
-      - name: config
-        configMap:
-          name: caxton-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: caxton-service
-spec:
-  selector:
-    app: caxton
-  ports:
-  - name: http
-    port: 80
-    targetPort: 8080
-  - name: metrics
-    port: 9090
-    targetPort: 9090
-  type: LoadBalancer
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: caxton-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-```
-
 ### Building from Source
 
 For development or customization:
 
 ```bash
 # Prerequisites
-- Rust 1.70+
+- Rust 1.89+
 - Git
 
 # Clone repository
@@ -637,11 +498,6 @@ caxton logs --export logs.json --since 1h
 ```bash
 # Remove from system PATH
 sudo rm /usr/local/bin/caxton
-
-# Remove package manager installation
-brew uninstall caxton           # Homebrew
-sudo apt remove caxton          # Ubuntu/Debian
-sudo yum remove caxton          # RHEL/CentOS
 ```
 
 ### Remove Configuration and Data
@@ -659,19 +515,6 @@ rm -rf ~/.local/share/caxton
 # Remove service files
 sudo rm /etc/systemd/system/caxton.service
 sudo systemctl daemon-reload
-```
-
-### Remove Container Installation
-
-```bash
-# Stop and remove Docker containers
-docker-compose down -v
-
-# Remove Docker images
-docker rmi caxton/caxton:latest
-
-# Remove Kubernetes resources
-kubectl delete -f caxton-k8s.yaml
 ```
 
 ## Scaling and Production Considerations
