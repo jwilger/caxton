@@ -8,8 +8,8 @@
       <img src="{{ '/assets/img/logo.svg' | relative_url }}"
            alt=""
            class="navbar__logo"
-           width="32"
-           height="32"
+           width="48"
+           height="48"
            loading="eager">
       <span class="navbar__title">Caxton</span>
     </a>
@@ -92,7 +92,7 @@
   text-decoration: none;
   color: var(--text-primary);
   font-weight: var(--font-semibold);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   transition: opacity var(--transition-fast);
 
   &:hover {
@@ -108,8 +108,8 @@
 }
 
 .navbar__logo {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   display: block;
 }
 
@@ -175,7 +175,7 @@
 .navbar__menu {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
+  gap: var(--space-12);
 
   @media (max-width: 768px) {
     position: fixed;
