@@ -149,10 +149,24 @@ a:not(.btn):not(.nav-link):not(.link-card):focus {
     z-index: 1;
 }
 
-.brand-text {
-    font-size: 1.25rem;
+.brand-text,
+.nav-title {
+    font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.nav-menu {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    display: inline-block;
 }
 
 .nav-links {
