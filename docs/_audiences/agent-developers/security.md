@@ -451,11 +451,11 @@ SecurityEvent::SuspiciousActivity { agent_id, activity_pattern }
 Set up security monitoring:
 
 ```yaml
-# Prometheus metrics
+# Prometheus metrics (example values shown)
 caxton_security_events_total{type="unauthorized_access"} 0
 caxton_security_events_total{type="permission_escalation"} 0
 caxton_agent_permissions_violations_total 0
-caxton_api_authentication_failures_total 2
+caxton_api_authentication_failures_total 2  # Example count, not baseline
 
 # Grafana alerts
 - alert: UnauthorizedAccessAttempt

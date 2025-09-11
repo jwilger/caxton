@@ -151,6 +151,11 @@ cargo clippy -- -W clippy::all -W clippy::pedantic
 
 ### Custom Clippy Configuration
 
+The project uses a `.clippy.toml` file placed in the repository root
+(alongside `Cargo.toml`) to configure clippy rules. This file integrates
+automatically with the development setup when running `cargo clippy` or using
+the bacon continuous testing system.
+
 Project `.clippy.toml` includes strict rules:
 
 ```toml

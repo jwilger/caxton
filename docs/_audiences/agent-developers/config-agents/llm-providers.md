@@ -346,7 +346,11 @@ llm:
     openai:
       use_streaming: true         # Stream responses
       parallel_requests: 3        # Max concurrent requests
-      adaptive_timeout: true      # Adjust timeout based on request size
+      adaptive_timeout:           # Adjust timeout based on request size
+        enabled: true
+        formula: "timeout = base_timeout + 0.5s * (request_tokens / 1000)"  # Example formula
+        min_timeout: 10s           # Minimum timeout
+        max_timeout: 120s          # Maximum timeout
 ```
 
 ## Monitoring and Debugging - **Intermediate**

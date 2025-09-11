@@ -69,6 +69,19 @@ pub enum AgentState {
     Failed { error: AgentError },
 }
 
+// Agent operations enumerated for type safety
+#[derive(Debug, Clone, PartialEq)]
+pub enum AgentOperation {
+    Load,
+    Start,
+    Stop,
+    Restart,
+    Deploy,
+    Undeploy,
+    SendMessage,
+    GetStatus,
+}
+
 // Product type: Deployment has all these properties
 #[derive(Debug, Clone)]
 pub struct Deployment {
@@ -375,6 +388,25 @@ pub enum CaxtonError {
     Security(#[from] SecurityError),
 }
 
+// Domain enums for error context
+#[derive(Debug, Clone, PartialEq)]
+pub enum ResourceType {
+    Memory,
+    CpuFuel,
+    ImportCount,
+    ExecutionTime,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WasmExecutionFailure {
+    OutOfFuel,
+    OutOfMemory,
+    InvalidInstruction,
+    HostFunctionError,
+    ModuleCompilationFailed,
+    ModuleInstantiationFailed,
+}
+
 // Domain-specific error types with context
 #[derive(Debug, Error)]
 pub enum AgentError {
@@ -384,22 +416,42 @@ pub enum AgentError {
     #[error("Agent {agent_id} in invalid state {current_state} for operation {operation}")]
     InvalidState {
         agent_id: AgentId,
-        current_state: String,
-        operation: String,
+        current_state: AgentState,
+        operation: AgentOperation,
     },
 
-    #[error("Agent {agent_id} exceeded {resource_type} limit: {details}")]
+    #[error("Agent {agent_id} exceeded {resource_type:?} limit: {details}")]
     ResourceLimitExceeded {
         agent_id: AgentId,
-        resource_type: String,
+        resource_type: ResourceType,
         details: String,
     },
 
-    #[error("WASM execution failed for agent {agent_id}: {reason}")]
+    #[error("WASM execution failed for agent {agent_id}: {reason:?}")]
     WasmExecutionFailed {
         agent_id: AgentId,
-        reason: String,
+        reason: WasmExecutionFailure,
     },
+}
+
+// Domain enums for routing error context
+#[derive(Debug, Clone, PartialEq)]
+pub enum DeliveryFailureReason {
+    AgentUnavailable,
+    NetworkTimeout,
+    MessageTooLarge,
+    ConversationClosed,
+    SecurityPolicyViolation,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MessageField {
+    Sender,
+    Receiver,
+    Performative,
+    ContentType,
+    Body,
+    ConversationId,
 }
 
 #[derive(Debug, Error)]
@@ -407,15 +459,15 @@ pub enum RoutingError {
     #[error("No route found for capability {capability}")]
     NoCapabilityProviders { capability: Capability },
 
-    #[error("Message {message_id} delivery failed: {reason}")]
+    #[error("Message {message_id} delivery failed: {reason:?}")]
     DeliveryFailed {
         message_id: MessageId,
-        reason: String,
+        reason: DeliveryFailureReason,
     },
 
-    #[error("Invalid message format in field {field}: {details}")]
+    #[error("Invalid message format in field {field:?}: {details}")]
     InvalidMessageFormat {
-        field: String,
+        field: MessageField,
         details: String,
     },
 

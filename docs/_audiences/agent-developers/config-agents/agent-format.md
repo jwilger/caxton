@@ -28,6 +28,10 @@ agent-name.md
 
 ## YAML Schema Reference - **Beginner**
 
+> **Note**: The following shows schema documentation mixing type annotations
+> (e.g., `string`, `boolean`) with example values (e.g., `capability1`,
+> `data_analysis`). See the examples section below for complete working YAML.
+
 ### Required Fields
 
 ```yaml
@@ -35,8 +39,12 @@ agent-name.md
 name: string                    # Agent identifier (required)
 version: string                 # Semantic version (required)
 description: string             # Brief agent purpose (required)
-capabilities: array[string]     # Capability declarations (required)
-tools: array[string]           # Tool permission list (required)
+capabilities:                   # Capability declarations (required)
+  - capability1                 # List of capability names
+  - capability2
+tools:                         # Tool permission list (required)
+  - tool1                       # List of tool names
+  - tool2
 llm:                           # LLM configuration (required)
   provider: string             # LLM provider
   model: string               # Model name
@@ -53,11 +61,13 @@ version: string                # Semantic versioning (e.g., "1.0.0")
 description: string            # Brief agent purpose (1-2 sentences)
 
 # Capability System (Required)
-capabilities: array[string]     # High-level capabilities
-  - capability_name             # e.g., "data_analysis"
+capabilities:                   # High-level capabilities
+  - capability_name             # List of capability names
+  - data_analysis               # e.g., "data_analysis"
 
-tools: array[string]           # Specific tools to access
-  - tool_name                   # e.g., "csv_reader"
+tools:                         # Specific tools to access
+  - tool_name                   # List of tool names
+  - csv_reader                  # e.g., "csv_reader"
 
 # LLM Configuration (Required)
 llm:

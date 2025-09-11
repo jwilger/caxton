@@ -43,6 +43,15 @@ Expected response:
 }
 ```
 
+### Port Usage Reference
+
+Caxton uses specific ports for different services:
+
+- **Port 8080**: Main REST API server (all agent management and messaging)
+- **Port 9090**: Prometheus metrics endpoint (monitoring and observability)
+
+All examples in this guide use port 8080 for the main API unless specifically noted.
+
 ## Configuration Agent API Patterns
 
 ### 1. Deploy a Configuration Agent
