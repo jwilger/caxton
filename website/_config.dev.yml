@@ -1,0 +1,67 @@
+# Jekyll Local Development Configuration Override
+# This file overrides website/_config.yml for local development
+# Usage: bundle exec jekyll serve --config _config.yml,_config.dev.yml
+
+# Override production settings for local development
+url: "http://localhost:4000"
+baseurl: ""  # Empty baseurl for local development
+
+# GitHub Pages settings - disabled for local
+repository: ""
+github_username: ""
+
+# Development-specific settings
+incremental: true
+livereload: true
+livereload_port: 35729
+
+# Show future posts and drafts in development
+future: true
+show_drafts: true
+unpublished: true
+
+# More verbose output during development
+verbose: true
+
+# Sass configuration for development
+sass:
+  sass_dir: _sass
+  style: expanded  # Unminified CSS for easier debugging
+
+# Disable compression for development
+compress_html:
+  clippings: []
+  comments: []
+  endings: []
+  startings: []
+  blanklines: true
+  profile: true
+
+# Development-only plugins (if any needed)
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+  - jekyll-paginate-v2
+
+# Faster builds - disable some features for development if needed
+# Uncomment these if builds are slow:
+# exclude:
+#   - node_modules
+#   - vendor
+#   - .sass-cache
+#   - .jekyll-cache
+#   - gemfiles
+#   - Gemfile
+#   - Gemfile.lock
+
+# Keep watch enabled
+watch: true
+
+# Serve options
+host: 127.0.0.1
+port: 4000

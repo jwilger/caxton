@@ -36,7 +36,7 @@
             gh
             jq
             pre-commit
-            mdformat
+            ruby
             cargo-nextest
             cargo-watch
             cargo-expand
@@ -70,6 +70,7 @@
             # Create local dependency directories
             mkdir -p .dependencies/nodejs
             mkdir -p .dependencies/rust
+            mkdir -p .dependencies/ruby
 
             # Configure Node.js/npm to use local directory
             export NPM_CONFIG_PREFIX="$PWD/.dependencies/nodejs"
@@ -81,6 +82,12 @@
             export CARGO_HOME="$PWD/.dependencies/rust/cargo"
             export RUSTUP_HOME="$PWD/.dependencies/rust/rustup"
             export PATH="$PWD/.dependencies/rust/cargo/bin:$PATH"
+
+            # Configure Ruby/Bundler to use local directory
+            export GEM_HOME="$PWD/.dependencies/ruby"
+            export GEM_PATH="$PWD/.dependencies/ruby"
+            export BUNDLE_PATH="$PWD/.dependencies/ruby"
+            export PATH="$PWD/.dependencies/ruby/bin:$PATH"
 
             # For AI coding assistants
             cargo install --locked cargo-mcp
