@@ -1,0 +1,294 @@
+---
+layout: default
+---
+
+<main class="guide-layout" id="main-content">
+    <div class="container">
+        <div class="guide-content">
+            <!-- Breadcrumb navigation -->
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="{{ '/' | relative_url }}">Home</a></li>
+                    {% if page.section %}
+                    <li><a href="{{ '/' | append: page.section | append: '/' | relative_url }}">{{ page.section | replace: '-', ' ' | capitalize }}</a></li>
+                    {% endif %}
+                    <li aria-current="page">{{ page.title }}</li>
+                </ol>
+            </nav>
+
+            <!-- Article content -->
+            <article class="guide-article">
+                <header class="guide-header">
+                    <h1 class="guide-title">{{ page.title }}</h1>
+                    {% if page.description %}
+                    <p class="guide-description">{{ page.description }}</p>
+                    {% endif %}
+                    {% if page.date %}
+                    <div class="guide-meta">
+                        <time datetime="{{ page.date | date_to_xmlschema }}">
+                            Updated {{ page.date | date: "%B %d, %Y" }}
+                        </time>
+                    </div>
+                    {% endif %}
+                </header>
+
+                <div class="guide-body">
+                    {{ content }}
+                </div>
+
+                <!-- Navigation to next/previous guides -->
+                {% if page.collection %}
+                <nav class="guide-navigation" aria-label="Guide navigation">
+                    {% assign collection = site[page.collection] | sort: 'weight' %}
+                    {% for doc in collection %}
+                        {% if doc.url == page.url %}
+                            {% assign current_index = forloop.index0 %}
+                            {% break %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if current_index > 0 %}
+                        {% assign prev_doc = collection[current_index | minus: 1] %}
+                        <a href="{{ prev_doc.url | relative_url }}" class="guide-nav-link guide-nav-prev">
+                            <span class="guide-nav-direction">← Previous</span>
+                            <span class="guide-nav-title">{{ prev_doc.title }}</span>
+                        </a>
+                    {% endif %}
+
+                    {% assign next_index = current_index | plus: 1 %}
+                    {% if next_index < collection.size %}
+                        {% assign next_doc = collection[next_index] %}
+                        <a href="{{ next_doc.url | relative_url }}" class="guide-nav-link guide-nav-next">
+                            <span class="guide-nav-direction">Next →</span>
+                            <span class="guide-nav-title">{{ next_doc.title }}</span>
+                        </a>
+                    {% endif %}
+                </nav>
+                {% endif %}
+            </article>
+        </div>
+    </div>
+</main>
+
+<style>
+.guide-layout {
+    min-height: calc(100vh - var(--header-height, 80px));
+    padding: var(--space-8) 0;
+}
+
+.guide-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-6);
+}
+
+.breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.breadcrumb li:not(:last-child)::after {
+    content: '/';
+    margin-left: var(--space-2);
+    color: var(--text-muted);
+}
+
+.breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.breadcrumb a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.guide-header {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-surface0);
+}
+
+.guide-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-bold);
+    line-height: var(--line-height-tight);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-4) 0;
+}
+
+.guide-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    line-height: var(--line-height-relaxed);
+    margin: 0 0 var(--space-4) 0;
+}
+
+.guide-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.guide-body {
+    line-height: var(--line-height-relaxed);
+    color: var(--text-primary);
+}
+
+.guide-body h2,
+.guide-body h3,
+.guide-body h4,
+.guide-body h5,
+.guide-body h6 {
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+}
+
+.guide-body h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-semibold);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-surface0);
+}
+
+.guide-body h3 {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-semibold);
+}
+
+.guide-body h4 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-medium);
+}
+
+.guide-body p {
+    margin-bottom: var(--space-4);
+}
+
+.guide-body ul,
+.guide-body ol {
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-6);
+}
+
+.guide-body li {
+    margin-bottom: var(--space-2);
+}
+
+.guide-body blockquote {
+    margin: var(--space-6) 0;
+    padding: var(--space-4) var(--space-6);
+    background-color: var(--bg-surface);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-md);
+}
+
+.guide-body pre {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-size: var(--font-size-sm);
+}
+
+.guide-body code {
+    background-color: var(--bg-surface);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.guide-body pre code {
+    background: none;
+    padding: 0;
+}
+
+.guide-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-12);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--color-surface0);
+}
+
+.guide-nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    min-width: 0;
+    flex: 1;
+}
+
+.guide-nav-link:hover {
+    background-color: var(--bg-surface-hover);
+    text-decoration: none;
+}
+
+.guide-nav-prev {
+    text-align: left;
+}
+
+.guide-nav-next {
+    text-align: right;
+    margin-left: auto;
+}
+
+.guide-nav-direction {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+}
+
+.guide-nav-title {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .guide-layout {
+        padding: var(--space-6) 0;
+    }
+
+    .guide-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .guide-navigation {
+        flex-direction: column;
+    }
+
+    .guide-nav-next {
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .guide-nav-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+}
+</style>
