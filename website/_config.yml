@@ -51,6 +51,11 @@ plugins:
   - jekyll-titles-from-headings
   - jekyll-paginate-v2
 
+# Configure jekyll-relative-links to process collections (required for baseurl support)
+relative_links:
+  enabled: true
+  collections: true
+
 # Collections Configuration - Include docs/ as single source of truth
 collections:
   # ADR Collection from docs/adr/
