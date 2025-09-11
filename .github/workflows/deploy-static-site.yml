@@ -1,0 +1,156 @@
+name: Deploy Static Site to GitHub Pages
+
+on:
+  # Automatic deployment on push to main
+  push:
+    branches: ["main"]
+
+  # Manual deployment option
+  workflow_dispatch:
+    inputs:
+      deploy_preview:
+        description: 'Deploy a preview version'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git info
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+
+      - name: Fetch latest release info
+        id: latest_release
+        run: |
+          # Fetch latest release from GitHub API
+          RELEASE_JSON=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+
+          # Check if we got a valid release
+          if echo "$RELEASE_JSON" | grep -q '"tag_name"'; then
+            # Extract release information
+            TAG_NAME=$(echo "$RELEASE_JSON" | jq -r '.tag_name // "v0.0.0"')
+            RELEASE_NAME=$(echo "$RELEASE_JSON" | jq -r '.name // "Development"')
+            RELEASE_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at // ""' | cut -d'T' -f1)
+            # Get release body - clean it for HTML injection
+            RELEASE_BODY_RAW=$(echo "$RELEASE_JSON" | jq -r '.body // ""')
+            # Escape HTML and limit length
+            RELEASE_BODY=$(echo "$RELEASE_BODY_RAW" | \
+              sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g' | \
+              head -20)
+            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url // ""')
+
+            # Clean version (remove 'v' prefix if present)
+            VERSION="${TAG_NAME#v}"
+
+            # Check if this is a pre-1.0 release
+            if [[ "$VERSION" == 0.* ]]; then
+              RELEASE_STATUS="Early Development"
+              RELEASE_PHASE="Foundation Phase"
+            else
+              RELEASE_STATUS="Stable Release"
+              RELEASE_PHASE="Production Ready"
+            fi
+          else
+            # No releases found, use defaults
+            VERSION="0.1.0-dev"
+            TAG_NAME="development"
+            RELEASE_NAME="Foundation Phase"
+            RELEASE_DATE=$(date +%Y-%m-%d)
+            RELEASE_STATUS="Early Development"
+            RELEASE_PHASE="Foundation Phase"
+            RELEASE_BODY="Caxton is currently in early development. Core architecture is being implemented with a focus on getting the fundamentals right: configuration-driven agents, FIPA messaging, and comprehensive observability."
+            RELEASE_URL="https://github.com/${{ github.repository }}/releases"
+          fi
+
+          # Export for next steps
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
+          echo "RELEASE_STATUS=$RELEASE_STATUS" >> $GITHUB_ENV
+          echo "RELEASE_PHASE=$RELEASE_PHASE" >> $GITHUB_ENV
+          echo "RELEASE_BODY=$RELEASE_BODY" >> $GITHUB_ENV
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+
+          echo "Latest release: $VERSION ($RELEASE_STATUS)"
+
+      - name: Prepare static site with release info
+        run: |
+          # Create build directory
+          mkdir -p build
+
+          # Copy website files to build directory
+          cp -r website/* build/
+
+          # Update release information in HTML file
+          cd build
+
+          # Update release status badge
+          sed -i "s|<span class=\"status-badge\" id=\"release-status\">Early Development</span>|<span class=\"status-badge\" id=\"release-status\">${RELEASE_STATUS}</span>|g" index.html
+
+          # Update release date
+          if [[ "$VERSION" != "0.1.0-dev" ]]; then
+            DISPLAY_DATE="v${VERSION} • ${RELEASE_DATE}"
+          else
+            DISPLAY_DATE="Project Status"
+          fi
+          sed -i "s|<span class=\"release-date\" id=\"release-date\">Project Status</span>|<span class=\"release-date\" id=\"release-date\">${DISPLAY_DATE}</span>|g" index.html
+
+          # Update release title
+          if [[ "$VERSION" == "0.1.0-dev" || "$VERSION" == 0.* ]]; then
+            DISPLAY_TITLE="${RELEASE_PHASE}"
+          else
+            DISPLAY_TITLE="${RELEASE_NAME}"
+          fi
+          sed -i "s|<h3 class=\"release-title\" id=\"release-title\">Foundation Phase</h3>|<h3 class=\"release-title\" id=\"release-title\">${DISPLAY_TITLE}</h3>|g" index.html
+
+          # Update release description
+          if [[ "$VERSION" == 0.* ]]; then
+            DISPLAY_DESCRIPTION="Caxton is currently in early development. Core architecture is being implemented with a focus on getting the fundamentals right: configuration-driven agents, FIPA messaging, and comprehensive observability."
+          else
+            DISPLAY_DESCRIPTION="${RELEASE_BODY}"
+          fi
+          sed -i "s|<div class=\"release-description\" id=\"release-description\">.*</div>|<div class=\"release-description\" id=\"release-description\">${DISPLAY_DESCRIPTION}</div>|g" index.html
+
+          # Add release notes button if we have a real release
+          if [[ "$VERSION" != "0.1.0-dev" && "$RELEASE_URL" != "" ]]; then
+            # Find the release-actions div and add the release notes button
+            sed -i "s|<div class=\"release-actions\">|<div class=\"release-actions\">\n                        <a href=\"${RELEASE_URL}\" target=\"_blank\" rel=\"noopener\" class=\"btn btn-outline\">\n                            View Release Notes\n                        </a>|g" index.html
+          fi
+
+          echo "✅ Release information injected into static HTML"
+          echo "Version: ${VERSION}"
+          echo "Status: ${RELEASE_STATUS}"
+          echo "Phase: ${RELEASE_PHASE}"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

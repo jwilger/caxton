@@ -715,6 +715,367 @@
   pointer-events: none;
 }
 
+/* Configuration-driven Architecture Components */
+.config-runtime {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-left: 4px solid var(--color-blue);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.config-runtime:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.config-runtime strong {
+  display: block;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-bold);
+  color: var(--color-blue);
+}
+
+.config-runtime small {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Config File Agents */
+.agent.config-file {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 140px;
+  text-align: center;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.agent.config-file:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-green);
+  box-shadow: var(--shadow-md);
+}
+
+.agent.config-file::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-green);
+}
+
+.agent-icon {
+  font-size: var(--font-size-xl);
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.agent-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-mono);
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+}
+
+.agent-caps {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* WASM MCP Servers */
+.mcp-server {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 140px;
+  text-align: center;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.mcp-server.wasm {
+  border-left: 4px solid var(--color-mauve);
+}
+
+.mcp-server:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-mauve);
+  box-shadow: var(--shadow-md);
+}
+
+.server-icon {
+  font-size: var(--font-size-xl);
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.server-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-mono);
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+}
+
+.server-type {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Message Router Component */
+.message-router {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-left: 4px solid var(--color-sapphire);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+  min-width: 160px;
+}
+
+.message-router:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-sapphire);
+  box-shadow: var(--shadow-md);
+}
+
+.message-router strong {
+  display: block;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-bold);
+  color: var(--color-sapphire);
+}
+
+.message-router small {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Message Flow Arrows */
+.routing-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  animation: pulse 2s ease-in-out infinite;
+  padding: var(--space-2);
+}
+
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* Component Grids and Layouts */
+.component {
+  background: var(--bg-surface);
+  border: 2px solid var(--color-surface1);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.component:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.component strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  margin-bottom: var(--space-2);
+}
+
+.component small {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+/* Memory Layer */
+.memory-layer {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-left: 4px solid var(--color-yellow);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.memory-layer:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-yellow);
+  box-shadow: var(--shadow-md);
+}
+
+/* Tool Layer */
+.tool-layer {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-surface1);
+  border-left: 4px solid var(--color-peach);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-layer:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-peach);
+  box-shadow: var(--shadow-md);
+}
+
+/* Consistent hover effects for all architecture elements */
+.message,
+.supervisor,
+.restart-policy,
+.supervisor-arrow,
+.capability,
+.agent,
+.mcp-server,
+.tool,
+.memory,
+.component,
+.api-endpoint,
+.store,
+.export,
+.agent-failure,
+.agent-ok,
+.breaker,
+.debug-point,
+.crashed-agent,
+.healthy-agents,
+.circuit-breakers {
+  transition: all var(--transition-base);
+}
+
+.message:hover,
+.supervisor:hover,
+.restart-policy:hover,
+.capability:hover,
+.agent:hover:not(.config-file),
+.tool:hover,
+.memory:hover,
+.api-endpoint:hover,
+.store:hover,
+.export:hover,
+.agent-ok:hover,
+.breaker:hover,
+.debug-point:hover,
+.crashed-agent:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Specific hover effects for elements with borders */
+.message:hover {
+  border-color: var(--color-blue);
+}
+
+.supervisor:hover {
+  border-color: var(--color-sapphire);
+}
+
+.capability:hover {
+  border-color: var(--color-teal);
+}
+
+.tool:hover {
+  border-color: var(--color-peach);
+}
+
+.memory:hover {
+  border-color: var(--color-yellow);
+}
+
+.api-endpoint:hover {
+  border-color: var(--color-lavender);
+}
+
+.store:hover {
+  border-color: var(--color-green);
+}
+
+.export:hover {
+  border-color: var(--color-sky);
+}
+
+.breaker:hover {
+  border-color: var(--color-red);
+}
+
+.debug-point:hover {
+  border-color: var(--color-mauve);
+}
+
+/* Agent Status Indicators */
+.agent.healthy .agent-icon::after {
+  content: '✓';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: var(--font-size-xs);
+  color: var(--color-green);
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ============================================================================
  * Getting Started Section - Step Cards
  * ============================================================================ */
