@@ -371,29 +371,32 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                 <div class="step-number">1</div>
                 <h3>Install Caxton</h3>
                 <div class="code-snippet">
-                    <pre data-language="BASH"><code># Install with observability stack included
-curl -sSL https://caxton.dev/install.sh | sh
-caxton init my-system --with-observability</code></pre>
+                    <pre data-language="BASH"><code># Download binary from GitHub releases
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-linux-x86_64.tar.gz | tar xz
+sudo mv caxton /usr/local/bin/caxton</code></pre>
                 </div>
             </div>
             <div class="step-card">
                 <div class="step-number">2</div>
-                <h3>Create Your First Agent</h3>
+                <h3>Initialize and Start Server</h3>
                 <div class="code-snippet">
-                    <pre data-language="BASH"><code># Create a configuration-driven agent
-caxton agent new order-processor \
-  --template request-handler \
-  --capabilities order-processing,inventory-checking</code></pre>
+                    <pre data-language="BASH"><code># Generate default configuration
+caxton config init
+# Start the server
+caxton server start</code></pre>
                 </div>
             </div>
             <div class="step-card">
                 <div class="step-number">3</div>
-                <h3>Deploy and Monitor</h3>
+                <h3>Create Your First Agent</h3>
                 <div class="code-snippet">
-                    <pre data-language="BASH"><code># Start with full observability
-docker-compose up  # Includes Jaeger, Prometheus
-caxton deploy
-caxton monitor --dashboard</code></pre>
+                    <pre data-language="BASH"><code># Create your first agent configuration file
+cat > order-agent.md << EOF
+---
+name: OrderAgent
+capabilities: [order-processing]
+---
+EOF</code></pre>
                 </div>
             </div>
         </div>
@@ -441,9 +444,9 @@ integrates with external systems via MCP tools.</code></pre>
                         <pre data-language="BASH"><code># Deploy your configuration agent
 caxton agent deploy order-processor.yaml
 
-# Verify deployment
-caxton agent status order-processor
-✓ Running (config agent, embedded memory ready)</code></pre>
+# Check server status
+curl http://localhost:8080/api/v1/health
+# {"status":"healthy","memory_backend":"embedded"}</code></pre>
                     </div>
                 </div>
                 <div class="step-card">
