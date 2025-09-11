@@ -17,7 +17,7 @@ and MCP tool creation with WebAssembly sandboxing.
 
 - ✅ Advanced configuration agent patterns and YAML schemas
 - ✅ MCP tool development with WebAssembly sandboxing
-- ✅ FIPA-ACL messaging protocols and capability-based routing
+- ✅ Agent messaging protocols and capability-based routing
 - ✅ Memory system integration for intelligent agent behavior
 - ✅ Security best practices and tool sandboxing
 - ✅ Testing strategies for configuration agents
@@ -263,13 +263,13 @@ caxton_mcp_sdk::export_tool!(DatabaseTool);
 - Capability allowlists restrict tool permissions
 - Resource limits prevent denial-of-service
 
-### FIPA-ACL Messaging with Capability Routing
+### Agent Messaging with Capability Routing
 
 **Philosophy**: Agents communicate via capabilities, not direct addressing.
 
 ```rust
 // Send message to any agent with "data-analysis" capability
-let message = FipaMessage::new()
+let message = AgentMessage::new()
     .performative(Performative::Request)
     .target_capability("data-analysis")
     .content(AnalysisRequest {

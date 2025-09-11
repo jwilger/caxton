@@ -1,23 +1,27 @@
 ---
-title: "FIPA Concepts for Developers"
+title: "Agent Messaging Concepts for Developers"
 date: 2025-09-10
 layout: page
 categories: [Concepts]
 ---
 
-FIPA (Foundation for Intelligent Physical Agents) provides standardized
-patterns for agent communication. While Caxton uses a pragmatic subset of FIPA
-(see [ADR-0012](../adr/0012-pragmatic-fipa-subset.md)), understanding FIPA
-concepts helps developers build better multi-agent systems.
+Caxton implements a structured agent messaging protocol that provides
+standardized
+patterns for agent communication. Based on proven agent communication
+principles,
+this system enables robust multi-agent coordination while remaining practical
+for production use.
 
-This guide explains FIPA concepts in practical terms, focusing on what
+This guide explains agent messaging concepts in practical terms, focusing
+on what
 developers need to know to work with Caxton.
 
-## Quick Start: FIPA in 5 Minutes
+## Quick Start: Agent Messaging in 5 Minutes
 
-### What is FIPA?
+### What is Agent Messaging?
 
-FIPA is a set of standards for how autonomous software agents communicate and
+Caxton's agent messaging protocol defines how autonomous software agents
+communicate and
 coordinate. Think of it as "HTTP for agents" - a common language that lets
 different agents work together.
 
@@ -45,7 +49,7 @@ Agents communicate using "speech acts" - messages with specific intentions:
 }
 ```
 
-## FIPA Concepts Explained
+## Agent Messaging Concepts Explained
 
 ### 1. Performatives (Message Types)
 
@@ -76,7 +80,7 @@ Think of performatives like email subject line prefixes:
 #### Essential Fields
 
 ```rust
-pub struct FIPAMessage {
+pub struct AgentMessage {
     // What kind of message (request, inform, etc.)
     performative: Performative,
 
@@ -104,8 +108,8 @@ pub struct FIPAMessage {
   ticket number)
 - **reply_with/in_reply_to**: Matches responses to requests (like email
   threading)
-- **content**: Your actual data - Caxton uses JSON instead of FIPA's
-  complex formats
+- **content**: Your actual data - Caxton uses simple JSON for maximum
+  compatibility
 
 ### 3. Interaction Protocols
 
@@ -289,9 +293,11 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 
     // Phase 2: Parallel analysis
     let analyses = futures::join!(
-        request_from_agent("statistical-analyzer", "analyze", &preprocessed, &conv_id),
+        request_from_agent("statistical-analyzer", "analyze", &preprocessed,
+                           &conv_id),
         request_from_agent("ml-analyzer", "analyze", &preprocessed, &conv_id),
-        request_from_agent("pattern-detector", "detect", &preprocessed, &conv_id),
+        request_from_agent("pattern-detector", "detect", &preprocessed,
+                           &conv_id),
     );
 
     // Phase 3: Combine results
@@ -306,9 +312,9 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 }
 ```
 
-## FIPA vs Modern Approaches
+## Agent Messaging vs Modern Approaches
 
-### What FIPA Got Right
+### What Agent Messaging Protocols Get Right
 
 1. **Standardized communication** - Common language for agents
 2. **Speech acts** - Clear message intentions
@@ -317,15 +323,15 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 
 ### What We Simplified
 
-| FIPA Approach | Caxton Approach | Why |
-|---------------|-----------------|-----|
+| Traditional Approach | Caxton Approach | Why |
+|---------------------|-----------------|-----|
 | Complex ontologies (OWL/RDF) | JSON Schema | Better tooling, developer friendly |
-| Semantic languages (FIPA-SL) | Plain JSON | Universal support |
+| Semantic languages | Plain JSON | Universal support |
 | Many performatives (~22) | Essential 8 | Simpler mental model |
-| Agent platforms (JADE) | Container orchestration | Cloud-native |
-| Service discovery (DF/AMS) | Kubernetes/Consul | Modern infrastructure |
+| Agent platforms | Container orchestration | Cloud-native |
+| Service discovery systems | Kubernetes/Consul | Modern infrastructure |
 
-## Debugging FIPA Messages
+## Debugging Agent Messages
 
 ### Common Issues and Solutions
 
@@ -497,17 +503,20 @@ impl ConversationManager {
 
 ### Tutorials
 
-1. [Building Your First FIPA Agent](../tutorials/first-fipa-agent.md)
+1. [Building Your First Agent](../tutorials/first-agent.md)
 2. [Implementing Contract Net Protocol](../tutorials/contract-net.md)
 3. [Advanced Message Patterns](../tutorials/advanced-patterns.md)
 
 ### References
 
-- [FIPA Specifications](http://www.fipa.org/repository/standardspecs.html) -
-  Original specs (academic)
-- [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md) -
-  Why we chose FIPA
-- [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md) -
+- [Agent Communication Standards]
+  (https://en.wikipedia.org/wiki/Agent_communication_language) -
+  Background on agent communication
+- [ADR-0003: Agent Messaging Protocol]
+  (../adr/0003-agent-messaging-protocol.md) -
+  Why we chose structured messaging
+- [ADR-0012: Pragmatic Message Subset]
+  (../adr/0012-pragmatic-message-subset.md) -
   Our simplifications
 - [Communication Patterns](communication-patterns.md) -
   Practical patterns
@@ -521,16 +530,16 @@ impl ConversationManager {
 
 ## FAQ
 
-### Q: Why use FIPA instead of REST/GraphQL?
+### Q: Why use agent messaging instead of REST/GraphQL?
 
-**A**: FIPA provides:
+**A**: Agent messaging provides:
 
 - Conversation tracking across multiple messages
 - Explicit message intentions (performatives)
 - Proven patterns for agent coordination
 - Decoupled, asynchronous communication
 
-### Q: Do I need to learn all of FIPA?
+### Q: Do I need to learn complex agent protocols?
 
 **A**: No! Caxton uses only the useful parts. Focus on:
 
@@ -541,14 +550,14 @@ impl ConversationManager {
 
 ### Q: How is this different from message queues?
 
-**A**: FIPA adds semantics:
+**A**: Agent messaging adds semantics:
 
 - Messages have explicit meanings (performatives)
 - Built-in conversation tracking
 - Standard coordination protocols
 - Agent-specific patterns
 
-### Q: Can I use FIPA with existing services?
+### Q: Can I use agent messaging with existing services?
 
 **A**: Yes! Create adapter agents:
 
@@ -558,11 +567,11 @@ pub struct RestAdapter {
 }
 
 impl RestAdapter {
-    async fn handle_fipa(&self, msg: Message) -> Message {
-        // Convert FIPA to REST
+    async fn handle_agent_message(&self, msg: Message) -> Message {
+        // Convert agent message to REST
         let response = self.call_rest_api(&msg).await;
 
-        // Convert back to FIPA
+        // Convert back to agent message
         Message::inform(response)
     }
 }
@@ -570,8 +579,9 @@ impl RestAdapter {
 
 ## Summary
 
-FIPA provides a time-tested foundation for agent communication. While the full
-specification is complex, Caxton's pragmatic subset gives you:
+Agent messaging protocols provide a time-tested foundation for agent
+communication. While
+traditional specifications can be complex, Caxton's pragmatic approach gives you:
 
 - Clear communication patterns
 - Standardized message formats
@@ -581,5 +591,5 @@ specification is complex, Caxton's pragmatic subset gives you:
 Focus on understanding performatives, message structure, and basic patterns.
 The rest can be learned as needed.
 
-Remember: **FIPA is just a tool** - the goal is building reliable,
+Remember: **Agent messaging is just a tool** - the goal is building reliable,
 maintainable multi-agent systems.

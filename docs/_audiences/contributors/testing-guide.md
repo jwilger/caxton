@@ -72,7 +72,7 @@ async fn test_agent_message_handling() {
         AgentConfig::new("test-agent", wasm_bytes)
     ).await?;
 
-    let message = FipaMessage::new(
+    let message = AgentMessage::new(
         MessageId::generate(),
         Performative::Request,
         AgentId::system(),
@@ -97,7 +97,7 @@ Testing Architecture:
 │   └── Security Policies          # Validation rules
 ├── Integration Tests (47 tests)    # In tests/ directory
 │   ├── Runtime Integration        # End-to-end workflows
-│   ├── Message Routing           # FIPA message handling
+│   ├── Message Routing           # Agent message handling
 │   ├── Performance Benchmarks    # Scaling and timing
 │   └── Error Scenarios           # Failure mode testing
 └── Property Tests (12 tests)      # Generative testing
@@ -191,7 +191,7 @@ mod tests {
 
 ```rust
 // tests/message_routing_test.rs
-use caxton::{WasmRuntime, FipaMessage, AgentConfig};
+use caxton::{WasmRuntime, AgentMessage, AgentConfig};
 
 #[tokio::test]
 async fn test_capability_based_routing() {
@@ -210,7 +210,7 @@ async fn test_capability_based_routing() {
     ).await?;
 
     // Send message targeting capability, not specific agent
-    let message = FipaMessage::new(
+    let message = AgentMessage::new(
         MessageId::generate(),
         Performative::Request,
         AgentId::system(),
@@ -399,7 +399,7 @@ fn agent_should_handle_malformed_messages() {
 
 ```rust
 impl Agent<Running> {
-    pub fn handle_message(&self, message: FipaMessage) -> Result<(), ProcessingError> {
+    pub fn handle_message(&self, message: AgentMessage) -> Result<(), ProcessingError> {
         // Add validation to handle malformed messages
         if let Err(e) = self.validate_message_format(&message) {
             return Err(ProcessingError::InvalidMessageFormat {
@@ -418,7 +418,7 @@ impl Agent<Running> {
 
 ```rust
 impl Agent<Running> {
-    pub fn handle_message(&self, message: FipaMessage) -> Result<(), ProcessingError> {
+    pub fn handle_message(&self, message: AgentMessage) -> Result<(), ProcessingError> {
         // Extract validation into clear method
         let validated_message = self.validate_and_parse_message(message)?;
 
@@ -428,7 +428,7 @@ impl Agent<Running> {
 
     fn validate_and_parse_message(
         &self,
-        message: FipaMessage
+        message: AgentMessage
     ) -> Result<ValidatedMessage, ProcessingError> {
         // Centralized validation logic
         ValidatedMessage::try_from(message)
@@ -499,7 +499,7 @@ mod agent_name_tests {
 ```rust
 // benches/message_routing_bench.rs
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use caxton::{WasmRuntime, FipaMessage};
+use caxton::{WasmRuntime, AgentMessage};
 
 fn benchmark_message_routing(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
@@ -531,7 +531,7 @@ async fn test_concurrent_message_processing() {
 
     // Generate 1000 concurrent messages
     let messages: Vec<_> = (0..1000).map(|i| {
-        FipaMessage::request(
+        AgentMessage::request(
             AgentId::system(),
             agent_id,
             MessageContent::text(format!("message_{}", i))
@@ -656,7 +656,7 @@ pub mod fixtures {
             .with_cpu_fuel(CpuFuel::try_new(100_000).unwrap())
     }
 
-    pub fn simple_request_message(receiver: AgentId) -> FipaMessage {
+    pub fn simple_request_message(receiver: AgentId) -> AgentMessage {
         FipaMessage::new(
             MessageId::generate(),
             Performative::Request,

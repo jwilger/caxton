@@ -41,13 +41,13 @@ the embedded and external memory backends.
 
 ### Messaging Concepts
 
-FIPA-ACL lightweight messaging with capability-based routing that enables
+Capability-based agent messaging with routing that enables
 agent-to-agent communication patterns.
 
 **[Messaging](/docs/concepts/messaging/)**
 
 - Capability routing vs direct agent addressing
-- FIPA-ACL subset for production use cases
+- Agent messaging subset for production use cases
 - Conversation management and multi-turn dialogue
 - Integration patterns for configuration vs WASM agents
 

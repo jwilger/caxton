@@ -1,21 +1,20 @@
 ---
-title: "FIPA-ACL Subset Implementation for Context Management"
-description: "How Caxton's lightweight FIPA-ACL implementation integrates with\n  the context management architecture for configuration agents"
+title: "Capability-Based Messaging Implementation for Context Management"
+description: "How Caxton's lightweight capability-based messaging implementation integrates with\n  the context management architecture for configuration agents"
 layout: documentation
-categories: [Messaging, FIPA, Context Management, Architecture]
+categories: [Messaging, Agent Communication, Context Management, Architecture]
 date: 2025-09-10
 ---
 
 ## Overview
 
-Caxton implements a carefully selected subset of FIPA-ACL (Foundation for
-Intelligent Physical Agents - Agent Communication Language) optimized for
-configuration-driven agents and integrated with the context management
-architecture (ADR-0031). This subset provides standardized agent
+Caxton implements a carefully selected subset of capability-based messaging
+optimized for configuration-driven agents and integrated with the context management
+architecture (ADR-0031). This messaging protocol provides standardized agent
 communication while serving as a primary context source for intelligent
 context preparation.
 
-## FIPA-ACL Subset Definition
+## Capability-Based Messaging Definition
 
 ### Supported Performatives (1.0)
 
@@ -38,7 +37,7 @@ context preparation.
 
 ### Deferred Performatives (Post-1.0)
 
-The following FIPA-ACL performatives are intentionally deferred to maintain
+The following messaging performatives are intentionally deferred to maintain
 simplicity for configuration agents in the 1.0 release:
 
 - `CFP` (Call for Proposal) - Complex bidding protocol
@@ -48,9 +47,9 @@ simplicity for configuration agents in the 1.0 release:
 
 ## Context Management Integration
 
-### FIPA Messages as Context Sources
+### Agent Messages as Context Sources
 
-FIPA messaging provides **conversation context** as one of four primary
+Agent messaging provides **conversation context** as one of four primary
 context sources in the context management architecture:
 
 1. **Conversation History** - Message threads and reply chains
@@ -60,12 +59,12 @@ context sources in the context management architecture:
 
 ### Context Router Integration Flow
 
-When a FIPA message arrives, the Context Router intercepts it to determine
+When an agent message arrives, the Context Router intercepts it to determine
 context needs before agent processing:
 
 ```yaml
-# Example: FIPA REQUEST triggers context preparation
-# 1. FIPA Message Received
+# Example: Agent REQUEST triggers context preparation
+# 1. Agent Message Received
 performative: REQUEST
 capability: data-analysis
 conversation_id: conv_analysis_001
@@ -79,19 +78,19 @@ content: "Generate Q4 sales forecast based on current trends"
 # - Gathers multi-source context within <100ms target
 
 # 3. Contextual Agent Call
-# - Agent receives FIPA message + prepared context
+# - Agent receives agent message + prepared context
 # - Context includes conversation history, relevant patterns, tool data
 # - Agent generates contextually-aware response
 ```
 
 ### Conversation Context Contribution
 
-FIPA conversations serve as **immediate context** (highest priority) in the
+Agent conversations serve as **immediate context** (highest priority) in the
 hierarchical context system:
 
 **Context Priority Levels:**
 
-1. **Immediate Context** (FIPA conversation threads) - Highest priority
+1. **Immediate Context** (Agent conversation threads) - Highest priority
 2. **Session Context** (Tool state, user preferences) - Medium priority
 3. **Domain Context** (Capability knowledge, patterns) - Lower priority
 4. **Historical Context** (Memory system patterns) - Background priority
@@ -104,7 +103,7 @@ hierarchical context system:
 
 ### Context-Aware Message Routing
 
-The integration between FIPA messaging and context management enables
+The integration between agent messaging and context management enables
 context-aware routing patterns:
 
 ```yaml
@@ -140,7 +139,7 @@ selection_criteria:
 
 ### Latency Targets
 
-FIPA message processing integrates with context management performance targets
+Agent message processing integrates with context management performance targets
 from ADR-0031:
 
 - **Context preparation**: <100ms (P95)
@@ -150,7 +149,7 @@ from ADR-0031:
 
 ### Context Flow Architecture
 
-The complete flow from FIPA request to agent LLM call with context:
+The complete flow from agent request to agent LLM call with context:
 
 ```mermaid
 sequenceDiagram
@@ -162,26 +161,26 @@ sequenceDiagram
     participant Target as Target Agent
     participant LLM as LLM Provider
 
-    Sender->>Router: FIPA REQUEST message
+    Sender->>Router: Agent REQUEST message
     Router->>ContextR: Route with context analysis
     ContextR->>Memory: Semantic search for patterns
     ContextR->>Registry: Get capability metadata
     ContextR->>Router: Context requirements
-    Router->>Target: FIPA message + prepared context
+    Router->>Target: Agent message + prepared context
     Target->>LLM: Formatted prompt with context
     LLM->>Target: Response
-    Target->>Router: FIPA INFORM response
+    Target->>Router: Agent INFORM response
     Router->>Sender: Delivery confirmation
 ```
 
 ## Message Structure with Context Integration
 
-### Enhanced FIPA Message Format
+### Enhanced Agent Message Format
 
-Standard FIPA messages are enhanced with context metadata:
+Standard agent messages are enhanced with context metadata:
 
 ```yaml
-# Core FIPA Fields
+# Core Agent Message Fields
 performative: REQUEST | INFORM | QUERY | PROPOSE | ACCEPT_PROPOSAL |
               REJECT_PROPOSAL | FAILURE | NOT_UNDERSTOOD
 capability: target-capability-name
@@ -197,8 +196,8 @@ context_hints:
   tool_context_required: boolean           # Whether tool data needed
   capability_metadata: boolean             # Include capability information
 
-# Standard FIPA Metadata
-protocol: fipa-request | fipa-inform | fipa-query
+# Standard Agent Message Metadata
+protocol: agent-request | agent-inform | agent-query
 language: english                          # Content language
 ontology: caxton-1.0                      # Domain ontology
 ```
@@ -395,7 +394,7 @@ context_status:
 - Context continuity success rates across agent changes
 - Memory integration effectiveness for recurring conversation patterns
 
-## Best Practices for Context-Integrated FIPA Messages
+## Best Practices for Context-Integrated Agent Messages
 
 ### Message Design Guidelines
 
@@ -432,8 +431,8 @@ context_status:
 
 ## Implementation Status and Future Enhancements
 
-**Current Implementation Status**: This documentation describes the FIPA-ACL
-subset architecture as integrated with the context management system
+**Current Implementation Status**: This documentation describes the capability-based
+messaging architecture as integrated with the context management system
 (ADR-0031). The implementation provides the messaging foundation for
 context-aware configuration agents, with context preparation and routing
 designed to meet the performance targets specified in the context management
@@ -447,7 +446,7 @@ architecture.
 - Machine learning-based context optimization and agent-context matching
 - Context caching and pre-loading for frequently accessed conversation patterns
 
-The FIPA-ACL subset implementation serves as both a robust messaging protocol
+The capability-based messaging implementation serves as both a robust messaging protocol
 and a critical context source for intelligent agent interactions, enabling
 configuration-driven agents to participate in sophisticated multi-turn
 conversations with appropriate contextual awareness.

@@ -254,7 +254,7 @@ sections:
   messaging:
     title: "Messaging"
     weight: 7
-    description: "FIPA-ACL messaging and communication patterns"
+    description: "Agent messaging and communication patterns"
 
   config-agents:
     title: "Config Agents"

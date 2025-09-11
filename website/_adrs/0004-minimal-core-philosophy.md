@@ -34,7 +34,8 @@ Caxton will maintain a strictly minimal server design, providing only three core
 capabilities:
 
 1. **Agent Runtime**: WebAssembly-based isolation and execution
-2. **Message Router**: FIPA protocol implementation including Contract Net
+2. **Message Router**: Agent messaging protocol implementation including
+   Contract Net
    Protocol (CNP) for agent coordination
 3. **Observability Layer**: Structured logging and OpenTelemetry integration
 
@@ -53,7 +54,7 @@ This means explicitly NOT including:
 
 ### Important Distinction: Agent Coordination vs Infrastructure Consensus
 
-Caxton DOES include FIPA agent coordination protocols like Contract Net Protocol
+Caxton DOES include agent coordination protocols like Contract Net Protocol
 (CNP) because:
 
 - CNP is about task delegation and negotiation between agents

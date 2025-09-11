@@ -117,7 +117,7 @@ memory:
     collection_name: "caxton_memory"
     vector_size: 384
 
-# FIPA messaging configuration
+# Agent messaging configuration
 messaging:
   max_message_size: 1MB       # Maximum message size
   queue_size: 10000          # Message queue size

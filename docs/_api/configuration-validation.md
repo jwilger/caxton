@@ -821,6 +821,6 @@ console.log(`Reloaded in
 - [Capability Registration API](capability-registration.md) - Validate capability
   declarations
 - [Memory System API](memory-integration.md) - Test memory-enabled configurations
-- [FIPA Messaging API](fipa-messaging.md) - Test agent communication capabilities
+- [Agent Messaging API](fipa-messaging.md) - Test agent communication capabilities
 - [ADR-0028](../adr/0028-configuration-driven-agent-architecture.md) -
   Configuration agent architecture

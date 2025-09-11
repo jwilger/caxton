@@ -201,7 +201,7 @@ memory:
 
 ### Communication Security Configuration
 
-Caxton uses lightweight FIPA messaging with capability-based routing:
+Caxton uses lightweight agent messaging with capability-based routing:
 
 ```yaml
 # Communication security settings (embedded architecture)
@@ -999,7 +999,7 @@ Caxton embedded deployment maintains comprehensive audit logs for:
   Understanding configuration agent security model
 - [Embedded Memory System ADR](../adr/0030-embedded-memory-system.md):
   Memory system security and isolation
-- [FIPA Lightweight Messaging ADR](../adr/0029-fipa-acl-lightweight-messaging.md):
+- [Lightweight Agent Messaging ADR](../adr/0029-fipa-acl-lightweight-messaging.md):
   Communication security design
 - [Configuration-Driven Agents ADR](../adr/0028-configuration-driven-agent-architecture.md):
   Configuration agent security model

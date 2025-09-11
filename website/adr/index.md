@@ -27,7 +27,7 @@ The following ADRs document the architectural decisions for Caxton:
 - **[ADR-0028: Configuration-Driven Agent Architecture](0028-configuration-driven-agent-architecture)**
   ✨ **ACCEPTED** - Markdown + YAML agents as primary UX (5-10 minute
   onboarding)
-- **[ADR-0029: FIPA-ACL Lightweight Messaging](0029-fipa-acl-lightweight-messaging)**
+- **[ADR-0029: Agent Messaging Protocol](0029-fipa-acl-lightweight-messaging)**
   ✨ **ACCEPTED** - Capability-based routing optimized for config agents
 - **[ADR-0030: Embedded Memory System](0030-embedded-memory-system)**
   ✨ **ACCEPTED** - SQLite + local embeddings with zero dependencies
@@ -38,8 +38,8 @@ The following ADRs document the architectural decisions for Caxton:
   - **ACCEPTED** - Comprehensive tracing and monitoring
 - **[ADR-0002: WebAssembly for Agent Isolation](0002-webassembly-for-agent-isolation)**
   - **ACCEPTED** - WASM sandboxing for security (power users)
-- **[ADR-0003: FIPA Messaging Protocol](0003-fipa-messaging-protocol)**
-  - **SUPERSEDED** by ADR-0029 - Original FIPA implementation
+- **[ADR-0003: Agent Messaging Protocol](0003-fipa-messaging-protocol)**
+  - **SUPERSEDED** by ADR-0029 - Original messaging implementation
 - **[ADR-0004: Minimal Core Philosophy](0004-minimal-core-philosophy)**
   - **ACCEPTED** - Lightweight design principles
 - **[ADR-0005: MCP for External Tools](0005-mcp-for-external-tools)**
@@ -62,8 +62,8 @@ The following ADRs document the architectural decisions for Caxton:
 
 - **[ADR-0011: Capability Registration in Code](0011-capability-registration-in-code)**
   - **ACCEPTED** - Code-based capability declaration
-- **[ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset)**
-  - **SUPERSEDED** by ADR-0029 - Original FIPA simplification
+- **[ADR-0012: Pragmatic Agent Messaging Subset](0012-pragmatic-fipa-subset)**
+  - **SUPERSEDED** by ADR-0029 - Original messaging simplification
 - **[ADR-0013: State Management Architecture](0013-state-management-architecture)**
   - **ACCEPTED** - Distributed state handling
 - **[ADR-0014: Coordination-First Architecture](0014-coordination-first-architecture)**

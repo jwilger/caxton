@@ -475,7 +475,7 @@ async function orchestrateWorkflow(workflowSteps, workspace) {
       const bestProvider = providers[0];
       console.log(`Routing step "${step.name}" to agent: ${bestProvider.agent_name}`);
 
-      // Send FIPA message to capability
+      // Send agent message to capability
       const message = await fetch('/api/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1109,6 +1109,6 @@ try {
 - [Capability Registration API](capability-registration.md) - Capability system
 - [Memory System API](memory-integration.md) - Agent memory operations
 - [Configuration Validation API](configuration-validation.md) - Validation and testing
-- [FIPA Messaging API](fipa-messaging.md) - Agent communication
+- [Agent Messaging API](fipa-messaging.md) - Agent communication
 - [ADR-0028](../adr/0028-configuration-driven-agent-architecture.md) -
   Architecture foundation

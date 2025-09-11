@@ -838,6 +838,6 @@ caxton storage analyze --show-indexes --show-fragmentation
 - [Configuration Agent Guide](../_concepts/api/config-agents.md)
 - [Embedded Memory System](../adr/0030-embedded-memory-system.md)
 - [Configuration-Driven Architecture](../adr/0028-configuration-driven-agent-architecture.md)
-- [FIPA Lightweight Messaging](../adr/0029-fipa-acl-lightweight-messaging.md)
+- [Lightweight Agent Messaging](../adr/0029-agent-messaging-protocol.md)
 - [Performance Tuning](performance-tuning.md)
 - [Agent Lifecycle Management](agent-lifecycle-management.md)

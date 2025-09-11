@@ -39,7 +39,7 @@ business domain responsibility through MCP tools.
 
 - **SWIM Protocol**: Infrastructure layer for cluster coordination and
   membership
-- **FIPA Protocol**: Application layer for semantic agent-to-agent messaging
+- **Agent Messaging Protocol**: Application layer for semantic agent-to-agent messaging
 - **Clear Separation**: These protocols complement rather than compete with each
   other
 
@@ -196,8 +196,8 @@ state tool interfaces for business domain state management.
 ## Related ADRs
 
 - [ADR-0015: Distributed Protocol Architecture](0015-distributed-protocol-architecture.md)
-  \- Details FIPA/SWIM integration and partition handling
-- [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md) - Agent
+  \- Details agent messaging/SWIM integration and partition handling
+- [ADR-0012: Pragmatic Agent Messaging](0012-pragmatic-fipa-subset.md) - Agent
   communication protocol
 - [ADR-0013: State Management Architecture (Superseded)](0013-state-management-architecture.md)
   \- Previous approach

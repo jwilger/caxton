@@ -313,7 +313,7 @@ navigation:
     - title: "Core Concepts"
       url: "/concepts/"
       sections:
-        - title: "FIPA Concepts"
+        - title: "Agent Messaging Concepts"
           url: "/concepts/fipa-concepts/"
         - title: "Communication Patterns"
           url: "/concepts/communication-patterns/"
@@ -375,9 +375,9 @@ navigation:
     - title: "Messaging"
       url: "/messaging/"
       sections:
-        - title: "FIPA ACL Subset"
+        - title: "Agent Message Subset"
           url: "/messaging/fipa-acl-subset/"
-        - title: "FIPA Patterns"
+        - title: "Agent Messaging Patterns"
           url: "/messaging/fipa-patterns/"
         - title: "Capability Routing"
           url: "/messaging/capability-routing/"
@@ -462,7 +462,7 @@ sections:
   messaging:
     title: "Messaging"
     weight: 7
-    description: "FIPA-ACL messaging and communication patterns"
+    description: "Agent messaging and communication patterns"
 
   config-agents:
     title: "Config Agents"

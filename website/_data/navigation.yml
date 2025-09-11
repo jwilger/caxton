@@ -193,12 +193,12 @@ docs:
     title: "Messaging"
     description: "Agent communication protocols and patterns"
     sections:
-      - title: "FIPA-ACL Subset"
+      - title: "Agent Message Subset"
         url: "/messaging/fipa-acl-subset/"
-        description: "Supported FIPA message types"
-      - title: "FIPA Patterns"
+        description: "Supported agent message types"
+      - title: "Agent Messaging Patterns"
         url: "/messaging/fipa-patterns/"
-        description: "Common FIPA interaction patterns"
+        description: "Common agent interaction patterns"
       - title: "Conversation Management"
         url: "/messaging/conversation-management/"
         description: "Managing agent conversations"
@@ -273,7 +273,7 @@ docs:
       patterns:
         title: "Patterns"
         sections:
-          - title: "FIPA Patterns"
+          - title: "Agent Messaging Patterns"
             url: "/messaging/fipa-patterns/"
             description: "Proven communication patterns"
 
@@ -281,9 +281,9 @@ docs:
       research:
         title: "Research"
         sections:
-          - title: "FIPA ACL Subset"
+          - title: "Agent Message Subset"
             url: "/messaging/fipa-acl-subset/"
-            description: "FIPA protocol deep dive"
+            description: "Agent messaging protocol deep dive"
           - title: "Memory System"
             url: "/memory/overview/"
             description: "State management research"
@@ -333,7 +333,7 @@ adr:
           status: "accepted"
           date: "2024-08-07"
         - number: "0003"
-          title: "FIPA Messaging Protocol"
+          title: "Agent Messaging Protocol"
           url: "/adr/0003-fipa-messaging-protocol/"
           status: "accepted"
           date: "2024-08-07"
@@ -417,12 +417,12 @@ adr:
       description: "Communication protocol decisions"
       adrs:
         - number: "0012"
-          title: "Pragmatic FIPA Subset"
+          title: "Pragmatic Agent Messaging Subset"
           url: "/adr/0012-pragmatic-fipa-subset/"
           status: "accepted"
           date: "2024-08-07"
         - number: "0029"
-          title: "FIPA-ACL Lightweight Messaging"
+          title: "Capability-Based Messaging"
           url: "/adr/0029-fipa-acl-lightweight-messaging/"
           status: "accepted"
           date: "2024-09-10"

@@ -1,5 +1,5 @@
 ---
-title: "ADR-0029: FIPA Messaging"
+title: "ADR-0029: Agent Messaging"
 date: 2025-09-09
 status: accepted
 layout: adr
@@ -14,14 +14,15 @@ Accepted
 ## Context
 
 With the shift to configuration-driven agents (ADR-0028), we need to reconsider
-how agents communicate with each other. The previous FIPA-ACL implementation was
+how agents communicate with each other. The previous agent messaging
+implementation was
 designed for compiled WASM agents, but config agents have different capabilities
 and constraints.
 
 ### Current State Analysis
 
-- **ADR-0003** established FIPA messaging protocol for WASM agents
-- **ADR-0012** defined a pragmatic FIPA subset for performance
+- **ADR-0003** established agent messaging protocol for WASM agents
+- **ADR-0012** defined a pragmatic agent messaging subset for performance
 - Configuration-driven agents need a simpler, more accessible messaging model
 - Contract Net Protocol (CNP) adds significant complexity that may not be needed
   for 1.0
@@ -31,19 +32,20 @@ and constraints.
 1. **Capability-based routing**: Agents should request capabilities, not
    specific agents
 2. **Conversation tracking**: Maintain thread context across message exchanges
-3. **Standard compliance**: Follow FIPA-ACL where practical for interoperability
+3. **Standard compliance**: Follow agent messaging standards where practical
+   for interoperability
 4. **Config agent friendly**: Work naturally with prompt-based agent logic
 5. **Future extensible**: Allow advanced features without breaking simple cases
 
 ## Decision
 
-We will implement a **lightweight FIPA-ACL messaging system** optimized for
+We will implement a **lightweight agent messaging system** optimized for
 configuration-driven agents, with capability-based routing and deferred Contract
 Net Protocol implementation.
 
 ### Message Structure Principles
 
-FIPA messages will include:
+Agent messages will include:
 
 - **Performative**: Communicative intent (REQUEST, INFORM, QUERY, etc.)
 - **Capability-based addressing**: Messages target capabilities, not specific
@@ -92,15 +94,15 @@ specific agent identities.
 
 ### Configuration Agent Integration
 
-Configuration-driven agents participate in FIPA messaging through their runtime
-environment. The agent runtime formats incoming FIPA messages into natural
+Configuration-driven agents participate in agent messaging through their runtime
+environment. The agent runtime formats incoming agent messages into natural
 language prompts that config agents can understand, and parses their responses
-back into FIPA message format.
+back into agent message format.
 
 **Key Integration Points**:
 
-- **Prompt formatting**: Convert FIPA messages to natural language context
-- **Response parsing**: Extract FIPA performatives from agent responses
+- **Prompt formatting**: Convert agent messages to natural language context
+- **Response parsing**: Extract message performatives from agent responses
 - **Conversation continuity**: Maintain thread context across exchanges
 - **Error handling**: Guide agents to use appropriate failure responses
 
@@ -147,7 +149,7 @@ decision-making without complex bidding protocols.
 - **Standard compliance**: Follows FIPA-ACL conventions where practical
 - **Conversation tracking**: Maintains context across multi-turn interactions
 - **Future extensible**: Can add CNP and advanced features in post-1.0 releases
-- **Natural language friendly**: Config agents can generate/parse FIPA messages
+- **Natural language friendly**: Config agents can generate/parse agent messages
   through prompts
 
 ### Negative
@@ -156,7 +158,7 @@ decision-making without complex bidding protocols.
   resource optimization
 - **Limited negotiation**: Only simple propose/accept/reject patterns
 - **Prompt engineering required**: Config agents need good prompts to handle
-  FIPA messages properly
+  agent messages properly
 
 ### Risk Mitigation
 
@@ -164,14 +166,14 @@ decision-making without complex bidding protocols.
   patterns
 - **Capability evolution**: Capability registry can be enhanced without changing
   message format
-- **Protocol versioning**: FIPA messages include protocol field for future
+- **Protocol versioning**: Agent messages include protocol field for future
   compatibility
 
 ## Implementation Plan
 
 ### Phase 1: Core Messaging (1.0)
 
-1. Basic FIPA message structure and performatives
+1. Basic agent message structure and performatives
 2. Capability registry and routing
 3. Conversation management and cleanup
 4. Config agent runtime integration
@@ -192,8 +194,9 @@ decision-making without complex bidding protocols.
 
 ## Alignment with Existing ADRs
 
-- **ADR-0003 (FIPA Messaging Protocol)**: Updates with new lightweight approach
-- **ADR-0012 (Pragmatic FIPA Subset)**: Extends with config-agent-optimized
+- **ADR-0003 (Agent Messaging Protocol)**: Updates with new lightweight approach
+- **ADR-0012 (Pragmatic Agent Messaging Subset)**: Extends with
+  config-agent-optimized
   subset
 - **ADR-0028 (Configuration-Driven Agents)**: Provides messaging layer for
   config agents
@@ -208,7 +211,6 @@ decision-making without complex bidding protocols.
 
 ## References
 
-- [FIPA-ACL Specification](http://www.fipa.org/specs/fipa00061/SC00061G.html)
-- [FIPA Contract Net Protocol](http://www.fipa.org/specs/fipa00029/SC00029H.html)
-  \- deferred to post-1.0
+- Agent communication standards for multi-agent systems
+- Contract Net Protocol patterns - deferred to post-1.0
 - Configuration agent messaging patterns from expert analysis

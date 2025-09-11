@@ -452,7 +452,7 @@ tracking
   for agent coordination and collaboration
 - [Memory Integration](memory-integration.md) - Agent learning and knowledge
   sharing
-- [FIPA Messaging](../messaging/fipa-acl-subset.md) - Communication
+- [Agent Messaging](../messaging/fipa-acl-subset.md) - Communication
   protocols between agents
 - [Message Router](../architecture/message-router.md) - How agent
   communication is coordinated

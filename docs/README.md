@@ -43,7 +43,7 @@ orchestrates multi-agent systems.
 - [API Reference](developer-guide/api-reference.md) - Complete API documentation
 - [Building Agents](developer-guide/building-agents.md) - Agent development in
   depth
-- [Message Protocols](developer-guide/message-protocols.md) - FIPA protocol
+- [Message Protocols](developer-guide/message-protocols.md) - Agent messaging protocol
   implementation
 - [WebAssembly Integration](developer-guide/wasm-integration.md) - WASM module
   details
@@ -74,7 +74,7 @@ orchestrates multi-agent systems.
 - [Architecture Decision Records](adr/) - Key architectural decisions
   - [ADR-0001: Observability First](adr/0001-observability-first-architecture.md)
   - [ADR-0002: WebAssembly Isolation](adr/0002-webassembly-for-agent-isolation.md)
-  - [ADR-0003: FIPA Messaging](adr/0003-fipa-messaging-protocol.md)
+  - [ADR-0003: Agent Messaging](adr/0003-fipa-messaging-protocol.md)
   - [ADR-0004: Minimal Core](adr/0004-minimal-core-philosophy.md)
   - [ADR-0005: MCP Integration](adr/0005-mcp-for-external-tools.md)
   - [ADR-0006: Application Server](adr/0006-application-server-architecture.md)
@@ -83,7 +83,7 @@ orchestrates multi-agent systems.
   - [ADR-0009: CLI Design](adr/0009-cli-tool-design.md)
   - [ADR-0010: External Routing](adr/0010-external-agent-routing-api.md)
   - [ADR-0011: Capability Registration](adr/0011-capability-registration-in-code.md)
-  - [ADR-0012: Pragmatic FIPA Subset](adr/0012-pragmatic-fipa-subset.md)
+  - [ADR-0012: Pragmatic Agent Messaging](adr/0012-pragmatic-fipa-subset.md)
   - [ADR-0013: State Management](adr/0013-state-management-architecture.md)
     *(Superseded)*
   - [ADR-0014: Coordination-First Architecture](adr/0014-coordination-first-architecture.md)

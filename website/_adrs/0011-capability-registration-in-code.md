@@ -61,7 +61,7 @@ The manifest schema enforces this with `additionalProperties: false`.
 ### Neutral
 
 - Version information also moves to code constants
-- Protocol is fixed (FIPA-ACL) rather than configurable
+- Protocol is fixed (agent messaging) rather than configurable
 - No ontology configuration (use JSON schemas in code)
 
 ## Alternatives Considered

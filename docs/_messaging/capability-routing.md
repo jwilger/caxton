@@ -1,6 +1,6 @@
 ---
 title: "Capability-Based Message Routing"
-description: "Understanding capability-based addressing and routing patterns in Caxton's FIPA messaging system"
+description: "Understanding capability-based addressing and routing patterns in Caxton's agent messaging system"
 layout: documentation
 categories: [Messaging, Architecture, Configuration Agents]
 date: 2025-09-10
@@ -328,7 +328,7 @@ content: "Show routing decision for conversation conv_20240910_001"
 ### Context Management Architecture Integration
 
 Capability-based routing integrates with the context management architecture
-(ADR-0031) to provide intelligent, context-aware agent selection. When a FIPA
+(ADR-0031) to provide intelligent, context-aware agent selection. When an agent
 message targets a capability, the Context Router determines context
 requirements and influences routing decisions based on contextual factors.
 
@@ -439,7 +439,7 @@ awareness:
 
 ```mermaid
 flowchart TD
-    A[FIPA Message] --> B[Message Router]
+    A[Agent Message] --> B[Message Router]
     B --> C[Context Router Analysis]
     C --> D{Context Required?}
     D -->|Yes| E[Analyze Context Requirements]

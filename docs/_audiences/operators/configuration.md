@@ -137,7 +137,7 @@ memory:
     page_size: 4096          # SQLite page size optimization
     cache_size: -2000000     # SQLite cache size (2GB)
 
-# FIPA messaging configuration
+# Agent messaging configuration
 messaging:
   max_message_size: 10MB      # Maximum message size
   queue_size: 50000           # Message queue size

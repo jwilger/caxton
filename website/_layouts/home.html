@@ -52,7 +52,7 @@ layout: default
                 <ul class="solution-list">
                     <li>Built-in distributed tracing for every message</li>
                     <li>Agents with minimal setup</li>
-                    <li>FIPA standard protocols out of the box</li>
+                    <li>Standard agent messaging protocols out of the box</li>
                     <li>Graceful degradation during network partitions</li>
                     <li>Embedded memory system - no external dependencies</li>
                     <li>OpenTelemetry from day one</li>
@@ -79,7 +79,7 @@ layout: default
             <div class="feature-card">
                 <div class="feature-icon">💬</div>
                 <h3>Capability-Based Messaging</h3>
-                <p>Lightweight FIPA messaging with capability routing. Agents discover and communicate through capabilities, not addresses.</p>
+                <p>Lightweight agent messaging with capability routing. Agents discover and communicate through capabilities, not addresses.</p>
                 <div class="feature-protocols">
                     <span class="protocol">Capability Routing</span>
                     <span class="protocol">Request/Reply</span>
@@ -197,7 +197,7 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                 <ul>
                     <li><strong>Agents</strong> - YAML+Markdown for 5-10 minute onboarding</li>
                     <li><strong>MCP Tool Security</strong> - Secure tool execution with permission boundaries</li>
-                    <li><strong>Capability Routing</strong> - Lightweight FIPA messaging with capability-based discovery</li>
+                    <li><strong>Capability Routing</strong> - Lightweight agent messaging with capability-based discovery</li>
                     <li><strong>Embedded Memory</strong> - SQLite + Candle vector database built-in</li>
                     <li><strong>MCP Tool Bridge</strong> - Connect to external systems via Model Context Protocol</li>
                     <li><strong>Zero Dependencies</strong> - Self-contained with optional external backends</li>
@@ -244,8 +244,8 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                     </div>
                                 </div>
                                 <div class="message-flow">
-                                    <div class="message fipa">
-                                        <span class="message-type">FIPA: propose</span>
+                                    <div class="message agent">
+                                        <span class="message-type">Agent: propose</span>
                                         <span class="correlation-id">correlation: abc123</span>
                                     </div>
                                 </div>

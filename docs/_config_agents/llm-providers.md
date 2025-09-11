@@ -54,7 +54,7 @@ formats relevant information for optimal agent performance.
 
 The context management system gathers information from four primary sources:
 
-- **Conversation History**: FIPA message threads provide request context and
+- **Conversation History**: Agent message threads provide request context and
   prior exchanges
 - **Memory System**: Semantic search from embedded memory system provides
   historical patterns and knowledge
@@ -107,7 +107,7 @@ dynamically determines optimal context:
 ```rust
 // Conceptual context preparation flow
 async fn prepare_context(
-    request: &FipaMessage,
+    request: &AgentMessage,
     agent_config: &AgentConfig,
     provider: &dyn LlmProvider
 ) -> Result<FormattedContext, ContextError> {

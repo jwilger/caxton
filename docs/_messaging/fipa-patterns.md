@@ -1,16 +1,15 @@
 ---
-title: "FIPA-ACL Lightweight Messaging Patterns"
-description: "Practical patterns for using FIPA-ACL performatives in Caxton's
+title: "Lightweight Agent Messaging Patterns"
+description: "Practical patterns for using agent messaging performatives in Caxton's
   configuration agent system"
 layout: documentation
-categories: [Messaging, FIPA, Communication Patterns]
+categories: [Messaging, Agent Communication, Communication Patterns]
 date: 2025-09-10
 ---
 
 ## Overview
 
-Caxton implements a lightweight FIPA-ACL (Foundation for Intelligent Physical
-Agents - Agent Communication Language) messaging system optimized for
+Caxton implements a lightweight capability-based messaging system optimized for
 configuration-driven agents. This approach provides standardized communication
 patterns while remaining accessible to agents defined through YAML
 configuration and natural language prompts.
@@ -572,7 +571,7 @@ workflow_definition:
         recipients: ["sales_team", "executives"]
 ```
 
-## Best Practices for FIPA Messaging
+## Best Practices for Agent Messaging
 
 ### Message Structure
 
@@ -611,7 +610,7 @@ workflow_definition:
    sending requests
 4. **Log security events**: Track security-relevant message patterns
 
-The FIPA-ACL lightweight messaging system provides a robust foundation for
+The lightweight agent messaging system provides a robust foundation for
 agent communication while remaining accessible to configuration-driven agents.
 By following these patterns, agents can collaborate effectively while
 maintaining loose coupling and operational flexibility.

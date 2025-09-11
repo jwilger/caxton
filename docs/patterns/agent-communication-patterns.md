@@ -714,7 +714,7 @@ mod pattern_tests {
 
 ## References
 
-- [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md)
-- [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md)
+- [ADR-0003: Agent Messaging Protocol](../adr/0003-agent-messaging-protocol.md)
+- [ADR-0012: Pragmatic Agent Messaging Subset](../adr/0012-pragmatic-agent-subset.md)
 - [Enterprise Integration Patterns](https://www.enterpriseintegrationpatterns.com/)
 - [Reactive Messaging Patterns](https://www.reactivemanifesto.org/)

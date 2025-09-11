@@ -639,7 +639,7 @@ const { providers } = await response.json();
 
 // Route request to best provider
 const bestProvider = providers[0];
-const result = await sendFipaMessage(bestProvider.agent_id, {
+const result = await sendAgentMessage(bestProvider.agent_id, {
   performative: 'REQUEST',
   content: { action: 'resize_image', params: { width: 800, height: 600 } }
 });
@@ -676,9 +676,9 @@ const result = await sendFipaMessage(bestProvider.agent_id, {
 
 - [Configuration Agent API](config-agents.md) - Configuration agents
   automatically register capabilities
-- [FIPA Messaging API](fipa-messaging.md) - Send messages to capabilities
+- [Agent Messaging API](agent-messaging.md) - Send messages to capabilities
 - [Memory System API](memory-integration.md) - Store capability usage patterns
-- [ADR-0029](../adr/0029-fipa-acl-lightweight-messaging.md) -
+- [ADR-0029](../adr/0029-agent-messaging.md) -
   Capability-based routing design
 - [ADR-0011](../adr/0011-capability-registration-in-code.md) - Original
   capability registration approach

@@ -128,7 +128,7 @@ async fn test_agent_deployment_lifecycle() {
 
     // Send message to agent
     let response = caxton
-        .send_message(FipaMessage::request(
+        .send_message(AgentMessage::request(
             "system",
             &deployment.agent_id,
             "ping",
@@ -201,7 +201,7 @@ async fn test_multi_agent_conversation() {
 
     // Initiate negotiation
     let negotiation = cluster.nodes[0]
-        .send_message(FipaMessage::cfp(
+        .send_message(AgentMessage::cfp(
             &buyer.agent_id,
             &seller.agent_id,
             "product-123",
@@ -398,7 +398,7 @@ prop_compose! {
 }
 
 prop_compose! {
-    fn arb_fipa_message()(
+    fn arb_agent_message()(
         performative in prop_oneof![
             Just(Performative::Request),
             Just(Performative::Inform),
@@ -407,8 +407,8 @@ prop_compose! {
         sender in arb_agent_id(),
         receiver in arb_agent_id(),
         content in any::<String>(),
-    ) -> FipaMessage {
-        FipaMessage {
+    ) -> AgentMessage {
+        AgentMessage {
             performative,
             sender,
             receiver,
@@ -629,7 +629,7 @@ pub struct TestMetrics {
 
 1. **Fuzzing**: Add fuzzing for protocol implementations
 2. **Load Testing**: Comprehensive load testing framework
-3. **Compliance Testing**: FIPA protocol compliance suite
+3. **Compliance Testing**: Agent protocol compliance suite
 4. **Visual Testing**: UI component testing (if applicable)
 5. **Contract Testing**: Agent interaction contract tests
 

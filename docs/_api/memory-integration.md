@@ -964,7 +964,7 @@ When migrating from embedded to external backends:
   automatically
 - [Capability Registration API](capability-registration.md) - Store
   capability usage patterns
-- [FIPA Messaging API](fipa-messaging.md) - Store conversation context
+- [Agent Messaging API](fipa-messaging.md) - Store conversation context
 - [ADR-0030](../adr/0030-embedded-memory-system.md) - Memory system
   architecture decision
 - [ADR-0013](../adr/0013-state-management-architecture.md) - Agent state

@@ -1,6 +1,6 @@
 ---
 title: "Configuration Agent Messaging Integration"
-description: "How configuration agents participate in FIPA-ACL messaging
+description: "How configuration agents participate in agent messaging
   through runtime integration and natural language processing"
 layout: documentation
 categories: [Configuration Agents, Messaging, Runtime Integration]
@@ -10,8 +10,8 @@ date: 2025-09-10
 ## Overview
 
 Configuration agents (defined through YAML and markdown) participate in
-Caxton's FIPA-ACL messaging system through intelligent runtime integration.
-The system automatically translates between structured FIPA messages and
+Caxton's agent messaging system through intelligent runtime integration.
+The system automatically translates between structured agent messages and
 natural language prompts that configuration agents can understand and respond
 to effectively.
 
@@ -19,25 +19,25 @@ to effectively.
 
 ### Message Processing Pipeline
 
-When a FIPA message is routed to a configuration agent, the runtime
+When an agent message is routed to a configuration agent, the runtime
 performs several transformation steps:
 
 ```mermaid
 graph TD
-    A[Incoming FIPA Message] --> B[Message Parser]
+    A[Incoming Agent Message] --> B[Message Parser]
     B --> C[Context Builder]
     C --> D[Prompt Formatter]
     D --> E[Configuration Agent]
     E --> F[Response Parser]
-    F --> G[FIPA Message Builder]
-    G --> H[Outgoing FIPA Message]
+    F --> G[Agent Message Builder]
+    G --> H[Outgoing Agent Message]
 
     I[Conversation Context] --> C
     J[Agent Configuration] --> D
     K[Capability Registry] --> B
 ```
 
-1. **Message Parser**: Extracts FIPA performative, content, and metadata
+1. **Message Parser**: Extracts agent message performative, content, and metadata
 2. **Context Builder**: Integrates with Context Router (ADR-0031) to gather
    multi-source context including conversation history, semantic memory
    patterns, and tool-specific data
@@ -45,9 +45,9 @@ graph TD
    context following agent's template
 4. **Configuration Agent**: Processes the context-enhanced prompt using LLM
    capabilities
-5. **Response Parser**: Extracts FIPA performative and structured data from
+5. **Response Parser**: Extracts agent message performative and structured data from
    response
-6. **Message Builder**: Constructs properly formatted FIPA response message
+6. **Message Builder**: Constructs properly formatted agent response message
 
 ### Agent Configuration for Messaging
 
@@ -143,7 +143,7 @@ Ask me to:
 
 ### REQUEST Message Processing
 
-**Incoming FIPA Message:**
+**Incoming Agent Message:**
 
 ```yaml
 performative: REQUEST
@@ -228,7 +228,7 @@ agent_response: |
   I understand your frustration, Mr. Doe, and I sincerely apologize for this delivery issue. As a premium customer, you deserve better service, and we've taken immediate action to make this right.
 ```
 
-**Generated FIPA Response Message:**
+**Generated Agent Response Message:**
 
 ```yaml
 performative: INFORM
@@ -265,7 +265,7 @@ resolution_data:
 
 ### QUERY Message Processing
 
-**Incoming FIPA Message:**
+**Incoming Agent Message:**
 
 ```yaml
 performative: QUERY
@@ -312,7 +312,7 @@ user_prompt: |
 
 ### PROPOSE Message Processing
 
-**Incoming FIPA Message:**
+**Incoming Agent Message:**
 
 ```yaml
 performative: PROPOSE

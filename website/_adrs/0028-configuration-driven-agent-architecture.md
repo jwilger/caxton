@@ -162,7 +162,7 @@ The implementation will focus on three core areas:
 
 ## Related Decisions
 
-- ADR-0029: FIPA-ACL Lightweight Messaging (defines how config agents
+- ADR-0029: Agent Messaging Protocol (defines how config agents
   communicate)
 - ADR-0030: Embedded Memory System (provides memory capabilities to config
   agents)

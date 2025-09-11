@@ -295,7 +295,7 @@ DELETE /api/v1/agents/{agent_id}
 
 ### Send Message to Capability
 
-Send a FIPA message to agents with specific capabilities (capability-based
+Send an agent message to agents with specific capabilities (capability-based
 routing).
 
 #### REST
@@ -971,6 +971,6 @@ GET /api/v1/agents/{agent_id}/memory/stats
 ## Next Steps
 
 - [Building Agents](building-agents.md) - Configuration agent development guide
-- [Message Protocols](message-protocols.md) - FIPA protocol details
+- [Message Protocols](message-protocols.md) - Agent messaging protocol details
 - [Security Guide](security-guide.md) - Configuration agent security model
 - [Testing Guide](testing.md) - Testing strategies

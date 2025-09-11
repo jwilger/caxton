@@ -14,7 +14,8 @@ Proposed
 ## Context
 
 With the coordination-first architecture (ADR-0014), Caxton uses SWIM for
-cluster coordination and FIPA for agent messaging. This ADR clarifies how these
+cluster coordination and agent messaging protocols for semantic
+communication. This ADR clarifies how these
 protocols interact and addresses distributed systems concerns including network
 partitioning, consistency, and fault tolerance.
 
@@ -23,7 +24,7 @@ partitioning, consistency, and fault tolerance.
 ### Protocol Layer Separation
 
 Caxton implements a clear separation between coordination (SWIM) and
-communication (FIPA) protocols:
+communication (agent messaging) protocols:
 
 #### SWIM Protocol (Infrastructure Layer)
 
@@ -33,7 +34,7 @@ communication (FIPA) protocols:
 - **Consistency**: Eventually consistent via gossip
 - **Failure Model**: Crash-stop failures
 
-#### FIPA Protocol (Application Layer)
+#### Agent Messaging Protocol (Application Layer)
 
 - **Responsibility**: Agent-to-agent semantic messaging
 - **Scope**: Business logic communication
@@ -111,7 +112,8 @@ The system supports configurable delivery semantics:
 
 ### Positive
 
-- **Clear separation of concerns**: SWIM handles infrastructure, FIPA handles
+- **Clear separation of concerns**: SWIM handles infrastructure, agent
+  messaging handles
   application
 - **Graceful degradation**: System continues functioning during partitions
 - **Flexible consistency**: Eventually consistent for coordination, stronger
@@ -150,13 +152,17 @@ requirements.
 
 ## References
 
-- [SWIM Protocol Paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
-- [FIPA Agent Communication Language](http://www.fipa.org/specs/fipa00061/SC00061G.html)
-- [Distributed Systems: Principles and Paradigms](https://www.distributed-systems.net/index.php/books/ds3/)
+- [SWIM Protocol Paper]
+  (https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
+- [Agent Communication Research]
+  (http://www.fipa.org/specs/fipa00061/SC00061G.html)
+- [Distributed Systems: Principles and Paradigms]
+  (https://www.distributed-systems.net/index.php/books/ds3/)
 - [memberlist-rs](https://github.com/vectordotdev/memberlist-rs)
 - [MessagePack Specification](https://msgpack.org/)
 - [QUIC RFC 9000](https://datatracker.ietf.org/doc/html/rfc9000)
-- [ADR-0014: Coordination-First Architecture](0014-coordination-first-architecture.md)
-- [ADR-0012: Pragmatic FIPA Subset](0012-pragmatic-fipa-subset.md)
+- [ADR-0014: Coordination-First Architecture]
+  (0014-coordination-first-architecture.md)
+- [ADR-0012: Pragmatic Agent Messaging](0012-pragmatic-fipa-subset.md)
 - [ADR-0016: Security Architecture](0016-security-architecture.md)
 - [ADR-0017: Performance Requirements](0017-performance-requirements.md)

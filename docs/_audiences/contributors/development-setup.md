@@ -82,7 +82,7 @@ caxton/
 │   ├── sandbox.rs         # WebAssembly sandboxing
 │   ├── security.rs        # Security policies
 │   ├── resource_manager.rs # Resource management
-│   ├── message_router/    # FIPA message routing
+│   ├── message_router/    # Agent message routing
 │   ├── runtime/           # Agent runtime environment
 │   └── host_functions.rs  # Safe host function registry
 ├── tests/                 # Integration tests
@@ -227,7 +227,7 @@ principles:
 **Core Architecture:**
 
 - **Hybrid Runtime**: Config agents for ease, WASM for performance
-- **FIPA Messaging**: Capability-based message routing
+- **Agent Messaging**: Capability-based message routing
 - **Embedded Memory**: SQLite+Candle for zero dependencies
 - **Security Isolation**: WASM sandboxes for tools, not config agents
 

@@ -223,7 +223,7 @@ caxton conversations list
 caxton conversations show <conversation-id> --follow
 ```
 
-You'll see FIPA message flows between agents:
+You'll see agent message flows between agents:
 
 ```text
 CONVERSATION: conv-123
@@ -238,7 +238,7 @@ Open http://localhost:8080/dashboard to see:
 
 - **Agent Status**: Real-time agent health and activity
 - **Capability Map**: Visual representation of available capabilities
-- **Message Flow**: FIPA message routing and conversation threads
+- **Message Flow**: Agent message routing and conversation threads
 - **Memory Insights**: What agents are learning and storing
 - **Performance Metrics**: Response times and resource usage
 
@@ -270,9 +270,9 @@ Agents automatically improve through embedded memory:
 
 ### Professional Messaging
 
-FIPA-ACL ensures robust agent communication:
+Capability-based messaging ensures robust agent communication:
 
-- **Standard protocols**: Industry-standard agent messaging
+- **Standard protocols**: Structured agent messaging patterns
 - **Conversation tracking**: Maintain context across multi-turn interactions
 - **Error handling**: Proper failure and retry semantics
 

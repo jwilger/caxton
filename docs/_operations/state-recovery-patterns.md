@@ -1415,7 +1415,7 @@ recovery_dashboard:
 
 - [ADR-0028: Configuration-Driven Agent Architecture](../adr/0028-configuration-driven-agent-architecture.md)
 - [ADR-0030: Embedded Memory System](../adr/0030-embedded-memory-system.md)
-- [ADR-0029: FIPA-ACL Lightweight Messaging](../adr/0029-fipa-acl-lightweight-messaging.md)
+- [ADR-0029: Lightweight Agent Messaging](../adr/0029-fipa-acl-lightweight-messaging.md)
 - [Operational Runbook](operational-runbook.md)
 - [Agent Lifecycle Management](agent-lifecycle-management.md)
 - [Performance Tuning Guide](performance-tuning.md)

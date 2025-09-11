@@ -64,7 +64,7 @@ Each Caxton instance:
 │              Agent Layer                     │
 │  (WebAssembly Isolated Agents)              │
 ├─────────────────────────────────────────────┤
-│         FIPA Messaging Protocol              │
+│        Agent Messaging Protocol              │
 │    (Semantic Agent Communication)           │
 ├─────────────────────────────────────────────┤
 │        Coordination Layer (SWIM)             │
@@ -91,7 +91,7 @@ Handles infrastructure-level coordination:
 See [ADR-0015](../adr/0015-distributed-protocol-architecture.md) for protocol
 details.
 
-### FIPA Messaging Layer
+### Agent Messaging Layer
 
 Handles application-level communication:
 
@@ -319,7 +319,7 @@ failure | Degraded operation |
 
 Caxton's coordination-first architecture represents a significant simplification
 while maintaining distributed systems capabilities. By eliminating external
-dependencies and using proven protocols like SWIM and FIPA, Caxton provides:
+dependencies and using proven protocols like SWIM and agent messaging, Caxton provides:
 
 - **Operational simplicity** without sacrificing features
 - **Production reliability** with graceful failure handling

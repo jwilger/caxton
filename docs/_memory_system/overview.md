@@ -62,7 +62,7 @@ agents (ADR-0031), providing:
 
 - **Intelligent context retrieval** through semantic search with <50ms
   performance targets
-- **Conversation-aware memory queries** that integrate with FIPA messaging
+- **Conversation-aware memory queries** that integrate with agent messaging
   threads
 - **Template-based context gathering** using patterns like
   `{{capability}} tasks similar to {{request}}`
@@ -235,7 +235,7 @@ find relevant historical knowledge:
 
 ### Memory-Driven Context Flow
 
-1. **Agent Request Analysis**: FIPA message parsed to extract capability
+1. **Agent Request Analysis**: Agent message parsed to extract capability
    and task requirements
 2. **Memory Query Generation**: Context Router creates semantic search
    queries based on request context
@@ -489,7 +489,7 @@ policies
 - [Migration Guide](/docs/memory-system/migration.md)
 - [Configuration-Driven Agents](
   /docs/_adrs/0028-configuration-driven-agent-architecture.md)
-- [FIPA-ACL Lightweight Messaging](
+- [Lightweight Agent Messaging](
   /docs/_adrs/0029-fipa-acl-lightweight-messaging.md)
 
 ## Next Steps

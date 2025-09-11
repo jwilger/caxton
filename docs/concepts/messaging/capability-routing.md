@@ -427,8 +427,8 @@ routing_decision:
 ## Related Concepts
 
 - **[Messaging Overview](/docs/concepts/messaging/overview.md)**:
-  Foundational messaging architecture and FIPA-ACL integration
-- **[FIPA-ACL Subset](/docs/concepts/messaging/fipa-acl-subset.md)**:
+  Foundational messaging architecture and agent messaging integration
+- **[Agent Messaging Subset](/docs/concepts/messaging/agent-messaging-subset.md)**:
   Standardized communication protocols enabling capability routing
 - **[Conversation Management](/docs/concepts/messaging/conversation-management.md)**:
   Multi-turn dialogues and context preservation with capability routing

@@ -1,7 +1,7 @@
 ---
 title: "Configuration Agent Integration Concepts"
-description: "Understanding how configuration agents participate in FIPA-ACL
-  messaging through intelligent runtime integration and natural language processing"
+description: "Understanding how configuration agents participate in agent messaging
+  through intelligent runtime integration and natural language processing"
 date: 2025-01-13
 categories: [Concepts, Messaging, Configuration, Integration]
 layout: concept
@@ -13,7 +13,7 @@ level: advanced
 Configuration agents are defined through **YAML and markdown files** rather
 than compiled code, making them incredibly accessible to developers. However,
 this simplicity raises a question: how do these natural language-based agents
-participate in structured FIPA-ACL messaging protocols?
+participate in structured agent messaging protocols?
 
 The answer is **intelligent runtime integration**—a system that automatically
 translates between structured messages and natural language prompts while
@@ -23,7 +23,7 @@ preserving the benefits of both approaches.
 
 ### Bridging Two Worlds
 
-**Structured Messaging World** (FIPA-ACL):
+**Structured Messaging World** (Agent Messaging):
 
 - Precise performatives (REQUEST, INFORM, QUERY)
 - Formal conversation threading
@@ -46,8 +46,8 @@ that makes configuration agents appealing?
 **Automatic Message Transformation**:
 The system acts as an intelligent **translation layer** that:
 
-- **Inbound**: Converts FIPA messages into natural language prompts
-- **Outbound**: Extracts FIPA structure from natural language responses
+- **Inbound**: Converts agent messages into natural language prompts
+- **Outbound**: Extracts agent message structure from natural language responses
 - **Context**: Enriches prompts with relevant conversational and domain context
 - **Preservation**: Maintains message threading and conversation continuity
 
@@ -60,10 +60,10 @@ automatically.
 
 ### Inbound Message Flow
 
-**FIPA Message → Natural Language Prompt**:
+**Agent Message → Natural Language Prompt**:
 
 ```text
-1. FIPA Message Arrives
+1. Agent Message Arrives
    ├── performative: REQUEST
    ├── capability: customer-support
    ├── content: "Help customer with order issue"
@@ -97,7 +97,7 @@ automatically.
 
 ### Outbound Message Flow
 
-**Natural Language Response → FIPA Message**:
+**Natural Language Response → Agent Message**:
 
 ```text
 1. Agent Response Processing
@@ -106,14 +106,14 @@ automatically.
    ├── Structured data identification
    └── Action result parsing
 
-2. FIPA Message Construction
+2. Agent Message Construction
    ├── Performative selection based on response intent
    ├── Content formatting for structured transmission
    ├── Conversation threading (in_reply_to, reply_with)
    └── Metadata extraction for routing
 
 3. Message Validation
-   ├── FIPA protocol compliance checking
+   ├── Agent protocol compliance checking
    ├── Required field validation
    ├── Content structure verification
    └── Performance measurement logging
@@ -129,7 +129,7 @@ automatically.
 
 ### Customer Support Scenario
 
-**Incoming FIPA Request**:
+**Incoming Agent Request**:
 
 ```yaml
 performative: REQUEST
@@ -207,7 +207,7 @@ ACTIONS_TAKEN: {
 }
 ```
 
-**Generated FIPA Response**:
+**Generated Agent Response**:
 
 ```yaml
 performative: INFORM
@@ -404,7 +404,7 @@ agent_response: |
   Would you like me to start with the statistical analysis and route
   the ML components to the appropriate specialist?
 
-# System converts to appropriate FIPA messages
+# System converts to appropriate agent messages
 routing_request:
   performative: REQUEST
   capability: machine-learning
@@ -511,11 +511,11 @@ batch_processing:
 
 ### For Developers
 
-1. **Integration Architecture**: Understanding how FIPA messages become
+1. **Integration Architecture**: Understanding how agent messages become
    natural language prompts
 2. **Context Management**: Designing agents that effectively use
    conversational and domain context
-3. **Response Parsing**: Structuring agent responses for effective FIPA
+3. **Response Parsing**: Structuring agent responses for effective agent
    message generation
 4. **Performance Tuning**: Optimizing context preparation and response generation
 
@@ -523,7 +523,7 @@ batch_processing:
 
 1. **User Experience**: How seamless integration improves agent interaction quality
 2. **Capability Modeling**: Designing agent capabilities that work well with
-   FIPA messaging
+   agent messaging
 3. **Workflow Design**: Planning multi-agent interactions with configuration agents
 4. **Quality Metrics**: Measuring integration effectiveness and user satisfaction
 
@@ -550,7 +550,7 @@ batch_processing:
 
 - **[Messaging Overview](/docs/concepts/messaging/overview.md)**:
   Foundational messaging architecture enabling configuration agent integration
-- **[FIPA-ACL Subset](/docs/concepts/messaging/fipa-acl-subset.md)**:
+- **[Agent Messaging Subset](/docs/concepts/messaging/agent-messaging-subset.md)**:
   Structured communication protocols that configuration agents participate in
 - **[Conversation Management](/docs/concepts/messaging/conversation-management.md)**:
   Multi-turn dialogue context that enhances configuration agent responses

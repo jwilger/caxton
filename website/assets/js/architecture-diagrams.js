@@ -240,7 +240,7 @@ class ArchitectureDiagrams {
     // Add tooltips
     this.addTooltips(svg, [
       { element: agents[0], text: 'Each agent runs in an isolated WASM sandbox with restricted system access' },
-      { x: 220, y: 175, text: 'Message Bus handles secure inter-agent communication via FIPA protocols' },
+      { x: 220, y: 175, text: 'Message Bus handles secure inter-agent communication via agent messaging protocols' },
       { x: 310, y: 175, text: 'Resource Manager enforces memory and CPU limits per agent' }
     ]);
 
@@ -248,13 +248,13 @@ class ArchitectureDiagrams {
   }
 
   /**
-   * Create FIPA Message Flow diagram
+   * Create Agent Message Flow diagram
    */
   createFipaMessageFlowDiagram(container) {
     const svg = this.createSVGElement(container, 900, 700);
 
     // Title
-    this.addText(svg, 450, 30, 'FIPA Message Flow Architecture', {
+    this.addText(svg, 450, 30, 'Agent Message Flow Architecture', {
       fontSize: '18px',
       fontWeight: 'bold',
       textAnchor: 'middle',
@@ -293,7 +293,7 @@ class ArchitectureDiagrams {
       rx: 8
     });
 
-    this.addText(svg, 450, 270, 'FIPA Message Bus', {
+    this.addText(svg, 450, 270, 'Agent Message Bus', {
       fontSize: '16px',
       fontWeight: 'bold',
       textAnchor: 'middle',
@@ -434,7 +434,7 @@ class ArchitectureDiagrams {
       </marker>
     `;
 
-    this.diagrams.set('fipa-message-flow', svg);
+    this.diagrams.set('agent-message-flow', svg);
   }
 
   /**

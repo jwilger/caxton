@@ -34,7 +34,7 @@ Based on analysis of the existing codebase:
 2. **Domain Types**: Strong type safety using `nutype` for preventing primitive
    obsession
 3. **Coordination-First Architecture**: ADR-0014 establishes lightweight
-   coordination via SWIM protocol and FIPA messaging
+   coordination via SWIM protocol and agent messaging
 4. **Agent Lifecycle States**: Unloaded → Loaded → Running → Draining → Stopped
 5. **Resource Management**: CPU fuel, memory limits, and message counting
    already implemented
@@ -43,7 +43,7 @@ Based on analysis of the existing codebase:
 
 The message router must handle multiple domain concepts:
 
-- **Agent Communication**: FIPA-ACL message structure and performatives
+- **Agent Communication**: Agent message structure and performatives
 - **Routing Information**: Agent location and reachability
 - **Conversation Management**: Multi-turn dialog state
 - **Observability Context**: Trace correlation across system boundaries
@@ -159,7 +159,7 @@ without losing messages.
 
 **Acceptance Criteria:**
 
-- Failed deliveries generate FIPA FAILURE messages back to sender
+- Failed deliveries generate agent FAILURE messages back to sender
 - Temporary failures are retried with exponential backoff
 - Permanent failures (agent not found) are reported immediately
 - Circuit breaker pattern prevents cascade failures
@@ -236,7 +236,7 @@ observability.
 
 **Acceptance Criteria:**
 
-- Trace context is automatically injected into FIPA message headers
+- Trace context is automatically injected into agent message headers
 - Span is created for each routing operation
 - Trace context propagates across node boundaries
 - Custom attributes include agent IDs, message types, and conversation IDs
@@ -330,14 +330,14 @@ pub struct TraceSamplingRatio(f64);
 
 ## Message Structure Specification
 
-### FIPA-ACL Message Format
+### Agent Message Format
 
-Based on ADR-0003 and ADR-0012, messages follow FIPA-ACL structure:
+Based on ADR-0003 and ADR-0012, messages follow agent messaging structure:
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FipaMessage {
-    // Standard FIPA fields
+pub struct AgentMessage {
+    // Standard message fields
     pub performative: Performative,
     pub sender: AgentId,
     pub receiver: AgentId,
@@ -360,7 +360,7 @@ pub struct FipaMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Performative {
-    // Core FIPA performatives
+    // Core agent messaging performatives
     Request,
     Inform,
     QueryIf,
@@ -452,8 +452,8 @@ pub struct MessageRouter {
     conversations: Arc<RwLock<HashMap<ConversationId, Conversation>>>,
 
     // Message queues
-    inbound_queue: mpsc::Receiver<FipaMessage>,
-    outbound_queue: mpsc::Sender<FipaMessage>,
+    inbound_queue: mpsc::Receiver<AgentMessage>,
+    outbound_queue: mpsc::Sender<AgentMessage>,
 
     // Components
     delivery_engine: DeliveryEngine,
@@ -544,7 +544,7 @@ pub struct AgentQueueSize(usize);
 #[async_trait]
 pub trait MessageRouter: Send + Sync {
     /// Submit a message for routing
-    async fn route_message(&self, message: FipaMessage) -> Result<MessageId, RouterError>;
+    async fn route_message(&self, message: AgentMessage) -> Result<MessageId, RouterError>;
 
     /// Register a new agent
     async fn register_agent(
@@ -639,7 +639,7 @@ CREATE TABLE IF NOT EXISTS conversations (
 CREATE TABLE IF NOT EXISTS message_queue (
     id TEXT PRIMARY KEY,
     agent_id TEXT NOT NULL,
-    message BLOB NOT NULL, -- Serialized FipaMessage
+    message BLOB NOT NULL, -- Serialized AgentMessage
     priority INTEGER NOT NULL,
     created_at INTEGER NOT NULL,
     retry_count INTEGER DEFAULT 0,
@@ -840,7 +840,7 @@ mod benchmarks {
 ### Message Validation
 
 - **Size Limits**: Messages must not exceed 10MB (configurable)
-- **Content Validation**: FIPA message structure must be valid
+- **Content Validation**: Agent message structure must be valid
 - **Agent Authorization**: Only registered agents can send messages
 - **Rate Limiting**: Per-agent message rate limits to prevent flooding
 - **Content Sanitization**: Message content is treated as opaque binary data

@@ -144,7 +144,7 @@ categories: [api, performance]
 
 ### Messaging System Performance
 
-#### FIPA Message Routing
+#### Agent Message Routing
 
 ##### Message Delivery
 
@@ -212,7 +212,7 @@ categories: [api, performance]
 
 - **Configuration Agents**: ~10KB per agent configuration
 - **Memory Entities**: ~2.5KB per entity (including vector)
-- **Message History**: ~1KB per FIPA message (with content)
+- **Message History**: ~1KB per agent message (with content)
 - **System Logs**: ~50MB per day (info level)
 
 #### Disk I/O Patterns
@@ -318,7 +318,7 @@ caxton benchmark graph-traversal \
 ##### Message Routing Throughput
 
 ```bash
-# Test FIPA message routing performance
+# Test agent message routing performance
 caxton benchmark message-routing \
   --message-rate 100,500,1000 \
   --agent-count 10,50,100 \

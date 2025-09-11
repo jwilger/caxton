@@ -1148,4 +1148,4 @@ impl EmbeddedMemoryBackend {
 - [ADR-0030: Embedded Memory System](/docs/_adrs/0030-embedded-memory-system.md)
 - [ADR-0031: Context Management Architecture](/docs/_adrs/0031-context-management-architecture.md)
 - [Configuration-Driven Agents](/docs/_adrs/0028-configuration-driven-agent-architecture.md)
-- [FIPA-ACL Lightweight Messaging](/docs/_adrs/0029-fipa-acl-lightweight-messaging.md)
+- [Lightweight Agent Messaging](/docs/_adrs/0029-fipa-acl-lightweight-messaging.md)

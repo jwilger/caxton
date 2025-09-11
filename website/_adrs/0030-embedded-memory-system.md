@@ -190,7 +190,8 @@ systems scale.
 
 - **ADR-0028 (Configuration-Driven Agents)**: Provides memory capabilities for
   config agents
-- **ADR-0029 (FIPA-ACL Messaging)**: Agents can store conversation context and
+- **ADR-0029 (Agent Messaging Protocol)**: Agents can store conversation
+  context and
   patterns
 - **ADR-0004 (Minimal Core Philosophy)**: Embedded approach minimizes external
   dependencies
@@ -201,18 +202,20 @@ systems scale.
 
 - ADR-0028: Configuration-Driven Agent Architecture (defines agents that use
   memory)
-- ADR-0029: FIPA-ACL Lightweight Messaging (conversations can be stored in
+- ADR-0029: Agent Messaging Protocol (conversations can be stored in
   memory)
 - ADR-0013: State Management Architecture (memory is part of agent state
   management)
 
 ## References
 
-- [Memento MCP Tools](https://github.com/modelcontextprotocol/servers/tree/main/src/memory)
+- [Memento MCP Tools]
+  (https://github.com/modelcontextprotocol/servers/tree/main/src/memory)
   \- inspiration for entity-relation model
 - [SQLite Vector Search](https://alexgarcia.xyz/sqlite-vec/) - sqlite-vec
   extension
 - [Sentence Transformers](https://www.sbert.net/) - embedding model approach
-- [All-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+- [All-MiniLM-L6-v2]
+  (https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
   \- specific model selection
 - Expert analysis on embedded vs external memory systems

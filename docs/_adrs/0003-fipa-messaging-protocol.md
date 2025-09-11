@@ -1,8 +1,8 @@
 ---
-title: "ADR-0003: FIPA Messaging"
+title: "ADR-0003: Agent Messaging Protocol"
 date: 2025-01-31
 status: superseded
-superseded_by: "ADR-0029: FIPA-ACL Lightweight Messaging"
+superseded_by: "ADR-0029: Lightweight Agent Messaging"
 layout: adr
 categories: [Architecture, Technology]
 ---
@@ -10,10 +10,12 @@ categories: [Architecture, Technology]
 
 ## Status
 
-**Superseded** by [ADR-0029: FIPA-ACL Lightweight Messaging](0029-fipa-acl-lightweight-messaging.md)
+**Superseded** by
+[ADR-0029: Lightweight Agent Messaging](0029-fipa-acl-lightweight-messaging.md)
 
-This ADR established FIPA messaging for compiled WASM agents. ADR-0029
-updates the FIPA approach specifically for configuration-driven agents with a
+This ADR established agent messaging protocols for compiled WASM agents.
+ADR-0029
+updates the approach specifically for configuration-driven agents with a
 lightweight, capability-based messaging system.
 
 ## Context
@@ -31,12 +33,12 @@ effort and limit interoperability with existing agent systems.
 
 ## Decision
 
-We will use FIPA ACL (Agent Communication Language) as the messaging protocol
+We will use a structured agent communication protocol based on performatives
 for agent communication in Caxton.
 
 Key aspects:
 
-- Messages use FIPA performatives (request, inform, propose, etc.)
+- Messages use performatives (request, inform, propose, etc.)
 - Standard fields: sender, receiver, content, language, ontology
 - Support for conversation protocols and correlation
 - Well-defined semantics for each message type
@@ -46,26 +48,30 @@ Key aspects:
 
 ### Positive
 
-- **Industry standard**: FIPA has 20+ years of research and real-world use
+- **Proven concepts**: Performative-based messaging has 20+ years of
+  research and real-world use
 - **Rich semantics**: Performatives clearly express agent intentions
-- **Interoperability**: Can communicate with other FIPA-compliant systems
+- **Interoperability**: Can communicate with other agent systems using
+  similar patterns
 - **Proven patterns**: Established patterns for auctions, negotiations, etc.
 - **Extensible**: Can add custom fields while maintaining compatibility
 
 ### Negative
 
-- **Complexity**: FIPA ACL is more complex than simple JSON messages
+- **Complexity**: Performative-based messaging is more complex than simple
+  JSON messages
 - **Learning curve**: Developers must understand performatives and protocols
 - **Overhead**: More verbose than minimal protocols
-- **Legacy aspects**: Some FIPA concepts feel dated in modern systems
+- **Legacy aspects**: Some traditional agent communication concepts feel
+  dated in modern systems
 
 ### Mitigations
 
-- Provide high-level builders that hide FIPA complexity for simple cases
+- Provide high-level builders that hide protocol complexity for simple cases
 - Create comprehensive documentation with modern examples
 - Support efficient binary encoding (not just XML/string formats)
-- Focus on the subset of FIPA that provides clear value
-- Allow raw message passing for scenarios that don't fit FIPA
+- Focus on the subset of agent messaging patterns that provide clear value
+- Allow raw message passing for scenarios that don't fit structured protocols
 
 ## Alternatives Considered
 
@@ -94,13 +100,14 @@ Key aspects:
 The FIPA messaging approach requires:
 
 - **Message structure standardization**: All agent messages must include
-  FIPA-standard fields such as performative, sender, receiver, and conversation
+  standard fields such as performative, sender, receiver, and conversation
   context
-- **Performative semantics**: The system must support standard FIPA
+- **Performative semantics**: The system must support standard
   performatives (request, inform, propose, etc.) with their defined meanings
 - **Conversation correlation**: Messages must be linkable through conversation
   IDs and reply relationships to support multi-turn interactions
-- **Developer experience balance**: While maintaining FIPA compliance, provide
+- **Developer experience balance**: While maintaining protocol consistency,
+  provide
   simplified APIs for common messaging patterns to reduce complexity
 
 ## References

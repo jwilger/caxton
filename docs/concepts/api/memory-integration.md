@@ -478,7 +478,7 @@ patterns
   capability usage patterns
 - [Configuration Patterns](config-agent-patterns.md) - Memory-enabled
   collaboration patterns
-- [FIPA Messaging](../messaging/fipa-acl-subset.md) - Conversation context
+- [Agent Messaging](../messaging/fipa-acl-subset.md) - Conversation context
   preservation
 - [Message Router](../architecture/message-router.md) - Context-aware
   message routing

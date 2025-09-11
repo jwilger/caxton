@@ -615,6 +615,6 @@ Existing WASM agents can be migrated to configuration agents:
   discover agent capabilities
 - [Memory System API](memory-integration.md) - Agent memory and knowledge
   management
-- [FIPA Messaging API](fipa-messaging.md) - Inter-agent communication
+- [Agent Messaging API](fipa-messaging.md) - Inter-agent communication
 - [ADR-0028](../adr/0028-configuration-driven-agent-architecture.md) -
   Architectural decision rationale

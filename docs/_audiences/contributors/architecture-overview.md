@@ -11,7 +11,7 @@ layout: page
 Caxton is a production-ready multi-agent orchestration server that
 provides **configuration-driven agents** as the primary user experience,
 with optional WebAssembly isolation for advanced use cases. The system
-offers FIPA-compliant messaging, embedded memory capabilities, and
+offers capability-based messaging, embedded memory capabilities, and
 comprehensive observability.
 
 ## Core Architectural Principles
@@ -66,7 +66,7 @@ impl Agent<Loaded> {
 
 // Only running agents can process messages
 impl Agent<Running> {
-    pub fn handle_message(&self, msg: FipaMessage) -> Result<(), ProcessingError>
+    pub fn handle_message(&self, msg: AgentMessage) -> Result<(), ProcessingError>
 }
 ```
 
@@ -116,7 +116,7 @@ out of the box:
 │  │       └─────────────────┼─────────────────┘           │ │
 │  │                         │                             │ │
 │  │  ┌─────────────────────▼───────────────────────────┐  │ │
-│  │  │      Capability-Based FIPA Message Router       │  │ │
+│  │  │      Capability-Based Agent Message Router       │  │ │
 │  │  │  • Capability Routing • Conversation Mgmt       │  │ │
 │  │  │  • Protocol Handling  • Error Recovery          │  │ │
 │  │  └─────────────────────────────────────────────────┘  │ │
@@ -187,13 +187,13 @@ impl AgentRuntime {
 }
 ```
 
-### FIPA Message Router with Capability-Based Routing
+### Agent Message Router with Capability-Based Routing
 
 **Core Innovation**: Messages target capabilities, not specific agents.
 
 ```rust
 #[derive(Debug, Clone)]
-pub struct FipaMessage {
+pub struct AgentMessage {
     pub id: MessageId,
     pub performative: Performative,
     pub sender: AgentId,
@@ -208,7 +208,7 @@ pub struct FipaMessage {
 impl CapabilityRouter {
     pub async fn route_by_capability(
         &self,
-        message: FipaMessage
+        message: AgentMessage
     ) -> Result<(), RoutingError> {
         // 1. Find agents providing target capability
         let capable_agents = self.capability_registry
@@ -337,7 +337,7 @@ impl Agent<Running> {
 
 // Only running agents can process messages
 impl Agent<Running> {
-    pub fn handle_message(&self, msg: FipaMessage) -> Result<(), ProcessingError>
+    pub fn handle_message(&self, msg: AgentMessage) -> Result<(), ProcessingError>
 }
 ```
 
@@ -372,7 +372,7 @@ impl Agent<Running> {
 
 ```rust
 #[instrument(skip(self, message))]
-pub async fn route_message(&self, message: FipaMessage) -> Result<(), RoutingError> {
+pub async fn route_message(&self, message: AgentMessage) -> Result<(), RoutingError> {
     // Every operation creates structured logs and metrics
     let span = tracing::info_span!(
         "message_process",

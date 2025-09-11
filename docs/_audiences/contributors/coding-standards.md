@@ -102,7 +102,7 @@ cargo fmt --check
 /// # Arguments
 ///
 /// * `agent_id` - Unique identifier for the agent
-/// * `message` - FIPA message to process
+/// * `message` - Agent message to process
 ///
 /// # Returns
 ///
@@ -120,13 +120,13 @@ cargo fmt --check
 ///
 /// ```rust
 /// let agent_id = AgentId::generate();
-/// let message = FipaMessage::new(/* ... */);
+/// let message = AgentMessage::new(/* ... */);
 /// runtime.route_message(agent_id, message)?;
 /// ```
 pub async fn route_message(
     &self,
     agent_id: AgentId,
-    message: FipaMessage
+    message: AgentMessage
 ) -> Result<(), RoutingError> {
     // Implementation
 }
@@ -511,7 +511,7 @@ pub async fn deploy_agent(
 **Public APIs require comprehensive documentation:**
 
 ```rust
-/// Routes a FIPA message to the appropriate agent based on capability.
+/// Routes an agent message to the appropriate agent based on capability.
 ///
 /// This function implements capability-based routing where messages target
 /// specific capabilities rather than agent addresses, enabling loose coupling
@@ -519,7 +519,7 @@ pub async fn deploy_agent(
 ///
 /// # Arguments
 ///
-/// * `message` - The FIPA message to route, must have a valid target capability
+/// * `message` - The agent message to route, must have a valid target capability
 ///
 /// # Returns
 ///
@@ -537,7 +537,7 @@ pub async fn deploy_agent(
 ///
 /// ```rust
 /// let router = CapabilityRouter::new();
-/// let message = FipaMessage::request(
+/// let message = AgentMessage::request(
 ///     AgentId::system(),
 ///     Capability::new("data-analysis"),
 ///     MessageContent::json(analysis_request)
@@ -545,7 +545,7 @@ pub async fn deploy_agent(
 ///
 /// router.route_message(message).await?;
 /// ```
-pub async fn route_message(&self, message: FipaMessage) -> Result<(), RoutingError> {
+pub async fn route_message(&self, message: AgentMessage) -> Result<(), RoutingError> {
     // Implementation...
 }
 ```
@@ -638,9 +638,9 @@ test: add property tests for domain type validation
 Add comprehensive proptest coverage for all nutype domain types to
 verify invariants hold across input ranges.
 
-docs(adr): add ADR-0029 for FIPA messaging architecture
+docs(adr): add ADR-0029 for agent messaging architecture
 
-Document the decision to use a simplified FIPA-ACL messaging system
+Document the decision to use a simplified agent messaging system
 optimized for configuration-driven agents.
 ```
 

@@ -144,8 +144,8 @@ Declare what your agent can do:
 
 ```yaml
 capabilities:
-  - message-send       # Send FIPA messages
-  - message-receive    # Receive FIPA messages
+  - message-send       # Send agent messages
+  - message-receive    # Receive agent messages
   - data-analysis      # Analyze data
   - report-generation  # Create reports
   - file-processing    # Handle files
@@ -590,5 +590,5 @@ caxton performance breakdown \
 
 - [API Reference](api-reference.md) - Complete API documentation
 - [Security Guide](security-guide.md) - Security best practices
-- [Message Protocols](message-protocols.md) - FIPA protocol details
+- [Message Protocols](message-protocols.md) - Agent messaging protocol details
 - [Testing Guide](testing.md) - Testing strategies and tools

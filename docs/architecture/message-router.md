@@ -8,7 +8,7 @@ categories: [Architecture]
 ## Executive Summary
 
 The Caxton Message Router implements the core routing infrastructure for
-FIPA-ACL messages between agents. This consolidated specification defines
+agent messages between agents. This consolidated specification defines
 the requirements, design, and implementation for the high-performance,
 async message routing system with conversation tracking and comprehensive
 observability.
@@ -108,12 +108,12 @@ pub struct NodeId(Uuid);
 
 ### Message Structure
 
-FIPA-ACL compliant message format with Caxton extensions:
+Agent message format with Caxton extensions:
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FipaMessage {
-    // Standard FIPA fields
+pub struct AgentMessage {
+    // Standard agent message fields
     pub performative: Performative,
     pub sender: AgentId,
     pub receiver: AgentId,
@@ -540,8 +540,8 @@ router:
 
 ## References
 
-- [ADR-0003: FIPA Messaging Protocol](../adr/0003-fipa-messaging-protocol.md)
-- [ADR-0012: Pragmatic FIPA Subset](../adr/0012-pragmatic-fipa-subset.md)
+- [ADR-0003: Agent Messaging Protocol](../adr/0003-fipa-messaging-protocol.md)
+- [ADR-0012: Pragmatic Agent Messaging Subset](../adr/0012-pragmatic-fipa-subset.md)
 - [ADR-0031: Context Management Architecture](../adr/0031-context-management-architecture.md)
 - [Performance Tuning Guide](../operations/performance-tuning.md)
 - [Security Guide](../operations/devops-security-guide.md)

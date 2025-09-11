@@ -54,7 +54,7 @@ Master the technical architecture and design principles.
 2. **[ADR Documentation](../../docs/_adrs/)** (60 min)
    - **[ADR-28: Configuration Agents](../../docs/_adrs/0028-configuration-driven-agent-architecture.md)**
      - Primary UX
-   - **[ADR-29: FIPA Messaging](../../docs/_adrs/0029-fipa-acl-lightweight-messaging.md)**
+   - **[ADR-29: Agent Messaging](../../docs/_adrs/0029-agent-messaging.md)**
      - Capability routing
    - **[ADR-30: Embedded Memory](../../docs/_adrs/0030-embedded-memory-system.md)**
      - Zero-dependency backend
@@ -97,7 +97,7 @@ Deep technical areas for specialized contributions.
 
 2. **[Message Router Architecture](../../docs/architecture/message-router.md)**
    (45 min)
-    - FIPA-ACL protocol implementation
+    - Agent messaging protocol implementation
     - Capability-based routing algorithms
     - Conversation state management
 
@@ -428,12 +428,12 @@ pub fn good_code() -> CaxtonResult<ProcessedValue> {
 
 ### Message Router Development
 
-**Focus**: FIPA protocol, capability routing, conversation management
+**Focus**: Agent messaging protocol, capability routing, conversation management
 
 **Key files**:
 
 - `src/message_router/` - Core routing logic
-- `src/fipa/` - FIPA-ACL protocol implementation
+- `src/messaging/` - Agent messaging protocol implementation
 - `src/capabilities.rs` - Capability-based routing
 
 **Testing approach**:

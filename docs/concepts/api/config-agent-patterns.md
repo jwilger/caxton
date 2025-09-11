@@ -500,7 +500,7 @@ objectives
   discover and coordinate with each other
 - [Memory Integration](memory-integration.md) - Knowledge sharing and
   learning patterns
-- [FIPA Messaging](../messaging/fipa-acl-subset.md) - Communication
+- [Agent Messaging](../messaging/fipa-acl-subset.md) - Communication
   protocols that enable coordination
 - [Conversation Management](../messaging/conversation-management.md) -
   Context preservation across agent interactions

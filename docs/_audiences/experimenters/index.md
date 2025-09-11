@@ -144,7 +144,7 @@ Agents remember successful interactions:
 |-------------------|-----------------|
 | Python orchestration scripts | Server process with REST API |
 | No built-in persistence | Embedded memory with semantic search |
-| Manual agent coordination | FIPA-standard message protocols |
+| Manual agent coordination | Structured agent message protocols |
 | Development-only tools | Production-ready with observability |
 
 ## Common Experiment Patterns

@@ -251,7 +251,7 @@ pub enum ModelError {
 
 #### Messaging System Errors
 
-**FIPA Message Routing**:
+**Agent Message Routing**:
 
 ```rust
 pub enum MessageRoutingError {

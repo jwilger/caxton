@@ -145,7 +145,7 @@ API calls but between your own components. For example:
 }
 ```
 
-Caxton uses **capability-based routing** with lightweight FIPA-ACL messaging.
+Caxton uses **capability-based routing** with lightweight agent messaging.
 Agents request capabilities (like "data-analysis") rather than specific agents,
 enabling loose coupling and easier scaling. See
 [ADR-0029]({{ '/adr/0029-fipa-acl-lightweight-messaging/' | relative_url }})

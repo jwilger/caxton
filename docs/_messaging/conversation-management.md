@@ -1,7 +1,7 @@
 ---
 title: "Conversation Management"
 description: "Managing multi-turn conversations and message threading in
-  Caxton's FIPA messaging system"
+  Caxton's agent messaging system"
 layout: documentation
 categories: [Messaging, Conversation Threading, State Management]
 date: 2025-09-10

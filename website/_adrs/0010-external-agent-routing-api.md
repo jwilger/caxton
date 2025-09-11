@@ -198,8 +198,7 @@ technical design and TDD practices.
 - [ADR-0007: Management API Design](0007-management-api-design.md)
 - [ADR-0001: Observability First Architecture]
   (0001-observability-first-architecture.md)
-- [FIPA Agent Communication Language Specification]
-  (http://www.fipa.org/specs/fipa00061/)
+- Agent communication patterns for multi-agent systems
 - [OpenTelemetry Semantic Conventions]
   (https://opentelemetry.io/docs/reference/specification/trace/semantic\_
   conventions/)

@@ -22,7 +22,7 @@ context.
 
 ### Core Challenge
 
-When Agent A sends a FIPA message requesting the "data-analysis" capability,
+When Agent A sends an agent message requesting the "data-analysis" capability,
 what
 context should Agent B (the receiving data analyzer) get in its LLM prompt? The
 context must be:
@@ -38,7 +38,7 @@ context must be:
 
 The context management system must integrate seamlessly with:
 
-- **FIPA-ACL Messaging** (ADR-0029): Context derived from conversation threads
+- **Agent Messaging** (ADR-0029): Context derived from conversation threads
 - **Embedded Memory System** (ADR-0030): Historical knowledge and patterns
 - **MCP Tools**: Tool-specific context requirements and capabilities
 - **Multi-LLM Providers**: Support for different context formatting needs
@@ -66,7 +66,7 @@ gathering and formatting for each agent interaction.
 multiple
 sources:
 
-- Conversation history from FIPA message threads
+- Conversation history from agent message threads
 - Semantic search from embedded memory system (ADR-0030)
 - Capability registry information
 - MCP tool specifications and data
@@ -111,7 +111,7 @@ The system adapts context formatting for different LLM providers:
 
 ### Context Flow Architecture
 
-1. **Request Analysis**: Parse incoming FIPA message and identify target
+1. **Request Analysis**: Parse incoming agent message and identify target
    capability
 2. **Context Specification**: Determine context requirements from MCP tools and
    agent configuration
@@ -132,7 +132,7 @@ The system adapts context formatting for different LLM providers:
 - **Provider agnostic**: Works across multiple LLM providers with appropriate
   formatting
 - **Tool integration**: MCP tools can declare exactly what context they need
-- **Conversation aware**: Maintains context across multi-turn FIPA message
+- **Conversation aware**: Maintains context across multi-turn agent message
   exchanges
 - **Memory enhanced**: Leverages embedded memory system for historical context
 - **Signal-to-noise optimized**: Filtering pipeline prevents context overflow
@@ -173,7 +173,7 @@ The implementation focuses on four core areas:
 
 - **ADR-0028 (Configuration-Driven Agents)**: Provides intelligent context
   management for config agents
-- **ADR-0029 (FIPA-ACL Messaging)**: Context derived from conversation threads
+- **ADR-0029 (Agent Messaging)**: Context derived from conversation threads
   and message history
 - **ADR-0030 (Embedded Memory System)**: Semantic search provides historical
   context and patterns
@@ -186,7 +186,7 @@ The implementation focuses on four core areas:
 
 - ADR-0028: Configuration-Driven Agent Architecture (defines agents that use
   this context management)
-- ADR-0029: FIPA-ACL Lightweight Messaging (provides conversation context
+- ADR-0029: Agent Messaging (provides conversation context
   source)
 - ADR-0030: Embedded Memory System (provides semantic search context source)
 - ADR-0005: MCP for External Tools (enhanced with context requirements)

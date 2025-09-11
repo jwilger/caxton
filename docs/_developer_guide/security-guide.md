@@ -85,8 +85,8 @@ Configuration agents declare capabilities in their YAML frontmatter:
 ---
 name: CustomerAnalyzer
 capabilities:
-  - message-send      # Can send FIPA messages
-  - message-receive   # Can receive FIPA messages
+  - message-send      # Can send agent messages
+  - message-receive   # Can receive agent messages
   - tool-access       # Can use declared tools
   - memory-read       # Can read from agent memory
   - memory-write      # Can write to agent memory

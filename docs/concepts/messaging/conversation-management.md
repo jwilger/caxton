@@ -466,7 +466,7 @@ conversation_debug:
 
 - **[Messaging Overview](/docs/concepts/messaging/overview.md)**:
   Foundational messaging architecture enabling conversation management
-- **[FIPA-ACL Subset](/docs/concepts/messaging/fipa-acl-subset.md)**:
+- **[Agent Messaging Subset](/docs/concepts/messaging/agent-messaging-subset.md)**:
   Communication protocols supporting conversation threading
 - **[Capability Routing](/docs/concepts/messaging/capability-routing.md)**:
   How routing decisions consider conversation continuity

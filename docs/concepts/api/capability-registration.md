@@ -384,12 +384,12 @@ delays
 
 ## Integration with Other Systems
 
-### FIPA Messaging Integration
+### Agent Messaging Integration
 
-Capability registration works seamlessly with FIPA-ACL messaging:
+Capability registration works seamlessly with agent messaging:
 
 ```javascript
-// Send FIPA message to capability instead of specific agent
+// Send agent message to capability instead of specific agent
 const message = {
   performative: "REQUEST",
   capability: "data-analysis", // Instead of receiver: "agent-id"
@@ -465,7 +465,7 @@ observability tools
 
 - [Configuration Agents](config-agents.md) - Declarative agent definition
   with automatic capability registration
-- [FIPA Messaging](../messaging/fipa-acl-subset.md) - Message protocol for
+- [Agent Messaging](../messaging/fipa-acl-subset.md) - Message protocol for
   capability-based communication
 - [Message Routing](../messaging/capability-routing.md) - How messages are
   routed to capability providers
@@ -474,7 +474,7 @@ observability tools
 
 ## References
 
-- [ADR-0029: FIPA-ACL Lightweight Messaging](../../adr/0029-fipa-acl-lightweight-messaging.md)
+- [ADR-0029: Lightweight Agent Messaging](../../adr/0029-fipa-acl-lightweight-messaging.md)
   - Capability-based routing design decisions
 
 - [ADR-0011: Capability Registration in Code](../../adr/0011-capability-registration-in-code.md)

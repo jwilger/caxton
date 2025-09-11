@@ -28,7 +28,7 @@ onboarding versus the previous 2-4 hour WASM compilation workflow.
 | Memory System Integration | 0 | 5 | 0% | **HIGH** |
 | Configuration Validation | 0 | 3 | 0% | **MEDIUM** |
 | Legacy WASM Management | 4 | 8 | 50% | **LOW** |
-| FIPA Messaging API | 0 | 6 | 0% | **MEDIUM** |
+| Agent Messaging API | 0 | 6 | 0% | **MEDIUM** |
 | **Total** | **4** | **34** | **12%** |
 
 **Note**: Legacy WASM agent endpoints remain functional but are now secondary.
@@ -120,11 +120,11 @@ Priority focuses on configuration-driven agent capabilities.
 - `POST /api/v1/validate/capabilities` - Verify capability declarations
 - `GET /api/v1/templates` - List configuration templates
 
-### 🟡 FIPA Messaging API (MEDIUM PRIORITY)
+### 🟡 Agent Messaging API (MEDIUM PRIORITY)
 
-**Agent Communication** - Lightweight FIPA-ACL per ADR-0029
+**Agent Communication** - Lightweight agent messaging per ADR-0029
 
-- `POST /api/v1/messages` - Send FIPA message to capability
+- `POST /api/v1/messages` - Send agent message to capability
 - `GET /api/v1/messages/conversations/{id}` - Get conversation history
 - `WebSocket /ws/messages` - Real-time message streaming
 - `GET /api/v1/conversations` - List active conversations

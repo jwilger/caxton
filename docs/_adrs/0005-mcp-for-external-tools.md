@@ -54,7 +54,7 @@ Key aspects:
 
 ### Negative
 
-- **Additional protocol**: Agents must understand MCP in addition to FIPA
+- **Additional protocol**: Agents must understand MCP in addition to agent messaging
 - **Performance overhead**: Extra serialization/deserialization step
 - **Complexity**: Another moving part in the system
 - **Early standard**: MCP is still evolving
