@@ -276,13 +276,13 @@ navigation:
     - title: Architecture
       url: "#architecture"
     - title: Get Started
-      url: "/getting-started/"
+      url: "/getting-started/quickstart/"
     - title: Developer Guide
-      url: "/developer-guide/"
+      url: "/developer-guide/building-agents/"
     - title: API Reference
-      url: "/api/"
+      url: "/api/implementation-status/"
     - title: Operations
-      url: "/operations/"
+      url: "/operations/operational-runbook/"
     - title: ADRs
       url: "/adr/"
     - title: GitHub
