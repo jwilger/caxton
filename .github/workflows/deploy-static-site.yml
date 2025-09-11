@@ -78,15 +78,21 @@ jobs:
             RELEASE_URL="https://github.com/${{ github.repository }}/releases"
           fi
 
-          # Export for next steps
+          # Export for next steps (using heredoc for multiline content)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
           echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
           echo "RELEASE_STATUS=$RELEASE_STATUS" >> $GITHUB_ENV
           echo "RELEASE_PHASE=$RELEASE_PHASE" >> $GITHUB_ENV
-          echo "RELEASE_BODY=$RELEASE_BODY" >> $GITHUB_ENV
           echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+
+          # Handle multiline release body with heredoc
+          {
+            echo "RELEASE_BODY<<EOF"
+            echo "$RELEASE_BODY"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
           echo "Latest release: $VERSION ($RELEASE_STATUS)"
 
