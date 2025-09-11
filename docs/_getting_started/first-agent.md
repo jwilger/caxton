@@ -16,9 +16,9 @@ categories: [Getting Started]
 
 ## Build intelligent agents in 5 minutes using configuration files
 
-This guide teaches you to create **agents** - the way to build agents in
-Caxton. No compilation, no complex toolchains, just markdown files with YAML
-frontmatter.
+This guide teaches you to create **agents** - the configuration-driven way
+to build agents in Caxton. No compilation, no complex toolchains, just
+markdown files with YAML frontmatter.
 
 ## Agent Fundamentals
 

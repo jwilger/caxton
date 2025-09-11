@@ -17,9 +17,9 @@ categories: [Getting Started]
 
 ## Get a multi-agent system running in under 10 minutes
 
-This guide uses **agents** - the way to create intelligent agents in
-Caxton. No compilation, no complex toolchains, just markdown files with YAML
-configuration.
+This guide uses **configuration files** - the configuration-driven way to
+create intelligent agents in Caxton. No compilation, no complex toolchains,
+just markdown files with YAML configuration.
 
 ## Prerequisites
 
