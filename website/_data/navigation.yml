@@ -1,0 +1,511 @@
+# Navigation structure for Caxton Jekyll documentation site
+# This file defines the hierarchical navigation for all documentation sections
+
+main:
+  - title: Features
+    url: "#features"
+  - title: Architecture
+    url: "#architecture"
+  - title: Get Started
+    url: "/getting-started/"
+  - title: Developer Guide
+    url: "/developer-guide/"
+  - title: API Reference
+    url: "/api/"
+  - title: Operations
+    url: "/operations/"
+  - title: ADRs
+    url: "/adr/"
+  - title: GitHub
+    url: "https://github.com/jwilger/caxton"
+    external: true
+
+# Comprehensive documentation navigation structure
+# Based on the audience-first reorganization with logical groupings
+
+docs:
+  # Quick Start Section - For all audiences
+  getting_started:
+    title: "Getting Started"
+    description: "Essential first steps for all users"
+    sections:
+      - title: "Quickstart Guide"
+        url: "/getting-started/quickstart/"
+        description: "5-minute introduction to Caxton"
+      - title: "Installation"
+        url: "/getting-started/installation/"
+        description: "System requirements and installation steps"
+      - title: "Configuration"
+        url: "/getting-started/configuration/"
+        description: "Basic configuration setup"
+      - title: "Your First Agent"
+        url: "/getting-started/first-agent/"
+        description: "Building and deploying your first agent"
+      - title: "REST API Quickstart"
+        url: "/getting-started/rest-api-quickstart/"
+        description: "Quick start with HTTP API"
+
+  # Audience-Specific Documentation
+  audiences:
+    title: "By Audience"
+    description: "Role-specific guidance and workflows"
+    sections:
+      # Agent Developers - People building agents
+      agent_developers:
+        title: "Agent Developers"
+        description: "Build and deploy intelligent agents"
+        icon: "code"
+        sections:
+          - title: "Overview"
+            url: "/audience/agent-developers/"
+            description: "Start here for agent development"
+          - title: "Building Agents"
+            url: "/audience/agent-developers-building-agents/"
+            description: "Complete agent development guide"
+          - title: "API Reference"
+            url: "/audience/agent-developers-api-reference/"
+            description: "Runtime APIs and interfaces"
+          - title: "Security Guidelines"
+            url: "/audience/agent-developers-security/"
+            description: "Secure agent development practices"
+          - title: "Config Agents"
+            url: "/audience/agent-developers-config-agents/"
+            description: "Configuration-driven agent architecture"
+            subsections:
+              - title: "Overview"
+                url: "/config-agents/overview/"
+              - title: "Agent Format"
+                url: "/config-agents/agent-format/"
+              - title: "Best Practices"
+                url: "/config-agents/best-practices/"
+              - title: "Examples"
+                url: "/config-agents/examples/"
+              - title: "LLM Providers"
+                url: "/config-agents/llm-providers/"
+
+      # Operators - People running Caxton in production
+      operators:
+        title: "Operators"
+        description: "Deploy and manage Caxton in production"
+        icon: "server"
+        sections:
+          - title: "Installation Guide"
+            url: "/docs/audiences/operators/installation/"
+            description: "Production installation and setup"
+          - title: "Operational Runbook"
+            url: "/docs/audiences/operators/runbook/"
+            description: "Day-to-day operations and troubleshooting"
+          - title: "Operations Guides"
+            url: "/operations/"
+            description: "Comprehensive operational documentation"
+            subsections:
+              - title: "Agent Lifecycle Management"
+                url: "/operations/agent-lifecycle-management/"
+              - title: "Performance Tuning"
+                url: "/operations/performance-tuning/"
+              - title: "State Recovery Patterns"
+                url: "/operations/state-recovery-patterns/"
+              - title: "DevOps Security Guide"
+                url: "/operations/devops-security-guide/"
+              - title: "Error Handling Guide"
+                url: "/operations/error-handling-guide/"
+
+      # Experimenters - People exploring and prototyping
+      experimenters:
+        title: "Experimenters"
+        description: "Explore capabilities and prototype solutions"
+        icon: "beaker"
+        sections:
+          - title: "Overview"
+            url: "/docs/audiences/experimenters/"
+            description: "Getting started with experimentation"
+          - title: "Quick Experiments"
+            url: "/docs/audiences/experimenters/quickstart/"
+            description: "Fast feedback loops for testing ideas"
+
+      # Contributors - People developing Caxton itself
+      contributors:
+        title: "Contributors"
+        description: "Contribute to Caxton's development"
+        icon: "git-merge"
+        sections:
+          - title: "Development Setup"
+            url: "/docs/audiences/contributors/development-setup/"
+            description: "Set up development environment"
+          - title: "Architecture Overview"
+            url: "/docs/audiences/contributors/architecture-overview/"
+            description: "High-level system architecture"
+          - title: "Contributing Guide"
+            url: "/docs/contributors/development-guide/"
+            description: "Detailed contribution workflow"
+
+  # Core Concepts and Architecture
+  architecture:
+    title: "Architecture"
+    description: "System design and core concepts"
+    sections:
+      - title: "Coordination-First Overview"
+        url: "/docs/architecture/coordination-first-overview/"
+        description: "Core architectural philosophy"
+      - title: "Component Interactions"
+        url: "/docs/architecture/component-interaction-diagrams/"
+        description: "How components work together"
+      - title: "Routing Algorithm Design"
+        url: "/docs/architecture/routing-algorithm-design/"
+        description: "Message routing implementation"
+      - title: "Configuration and Deployment"
+        url: "/docs/architecture/configuration-and-deployment/"
+        description: "System configuration patterns"
+
+  # Technical Specifications and APIs
+  api:
+    title: "API Reference"
+    description: "Technical specifications and interfaces"
+    sections:
+      - title: "Implementation Status"
+        url: "/docs/api/implementation-status/"
+        description: "Current API implementation state"
+      - title: "Config Agents"
+        url: "/docs/api/config-agents/"
+        description: "Configuration-driven agent API"
+      - title: "Config Agent Patterns"
+        url: "/docs/api/config-agent-patterns/"
+        description: "Common configuration patterns"
+      - title: "Capability Registration"
+        url: "/docs/api/capability-registration/"
+        description: "Agent capability registration API"
+      - title: "Configuration Validation"
+        url: "/docs/api/configuration-validation/"
+        description: "Configuration validation system"
+      - title: "Memory Integration"
+        url: "/docs/api/memory-integration/"
+        description: "Memory system integration APIs"
+      - title: "Performance Specifications"
+        url: "/docs/api/performance-specifications/"
+        description: "Performance requirements and metrics"
+      - title: "MCP Integration"
+        url: "/docs/api/mcp-integration/"
+        description: "Model Context Protocol integration"
+
+  # Messaging and Communication
+  messaging:
+    title: "Messaging"
+    description: "Agent communication protocols and patterns"
+    sections:
+      - title: "FIPA-ACL Subset"
+        url: "/docs/messaging/fipa-acl-subset/"
+        description: "Supported FIPA message types"
+      - title: "FIPA Patterns"
+        url: "/docs/messaging/fipa-patterns/"
+        description: "Common FIPA interaction patterns"
+      - title: "Conversation Management"
+        url: "/docs/messaging/conversation-management/"
+        description: "Managing agent conversations"
+      - title: "Capability Routing"
+        url: "/docs/messaging/capability-routing/"
+        description: "Routing messages by capability"
+      - title: "Config Agent Integration"
+        url: "/docs/messaging/config-agent-integration/"
+        description: "Messaging for config-driven agents"
+
+  # Memory System
+  memory_system:
+    title: "Memory System"
+    description: "Embedded memory and context management"
+    sections:
+      - title: "Overview"
+        url: "/docs/memory-system/overview/"
+        description: "Memory system architecture"
+      - title: "Embedded Backend"
+        url: "/docs/memory-system/embedded-backend/"
+        description: "Embedded vector database"
+      - title: "Model Management"
+        url: "/docs/memory-system/model-management/"
+        description: "Managing embedding models"
+      - title: "Usage Patterns"
+        url: "/docs/memory-system/usage-patterns/"
+        description: "Common memory usage patterns"
+      - title: "Migration Guide"
+        url: "/docs/memory-system/migration/"
+        description: "Migrating memory system data"
+
+  # Developer Resources
+  developer_guide:
+    title: "Developer Guide"
+    description: "Development tools and best practices"
+    sections:
+      - title: "API Reference"
+        url: "/docs/developer-guide/api-reference/"
+        description: "Complete API documentation"
+      - title: "Building Agents"
+        url: "/docs/developer-guide/building-agents/"
+        description: "Agent development guide"
+      - title: "Security Guide"
+        url: "/docs/developer-guide/security-guide/"
+        description: "Security best practices"
+
+  # Specialized Topics
+  specialized:
+    title: "Specialized Topics"
+    description: "Advanced features and specific use cases"
+    sections:
+      # Performance and Benchmarking
+      performance:
+        title: "Performance"
+        sections:
+          - title: "Benchmarking Guide"
+            url: "/docs/benchmarks/performance-benchmarking-guide/"
+            description: "Performance measurement and optimization"
+          - title: "Metrics Integration"
+            url: "/docs/monitoring/metrics-integration-guide/"
+            description: "System monitoring and metrics"
+
+      # Security
+      security:
+        title: "Security"
+        sections:
+          - title: "Security Audit Checklist"
+            url: "/docs/security/security-audit-checklist/"
+            description: "Security review processes"
+
+      # Patterns and Best Practices
+      patterns:
+        title: "Patterns"
+        sections:
+          - title: "Agent Communication Patterns"
+            url: "/docs/patterns/agent-communication-patterns/"
+            description: "Proven communication patterns"
+
+      # Research and Learning
+      research:
+        title: "Research"
+        sections:
+          - title: "FIPA Knowledge Base"
+            url: "/docs/learning/fipa-knowledge-base/"
+            description: "FIPA protocol deep dive"
+          - title: "Lightweight State Alternatives"
+            url: "/docs/research/lightweight-state-alternatives/"
+            description: "State management research"
+
+      # Technical Specifications
+      specifications:
+        title: "Specifications"
+        sections:
+          - title: "Message Router Specification"
+            url: "/docs/specifications/message-router-specification/"
+            description: "Message routing technical spec"
+
+      # MCP Integration
+      mcp:
+        title: "MCP (Model Context Protocol)"
+        sections:
+          - title: "State Tool Specification"
+            url: "/docs/mcp/state-tool-specification/"
+            description: "MCP state management tool"
+
+      # Technology Guides
+      technology:
+        title: "Technology"
+        sections:
+          - title: "WebAssembly Ecosystem Guide"
+            url: "/docs/technology/webassembly-ecosystem-guide/"
+            description: "WebAssembly integration details"
+
+# Architecture Decision Records navigation
+adr:
+  title: "Architecture Decision Records"
+  description: "Design decisions and their rationale"
+  sections:
+    # Foundation ADRs (Core Architecture)
+    foundation:
+      title: "Foundation"
+      description: "Core architectural decisions"
+      adrs:
+        - number: "0001"
+          title: "Observability-First Architecture"
+          url: "/adr/0001-observability-first-architecture/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0002"
+          title: "WebAssembly for Agent Isolation"
+          url: "/adr/0002-webassembly-for-agent-isolation/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0003"
+          title: "FIPA Messaging Protocol"
+          url: "/adr/0003-fipa-messaging-protocol/"
+          status: "accepted"
+          date: "2024-08-07"
+
+    # System Design ADRs
+    system_design:
+      title: "System Design"
+      description: "High-level system architecture decisions"
+      adrs:
+        - number: "0004"
+          title: "Minimal Core Philosophy"
+          url: "/adr/0004-minimal-core-philosophy/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0006"
+          title: "Application Server Architecture"
+          url: "/adr/0006-application-server-architecture/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0014"
+          title: "Coordination-First Architecture"
+          url: "/adr/0014-coordination-first-architecture/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0015"
+          title: "Distributed Protocol Architecture"
+          url: "/adr/0015-distributed-protocol-architecture/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0027"
+          title: "Single Codebase Architecture"
+          url: "/adr/0027-single-codebase-architecture/"
+          status: "accepted"
+          date: "2024-08-08"
+
+    # Integration ADRs
+    integration:
+      title: "Integration"
+      description: "External system integration decisions"
+      adrs:
+        - number: "0005"
+          title: "MCP for External Tools"
+          url: "/adr/0005-mcp-for-external-tools/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0030"
+          title: "Embedded Memory System"
+          url: "/adr/0030-embedded-memory-system/"
+          status: "accepted"
+          date: "2024-09-10"
+
+    # API Design ADRs
+    api_design:
+      title: "API Design"
+      description: "Interface and protocol design decisions"
+      adrs:
+        - number: "0007"
+          title: "Management API Design"
+          url: "/adr/0007-management-api-design/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0009"
+          title: "CLI Tool Design"
+          url: "/adr/0009-cli-tool-design/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0010"
+          title: "External Agent Routing API"
+          url: "/adr/0010-external-agent-routing-api/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0026"
+          title: "Simplified Management API Protocol"
+          url: "/adr/0026-simplified-management-api-protocol/"
+          status: "accepted"
+          date: "2024-08-08"
+
+    # Messaging ADRs
+    messaging:
+      title: "Messaging"
+      description: "Communication protocol decisions"
+      adrs:
+        - number: "0012"
+          title: "Pragmatic FIPA Subset"
+          url: "/adr/0012-pragmatic-fipa-subset/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0029"
+          title: "FIPA-ACL Lightweight Messaging"
+          url: "/adr/0029-fipa-acl-lightweight-messaging/"
+          status: "accepted"
+          date: "2024-09-10"
+
+    # Agent Design ADRs
+    agent_design:
+      title: "Agent Design"
+      description: "Agent architecture and lifecycle decisions"
+      adrs:
+        - number: "0008"
+          title: "Agent Deployment Model"
+          url: "/adr/0008-agent-deployment-model/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0011"
+          title: "Capability Registration in Code"
+          url: "/adr/0011-capability-registration-in-code/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0028"
+          title: "Configuration-Driven Agent Architecture"
+          url: "/adr/0028-configuration-driven-agent-architecture/"
+          status: "accepted"
+          date: "2024-09-10"
+
+    # State Management ADRs
+    state_management:
+      title: "State Management"
+      description: "Data persistence and state handling decisions"
+      adrs:
+        - number: "0013"
+          title: "State Management Architecture"
+          url: "/adr/0013-state-management-architecture/"
+          status: "accepted"
+          date: "2024-08-07"
+
+    # Implementation ADRs
+    implementation:
+      title: "Implementation"
+      description: "Code structure and implementation decisions"
+      adrs:
+        - number: "0018"
+          title: "Domain Types with Nutype"
+          url: "/adr/0018-domain-types-nutype/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0020"
+          title: "Parse Don't Validate"
+          url: "/adr/0020-parse-dont-validate/"
+          status: "accepted"
+          date: "2024-08-07"
+        - number: "0021"
+          title: "Atomic Primitives Exception"
+          url: "/adr/0021-atomic-primitives-exception/"
+          status: "accepted"
+          date: "2024-08-07"
+
+# Footer navigation
+footer:
+  - title: "Documentation"
+    url: "/docs/"
+  - title: "API Reference"
+    url: "/docs/developer-guide/api-reference/"
+  - title: "ADRs"
+    url: "/adr/"
+  - title: "GitHub"
+    url: "https://github.com/jwilger/caxton"
+    external: true
+  - title: "Issues"
+    url: "https://github.com/jwilger/caxton/issues"
+    external: true
+
+# Breadcrumb configuration
+breadcrumbs:
+  enabled: true
+  separator: "/"
+  home_text: "Caxton"
+  hide_current: false
+
+# Search configuration
+search:
+  enabled: true
+  provider: "lunr"
+  placeholder: "Search documentation..."
+  max_results: 10
+
+# end of file

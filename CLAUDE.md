@@ -261,7 +261,7 @@ feedback:
 
 ## Key Architectural Decisions
 
-Reference the ADR documentation in `docs/adr/` for detailed rationales:
+Reference the ADR documentation in `docs/_adrs/` for detailed rationales:
 
 1. **Observability First** (ADR-0001): Every operation is instrumented with
    tracing

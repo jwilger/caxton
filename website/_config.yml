@@ -21,6 +21,9 @@ highlighter: rouge
 permalink: pretty
 timezone: UTC
 
+# Collections directory - points to docs/ for single source of truth
+collections_dir: "../docs"
+
 # Kramdown and Rouge configuration
 kramdown:
   input: GFM
@@ -48,12 +51,59 @@ plugins:
   - jekyll-titles-from-headings
   - jekyll-paginate-v2
 
-# ADR Collection Configuration
+# Collections Configuration - Include docs/ as single source of truth
 collections:
+  # ADR Collection from docs/adr/
   adrs:
     output: true
     permalink: /adr/:name/
     sort_by: date
+
+  # Documentation Collections from docs/ directory
+  audiences:
+    output: true
+    permalink: /audience/:name/
+    sort_by: title
+
+  concepts:
+    output: true
+    permalink: /concepts/:name/
+    sort_by: title
+
+  api:
+    output: true
+    permalink: /api/:name/
+    sort_by: title
+
+  getting_started:
+    output: true
+    permalink: /getting-started/:name/
+    sort_by: weight
+
+  developer_guide:
+    output: true
+    permalink: /developer-guide/:name/
+    sort_by: weight
+
+  operations:
+    output: true
+    permalink: /operations/:name/
+    sort_by: weight
+
+  memory_system:
+    output: true
+    permalink: /memory/:name/
+    sort_by: weight
+
+  messaging:
+    output: true
+    permalink: /messaging/:name/
+    sort_by: weight
+
+  config_agents:
+    output: true
+    permalink: /config-agents/:name/
+    sort_by: weight
 
 # Collection defaults
 defaults:
@@ -68,11 +118,67 @@ defaults:
     values:
       layout: "adr"
       sitemap: true
+  # Documentation collection defaults from docs/
   - scope:
-      path: "docs"
+      path: ""
+      type: "audiences"
     values:
-      layout: "documentation"
+      layout: "audience"
       sitemap: true
+  - scope:
+      path: ""
+      type: "concepts"
+    values:
+      layout: "concept"
+      sitemap: true
+  - scope:
+      path: ""
+      type: "api"
+    values:
+      layout: "api"
+      sitemap: true
+  - scope:
+      path: ""
+      type: "getting_started"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "getting-started"
+  - scope:
+      path: ""
+      type: "developer_guide"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "developer-guide"
+  - scope:
+      path: ""
+      type: "operations"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "operations"
+  - scope:
+      path: ""
+      type: "memory_system"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "memory-system"
+  - scope:
+      path: ""
+      type: "messaging"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "messaging"
+  - scope:
+      path: ""
+      type: "config_agents"
+    values:
+      layout: "guide"
+      sitemap: true
+      section: "config-agents"
 
 # Sass configuration to match current Catppuccin theme
 sass:
@@ -90,7 +196,8 @@ exclude:
   - vendor/ruby/
 
 # Include files that would normally be excluded
-include: [_adrs/]
+include:
+  - _adrs/
 
 # Pagination configuration for ADRs
 pagination:
@@ -169,16 +276,193 @@ navigation:
     - title: Architecture
       url: "#architecture"
     - title: Get Started
-      url: "#getting-started"
-    - title: API Docs
-      url: "/doc/caxton/"
+      url: "/getting-started/"
+    - title: Developer Guide
+      url: "/developer-guide/"
+    - title: API Reference
+      url: "/api/"
+    - title: Operations
+      url: "/operations/"
     - title: ADRs
       url: "/adr/"
-    - title: Documentation
-      url: "/docs/"
     - title: GitHub
       url: "https://github.com/jwilger/caxton"
       external: true
+
+  # Documentation navigation structure
+  docs:
+    - title: "Getting Started"
+      url: "/getting-started/"
+      sections:
+        - title: "Installation"
+          url: "/getting-started/installation/"
+        - title: "Quick Start"
+          url: "/getting-started/quickstart/"
+        - title: "Configuration"
+          url: "/getting-started/configuration/"
+        - title: "First Agent"
+          url: "/getting-started/first-agent/"
+        - title: "REST API Quick Start"
+          url: "/getting-started/rest-api-quickstart/"
+
+    - title: "Core Concepts"
+      url: "/concepts/"
+      sections:
+        - title: "FIPA Concepts"
+          url: "/concepts/fipa-concepts/"
+        - title: "Communication Patterns"
+          url: "/concepts/communication-patterns/"
+
+    - title: "Developer Guide"
+      url: "/developer-guide/"
+      sections:
+        - title: "Building Agents"
+          url: "/developer-guide/building-agents/"
+        - title: "API Reference"
+          url: "/developer-guide/api-reference/"
+        - title: "Security Guide"
+          url: "/developer-guide/security-guide/"
+
+    - title: "API Reference"
+      url: "/api/"
+      sections:
+        - title: "Implementation Status"
+          url: "/api/implementation-status/"
+        - title: "Performance Specifications"
+          url: "/api/performance-specifications/"
+        - title: "Configuration Validation"
+          url: "/api/configuration-validation/"
+        - title: "Memory Integration"
+          url: "/api/memory-integration/"
+        - title: "Capability Registration"
+          url: "/api/capability-registration/"
+
+    - title: "Operations"
+      url: "/operations/"
+      sections:
+        - title: "Operational Runbook"
+          url: "/operations/operational-runbook/"
+        - title: "Performance Tuning"
+          url: "/operations/performance-tuning/"
+        - title: "DevOps Security Guide"
+          url: "/operations/devops-security-guide/"
+        - title: "Agent Lifecycle Management"
+          url: "/operations/agent-lifecycle-management/"
+        - title: "State Recovery Patterns"
+          url: "/operations/state-recovery-patterns/"
+        - title: "Error Handling Guide"
+          url: "/operations/error-handling-guide/"
+
+    - title: "Memory System"
+      url: "/memory/"
+      sections:
+        - title: "Overview"
+          url: "/memory/overview/"
+        - title: "Embedded Backend"
+          url: "/memory/embedded-backend/"
+        - title: "Model Management"
+          url: "/memory/model-management/"
+        - title: "Usage Patterns"
+          url: "/memory/usage-patterns/"
+        - title: "Migration"
+          url: "/memory/migration/"
+
+    - title: "Messaging"
+      url: "/messaging/"
+      sections:
+        - title: "FIPA ACL Subset"
+          url: "/messaging/fipa-acl-subset/"
+        - title: "FIPA Patterns"
+          url: "/messaging/fipa-patterns/"
+        - title: "Capability Routing"
+          url: "/messaging/capability-routing/"
+        - title: "Conversation Management"
+          url: "/messaging/conversation-management/"
+        - title: "Config Agent Integration"
+          url: "/messaging/config-agent-integration/"
+
+    - title: "Config Agents"
+      url: "/config-agents/"
+      sections:
+        - title: "Overview"
+          url: "/config-agents/overview/"
+        - title: "Agent Format"
+          url: "/config-agents/agent-format/"
+        - title: "Best Practices"
+          url: "/config-agents/best-practices/"
+        - title: "Examples"
+          url: "/config-agents/examples/"
+        - title: "LLM Providers"
+          url: "/config-agents/llm-providers/"
+
+# Audience definitions for content organization
+audiences:
+  all:
+    title: "All Users"
+    description: "Content relevant to all Caxton users"
+    color: "blue"
+
+  experimenters:
+    title: "Experimenters"
+    description: "Researchers and prototype builders exploring multi-agent concepts"
+    color: "green"
+
+  developers:
+    title: "Agent Developers"
+    description: "Developers building production agent systems"
+    color: "purple"
+
+  operators:
+    title: "Operators"
+    description: "DevOps and platform engineers running Caxton in production"
+    color: "orange"
+
+  contributors:
+    title: "Contributors"
+    description: "Open source contributors to the Caxton project"
+    color: "red"
+
+# Content organization for navigation
+sections:
+  getting-started:
+    title: "Getting Started"
+    weight: 1
+    description: "Quick start guides and basic concepts"
+
+  concepts:
+    title: "Core Concepts"
+    weight: 2
+    description: "Fundamental Caxton concepts and architecture"
+
+  developer-guide:
+    title: "Developer Guide"
+    weight: 3
+    description: "Building agents and integrating with Caxton"
+
+  api:
+    title: "API Reference"
+    weight: 4
+    description: "Complete API documentation and examples"
+
+  operations:
+    title: "Operations"
+    weight: 5
+    description: "Deployment, monitoring, and production operations"
+
+  memory-system:
+    title: "Memory System"
+    weight: 6
+    description: "Embedded memory and knowledge management"
+
+  messaging:
+    title: "Messaging"
+    weight: 7
+    description: "FIPA-ACL messaging and communication patterns"
+
+  config-agents:
+    title: "Config Agents"
+    weight: 8
+    description: "Configuration-driven agent patterns"
 
 # Feature flags for progressive enhancement
 features:

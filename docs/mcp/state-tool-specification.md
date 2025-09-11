@@ -1,4 +1,9 @@
-# MCP StateTool Interface Specification
+---
+title: "MCP StateTool Interface Specification"
+date: 2025-09-10
+layout: page
+categories: [MCP]
+---
 
 ## Overview
 

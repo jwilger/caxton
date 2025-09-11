@@ -1,23 +1,36 @@
-______________________________________________________________________
-
-## layout: documentation title: Documentation permalink: /docs/
+---
+title: "Documentation"
+layout: documentation
+permalink: /docs/
+date: 2025-09-10
+categories: [Website]
+---
 
 <div align="center">
   <img src="{{ '/assets/img/logo.svg' | relative_url }}"
        alt="Caxton Logo" width="150" height="150">
 </div>
 
-Welcome to the comprehensive documentation for Caxton, the production-ready
-multi-agent application server.
+Welcome to the comprehensive documentation for Caxton, the configuration-driven
+agent platform.
 
 ## What is Caxton?
 
-Caxton is a specialized server for coordinating smart software components called
-"agents" - like Redis for caching or Nginx for web serving, but for managing
-intelligent automation. You install Caxton, deploy your agents (written in any
-language that compiles to WebAssembly), and it handles all the complex
-distributed systems challenges: message routing, fault tolerance, observability,
-and scaling - all without requiring any external databases or dependencies.
+Caxton is a hybrid agent platform designed for rapid development and
+production deployment. Unlike traditional platforms that require hours of
+compilation setup, Caxton lets you **create and deploy agents in 5-10
+minutes** using simple markdown configuration files.
+
+**Two Agent Types, One Platform:**
+
+- **Configuration agents**: Define behavior in markdown files with YAML
+  frontmatter (90% of use cases)
+- **WebAssembly agents**: Compile custom algorithms when you need maximum
+  performance (10% of use cases)
+
+**Zero External Dependencies:** Embedded SQLite memory, local embedding models,
+and single-binary deployment mean Caxton works immediately out of the box - no
+PostgreSQL, Neo4j, or complex infrastructure required.
 
 ## What problems does Caxton solve?
 
@@ -54,14 +67,20 @@ addresses:
 
 ### Real-World Examples
 
-- **Customer Service**: Route inquiries between specialist agents (billing,
-  technical, sales)
-- **Content Processing**: Coordinate agents that analyze, summarize, and
-  moderate user-generated content
-- **E-commerce**: Have agents handle inventory, recommendations, and fraud
-  detection working together
-- **Data Analysis**: Pipeline where agents clean data, run analysis, and
-  generate reports
+**Configuration Agent Use Cases** (5-10 minute setup):
+
+- **Customer Service**: Natural language routing between specialist capabilities
+- **Content Processing**: Orchestrate analysis, summarization, and moderation workflows
+- **Data Analysis**: Chain CSV parsing, statistical analysis, and report
+  generation
+- **Team Automation**: Coordinate Slack notifications, GitHub updates, and email
+  workflows
+
+**WebAssembly Agent Use Cases** (for power users):
+
+- **Custom ML Models**: Deploy proprietary algorithms with security isolation
+- **High-Performance Computing**: CPU-intensive mathematical operations
+- **Legacy Integration**: Wrap existing C/C++/Rust libraries as agents
 
 ## Quick Links
 
@@ -96,17 +115,24 @@ addresses:
 
 ## Core Concepts
 
-### Agents
+### Configuration Agents
 
-Think of agents as small, focused programs that handle specific tasks. For
-example:
+**Primary Agent Type (90% of use cases)**: Define agent behavior in markdown
+files with YAML frontmatter. No compilation required.
 
-- A **billing agent** that processes payments and invoices
-- A **notification agent** that sends emails and texts
-- A **data agent** that reads from databases and APIs
+```yaml
+---
+name: BillingAgent
+capabilities: [billing, invoices]
+tools: [database, email]
+system_prompt: |
+  You process payments and generate invoices.
+---
+```
 
-Each agent runs in its own secure sandbox with configurable memory and CPU
-limits, like lightweight containers but even safer.
+**WebAssembly Agents**: When you need custom algorithms or maximum
+performance, agents can still be compiled modules running in secure sandboxes
+with memory/CPU limits.
 
 ### Messages
 
@@ -122,10 +148,11 @@ API calls but between your own components. For example:
 }
 ```
 
-Caxton uses a simplified version of industry-standard agent messaging protocols,
-keeping the useful parts (reliable delivery, request tracking) while discarding
-academic complexity. See \[ADR-0012\]({{ '/adr/0012-pragmatic-fipa-subset/' |
-relative_url }}) for our pragmatic approach.
+Caxton uses **capability-based routing** with lightweight FIPA-ACL messaging.
+Agents request capabilities (like "data-analysis") rather than specific agents,
+enabling loose coupling and easier scaling. See
+[ADR-0029]({{ '/adr/0029-fipa-acl-lightweight-messaging/' | relative_url }})
+for our configuration-friendly approach.
 
 ### Observability
 
@@ -138,18 +165,26 @@ provides:
 
 All built-in from day one using industry-standard OpenTelemetry.
 
-### Tools (MCP Integration)
+### Memory and Tools
 
-Agents often need to interact with external systems. Rather than giving agents
-direct database access (risky), Caxton provides controlled "tools" they can use:
+**Embedded Memory System**: Configuration agents get persistent memory out of
+the box using embedded SQLite + local embedding models. No external database
+setup required. Memory enables agents to:
 
-- Database queries through secure connections
-- API calls with rate limiting and error handling
-- File system access with proper permissions
-- Integration with services like Slack, GitHub, or your internal APIs
+- Remember past conversations and solutions
+- Store and retrieve relevant context automatically
+- Learn patterns from successful interactions
 
-This uses the Model Context Protocol (MCP) standard for safe, observable
-external interactions.
+**MCP Tools**: Agents interact with external systems through secure, observable tools:
+
+- Database queries with proper permissions
+- API calls with built-in rate limiting
+- File system access within security boundaries
+- Integration with Slack, GitHub, and internal services
+
+Memory scales from embedded (instant setup) to external backends (Neo4j,
+Qdrant) as needed. See [ADR-0030]({{ '/adr/0030-embedded-memory-system/' |
+relative_url }}) for the hybrid architecture.
 
 ## Documentation Structure
 

@@ -1,4 +1,9 @@
-# Performance and Safety Metrics Report
+---
+title: "Performance and Safety Metrics Report"
+date: 2025-08-10
+layout: page
+categories: [Performance]
+---
 
 **Date:** August 10, 2025 **Project:** Caxton Type System Improvements
 **Analysis Type:** Post-Implementation Metrics
@@ -120,7 +125,7 @@ Success Rate: 100%
 
 **Error Message Quality:**
 
-```rust
+````rust
 // Before: Generic error messages
 "validation failed"
 "invalid input"
@@ -131,7 +136,7 @@ Success Rate: 100%
 "Invalid memory request: 15GB exceeds maximum allowed 10GB"
 "CPU fuel insufficient: requested 1000, available 500"
 "Agent ID validation failed: TestAgentId cannot be used in production context"
-```
+````
 
 ## 📈 Code Quality Metrics
 

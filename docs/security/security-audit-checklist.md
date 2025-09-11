@@ -1,4 +1,9 @@
-# Security Audit Checklist
+---
+title: "Security Audit Checklist"
+date: 2025-01-15
+layout: page
+categories: [Security]
+---
 
 ## Overview
 

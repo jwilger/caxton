@@ -1,4 +1,9 @@
-# Developer Experience Guide
+---
+title: "Developer Experience Guide"
+date: 2025-01-14
+layout: page
+categories: [Developer Guide]
+---
 
 ## Welcome to Caxton Development
 

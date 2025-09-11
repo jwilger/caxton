@@ -44,16 +44,16 @@ jobs:
 
       - name: Sync ADRs to Jekyll collection
         run: |
-          echo "Syncing ADRs from docs/adr/ to website/_adrs/"
+          echo "Syncing ADRs from docs/_adrs/ to website/_adrs/"
 
           # Create _adrs directory if it doesn't exist (matches Jekyll collection name 'adrs')
           mkdir -p website/_adrs
 
           # Copy all ADR files
-          cp docs/adr/*.md website/_adrs/ 2>/dev/null || true
+          cp docs/_adrs/*.md website/_adrs/ 2>/dev/null || true
 
           # Verify sync
-          SOURCE_COUNT=$(ls -1 docs/adr/*.md 2>/dev/null | wc -l)
+          SOURCE_COUNT=$(ls -1 docs/_adrs/*.md 2>/dev/null | wc -l)
           JEKYLL_COUNT=$(ls -1 website/_adrs/*.md 2>/dev/null | grep -v README.md | wc -l)
 
           echo "Source ADRs: $SOURCE_COUNT"

@@ -1,4 +1,9 @@
-# Message Router Configuration and Deployment Architecture
+---
+title: "Configuration and Deployment Architecture"
+date: 2025-01-14
+layout: page
+categories: [architecture, deployment]
+---
 
 ## Overview
 

@@ -1,4 +1,9 @@
-# FIPA Knowledge Base for Developers
+---
+title: "FIPA Knowledge Base for Developers"
+date: 2025-09-10
+layout: page
+categories: [Learning]
+---
 
 ## Introduction
 
@@ -49,14 +54,15 @@ Agents communicate using "speech acts" - messages with specific intentions:
 #### What Caxton Uses
 
 | Performative | Purpose | Example Use Case |
-|--------------|---------|------------------| | **REQUEST** | Ask agent to
-perform action | "Process this data" | | **INFORM** | Share information | "Task
-completed" | | **QUERY** | Ask for information | "What's the status?" | |
-**PROPOSE** | Offer to do something | "I can handle this for $10" | |
-**ACCEPT_PROPOSAL** | Accept an offer | "Yes, proceed" | | **REJECT_PROPOSAL** |
-Decline an offer | "No, too expensive" | | **FAILURE** | Report inability |
-"Cannot complete: disk full" | | **NOT_UNDERSTOOD** | Message unclear | "Unknown
-action requested" |
+|--------------|---------|------------------|
+| **REQUEST** | Ask agent to perform action | "Process this data" |
+| **INFORM** | Share information | "Task completed" |
+| **QUERY** | Ask for information | "What's the status?" |
+| **PROPOSE** | Offer to do something | "I can handle this for $10" |
+| **ACCEPT_PROPOSAL** | Accept an offer | "Yes, proceed" |
+| **REJECT_PROPOSAL** | Decline an offer | "No, too expensive" |
+| **FAILURE** | Report inability | "Cannot complete: disk full" |
+| **NOT_UNDERSTOOD** | Message unclear | "Unknown action requested" |
 
 #### Real-World Analogy
 
@@ -314,12 +320,12 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 ### What We Simplified
 
 | FIPA Approach | Caxton Approach | Why |
-|---------------|-----------------|-----| | Complex ontologies (OWL/RDF) | JSON
-Schema | Better tooling, developer friendly | | Semantic languages (FIPA-SL) |
-Plain JSON | Universal support | | Many performatives (~22) | Essential 8 |
-Simpler mental model | | Agent platforms (JADE) | Container orchestration |
-Cloud-native | | Service discovery (DF/AMS) | Kubernetes/Consul | Modern
-infrastructure |
+|---------------|-----------------|-----|
+| Complex ontologies (OWL/RDF) | JSON Schema | Better tooling, developer friendly |
+| Semantic languages (FIPA-SL) | Plain JSON | Universal support |
+| Many performatives (~22) | Essential 8 | Simpler mental model |
+| Agent platforms (JADE) | Container orchestration | Cloud-native |
+| Service discovery (DF/AMS) | Kubernetes/Consul | Modern infrastructure |
 
 ## Debugging FIPA Messages
 

@@ -1,11 +1,10 @@
-______________________________________________________________________
-
-## layout: documentation
-
+---
+layout: documentation
 title: "Anchor Links Demo"
 description: "Demo page showing anchor link functionality for long documents"
-
-# Anchor Links Demo
+date: 2025-09-10
+categories: [Website]
+---
 
 This page demonstrates the anchor links functionality implemented for the Caxton
 documentation site. Anchor links provide deep-linking, smooth scrolling, and

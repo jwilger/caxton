@@ -1,0 +1,282 @@
+# Jekyll Configuration for Caxton Documentation
+# Single source of truth for all documentation content
+
+# Site settings
+title: Caxton Documentation
+subtitle: Multi-Agent Orchestration Platform
+description: >-
+  Complete documentation for Caxton - WebAssembly isolation, Observable by design,
+  Production-ready from day one. Build resilient multi-agent systems with < 50μs overhead.
+
+# This config is for building documentation as Jekyll collections
+# The main website/_config.yml will include this content via collections
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+timezone: UTC
+
+# Kramdown and Rouge configuration
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+    span:
+      line_numbers: false
+    block:
+      line_numbers: false
+      start_line: 1
+
+# Rouge configuration
+rouge:
+  css_class: 'highlight'
+
+# Collections Configuration - Single Source of Truth
+collections:
+  # ADR Collection - Architecture Decision Records
+  adrs:
+    output: true
+    permalink: /adr/:name/
+    sort_by: date
+
+  # Audiences Collection - Documentation organized by user type
+  audiences:
+    output: true
+    permalink: /audience/:name/
+    sort_by: title
+
+  # Concepts Collection - Core technical concepts
+  concepts:
+    output: true
+    permalink: /concepts/:name/
+    sort_by: title
+
+  # API Documentation Collection
+  api:
+    output: true
+    permalink: /api/:name/
+    sort_by: title
+
+  # Getting Started Collection
+  getting_started:
+    output: true
+    permalink: /getting-started/:name/
+    sort_by: weight
+
+  # Developer Guide Collection
+  developer_guide:
+    output: true
+    permalink: /developer-guide/:name/
+    sort_by: weight
+
+  # Operations Collection
+  operations:
+    output: true
+    permalink: /operations/:name/
+    sort_by: weight
+
+  # Memory System Collection
+  memory_system:
+    output: true
+    permalink: /memory/:name/
+    sort_by: weight
+
+  # Messaging Collection
+  messaging:
+    output: true
+    permalink: /messaging/:name/
+    sort_by: weight
+
+  # Config Agents Collection
+  config_agents:
+    output: true
+    permalink: /config-agents/:name/
+    sort_by: weight
+
+# Collection defaults with frontmatter
+defaults:
+  # ADR defaults
+  - scope:
+      path: "adr"
+      type: "adrs"
+    values:
+      layout: "adr"
+      sitemap: true
+      audience: "contributors"
+
+  # Audience defaults
+  - scope:
+      path: "audiences"
+      type: "audiences"
+    values:
+      layout: "audience"
+      sitemap: true
+
+  # Concepts defaults
+  - scope:
+      path: "concepts"
+      type: "concepts"
+    values:
+      layout: "concept"
+      sitemap: true
+      audience: "all"
+
+  # API defaults
+  - scope:
+      path: "api"
+      type: "api"
+    values:
+      layout: "api"
+      sitemap: true
+      audience: "developers"
+
+  # Getting Started defaults
+  - scope:
+      path: "getting-started"
+      type: "getting_started"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "all"
+      section: "getting-started"
+
+  # Developer Guide defaults
+  - scope:
+      path: "developer-guide"
+      type: "developer_guide"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "developers"
+      section: "developer-guide"
+
+  # Operations defaults
+  - scope:
+      path: "operations"
+      type: "operations"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "operators"
+      section: "operations"
+
+  # Memory System defaults
+  - scope:
+      path: "memory-system"
+      type: "memory_system"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "developers"
+      section: "memory-system"
+
+  # Messaging defaults
+  - scope:
+      path: "messaging"
+      type: "messaging"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "developers"
+      section: "messaging"
+
+  # Config Agents defaults
+  - scope:
+      path: "config-agents"
+      type: "config_agents"
+    values:
+      layout: "guide"
+      sitemap: true
+      audience: "developers"
+      section: "config-agents"
+
+# Audience definitions for content organization
+audiences:
+  all:
+    title: "All Users"
+    description: "Content relevant to all Caxton users"
+    color: "blue"
+
+  experimenters:
+    title: "Experimenters"
+    description: "Researchers and prototype builders exploring multi-agent concepts"
+    color: "green"
+
+  developers:
+    title: "Agent Developers"
+    description: "Developers building production agent systems"
+    color: "purple"
+
+  operators:
+    title: "Operators"
+    description: "DevOps and platform engineers running Caxton in production"
+    color: "orange"
+
+  contributors:
+    title: "Contributors"
+    description: "Open source contributors to the Caxton project"
+    color: "red"
+
+# Content organization for navigation
+sections:
+  getting-started:
+    title: "Getting Started"
+    weight: 1
+    description: "Quick start guides and basic concepts"
+
+  concepts:
+    title: "Core Concepts"
+    weight: 2
+    description: "Fundamental Caxton concepts and architecture"
+
+  developer-guide:
+    title: "Developer Guide"
+    weight: 3
+    description: "Building agents and integrating with Caxton"
+
+  api:
+    title: "API Reference"
+    weight: 4
+    description: "Complete API documentation and examples"
+
+  operations:
+    title: "Operations"
+    weight: 5
+    description: "Deployment, monitoring, and production operations"
+
+  memory-system:
+    title: "Memory System"
+    weight: 6
+    description: "Embedded memory and knowledge management"
+
+  messaging:
+    title: "Messaging"
+    weight: 7
+    description: "FIPA-ACL messaging and communication patterns"
+
+  config-agents:
+    title: "Config Agents"
+    weight: 8
+    description: "Configuration-driven agent patterns"
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - .git/
+  - .gitignore
+  - TESTING.md
+  - "*.log"
+
+# Include files that would normally be excluded
+include:
+  - _adrs/
+  - .htaccess

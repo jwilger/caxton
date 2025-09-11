@@ -1,4 +1,10 @@
-# Agent Communication Pattern Catalog
+---
+title: "Agent Communication Pattern Catalog"
+date: 2024-01-01
+layout: page
+categories: [Patterns]
+---
+
 
 ## Introduction
 

@@ -1,4 +1,9 @@
-# Domain Types in Caxton
+---
+title: "Domain Types in Caxton"
+date: 2025-01-10
+layout: page
+categories: [Development]
+---
 
 This document describes the domain types used throughout the Caxton WebAssembly
 runtime to eliminate primitive obsession and improve type safety.
