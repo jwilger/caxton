@@ -91,10 +91,8 @@ transfer
 
 **Hot-Reload Updates**: <1 second for configuration changes
 
-**WASM Compilation**: 30-60 seconds (legacy approach being superseded)
-
-**Scale Economics**: Configuration agents deploy 10x faster than
-compiled alternatives
+**Scale Economics**: Configuration agents provide immediate deployment
+without compilation overhead
 
 ### Runtime Performance Patterns
 

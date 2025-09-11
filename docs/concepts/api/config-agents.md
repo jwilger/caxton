@@ -253,19 +253,16 @@ Phase 4: Add predictive analytics
 
 ### Rapid Development Cycles
 
-**Traditional WASM Agent**:
-
-- Write Rust code (2-4 hours)
-- Compile and test (30 minutes)
-- Deploy and debug (1 hour)
-- **Total**: 3-5 hours
-
-**Configuration Agent**:
+**Configuration Agent Development**:
 
 - Write YAML + markdown (10 minutes)
 - Deploy and test (2 minutes)
 - Iterate and refine (5 minutes)
 - **Total**: 15-20 minutes
+
+**Key advantages**: immediate deployment, hot-reload capabilities, and
+natural language configuration make agent development accessible to
+non-programmers
 
 ### Operational Simplicity
 
@@ -280,12 +277,11 @@ configurations
 
 ### Resource Efficiency
 
-**Lower Memory Usage**: 50-100MB per config agent vs 200-500MB per WASM
-agent
+**Lower Memory Usage**: 50-100MB per config agent with efficient resource sharing
 
-**Faster Startup**: 2-5 seconds vs 30-60 seconds for WASM agents
+**Faster Startup**: 2-5 seconds for immediate availability
 
-**Hot Updates**: <1 second configuration reloads vs full restart cycles
+**Hot Updates**: <1 second configuration reloads with zero downtime
 
 **Shared Resources**: Multiple agents share tool implementations efficiently
 
@@ -413,19 +409,7 @@ capabilities:
 
 **Memory Misuse**: Enabling global memory scope unnecessarily
 
-## Migration and Evolution
-
-### From Traditional Development
-
-**Assessment**: Identify what your WASM agents actually do
-
-**Tool Mapping**: Find MCP tools that provide equivalent functionality
-
-**Configuration Creation**: Write YAML + markdown equivalent
-
-**Parallel Deployment**: Run both versions during transition
-
-**Gradual Migration**: Move traffic to configuration agents progressively
+## Evolution and Scaling
 
 ### Scaling Configuration Agents
 

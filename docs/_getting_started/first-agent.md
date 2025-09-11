@@ -628,7 +628,6 @@ You now understand configuration agents! Continue learning:
 - **[Memory System Guide](../developer-guide/memory-system.md)** - Deep dive into
   agent learning
 - **[API Integration](rest-api-quickstart.md)** - REST API usage patterns
-- **[WASM Agents](../developer-guide/wasm-agents.md)** - When you need custom computation
 
 **Ready to build?** Start with simple single-capability agents, then compose
 them into powerful multi-agent workflows!

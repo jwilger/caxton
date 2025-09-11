@@ -14,7 +14,6 @@ production with the embedded, zero-dependency architecture (ADRs 28-30).
 |-----------|---------|------|
 | Server not responding | `curl http://localhost:8080/api/v1/health` | [Health Checks](#health-checks) |
 | Deploy config agent | Create markdown file in agents/ | [Config Agent Deployment](#config-agent-deployment) |
-| Deploy WASM agent | `curl -X POST /api/v1/agents` | [WASM Agent Deployment](#wasm-agent-deployment) |
 | List agents | `curl /api/v1/agents` | [Agent Management](#agent-management) |
 | Memory performance | `caxton memory stats` | [Memory Optimization](#memory-performance) |
 | Backup embedded data | `caxton backup --embedded` | [Backup Procedures](#backup-procedures) |
@@ -166,50 +165,22 @@ deploy_config_agent "data-analyzer" "agents/data-analyzer.md"
 | Capability Conflict | Agent name conflicts with existing | Choose unique agent name |
 | File Not Found | Agent file path incorrect | Verify file exists in agents/ directory |
 
-### WASM Agent Deployment (Advanced Use Cases)
-
-**Purpose**: Deploy compiled WebAssembly agents for power users requiring
-custom algorithms
-
-#### Deploy WASM Agent
-
-```bash
-# Compile your agent to WASM first (example with Rust)
-cargo build --target wasm32-wasi --release
-cp target/wasm32-wasi/release/my-agent.wasm ./
-
-# Deploy via REST API
-curl -X POST http://localhost:8080/api/v1/agents \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"custom-algorithm-agent\",
-    \"wasm_module\": \"$(base64 -w0 my-agent.wasm)\",
-    \"resource_limits\": {
-      \"max_memory_bytes\": 10485760,
-      \"max_fuel\": 1000000,
-      \"max_execution_time_ms\": 5000
-    }
-  }"
-```
-
 ### Agent Management
 
-**Purpose**: Monitor and manage both config and WASM agents
+**Purpose**: Monitor and manage configuration agents
 
 #### List All Agents
 
 ```bash
-# Get all agents (config and WASM)
+# Get all configuration agents
 curl http://localhost:8080/api/v1/agents | jq '.'
 
-# Filter by agent type
-caxton agents list --type config
-caxton agents list --type wasm
+# List configuration agents
+caxton agents list
 
-# Count agents by type
-CONFIG_COUNT=$(caxton agents list --type config --count)
-WASM_COUNT=$(caxton agents list --type wasm --count)
-echo "Config agents: $CONFIG_COUNT, WASM agents: $WASM_COUNT"
+# Count configuration agents
+CONFIG_COUNT=$(caxton agents list --count)
+echo "Configuration agents: $CONFIG_COUNT"
 
 # Monitor agent status
 watch -n 5 'caxton agents status --summary'
@@ -222,7 +193,7 @@ watch -n 5 'caxton agents status --summary'
 AGENT_NAME="data-analyzer"
 caxton agents show "$AGENT_NAME"
 
-# Get agent via REST API (both config and WASM)
+# Get agent via REST API
 AGENT_ID="550e8400-e29b-41d4-a716-446655440000"
 curl http://localhost:8080/api/v1/agents/$AGENT_ID | jq '.'
 
@@ -864,7 +835,7 @@ caxton storage analyze --show-indexes --show-fragmentation
 
 ## References
 
-- [Configuration Agent Guide](../user-guide/config-agents.md)
+- [Configuration Agent Guide](../_concepts/api/config-agents.md)
 - [Embedded Memory System](../adr/0030-embedded-memory-system.md)
 - [Configuration-Driven Architecture](../adr/0028-configuration-driven-agent-architecture.md)
 - [FIPA Lightweight Messaging](../adr/0029-fipa-acl-lightweight-messaging.md)

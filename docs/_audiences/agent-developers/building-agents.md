@@ -7,11 +7,11 @@ difficulty: beginner
 audience: agent-developers
 ---
 
-**Implementation Status**: Configuration agents are the primary development
-experience. WebAssembly agents are available for advanced use cases.
+**Implementation Status**: Configuration agents are the primary and recommended
+development experience for Caxton 1.0.
 
-Complete guide for building agents on the Caxton platform, from simple
-configuration-driven agents to advanced WebAssembly implementations.
+Complete guide for building configuration agents on the Caxton platform,
+providing rapid deployment with a 5-10 minute onboarding experience.
 
 ## Quick Start: Configuration Agents - **Beginner**
 
@@ -137,7 +137,7 @@ Before writing code, plan your agent:
 1. **Define the problem**: What specific task will the agent solve?
 2. **Identify capabilities**: What tools and skills does it need?
 3. **Map the workflow**: How should it process inputs and generate outputs?
-4. **Choose complexity level**: Configuration agent vs WebAssembly
+4. **Design configuration**: Define YAML schema and capabilities
 
 ### 2. Configuration Agent Development
 
@@ -182,78 +182,6 @@ vim agents/my-agent/agent.md
 
 # Reload without redeployment
 curl -X POST http://localhost:3000/api/agents/my-agent/reload
-```
-
-## Advanced: WebAssembly Agents - **Advanced**
-
-For performance-critical or algorithmically complex tasks, use WebAssembly:
-
-### Prerequisites
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Add WASM target
-rustup target add wasm32-wasi
-
-# Install tools
-cargo install wasm-pack
-```
-
-### WASM Agent Structure
-
-```rust
-use caxton_sdk::prelude::*;
-
-#[caxton_agent]
-pub struct AdvancedAgent {
-    state: AgentState,
-}
-
-impl Agent for AdvancedAgent {
-    fn handle_message(&mut self, message: Message) -> Result<Response> {
-        // Custom algorithm implementation
-        let result = self.process_complex_data(message.content)?;
-
-        Ok(Response::new()
-            .with_content(result)
-            .with_confidence(0.95))
-    }
-
-    fn capabilities(&self) -> Vec<Capability> {
-        vec![
-            Capability::new("advanced_processing")
-                .with_description("Complex data processing")
-                .with_parameters(vec![
-                    Parameter::new("algorithm", ParameterType::String),
-                    Parameter::new("threshold", ParameterType::Float),
-                ])
-        ]
-    }
-}
-
-impl AdvancedAgent {
-    fn process_complex_data(&self, input: &str) -> Result<String> {
-        // Custom processing logic
-        todo!("Implement your algorithm")
-    }
-}
-```
-
-### Build and Deploy WASM
-
-```bash
-# Build WASM module
-wasm-pack build --target wasm32-wasi --out-dir pkg
-
-# Deploy to Caxton
-curl -X POST http://localhost:3000/api/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "wasm",
-    "module": "'$(base64 -w 0 pkg/agent.wasm)'"
-  }'
 ```
 
 ## Testing Strategies - **Intermediate**

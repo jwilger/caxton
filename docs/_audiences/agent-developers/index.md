@@ -9,10 +9,9 @@ description: "Build intelligent agents and MCP tools for the Caxton platform wit
 
 ## Welcome, Agent Developer
 
-You're building **agents or MCP tools** for the Caxton platform. Whether you're
-creating configuration-driven agents, custom WebAssembly modules, or sandboxed
-MCP tools, this path provides comprehensive guidance for professional agent
-development.
+You're building **agents and MCP tools** for the Caxton platform. This path
+provides comprehensive guidance for professional configuration agent development
+and MCP tool creation with WebAssembly sandboxing.
 
 ## What You'll Master
 
@@ -21,7 +20,7 @@ development.
 - ✅ FIPA-ACL messaging protocols and capability-based routing
 - ✅ Memory system integration for intelligent agent behavior
 - ✅ Security best practices and tool sandboxing
-- ✅ Testing strategies for both configuration and WASM agents
+- ✅ Testing strategies for configuration agents
 - ✅ Performance optimization and deployment patterns
 
 ## Your Development Journey
@@ -34,7 +33,7 @@ Essential concepts for all Caxton developers.
    - Get familiar with the platform basics
 
 2. **[Building Agents Overview](../../developer-guide/building-agents.md)** (20 min)
-   - Configuration vs WASM agents decision matrix
+   - Configuration agent architecture and patterns
    - Architecture patterns and security model
    - Development workflow and tooling
 
@@ -84,17 +83,9 @@ Build agents that learn and improve over time.
    - Custom entity and relation types
    - Memory lifecycle management
 
-### 🔧 Advanced Development (1.5 hours)
+### 🔧 Advanced Development (1 hour)
 
-WASM agents, MCP tools, and complex integrations.
-
-#### WebAssembly Agent Development
-
-1. **[WASM Agent Development](../../developer-guide/building-agents.md#webassembly-agents-advanced)**
-    (30 min)
-    - When to choose WASM over configuration agents
-    - Rust, Go, JavaScript development patterns
-    - Resource limits and performance optimization
+MCP tools and complex integrations.
 
 #### MCP Tool Development
 
@@ -154,19 +145,7 @@ Professional deployment, testing, and monitoring.
 2. Security Guide → Performance Optimization
 3. Testing Strategies (focus on integration testing)
 
-### Track 3: WASM Agent Developer
-
-**Best for**: Custom algorithms, performance-critical code, legacy integration
-
-**Core Skills**: Rust/Go/JavaScript, WebAssembly toolchain, resource optimization
-
-**Learning Path**:
-
-1. WASM Agent Development → Performance Optimization
-2. Security Guide → Resource Management
-3. Advanced deployment patterns
-
-### Track 4: Platform Integrator
+### Track 3: Platform Integrator
 
 **Best for**: Connecting Caxton with existing systems and workflows
 
@@ -280,7 +259,7 @@ caxton_mcp_sdk::export_tool!(DatabaseTool);
 **Security Boundaries**:
 
 - Configuration agents run in host runtime (orchestration only)
-- MCP tools run in WASM sandboxes (system access)
+- MCP tools run in WebAssembly sandboxes (system access)
 - Capability allowlists restrict tool permissions
 - Resource limits prevent denial-of-service
 
@@ -612,25 +591,6 @@ if caxton test-results --agent my-agent --slot staging --passed; then
 else
     echo "Tests failed, keeping current version"
 fi
-```
-
-### Canary Deployment for WASM Agents
-
-```bash
-# Deploy to 10% of traffic
-caxton agents deploy my-agent.wasm \
-  --strategy canary \
-  --canary-percentage 10 \
-  --health-checks enabled
-
-# Monitor metrics
-caxton metrics watch my-agent \
-  --canary-metrics "error_rate,latency,throughput"
-
-# Gradual rollout if metrics look good
-caxton agents canary-promote my-agent \
-  --to-percentage 25 \
-  --if-metrics-healthy
 ```
 
 ### CI/CD Integration

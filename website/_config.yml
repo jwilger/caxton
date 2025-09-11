@@ -5,7 +5,7 @@
 title: Caxton
 subtitle: Multi-Agent Orchestration Platform
 description: >-
-  WebAssembly isolation. Observable by design. Production-ready from day one.
+  Configuration-driven agents. Observable by design. Production-ready from day one.
   Build resilient multi-agent systems with < 50μs overhead.
 
 url: "https://jwilger.github.io"

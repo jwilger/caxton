@@ -301,54 +301,6 @@ agents:
       memory_scope: "global"        # Global memory access
 ```
 
-### WASM Agent Optimization (Advanced Use Cases)
-
-Optimize WASM agents for performance-critical scenarios:
-
-```yaml
-wasm_runtime:
-  # Compilation optimization
-  jit_enabled: true
-  optimization_level: "speed"    # vs "size"
-
-  # Caching strategy
-  cache_compiled_modules: true
-  module_cache_size: 50          # Cache 50 compiled modules
-  module_cache_ttl: "1h"         # Cache TTL
-
-  # Resource management
-  memory_pooling: true           # Pool WASM memory
-  stack_pooling: true            # Pool execution stacks
-  instance_pooling: true         # Pool WASM instances
-
-  # Security vs Performance
-  fuel_enabled: true             # CPU metering (slight overhead)
-  fuel_per_instruction: 1        # Fuel consumption rate
-  max_fuel: 1000000             # Maximum execution fuel
-
-  # Memory configuration
-  max_memory_pages: 256          # 16MB max memory
-  memory_growth_enabled: true    # Allow dynamic growth
-
-# WASM agent specific limits
-wasm_agents:
-  default_limits:
-    memory_mb: 16                # 16MB WASM memory
-    fuel_limit: 1000000         # CPU fuel limit
-    execution_timeout: "5s"      # Max execution time
-
-  performance_profile:
-    - profile: "cpu_intensive"
-      memory_mb: 64
-      fuel_limit: 5000000
-      execution_timeout: "30s"
-
-    - profile: "memory_intensive"
-      memory_mb: 128
-      fuel_limit: 1000000
-      execution_timeout: "10s"
-```
-
 ## Agent Processing Optimization
 
 ### Conversation Batch Processing
@@ -564,7 +516,6 @@ curl -s localhost:9090/metrics | grep memory
 # Configuration agent metrics
 curl -s localhost:9090/metrics | grep agent
 # caxton_agent_config_count 8
-# caxton_agent_wasm_count 2
 # caxton_agent_reload_duration_seconds{quantile="0.99"} 0.15
 # caxton_agent_response_time_seconds{quantile="0.5"} 0.089
 # caxton_agent_tool_call_duration_seconds{quantile="0.99"} 2.3
@@ -597,7 +548,7 @@ caxton benchmark memory \
 
 # Configuration agent load test
 caxton benchmark agents \
-  --config-agents 20 \
+  --agents 20 \
   --conversations-per-second 100 \
   --duration 600s \
   --response-timeout 30s
@@ -616,7 +567,7 @@ caxton benchmark storage \
 
 # Full system stress test
 caxton benchmark system \
-  --config-agents 50 \
+  --agents 50 \
   --memory-entities 100000 \
   --concurrent-conversations 500 \
   --find-limits
@@ -1087,25 +1038,6 @@ pub async fn profile_cpu_usage() -> CpuProfile {
         processing_usage: processing,
         spawning_usage: spawning,
     }
-}
-```
-
-#### 5. WebAssembly Performance Testing
-
-WASM Execution Overhead:
-
-```rust
-#[bench]
-fn bench_wasm_overhead(b: &mut Bencher) {
-    let wasm_agent = create_wasm_agent();
-    let native_agent = create_native_agent();
-    let task = create_compute_task();
-
-    let wasm_time = bench_agent(&wasm_agent, &task);
-    let native_time = bench_agent(&native_agent, &task);
-
-    println!("WASM overhead: {:.2}x slower",
-             wasm_time.as_secs_f64() / native_time.as_secs_f64());
 }
 ```
 

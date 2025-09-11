@@ -11,4 +11,4 @@ phase: "Foundation Phase"
 url: "https://github.com/jwilger/caxton/releases"
 description: |
   Caxton is currently in early development. Core architecture is being implemented with a focus on
-  getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+  getting the fundamentals right: configuration-driven agents, FIPA messaging, and comprehensive observability.

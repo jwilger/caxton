@@ -6,68 +6,67 @@ categories: [Operations]
 ---
 
 This comprehensive security audit checklist ensures Caxton maintains robust
-security posture across all components, from WebAssembly sandboxing to API
+security posture across all components, from configuration agent security to API
 authentication and resource protection.
 
 ## Audit Categories
 
-1. **WebAssembly Sandbox Security**
-2. **API Authentication & Authorization**
-3. **Resource Exhaustion Protection**
-4. **Data Security & Privacy**
-5. **Network Security**
-6. **Operational Security**
-7. **Compliance & Governance**
+1. **Configuration Agent Security**
+2. **MCP Tool Sandboxing**
+3. **API Authentication & Authorization**
+4. **Resource Exhaustion Protection**
+5. **Data Security & Privacy**
+6. **Network Security**
+7. **Operational Security**
+8. **Compliance & Governance**
 
-## 1. WebAssembly Sandbox Security
+## 1. Configuration Agent Security
 
-### Isolation Verification
+### Configuration Validation
 
-- [ ] **Memory Isolation**
-  - [ ] Agents cannot access memory outside allocated bounds
-  - [ ] Stack overflow protections enabled
-  - [ ] Heap size limits enforced
-  - [ ] Memory layout randomization (ASLR) active
+- [ ] **YAML Configuration Security**
+  - [ ] Strict YAML schema validation
+  - [ ] Injection attack prevention in configuration
+  - [ ] Size limits on configuration files
+  - [ ] Version control and audit trails
 
-- [ ] **CPU Resource Limits**
-  - [ ] Fuel-based CPU metering implemented
-  - [ ] Maximum execution time limits set
-  - [ ] Infinite loop protection active
-  - [ ] CPU usage monitoring per agent
+- [ ] **Capability Enforcement**
+  - [ ] Declared capabilities properly validated
+  - [ ] Tool access restricted to declared tools only
+  - [ ] Memory scope isolation enforced
+  - [ ] Resource limits properly applied
 
-- [ ] **File System Access**
-  - [ ] No direct file system access from WASM
-  - [ ] All file operations through controlled host functions
-  - [ ] Path traversal protections in place
-  - [ ] Temporary file cleanup implemented
+- [ ] **Hot Reload Security**
+  - [ ] Configuration changes validated before activation
+  - [ ] Rollback capabilities in place
+  - [ ] File system permissions secured
+  - [ ] Configuration backup and recovery
 
-- [ ] **Network Access**
-  - [ ] No direct network access from WASM
-  - [ ] All network operations through approved host functions
-  - [ ] Outbound connection filtering
-  - [ ] Rate limiting on network operations
+### Memory Scope Isolation
 
-### Host Function Security
+- [ ] **Agent Memory Boundaries**
+  - [ ] Agent scope isolation enforced
+  - [ ] Workspace scope permissions verified
+  - [ ] Global scope access properly controlled
+  - [ ] Memory cleanup on agent removal
 
-- [ ] **Input Validation**
-  - [ ] All parameters validated before processing
-  - [ ] Buffer overflow protections
-  - [ ] Type checking for all inputs
-  - [ ] Sanitization of string inputs
+## 2. MCP Tool Sandboxing
 
-- [ ] **Output Sanitization**
-  - [ ] Return values properly encoded
-  - [ ] Sensitive data redaction
-  - [ ] Error message sanitization
-  - [ ] Log output filtering
+### Tool Security Controls
 
-- [ ] **Capability-Based Security**
-  - [ ] Host functions restricted by agent capabilities
-  - [ ] Principle of least privilege applied
-  - [ ] Dynamic capability revocation possible
-  - [ ] Capability inheritance controls
+- [ ] **Tool Access Control**
+  - [ ] Whitelist-based tool authorization
+  - [ ] Tool capability validation
+  - [ ] External system access restrictions
+  - [ ] Tool execution timeouts
 
-## 2. API Authentication & Authorization
+- [ ] **MCP Server Sandboxing**
+  - [ ] MCP servers run in WebAssembly sandboxes
+  - [ ] Resource limits enforced per MCP server
+  - [ ] File system access restrictions
+  - [ ] Network access controls
+
+## 3. API Authentication & Authorization
 
 ### Authentication Mechanisms
 
@@ -153,7 +152,7 @@ authentication and resource protection.
   - [ ] Connection count limits
   - [ ] I/O priority management
 
-## 4. Data Security & Privacy
+## 4. Resource Exhaustion Protection
 
 ### Data Encryption
 
@@ -197,7 +196,7 @@ authentication and resource protection.
   - [ ] Industry-specific privacy requirements
   - [ ] Cross-border data transfer protections
 
-## 5. Network Security
+## 5. Data Security & Privacy
 
 ### Network Architecture
 
@@ -227,7 +226,7 @@ authentication and resource protection.
   - [ ] Service-to-service authentication
   - [ ] Network policy enforcement
 
-## 6. Operational Security
+## 6. Network Security
 
 ### Monitoring & Logging
 
@@ -271,7 +270,7 @@ authentication and resource protection.
   - [ ] Emergency patching capabilities
   - [ ] Dependency vulnerability monitoring
 
-## 7. Compliance & Governance
+## 7. Operational Security
 
 ### Security Governance
 
@@ -384,6 +383,30 @@ security_monitoring:
   certificate_expiry_warnings: 30  # days
   vulnerability_scan_schedule: "0 2 * * 1"  # Weekly on Monday
 ```
+
+## 8. Compliance & Governance
+
+### Regulatory Compliance
+
+- [ ] **Data Protection Regulations**
+  - [ ] GDPR compliance for EU data processing
+  - [ ] CCPA compliance for California residents
+  - [ ] Data retention policies implemented
+  - [ ] Right to deletion procedures
+
+- [ ] **Industry Standards**
+  - [ ] SOC 2 Type II compliance
+  - [ ] ISO 27001 information security standards
+  - [ ] NIST Cybersecurity Framework alignment
+  - [ ] PCI DSS for payment data (if applicable)
+
+### Audit and Documentation
+
+- [ ] **Security Documentation**
+  - [ ] Security policies and procedures documented
+  - [ ] Incident response procedures defined
+  - [ ] Risk assessments conducted and documented
+  - [ ] Security training materials updated
 
 ## References
 

@@ -544,8 +544,7 @@ Expected response:
   "agents": {
     "total": 2,
     "running": 2,
-    "config_agents": 2,
-    "wasm_agents": 0
+    "config_agents": 2
   },
   "capabilities": {
     "total": 4,

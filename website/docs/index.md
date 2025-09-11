@@ -21,12 +21,10 @@ production deployment. Unlike traditional platforms that require hours of
 compilation setup, Caxton lets you **create and deploy agents in 5-10
 minutes** using simple markdown configuration files.
 
-**Two Agent Types, One Platform:**
+**Configuration-Driven Agent Development:**
 
-- **Configuration agents**: Define behavior in markdown files with YAML
-  frontmatter (90% of use cases)
-- **WebAssembly agents**: Compile custom algorithms when you need maximum
-  performance (10% of use cases)
+Define agent behavior in markdown files with YAML frontmatter - no
+compilation or toolchain setup required.
 
 **Zero External Dependencies:** Embedded SQLite memory, local embedding models,
 and single-binary deployment mean Caxton works immediately out of the box - no
@@ -76,11 +74,11 @@ addresses:
 - **Team Automation**: Coordinate Slack notifications, GitHub updates, and email
   workflows
 
-**WebAssembly Agent Use Cases** (for power users):
+**Advanced Use Cases**:
 
-- **Custom ML Models**: Deploy proprietary algorithms with security isolation
-- **High-Performance Computing**: CPU-intensive mathematical operations
-- **Legacy Integration**: Wrap existing C/C++/Rust libraries as agents
+- **Complex Workflows**: Multi-step orchestration with conditional logic
+- **Domain-Specific Tools**: Custom MCP servers for specialized integrations
+- **High-Scale Processing**: Handle thousands of concurrent conversations
 
 ## Quick Links
 
@@ -130,9 +128,8 @@ system_prompt: |
 ---
 ```
 
-**WebAssembly Agents**: When you need custom algorithms or maximum
-performance, agents can still be compiled modules running in secure sandboxes
-with memory/CPU limits.
+**Tool Integration**: When you need external system access, agents connect
+through secure MCP tools with permission boundaries and resource limits.
 
 ### Messages
 

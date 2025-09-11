@@ -13,7 +13,7 @@ layout: default
                 </h1>
                 <p class="hero-subtitle">
                     Configuration-driven agents. Embedded memory. Zero external dependencies.
-                    Build multi-agent systems in <span class="highlight">5-10 minutes</span> with optional WebAssembly isolation.
+                    Build multi-agent systems in <span class="highlight">5-10 minutes</span> using configuration-driven agents.
                 </p>
                 <div class="hero-actions">
                     <a href="#getting-started" class="btn btn-primary">Get Started</a>
@@ -51,7 +51,7 @@ layout: default
                 <h3 class="solution-title">How Caxton Solves Them</h3>
                 <ul class="solution-list">
                     <li>Built-in distributed tracing for every message</li>
-                    <li>WebAssembly isolation with zero blast radius</li>
+                    <li>Configuration agents with minimal setup</li>
                     <li>FIPA standard protocols out of the box</li>
                     <li>Graceful degradation during network partitions</li>
                     <li>Embedded memory system - no external dependencies</li>
@@ -70,7 +70,7 @@ layout: default
             <div class="feature-card">
                 <div class="feature-icon">⚙️</div>
                 <h3>Configuration-Driven Agents</h3>
-                <p>Create agents with YAML+Markdown configuration. 5-10 minute onboarding. Optional WebAssembly for advanced use cases.</p>
+                <p>Create agents with YAML+Markdown configuration. 5-10 minute onboarding. No compilation or toolchain setup required.</p>
                 <div class="feature-metrics">
                     <span class="metric">5-10 min setup</span>
                     <span class="metric">Zero compilation</span>
@@ -192,11 +192,11 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
         <h2 class="section-title">Architecture</h2>
         <div class="architecture-content">
             <div class="architecture-text">
-                <h3>Hybrid Agent Architecture</h3>
-                <p>Caxton provides both configuration-driven agents for rapid development and WebAssembly agents for performance-critical use cases. Zero external dependencies with embedded memory and local-first design.</p>
+                <h3>Configuration-Driven Architecture</h3>
+                <p>Caxton provides configuration-driven agents for rapid development. Zero external dependencies with embedded memory and local-first design.</p>
                 <ul>
                     <li><strong>Configuration Agents</strong> - YAML+Markdown for 5-10 minute onboarding</li>
-                    <li><strong>WebAssembly Runtime</strong> - Optional WASM isolation for advanced scenarios</li>
+                    <li><strong>MCP Tool Security</strong> - Secure tool execution with permission boundaries</li>
                     <li><strong>Capability Routing</strong> - Lightweight FIPA messaging with capability-based discovery</li>
                     <li><strong>Embedded Memory</strong> - SQLite + Candle vector database built-in</li>
                     <li><strong>MCP Tool Bridge</strong> - Connect to external systems via Model Context Protocol</li>
@@ -272,9 +272,9 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                             <strong>Actor System</strong><br>
                                             <small>tokio runtime<br>message routing</small>
                                         </div>
-                                        <div class="component wasm-pool">
-                                            <strong>WASM Runtime</strong><br>
-                                            <small>wasmtime<br>512MB/instance</small>
+                                        <div class="component config-runtime">
+                                            <strong>Config Runtime</strong><br>
+                                            <small>tokio executor<br>memory integration</small>
                                         </div>
                                     </div>
                                     <div class="data-layer">
@@ -312,8 +312,8 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                             </div>
                                         </div>
                                         <div class="healthy-agents">
-                                            <div class="agent-ok">WASM Agent ✓</div>
-                                            <div class="agent-ok">Config Agent ✓</div>
+                                            <div class="agent-ok">Config Agent A ✓</div>
+                                            <div class="agent-ok">Config Agent B ✓</div>
                                         </div>
                                     </div>
                                     <div class="recovery-mechanisms">
@@ -526,12 +526,12 @@ curl -X POST http://localhost:8080/api/v1/agents/order-processor/invoke \
             <div class="release-description">
                 {% if site.data.release.version and site.data.release.version contains "0." %}
                     Caxton is currently in early development. Core architecture is being implemented with a focus on
-                    getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+                    getting the fundamentals right: configuration-driven agents, FIPA messaging, and comprehensive observability.
                 {% elsif site.data.release and site.data.release.description %}
                     {{ site.data.release.description | markdownify | truncate: 300 | strip_html }}
                 {% else %}
                     Caxton is currently in early development. Core architecture is being implemented with a focus on
-                    getting the fundamentals right: WebAssembly isolation, FIPA messaging, and comprehensive observability.
+                    getting the fundamentals right: configuration-driven agents, FIPA messaging, and comprehensive observability.
                 {% endif %}
             </div>
             <div class="release-actions">

@@ -78,8 +78,8 @@ experimental**? How do teams plan around **partial implementations** and
 
 ### Current Implementation Landscape
 
-**Legacy WASM Infrastructure**: 50% complete - established but being
-superseded
+**Configuration Agent Infrastructure**: 50% complete - actively being
+implemented as primary architecture
 
 **Configuration Agent Runtime**: 0% complete - high priority new foundation
 
@@ -104,7 +104,7 @@ production?
 
 **Medium Priority**: Capability routing and memory integration
 
-**Low Priority**: Legacy WASM enhancements and advanced features
+**Low Priority**: Advanced features and optimization enhancements
 
 **Maintenance**: Existing stable features and security updates
 

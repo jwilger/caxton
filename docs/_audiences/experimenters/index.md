@@ -21,7 +21,7 @@ By the end of this path, you'll have:
 - ✅ Your first configuration agent deployed from a simple markdown file
 - ✅ Agents communicating via capability-based messaging
 - ✅ Built-in memory system learning from interactions
-- ✅ Understanding of when to use config agents vs WASM agents
+- ✅ Understanding of configuration agent capabilities
 
 ## Why Caxton is Perfect for Experimentation
 
@@ -136,7 +136,7 @@ Agents remember successful interactions:
 | Hours of toolchain setup | 5-10 minute onboarding |
 | Agent-to-agent coupling | Capability-based routing |
 | External databases required | Zero-dependency embedded memory |
-| Complex WASM compilation | Markdown + YAML configuration |
+| Complex compilation required | Markdown + YAML configuration |
 
 ### vs. LangChain/CrewAI
 
@@ -206,12 +206,6 @@ caxton memory search "sales trends analysis"
 - ✅ Rapid prototyping and experimentation
 - ✅ 90% of use cases
 
-### Consider WASM Agents When
-
-- 🔧 Custom algorithms needed
-- 🔧 Performance-critical computation
-- 🔧 Legacy code integration
-- 🔧 Proprietary algorithms
 - 🔧 Maximum security isolation
 
 ### Consider External Backends When

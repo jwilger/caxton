@@ -22,12 +22,8 @@ simplicity and compatibility with standard HTTP tooling.
 
 ### Agent Types
 
-Caxton supports two agent types:
-
-- **Configuration agents**: Defined in markdown files with YAML
-  frontmatter (primary experience)
-- **WebAssembly agents**: Compiled modules for advanced use cases requiring
-  custom algorithms
+Caxton uses configuration agents defined in markdown files with YAML
+frontmatter for rapid agent deployment and iteration.
 
 ### Base URLs
 
@@ -100,52 +96,6 @@ curl -X POST http://localhost:8080/api/v1/agents/config \
 }
 ```
 
-### Deploy WebAssembly Agent ✅ **IMPLEMENTED**
-
-Deploy a WebAssembly agent for advanced use cases requiring custom algorithms.
-
-> **Advanced Use Case**: WASM agents provide maximum flexibility and security
-> isolation for power users with complex algorithmic requirements.
-
-#### REST
-
-```bash
-POST /api/v1/agents/wasm
-
-# Request (Current Implementation)
-curl -X POST http://localhost:8080/api/v1/agents/wasm \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "my-wasm-agent",
-    "wasm_module": "AGFzbQEAAAA=",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
-      "max_execution_time_ms": 5000
-    }
-  }'
-
-# Response (Current Implementation)
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "my-wasm-agent",
-  "type": "webassembly",
-  "wasm_module": "AGFzbQEAAAA=",
-  "resource_limits": {
-    "max_memory_bytes": 10485760,
-    "max_fuel": 1000000,
-    "max_execution_time_ms": 5000
-  }
-}
-
-# Future Request Format (Planned)
-curl -X POST http://localhost:8080/api/v1/agents/wasm \
-  -H "Content-Type: multipart/form-data" \
-  -F "wasm=@agent.wasm" \
-  -F "config={\"name\":\"my-agent\",\"strategy\":\"immediate\",\
-          \"resources\":{\"memory\":\"50MB\",\"cpu\":\"100000\"}}"
-```
-
 #### Deployment Strategies
 
 Available deployment strategies:
@@ -165,7 +115,7 @@ PUT /api/v1/agents/{agent_id}/reload
 # Request
 curl -X PUT http://localhost:8080/api/v1/agents/agent_123/reload \
   -H "Content-Type: multipart/form-data" \
-  -F "wasm=@agent-v2.wasm" \
+  -F "config=@agent-v2.md" \
   -F "config={\"strategy\":\"graceful\",\"traffic_split\":10}"
 
 # Response
@@ -188,18 +138,9 @@ curl -X PUT http://localhost:8080/api/v1/agents/agent_123/reload \
 - **`suspended`**: Temporarily paused
 - **`failed`**: Configuration error or runtime failure
 
-#### WebAssembly Agent States
-
-- **`unloaded`**: Not present in system
-- **`loaded`**: WASM module loaded, not executing
-- **`running`**: Actively processing messages
-- **`draining`**: Finishing current work before shutdown
-- **`stopped`**: Cleanly shut down
-- **`failed`**: Encountered error and terminated
-
 ### List Agents ✅ **IMPLEMENTED**
 
-Get a list of all deployed agents, both configuration and WebAssembly.
+Get a list of all deployed configuration agents.
 
 > **Current Implementation**: Returns all agents as a simple array. Pagination
 > and filtering are planned for future releases.
@@ -215,7 +156,7 @@ curl http://localhost:8080/api/v1/agents
 # Response (Current Implementation - Empty)
 []
 
-# Response (Current Implementation - With Mixed Agents)
+# Response (Current Implementation - With Agents)
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -227,19 +168,15 @@ curl http://localhost:8080/api/v1/agents
   },
   {
     "id": "660e8400-e29b-41d4-a716-446655440001",
-    "name": "custom-wasm-agent",
-    "type": "webassembly",
+    "name": "report-generator",
+    "type": "configuration",
     "status": "running",
-    "resource_limits": {
-      "max_memory_bytes": 10485760,
-      "max_fuel": 1000000,
-      "max_execution_time_ms": 5000
-    }
+    "capabilities": ["report-generation", "data-visualization"]
   }
 ]
 
 # Future Request Format (Planned with filtering)
-GET /api/v1/agents?type=configuration&status=running&limit=10&offset=0
+GET /api/v1/agents?status=running&limit=10&offset=0
 ```
 
 ### Get Agent Details ✅ **IMPLEMENTED**
@@ -268,20 +205,6 @@ curl http://localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
   "memory_enabled": true,
   "memory_scope": "workspace",
   "config": "---\nname: DataAnalyzer\n..."
-}
-
-# Response (WebAssembly Agent)
-{
-  "id": "660e8400-e29b-41d4-a716-446655440001",
-  "name": "custom-wasm-agent",
-  "type": "webassembly",
-  "status": "running",
-  "wasm_module": "AGFzbQEAAAA=",
-  "resource_limits": {
-    "max_memory_bytes": 10485760,
-    "max_fuel": 1000000,
-    "max_execution_time_ms": 5000
-  }
 }
 
 # Response (Current Implementation - Not Found)
@@ -325,34 +248,6 @@ PUT /api/v1/agents/config/{agent_id}
   "agent_id": "agent_123",
   "status": "updated",
   "version": "1.1.0"
-}
-```
-
-### Update WebAssembly Agent ⏳ **PLANNED**
-
-Update a WebAssembly agent's code or configuration.
-
-#### REST
-
-```bash
-PUT /api/v1/agents/wasm/{agent_id}
-
-# Request
-{
-  "wasm_module": "base64_encoded_wasm",  // Optional
-  "config": {                             // Optional
-    "resources": {
-      "memory": "100MB"
-    }
-  },
-  "strategy": "blue_green"
-}
-
-# Response
-{
-  "agent_id": "agent_123",
-  "status": "updating",
-  "deployment_id": "deploy_456"
 }
 ```
 
@@ -601,7 +496,7 @@ POST /api/v1/deployments
 # Request
 {
   "agent_id": "agent_123",
-  "wasm_module": "base64_encoded_wasm",
+  "config": "updated_agent_config_markdown",
   "version": "2.0.0",
   "strategy": {
     "type": "canary",
@@ -863,7 +758,6 @@ All APIs use consistent error responses:
 | Code | HTTP Status | Description |
 |------|-------------|-------------|
 | `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
-| `INVALID_WASM` | 400 | Invalid WebAssembly module |
 | `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
 | `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
 | `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
@@ -884,15 +778,11 @@ const client = new CaxtonClient({
   apiKey: 'your-api-key'
 });
 
-// Deploy an agent
-const agent = await client.deployAgent({
-  wasmModule: fs.readFileSync('agent.wasm'),
-  config: {
-    name: 'my-agent',
-    resources: {
-      memory: '50MB'
-    }
-  }
+// Deploy a configuration agent
+const agent = await client.deployConfigAgent({
+  config: fs.readFileSync('agent.md', 'utf8'),
+  memoryEnabled: true,
+  memoryScope: 'workspace'
 });
 
 // Send a message
@@ -918,14 +808,12 @@ client = CaxtonClient(
     api_key='your-api-key'
 )
 
-# Deploy an agent
-with open('agent.wasm', 'rb') as f:
-    agent = client.deploy_agent(
-        wasm_module=f.read(),
-        config={
-            'name': 'my-agent',
-            'resources': {'memory': '50MB'}
-        }
+# Deploy a configuration agent
+with open('agent.md', 'r') as f:
+    agent = client.deploy_config_agent(
+        config=f.read(),
+        memory_enabled=True,
+        memory_scope='workspace'
     )
 
 # Send and wait for reply
@@ -958,15 +846,11 @@ func main() {
         caxton.WithAPIKey("your-api-key"),
     )
 
-    // Deploy agent
-    agent, err := client.DeployAgent(ctx, &caxton.DeployRequest{
-        WasmModule: wasmBytes,
-        Config: &caxton.AgentConfig{
-            Name: "my-agent",
-            Resources: &caxton.Resources{
-                Memory: "50MB",
-            },
-        },
+    // Deploy configuration agent
+    agent, err := client.DeployConfigAgent(ctx, &caxton.ConfigAgentRequest{
+        Config: configMarkdown,
+        MemoryEnabled: true,
+        MemoryScope: "workspace",
     })
 
     // Send message
@@ -1089,5 +973,4 @@ GET /api/v1/agents/{agent_id}/memory/stats
 - [Building Agents](building-agents.md) - Configuration agent development guide
 - [Message Protocols](message-protocols.md) - FIPA protocol details
 - [Security Guide](security-guide.md) - Configuration agent security model
-- [WebAssembly Integration](wasm-integration.md) - Advanced WASM development
 - [Testing Guide](testing.md) - Testing strategies

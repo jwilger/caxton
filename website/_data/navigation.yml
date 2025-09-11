@@ -310,7 +310,7 @@ docs:
         sections:
           - title: "Architecture Overview"
             url: "/adr/"
-            description: "WebAssembly integration details"
+            description: "System architecture and design decisions"
 
 # Architecture Decision Records navigation
 adr:

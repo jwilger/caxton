@@ -30,15 +30,6 @@ primary user experience. Security is implemented through:
 - **Memory Access Controls**: Agent memory is scoped and access-controlled
 - **Message Authentication**: All inter-agent communication is authenticated
 
-### Security Model for WebAssembly Agents
-
-WebAssembly agents provide additional security isolation for advanced use cases
-requiring custom algorithms:
-
-- **Direct WASM Sandboxing**: Agents run in isolated WebAssembly environments
-- **Resource Limits**: Memory and CPU constraints enforced at runtime
-- **Capability-based Access**: Fine-grained permission system
-
 ## Agent Security
 
 ### Configuration Agent Security (Primary)
@@ -84,27 +75,6 @@ Security is enforced through:
 - **Rate Limiting**: Prevents abuse of agent resources
 - **Capability Validation**: Runtime verification of declared capabilities
 
-### WebAssembly Agent Security (Advanced)
-
-For advanced use cases, WebAssembly agents provide direct isolation:
-
-```rust
-// WASM agent configuration with security limits
-let config = WasmAgentConfig {
-    // Memory limits prevent exhaustion
-    memory_limit: 50 * 1024 * 1024,  // 50MB
-
-    // CPU limits prevent infinite loops
-    cpu_time_limit: Duration::from_secs(10),
-
-    // Network access disabled by default
-    network_access: false,
-
-    // Filesystem access restricted
-    filesystem_access: FileSystemAccess::None,
-};
-```
-
 ### Agent Capabilities
 
 #### Configuration Agent Capabilities
@@ -129,31 +99,6 @@ tools:
 
 Capabilities are validated when agents attempt to use them. The runtime
 prevents unauthorized operations.
-
-#### WebAssembly Agent Capabilities
-
-WASM agents declare capabilities in code:
-
-```rust
-// In your WASM agent code
-#[agent_capabilities]
-pub fn declare_capabilities() -> Vec<Capability> {
-    vec![
-        Capability::MessageSend,
-        Capability::MessageReceive,
-        Capability::ToolAccess("database"),
-        Capability::TopicSubscribe("events"),
-    ]
-}
-
-// Capabilities are enforced at runtime
-pub fn handle_message(msg: Message) -> Result<Response> {
-    // This will fail if agent lacks database capability
-    let data = query_database("SELECT * FROM users")?;
-
-    Ok(Response::new(data))
-}
-```
 
 ### Secure Agent Deployment
 
@@ -181,23 +126,6 @@ Security validations include:
 - **Capability Verification**: Declared capabilities must be available
 - **Tool Authorization**: Requested tools must be permitted
 - **Memory Scope**: Memory access is properly scoped
-
-#### WebAssembly Agent Deployment
-
-For WASM agents, signing and verification are recommended:
-
-```bash
-# Sign your WASM agent with your private key
-caxton agent sign \
-  --wasm my-agent.wasm \
-  --key ~/.caxton/keys/developer.key \
-  --output my-agent-signed.wasm
-
-# Deploy with signature verification
-caxton deploy my-agent-signed.wasm \
-  --verify-signature \
-  --trusted-keys /etc/caxton/trusted-keys/
-```
 
 ## Message Security
 
@@ -780,12 +708,6 @@ Before deploying to production:
 - [ ] Capability declarations verified
 - [ ] Rate limiting configured
 - [ ] MCP servers properly sandboxed
-
-### WebAssembly Agents (if used)
-
-- [ ] All WASM agents signed and verified
-- [ ] Resource limits configured
-- [ ] Capability enforcement active
 
 ### System-wide Security
 

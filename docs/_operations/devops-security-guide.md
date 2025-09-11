@@ -139,7 +139,6 @@ echo "Latest release: https://github.com/$REPO/releases/latest"
 # Required environment variables for secure embedded deployment
 export CAXTON_MEMORY_BACKEND=embedded
 export CAXTON_CONFIG_AGENT_VALIDATION=strict
-export CAXTON_WASM_ISOLATION=strict  # For advanced WASM agents
 export CAXTON_SECURITY_AUDIT=enabled
 export CAXTON_LOG_LEVEL=info
 export CAXTON_MEMORY_SCOPE_ISOLATION=enabled
@@ -191,21 +190,6 @@ memory:
     relation_permissions: true  # Permission-based relations
 ```
 
-#### WASM Agent Security (Advanced Use Cases)
-
-For advanced WASM agents, maintain strict isolation:
-
-```yaml
-wasm_config:
-  isolation_mode: strict
-  memory_limit_mb: 16
-  cpu_time_limit_ms: 1000
-  network_access: false
-  filesystem_access: false
-  import_restrictions:
-    allowed_imports: ["env.print"]  # Minimal imports only
-```
-
 **Embedded Architecture Security Benefits:**
 
 - Configuration agents validated before execution
@@ -213,7 +197,7 @@ wasm_config:
 - Tool access control limits external system access
 - SQLite embedded storage with referential integrity
 - Hot-reload validation prevents malicious config injection
-- WASM sandbox isolation for advanced computational agents
+- Tool security through MCP server sandboxing
 
 ### Communication Security Configuration
 
@@ -685,8 +669,6 @@ grep "unauthorized_file_access" /var/log/caxton/security.log
 # Prompt injection attempts
 grep "prompt_injection_detected" /var/log/caxton/security.log
 
-# WASM isolation violations (for advanced agents)
-grep "wasm_isolation_violation" /var/log/caxton/security.log
 
 # API security events
 grep "api_security_event" /var/log/caxton/security.log
@@ -749,13 +731,6 @@ groups:
     annotations:
       summary: "Prompt injection attempt detected"
 
-  - alert: CaxtonWASMIsolationViolation
-    expr: caxton_wasm_isolation_violations_total > 0
-    for: 0m
-    labels:
-      severity: critical
-    annotations:
-      summary: "WASM isolation violation detected in advanced agent"
 ```
 
 ### Security Incident Response
@@ -953,7 +928,7 @@ For compliance audits, document these embedded Caxton security features:
 - [ ] **Configuration Validation**: Strict YAML and capability validation
 - [ ] **SQLite Security**: Database-level security with referential integrity
 - [ ] **File System Security**: Secure permissions and access controls
-- [ ] **WASM Sandboxing**: WebAssembly isolation for advanced computational agents
+- [ ] **MCP Tool Sandboxing**: WebAssembly isolation for tool security
 
 **Access Controls:**
 
@@ -999,12 +974,12 @@ Caxton embedded deployment maintains comprehensive audit logs for:
 - Security violation attempts and responses
 - System-level security policy enforcement
 
-**WASM Agent Events (Advanced):**
+**Tool Security Events:**
 
-- WASM agent deployment and isolation
-- Sandbox security violations
-- Resource limit enforcement
-- Import restriction violations
+- MCP server sandboxing violations
+- Tool access control violations
+- External system access attempts
+- Security policy enforcement
 
 ## Security Resources
 
@@ -1026,8 +1001,8 @@ Caxton embedded deployment maintains comprehensive audit logs for:
   Memory system security and isolation
 - [FIPA Lightweight Messaging ADR](../adr/0029-fipa-acl-lightweight-messaging.md):
   Communication security design
-- [WebAssembly Isolation ADR](../adr/0002-webassembly-for-agent-isolation.md):
-  Advanced WASM agent isolation (when applicable)
+- [Configuration-Driven Agents ADR](../adr/0028-configuration-driven-agent-architecture.md):
+  Configuration agent security model
 - [Observability ADR](../adr/0001-observability-first-architecture.md):
   Security monitoring approach
 

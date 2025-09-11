@@ -297,19 +297,6 @@ Now that you have agents running and communicating:
 - **[Advanced Patterns](../../developer-guide/agent-patterns.md)** -
   Multi-agent orchestration
 
-## When to Use WASM Agents
-
-Configuration agents handle 90% of use cases through LLM orchestration +
-tools. Consider WASM agents when you need:
-
-- **Custom algorithms**: Complex computation not available via tools
-- **Maximum performance**: CPU-intensive tasks with tight latency
-  requirements
-- **Legacy integration**: Existing code that must run in agent context
-
-See **[WASM Agent Development](../../developer-guide/wasm-agents.md)** for
-advanced use cases.
-
 ## Experimentation Tips
 
 1. **Start with single-capability agents** to understand the basics
