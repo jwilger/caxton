@@ -22,8 +22,8 @@ simplicity and compatibility with standard HTTP tooling.
 
 ### Agent Types
 
-Caxton uses configuration agents defined in markdown files with YAML
-frontmatter for rapid agent deployment and iteration.
+Caxton uses configuration agents defined in TOML configuration files
+for rapid agent deployment and iteration.
 
 ### Base URLs
 
@@ -62,8 +62,7 @@ curl http://localhost:8080/api/v1/health
 
 ### Deploy Configuration Agent ✅ **IMPLEMENTED**
 
-Deploy a new configuration-driven agent defined in markdown with YAML
-frontmatter.
+Deploy a new configuration-driven agent defined in TOML format.
 
 > **Primary Experience**: Configuration agents provide the fastest path to agent
 > deployment with a 5-10 minute onboarding experience.
@@ -78,7 +77,7 @@ curl -X POST http://localhost:8080/api/v1/agents/config \
   -H "Content-Type: application/json" \
   -d '{
     "name": "data-analyzer",
-    "config": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\n  - report-generation\ntools:\n  - http_client\n  - csv_parser\nsystem_prompt: |\n  You are a data analysis expert.\n---\n\n# DataAnalyzer Agent\n\nSpecializes in data analysis tasks.",
+    "config": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\ncapabilities = [\"data-analysis\", \"report-generation\"]\ntools = [\"http_client\", \"csv_parser\"]\n\nsystem_prompt = '''\nYou are a data analysis expert.\n'''\n\ndocumentation = '''\n# DataAnalyzer Agent\n\nSpecializes in data analysis tasks.\n'''",
     "memory_enabled": true,
     "memory_scope": "workspace"
   }'
@@ -115,7 +114,7 @@ PUT /api/v1/agents/{agent_id}/reload
 # Request
 curl -X PUT http://localhost:8080/api/v1/agents/agent_123/reload \
   -H "Content-Type: multipart/form-data" \
-  -F "config=@agent-v2.md" \
+  -F "config=@agent-v2.toml" \
   -F "config={\"strategy\":\"graceful\",\"traffic_split\":10}"
 
 # Response
@@ -204,7 +203,7 @@ curl http://localhost:8080/api/v1/agents/550e8400-e29b-41d4-a716-446655440000
   "tools": ["http_client", "csv_parser"],
   "memory_enabled": true,
   "memory_scope": "workspace",
-  "config": "---\nname: DataAnalyzer\n..."
+  "config": "name = \"DataAnalyzer\"\n..."
 }
 
 # Response (Current Implementation - Not Found)
@@ -238,7 +237,7 @@ PUT /api/v1/agents/config/{agent_id}
 
 # Request
 {
-  "config": "---\nname: DataAnalyzer\nversion: \"1.1.0\"\n...",
+  "config": "name = \"DataAnalyzer\"\nversion = \"1.1.0\"\n...",
   "memory_enabled": true,
   "strategy": "immediate"
 }
@@ -496,7 +495,7 @@ POST /api/v1/deployments
 # Request
 {
   "agent_id": "agent_123",
-  "config": "updated_agent_config_markdown",
+  "config": "updated_agent_config_toml",
   "version": "2.0.0",
   "strategy": {
     "type": "canary",
@@ -780,7 +779,7 @@ const client = new CaxtonClient({
 
 // Deploy a configuration agent
 const agent = await client.deployConfigAgent({
-  config: fs.readFileSync('agent.md', 'utf8'),
+  config: fs.readFileSync('agent.toml', 'utf8'),
   memoryEnabled: true,
   memoryScope: 'workspace'
 });
@@ -809,7 +808,7 @@ client = CaxtonClient(
 )
 
 # Deploy a configuration agent
-with open('agent.md', 'r') as f:
+with open('agent.toml', 'r') as f:
     agent = client.deploy_config_agent(
         config=f.read(),
         memory_enabled=True,
@@ -848,7 +847,7 @@ func main() {
 
     // Deploy configuration agent
     agent, err := client.DeployConfigAgent(ctx, &caxton.ConfigAgentRequest{
-        Config: configMarkdown,
+        Config: configTOML,
         MemoryEnabled: true,
         MemoryScope: "workspace",
     })

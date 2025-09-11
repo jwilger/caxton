@@ -42,7 +42,7 @@ Expected response:
 
 ### 1. Deploy a Configuration Agent
 
-Create and deploy an agent from a markdown configuration:
+Create and deploy an agent from a TOML configuration:
 
 ```bash
 # Create agent configuration file

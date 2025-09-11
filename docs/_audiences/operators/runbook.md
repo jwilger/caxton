@@ -17,7 +17,7 @@ architecture following ADRs 28-30.
 | Situation | Command | Section |
 |-----------|---------|---------|
 | Server health check | `curl localhost:8080/api/v1/health` | [Health](#health-monitoring) |
-| Deploy config agent | Create `.md` in `agents/` | [Config Agents](#config-agent-deployment) |
+| Deploy config agent | Create `.toml` in `agents/` | [Config Agents](#config-agent-deployment) |
 | Deploy WASM agent | `curl -X POST /api/v1/agents` | [WASM Agents](#wasm-agent-deployment) |
 | List all agents | `curl /api/v1/agents` | [Management](#agent-management) |
 | Memory diagnostics | `caxton memory stats` | [Memory](#memory-operations) |
@@ -147,32 +147,32 @@ curl http://localhost:8080/api/v1/health
 
 ```bash
 # 1. Create agent definition file
-cat > /var/lib/caxton/agents/data-analyzer.md << 'EOF'
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-  - chart_generator
-memory:
-  enabled: true
-  scope: workspace
-parameters:
-  max_file_size: "10MB"
-  supported_formats: ["csv", "json", "xlsx"]
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
-  You can fetch data from URLs, parse various formats, and create
-  visualizations.
-user_prompt_template: |
-  Analyze the following data request: {{request}}
-  Available context: {{context}}
----
+cat > /var/lib/caxton/agents/data-analyzer.toml << 'EOF'
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser", "chart_generator"]
 
+[memory]
+enabled = true
+scope = "workspace"
+
+[parameters]
+max_file_size = "10MB"
+supported_formats = ["csv", "json", "xlsx"]
+
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create
+visualizations.
+'''
+
+user_prompt_template = '''
+Analyze the following data request: {{request}}
+Available context: {{context}}
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 
 This agent specializes in data analysis tasks and provides:
@@ -182,10 +182,11 @@ This agent specializes in data analysis tasks and provides:
 - Statistical analysis and summaries
 - Chart and visualization generation
 - Report creation with insights
+'''
 EOF
 
 # 2. Validate configuration (catches 90% of deployment issues)
-caxton agents validate /var/lib/caxton/agents/data-analyzer.md
+caxton agents validate /var/lib/caxton/agents/data-analyzer.toml
 
 # 3. Hot-deploy the agent (zero-downtime)
 caxton agents deploy data-analyzer --hot-reload
@@ -242,15 +243,15 @@ deploy_config_agent() {
 
 # Usage example
 deploy_config_agent "data-analyzer" \
-    "/var/lib/caxton/agents/data-analyzer.md"
+    "/var/lib/caxton/agents/data-analyzer.toml"
 ```
 
 ### Common Deployment Issues
 
 | Error Pattern | Root Cause | Resolution |
 |---------------|------------|------------|
-| `YAML parse error: line 5` | Invalid frontmatter | Validate YAML syntax with `yamllint` |
-| `Missing required field: name` | Incomplete config | Add all required fields per schema |
+| `TOML parse error: line 5` | Invalid configuration | Validate TOML syntax with `toml check` |
+| `Missing required field: name` | Incomplete config | Add all required fields per TOML schema |
 | `Unknown tool: unknown_tool` | Invalid tool reference | Check `caxton tools list` for available tools |
 | `Agent name conflict` | Duplicate agent name | Use unique names or unload existing agent |
 | `File not found` | Incorrect file path | Verify file exists in `agents/` directory |
@@ -259,11 +260,11 @@ deploy_config_agent "data-analyzer" \
 **Diagnostic commands for deployment issues:**
 
 ```bash
-# Check YAML syntax
-yamllint /var/lib/caxton/agents/data-analyzer.md
+# Check TOML syntax
+toml check /var/lib/caxton/agents/data-analyzer.toml
 
 # Validate against schema
-caxton agents validate-schema /var/lib/caxton/agents/data-analyzer.md
+caxton agents validate-schema /var/lib/caxton/agents/data-analyzer.toml
 
 # Check available tools
 caxton tools list --available
@@ -272,7 +273,7 @@ caxton tools list --available
 caxton agents list --names-only | grep -i analyzer
 
 # Check file permissions
-ls -la /var/lib/caxton/agents/data-analyzer.md
+ls -la /var/lib/caxton/agents/data-analyzer.toml
 ```
 
 ## WASM Agent Deployment
@@ -432,11 +433,11 @@ caxton agents watch /var/lib/caxton/agents/ --auto-reload \
     --ignore-errors --log-changes
 
 # Test agent locally before deployment
-caxton agents test-local ./agents/new-agent.md \
+caxton agents test-local ./agents/new-agent.toml \
     --input "test query" --timeout 10s
 
 # Validate configuration changes
-caxton agents diff data-analyzer ./agents/data-analyzer.md
+caxton agents diff data-analyzer ./agents/data-analyzer.toml
 
 # Check agent logs for issues
 caxton agents logs data-analyzer --tail 100 --level error

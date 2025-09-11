@@ -18,12 +18,13 @@ categories: [api, config-agents]
 ## Overview
 
 Configuration agents are the primary user experience for Caxton, providing
-5-10 minute onboarding through markdown files with YAML frontmatter. This API
+5-10 minute onboarding through TOML configuration files. This API
 enables creation, management, and orchestration of configuration-driven agents
 without requiring WebAssembly compilation.
 
-**Architecture**: Based on ADR-0028, configuration agents are defined as
-markdown files with YAML frontmatter, executed through LLM orchestration in
+**Architecture**: Based on ADR-0032, configuration agents are defined as
+TOML configuration files with embedded documentation, executed through LLM
+orchestration in
 the host runtime while actual functionality is provided by WebAssembly MCP
 servers in isolated sandboxes.
 
@@ -31,38 +32,39 @@ servers in isolated sandboxes.
 
 Configuration agents consist of three parts:
 
-1. **YAML Frontmatter**: Agent metadata, capabilities, and configuration
-2. **System Instructions**: Markdown content defining agent behavior
+1. **TOML Configuration**: Agent metadata, capabilities, and configuration
+2. **System Instructions**: Embedded documentation and prompts
 3. **Runtime Integration**: Automatic capability registration and memory integration
 
 ### Example Configuration Agent
 
-```yaml
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-  - chart_generator
-parameters:
-  max_file_size: "10MB"
-  supported_formats: ["csv", "json", "xlsx"]
-memory_enabled: true
-memory_scope: "workspace"
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
-  You can fetch data from URLs, parse various formats, and create visualizations.
-user_prompt_template: |
-  Analyze the following data request: {{request}}
+```toml
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser", "chart_generator"]
 
-  Available data: {{context}}
-  User requirements: {{requirements}}
----
+[parameters]
+max_file_size = "10MB"
+supported_formats = ["csv", "json", "xlsx"]
 
+[memory]
+enabled = true
+scope = "workspace"
+
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create visualizations.
+'''
+
+user_prompt_template = '''
+Analyze the following data request: {{request}}
+
+Available data: {{context}}
+User requirements: {{requirements}}
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 
 This agent specializes in data analysis tasks and can:
@@ -77,6 +79,7 @@ Ask me to:
 - "Analyze the sales data at https://example.com/sales.csv"
 - "Create a chart showing monthly trends"
 - "Summarize the key metrics in this dataset"
+'''
 ```
 
 ## Core API Endpoints
@@ -85,14 +88,14 @@ Ask me to:
 
 **POST** `/api/v1/config-agents`
 
-Deploy a new configuration agent from markdown content.
+Deploy a new configuration agent from TOML content.
 
 #### Request Body
 
 ```json
 {
   "name": "DataAnalyzer",
-  "content": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\n...",
+  "content": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\n...",
   "auto_start": true,
   "workspace": "project-alpha"
 }
@@ -101,7 +104,7 @@ Deploy a new configuration agent from markdown content.
 #### Request Fields
 
 - `name` (string, required): Agent identifier, must be unique within workspace
-- `content` (string, required): Complete markdown file with YAML frontmatter
+- `content` (string, required): Complete TOML configuration file
 - `auto_start` (boolean, optional): Start agent immediately after
   deployment (default: true)
 - `workspace` (string, optional): Workspace scope for agent deployment
@@ -124,7 +127,7 @@ Deploy a new configuration agent from markdown content.
 
 #### Error Responses
 
-- **400 Bad Request**: Invalid YAML frontmatter or missing required fields
+- **400 Bad Request**: Invalid TOML format or missing required fields
 - **409 Conflict**: Agent name already exists in workspace
 - **422 Unprocessable Entity**: Configuration validation failed
 
@@ -198,7 +201,7 @@ Retrieve detailed information about a specific configuration agent.
     "failed_requests": 2,
     "average_response_time": "1.2s"
   },
-  "content": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\n..."
+  "content": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\n..."
 }
 ```
 
@@ -227,7 +230,7 @@ Update an existing configuration agent's definition.
 
 #### Request Fields
 
-- `content` (string, required): Updated markdown content with YAML frontmatter
+- `content` (string, required): Updated TOML configuration content
 - `restart` (boolean, optional): Restart agent after update (default: true)
 
 #### Response (200 OK)
@@ -245,7 +248,7 @@ Update an existing configuration agent's definition.
 
 #### Error Responses
 
-- **400 Bad Request**: Invalid YAML frontmatter
+- **400 Bad Request**: Invalid TOML format
 - **404 Not Found**: Configuration agent does not exist
 - **422 Unprocessable Entity**: Configuration validation failed
 
@@ -340,13 +343,13 @@ Content-Encoding: chunked
 
 **POST** `/api/v1/config-agents/validate`
 
-Validate configuration agent YAML and markdown without deploying.
+Validate configuration agent TOML configuration without deploying.
 
 #### Request Body
 
 ```json
 {
-  "content": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\n..."
+  "content": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\n..."
 }
 ```
 
@@ -449,7 +452,7 @@ Retrieve a specific configuration template with full content.
   "name": "Data Analyzer",
   "description": "Analyzes CSV, JSON, and Excel files with visualization",
   "category": "data-processing",
-  "content": "---\nname: {{AGENT_NAME}}\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\n...",
+  "content": "name = \"{{AGENT_NAME}}\"\nversion = \"1.0.0\"\ncapabilities = [\"data-analysis\", \"report-generation\"]\n...",
   "parameters": [
     {
       "name": "AGENT_NAME",
@@ -491,7 +494,7 @@ interface ConfigurationAgent {
   memory_scope: MemoryScope;     // Memory sharing scope
   deployed_at: string;          // ISO 8601 deployment timestamp
   last_activity: string;        // ISO 8601 last activity timestamp
-  content: string;              // Full markdown content
+  content: string;              // Full TOML content
 }
 ```
 
@@ -532,7 +535,7 @@ All endpoints follow consistent error response format:
 
 ### Common Error Codes
 
-- `VALIDATION_ERROR` - Invalid YAML or configuration
+- `VALIDATION_ERROR` - Invalid TOML or configuration
 - `AGENT_NOT_FOUND` - Specified agent does not exist
 - `NAME_CONFLICT` - Agent name already exists in workspace
 - `RUNTIME_ERROR` - Agent execution failed

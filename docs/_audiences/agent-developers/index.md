@@ -15,7 +15,7 @@ and MCP tool creation with WebAssembly sandboxing.
 
 ## What You'll Master
 
-- ✅ Advanced configuration agent patterns and YAML schemas
+- ✅ Advanced configuration agent patterns and TOML configuration
 - ✅ MCP tool development with WebAssembly sandboxing
 - ✅ Agent messaging protocols and capability-based routing
 - ✅ Memory system integration for intelligent agent behavior
@@ -44,7 +44,7 @@ The primary development experience for 90% of use cases.
 #### Core Skills
 
 1. **[Configuration Agent Schema](../../config-agents/agent-format.md)** (15 min)
-   - Complete YAML reference with validation rules
+   - Complete TOML reference with validation rules
    - Required vs optional fields and their effects
 
 2. **[Agent Configuration Examples](../../config-agents/examples.md)** (15 min)
@@ -125,7 +125,7 @@ Professional deployment, testing, and monitoring.
 
 **Best for**: Business logic, workflow orchestration, rapid prototyping
 
-**Core Skills**: YAML mastery, prompt engineering, tool integration
+**Core Skills**: TOML configuration, prompt engineering, tool integration
 
 **Learning Path**:
 
@@ -163,55 +163,72 @@ Professional deployment, testing, and monitoring.
 
 **Philosophy**: 90% of agents should be configuration-driven for rapid development.
 
-```yaml
----
-name: BusinessAnalyst
-version: "1.2.0"
-description: "Analyzes business metrics and generates insights"
+```toml
+name = "BusinessAnalyst"
+version = "1.2.0"
+description = "Analyzes business metrics and generates insights"
 
-capabilities:
-  - data-analysis
-  - report-generation
-  - trend-forecasting
+capabilities = [
+  "data-analysis",
+  "report-generation",
+  "trend-forecasting"
+]
 
-tools:
-  - database_reader
-  - excel_processor
-  - chart_generator
+tools = [
+  "database_reader",
+  "excel_processor",
+  "chart_generator"
+]
 
-memory:
-  enabled: true
-  scope: workspace
-  search_limit: 20
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
 
-llm_config:
-  provider: openai
-  model: gpt-4
-  temperature: 0.7
+[memory]
+enabled = true
+scope = "workspace"
+search_limit = 20
 
-parameters:
-  analysis_types: ["trend", "comparison", "forecast"]
-  max_data_rows: 100000
+[parameters]
+analysis_types = ["trend", "comparison", "forecast"]
+max_data_rows = 100000
 
-system_prompt: |
-  You are a senior business analyst with expertise in:
-  {{#each capabilities}}
-  - {{this}}
-  {{/each}}
+system_prompt = '''
+You are a senior business analyst with expertise in data analysis,
+report generation, and trend forecasting.
 
-  Always provide data-driven insights with clear recommendations.
-  Use memory to build context and improve analysis over time.
+Always provide data-driven insights with clear recommendations.
+Use memory to build context and improve analysis over time.
 
-user_prompt_template: |
-  Business Request: {{request}}
+When analyzing data:
+1. Start with data validation and quality checks
+2. Apply appropriate analytical methods
+3. Generate clear visualizations
+4. Provide actionable business recommendations
+'''
 
-  {{#if memory_context}}
-  Relevant Context: {{memory_context}}
-  {{/if}}
+user_prompt_template = '''
+Business Request: {{request}}
 
-  Data Sources: {{data_sources}}
-  Analysis Type: {{analysis_type}}
----
+Data Sources: {{data_sources}}
+Analysis Type: {{analysis_type}}
+
+{{#if memory_context}}
+Relevant Context: {{memory_context}}
+{{/if}}
+'''
+
+documentation = '''
+# Business Analyst Agent
+
+Analyzes business metrics and generates comprehensive insights.
+
+## Usage Examples
+- "Analyze quarterly sales performance by region"
+- "Generate trend forecast for next quarter"
+- "Compare product performance metrics"
+'''
 ```
 
 **Key Advantages**:
@@ -294,23 +311,25 @@ agent_runtime.route_message(message).await?;
 
 **Philosophy**: Agents learn from successful interactions and build context.
 
-```yaml
+```toml
 # Agent with learning behavior
-memory:
-  enabled: true
-  scope: workspace  # Shared across agents in same workspace
-  auto_store: true  # Store successful interactions
-  search:
-    similarity_threshold: 0.7
-    max_results: 10
-    include_relations: true
+[memory]
+enabled = true
+scope = "workspace"  # Shared across agents in same workspace
+auto_store = true  # Store successful interactions
+
+[memory.search]
+similarity_threshold = 0.7
+max_results = 10
+include_relations = true
 
 # Memory operations in prompts
-system_prompt: |
-  Before analyzing data, search your memory for similar analyses:
-  1. Look for patterns in {{data_type}} analysis
-  2. Find relevant insights from previous {{domain}} work
-  3. Apply lessons learned to improve accuracy
+system_prompt = '''
+Before analyzing data, search your memory for similar analyses:
+1. Look for patterns in {{data_type}} analysis
+2. Find relevant insights from previous {{domain}} work
+3. Apply lessons learned to improve accuracy
+'''
 ```
 
 **Memory Scopes**:
@@ -325,21 +344,34 @@ system_prompt: |
 
 ```bash
 # 1. Create agent configuration
-cat > my-agent.md << 'EOF'
----
-name: MyAgent
-capabilities: [my-capability]
-tools: [my-tool]
----
+cat > my-agent.toml << 'EOF'
+name = "MyAgent"
+capabilities = ["my-capability"]
+tools = ["my-tool"]
+
+[llm]
+provider = "openai"
+model = "gpt-4"
+
+system_prompt = '''
+You are MyAgent. You do useful things!
+'''
+
+user_prompt_template = '''
+Request: {{request}}
+'''
+
+documentation = '''
 # My Agent
 Does useful things!
+'''
 EOF
 
 # 2. Validate configuration
-caxton validate my-agent.md
+caxton validate my-agent.toml
 
 # 3. Hot-deploy for testing
-caxton agents deploy my-agent.md --hot-reload
+caxton agents deploy my-agent.toml --hot-reload
 
 # 4. Test agent interaction
 caxton message send \
@@ -351,7 +383,7 @@ caxton logs MyAgent --tail 20
 caxton memory search "test request"
 
 # 6. Iterate and improve
-# Edit my-agent.md → Hot-reload → Test → Repeat
+# Edit my-agent.toml → Hot-reload → Test → Repeat
 ```
 
 ### MCP Tool Development
@@ -373,49 +405,54 @@ cargo build --target wasm32-wasi --release
 
 # 4. Test in sandbox locally
 caxton tools test target/wasm32-wasi/release/my_tool.wasm \
-  --capability-allowlist my-capabilities.yaml
+  --capability-allowlist my-capabilities.toml
 
 # 5. Deploy to Caxton
 caxton tools deploy my_tool.wasm \
   --name my-tool \
-  --capabilities my-capabilities.yaml
+  --capabilities my-capabilities.toml
 
 # 6. Test integration with agents
-caxton agents deploy agent-using-my-tool.md
+caxton agents deploy agent-using-my-tool.toml
 ```
 
 ### Testing Strategies
 
 #### Configuration Agent Testing
 
-```yaml
-# test-scenarios.yaml
-scenarios:
-  - name: basic_data_analysis
-    capability: data-analysis
-    input:
-      request: "Analyze sales trends"
-      data_source: "test-data.csv"
-    expected_output:
-      contains: ["trend", "analysis", "insights"]
-      memory_stored: true
+```toml
+# test-scenarios.toml
+[[scenarios]]
+name = "basic_data_analysis"
+capability = "data-analysis"
 
-  - name: error_handling
-    capability: data-analysis
-    input:
-      request: "Analyze invalid data"
-      data_source: "nonexistent.csv"
-    expected_output:
-      error_handled: true
-      user_feedback: true
+[scenarios.input]
+request = "Analyze sales trends"
+data_source = "test-data.csv"
+
+[scenarios.expected_output]
+contains = ["trend", "analysis", "insights"]
+memory_stored = true
+
+[[scenarios]]
+name = "error_handling"
+capability = "data-analysis"
+
+[scenarios.input]
+request = "Analyze invalid data"
+data_source = "nonexistent.csv"
+
+[scenarios.expected_output]
+error_handled = true
+user_feedback = true
 ```
 
 ```bash
 # Run test suite
-caxton test my-agent.md --scenarios test-scenarios.yaml
+caxton test my-agent.toml --scenarios test-scenarios.toml
 
 # Performance testing
-caxton load-test my-agent.md \
+caxton load-test my-agent.toml \
   --concurrent 10 \
   --duration 60s \
   --scenario basic_data_analysis
@@ -429,7 +466,7 @@ cargo test --target wasm32-wasi
 
 # Integration test with sandbox
 caxton tools integration-test my_tool.wasm \
-  --test-cases tool-tests.yaml
+  --test-cases tool-tests.toml
 
 # Security testing
 caxton tools security-test my_tool.wasm \
@@ -442,57 +479,73 @@ caxton tools security-test my_tool.wasm \
 
 ### Multi-Agent Orchestration
 
-```yaml
+```toml
 # Coordinator agent that orchestrates workflow
----
-name: WorkflowCoordinator
-capabilities:
-  - workflow-orchestration
-  - task-delegation
+name = "WorkflowCoordinator"
+capabilities = [
+  "workflow-orchestration",
+  "task-delegation"
+]
 
-workflow:
-  data_analysis_pipeline:
-    steps:
-      - capability: data-ingestion
-        timeout: 30s
-        required: true
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.1
 
-      - capability: data-analysis
-        depends_on: data-ingestion
-        parallel: false
+[workflow.data_analysis_pipeline]
+[[workflow.data_analysis_pipeline.steps]]
+capability = "data-ingestion"
+timeout = "30s"
+required = true
 
-      - capability: report-generation
-        depends_on: data-analysis
-        timeout: 60s
+[[workflow.data_analysis_pipeline.steps]]
+capability = "data-analysis"
+depends_on = "data-ingestion"
+parallel = false
 
-error_handling:
-  retry_policy:
-    max_attempts: 3
-    backoff_strategy: exponential
+[[workflow.data_analysis_pipeline.steps]]
+capability = "report-generation"
+depends_on = "data-analysis"
+timeout = "60s"
 
-  fallback_agents:
-    data-analysis: ["backup-analyzer", "simple-analyzer"]
----
+[error_handling.retry_policy]
+max_attempts = 3
+backoff_strategy = "exponential"
+
+[error_handling.fallback_agents]
+data-analysis = ["backup-analyzer", "simple-analyzer"]
+
+system_prompt = '''
+You are a workflow coordinator that orchestrates complex data analysis pipelines.
+Delegate tasks to appropriate agents based on their capabilities.
+'''
+
+user_prompt_template = '''
+Workflow Request: {{request}}
+Pipeline: {{pipeline_name}}
+Steps Required: {{steps}}
+'''
 ```
 
 ### Performance Optimization
 
 #### Memory Usage Optimization
 
-```yaml
+```toml
 # Efficient memory configuration
-memory:
-  enabled: true
-  scope: agent  # Minimize scope when possible
-  search:
-    similarity_threshold: 0.8  # Higher threshold = fewer results
-    max_results: 5  # Limit result set size
-    cache_results: true  # Cache frequent queries
+[memory]
+enabled = true
+scope = "agent"  # Minimize scope when possible
 
-  cleanup:
-    auto_cleanup: true
-    max_age: "30d"  # Remove old memories
-    max_entities: 1000  # Prevent unbounded growth
+[memory.search]
+similarity_threshold = 0.8  # Higher threshold = fewer results
+max_results = 5  # Limit result set size
+cache_results = true  # Cache frequent queries
+
+[memory.cleanup]
+auto_cleanup = true
+max_age = "30d"  # Remove old memories
+max_entities = 1000  # Prevent unbounded growth
 ```
 
 #### Tool Performance
@@ -526,23 +579,21 @@ impl Tool for HighPerformanceTool {
 
 #### Configuration Agent Security
 
-```yaml
+```toml
 # Security-conscious configuration
-security:
-  input_validation:
-    max_input_length: 10000
-    allowed_formats: ["text", "json"]
-    sanitize_html: true
+[security.input_validation]
+max_input_length = 10000
+allowed_formats = ["text", "json"]
+sanitize_html = true
 
-  output_filtering:
-    remove_sensitive_data: true
-    allowed_domains: ["safe-api.com"]
+[security.output_filtering]
+remove_sensitive_data = true
+allowed_domains = ["safe-api.com"]
 
-  tool_restrictions:
-    http_client:
-      allowed_hosts: ["api.example.com"]
-      max_request_size: "1MB"
-      timeout: "30s"
+[security.tool_restrictions.http_client]
+allowed_hosts = ["api.example.com"]
+max_request_size = "1MB"
+timeout = "30s"
 ```
 
 #### MCP Tool Security
@@ -580,7 +631,7 @@ impl Tool for SecureTool {
 
 ```bash
 # Deploy new version to staging slot
-caxton agents deploy my-agent-v2.md --slot staging
+caxton agents deploy my-agent-v2.toml --slot staging
 
 # Test staging version
 caxton test-suite run --agent my-agent --slot staging
@@ -617,13 +668,13 @@ jobs:
 
       - name: Validate agent configurations
         run: |
-          for agent in agents/*.md; do
+          for agent in agents/*.toml; do
             caxton validate "$agent"
           done
 
       - name: Deploy to staging
         run: |
-          for agent in agents/*.md; do
+          for agent in agents/*.toml; do
             caxton deploy "$agent" --env staging
           done
 
@@ -633,7 +684,7 @@ jobs:
       - name: Deploy to production
         if: success()
         run: |
-          for agent in agents/*.md; do
+          for agent in agents/*.toml; do
             caxton deploy "$agent" --env production --strategy blue-green
           done
 ```
@@ -645,7 +696,7 @@ jobs:
 - **caxton-cli**: Command-line development and deployment tool
 - **caxton-mcp-sdk**: Rust SDK for MCP tool development
 - **caxton-js-sdk**: JavaScript/TypeScript SDK for web integration
-- **caxton-validation**: YAML schema validation for configuration agents
+- **caxton-validation**: TOML schema validation for configuration agents
 
 ### Community Resources
 

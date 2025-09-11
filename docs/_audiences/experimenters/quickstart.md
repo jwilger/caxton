@@ -21,7 +21,7 @@ categories: [Experimenters, Getting Started]
 
 This guide uses **configuration agents** - the simplest way to create
 intelligent agents in Caxton. No compilation, no complex toolchains, just
-markdown files with YAML configuration.
+TOML configuration files.
 
 Perfect for researchers, hobbyists, and anyone wanting to experiment with
 multi-agent systems without infrastructure complexity.
@@ -54,45 +54,56 @@ You should see:
 
 ## 2. Create Your First Configuration Agent
 
-Create a file called `data-analyzer.md`:
+Create a file called `data-analyzer.toml`:
 
-```yaml
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-  - chart_generator
-memory:
-  enabled: true
-  scope: agent
-parameters:
-  max_file_size: "10MB"
-  supported_formats: ["csv", "json", "xlsx"]
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
-  You can fetch data from URLs, parse various formats, and create
-  visualizations.
+```toml
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = [
+  "data-analysis",
+  "report-generation"
+]
+tools = [
+  "http_client",
+  "csv_parser",
+  "chart_generator"
+]
 
-  When you receive data analysis requests:
-  1. Check your memory for similar past analyses
-  2. Use appropriate tools to fetch and parse data
-  3. Generate clear insights and recommendations
-  4. Store successful patterns in memory for future use
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
 
-user_prompt_template: |
-  Analyze the following data request: {{request}}
+[memory]
+enabled = true
+scope = "agent"
 
-  Available context from memory: {{memory_context}}
-  Data source: {{data_source}}
-  Requirements: {{requirements}}
----
+[parameters]
+max_file_size = "10MB"
+supported_formats = ["csv", "json", "xlsx"]
 
-## DataAnalyzer Agent
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create
+visualizations.
+
+When you receive data analysis requests:
+1. Check your memory for similar past analyses
+2. Use appropriate tools to fetch and parse data
+3. Generate clear insights and recommendations
+4. Store successful patterns in memory for future use
+'''
+
+user_prompt_template = '''
+Analyze the following data request: {{request}}
+
+Available context from memory: {{memory_context}}
+Data source: {{data_source}}
+Requirements: {{requirements}}
+'''
+
+documentation = '''
+# DataAnalyzer Agent
 
 This agent specializes in data analysis and can:
 
@@ -110,13 +121,14 @@ Send capability-based messages like:
 
 The agent automatically learns from successful analyses and improves over
 time.
+'''
 ```
 
 ## 3. Deploy the Configuration Agent
 
 ```bash
 # Deploy from your config file
-caxton agent deploy data-analyzer.md
+caxton agent deploy data-analyzer.toml
 
 # Verify deployment
 caxton agent list
@@ -171,39 +183,56 @@ You'll see output showing how the agent:
 
 ## 6. Create a Multi-Agent Workflow
 
-Create a report generator agent in `report-generator.md`:
+Create a report generator agent in `report-generator.toml`:
 
-```yaml
----
-name: ReportGenerator
-version: "1.0.0"
-capabilities:
-  - report-generation
-  - document-creation
-tools:
-  - pdf_generator
-  - template_engine
-memory:
-  enabled: true
-  scope: workspace
-system_prompt: |
-  You are a report generation specialist. You create professional reports
-  from analysis results provided by other agents.
+```toml
+name = "ReportGenerator"
+version = "1.0.0"
+capabilities = [
+  "report-generation",
+  "document-creation"
+]
+tools = [
+  "pdf_generator",
+  "template_engine"
+]
 
-  Listen for messages from data-analysis agents and automatically generate
-  comprehensive reports from their findings.
----
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.5
 
-## ReportGenerator Agent
+[memory]
+enabled = true
+scope = "workspace"
+
+system_prompt = '''
+You are a report generation specialist. You create professional reports
+from analysis results provided by other agents.
+
+Listen for messages from data-analysis agents and automatically generate
+comprehensive reports from their findings.
+'''
+
+user_prompt_template = '''
+Generate a report from the following analysis: {{analysis_results}}
+
+Report requirements: {{requirements}}
+Memory context: {{memory_context}}
+'''
+
+documentation = '''
+# ReportGenerator Agent
 
 Automatically creates professional reports from data analysis results.
+'''
 ```
 
 Deploy and test the workflow:
 
 ```bash
 # Deploy report generator
-caxton agent deploy report-generator.md
+caxton agent deploy report-generator.toml
 
 # Send request that triggers both agents
 caxton message send \
@@ -255,8 +284,8 @@ Open http://localhost:8080/dashboard to see:
 
 Unlike traditional agent platforms requiring hours of compilation setup:
 
-- **No toolchains**: Just markdown + YAML configuration
-- **No compilation**: Agents deploy instantly from text files
+- **No toolchains**: Just TOML configuration files
+- **No compilation**: Agents deploy instantly from configuration files
 - **No external dependencies**: Memory and routing work out-of-the-box
 
 ### Capability-Based Architecture
@@ -291,7 +320,7 @@ Now that you have agents running and communicating:
 - **[Create Your First Config Agent](first-agent.md)** - Deep dive into
   configuration options
 - **[Configuration Reference](../operators/configuration.md)** - Complete
-  YAML schema documentation
+  TOML schema documentation
 - **[API Patterns](../agent-developers/api-quickstart.md)** - Interact via
   REST API
 - **[Advanced Patterns](../../developer-guide/agent-patterns.md)** -
@@ -327,27 +356,27 @@ caxton memory inspect DataAnalyzer --patterns
 
 Create agents with overlapping capabilities and see how they self-organize:
 
-```yaml
+```toml
 # Agent 1: Broad data analysis
-capabilities: ["data-analysis", "visualization"]
+capabilities = ["data-analysis", "visualization"]
 
 # Agent 2: Specialized in finance
-capabilities: ["data-analysis", "financial-modeling"]
+capabilities = ["data-analysis", "financial-modeling"]
 
 # Agent 3: Report specialist
-capabilities: ["visualization", "report-generation"]
+capabilities = ["visualization", "report-generation"]
 ```
 
 ### Knowledge Building
 
 Use global memory scope to create knowledge-accumulating agents:
 
-```yaml
-memory:
-  enabled: true
-  scope: global
-  semantic_search: true
-  relationship_tracking: true
+```toml
+[memory]
+enabled = true
+scope = "global"
+semantic_search = true
+relationship_tracking = true
 ```
 
 **Need help?** Run `caxton doctor` to diagnose issues, or check logs with

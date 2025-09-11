@@ -7,87 +7,100 @@ categories: [Configuration, Agents, Reference]
 
 ## File Structure
 
-Configuration agents are markdown files (`.md`) with YAML frontmatter that
-define agent behavior, capabilities, and documentation in a single file:
+Configuration agents are TOML files (`.toml`) that define agent behavior,
+capabilities, and documentation in a single structured configuration file:
 
 ```text
-agent-name.md
-├── YAML frontmatter (--- delimited)
-│   ├── Agent metadata
-│   ├── Capability declarations
-│   ├── Tool permissions
-│   ├── Prompt templates
-│   └── Configuration parameters
-└── Markdown documentation
+agent-name.toml
+├── Agent metadata
+├── Capability declarations
+├── Tool permissions
+├── Prompt templates
+├── Configuration parameters
+└── Embedded documentation (in 'documentation' field)
     ├── Agent description
     ├── Usage examples
     └── Implementation notes
 ```
 
-## YAML Schema Reference
+## TOML Schema Reference
 
 ### Required Fields
 
-```yaml
----
-name: string                    # Agent identifier (required)
-version: string                 # Semantic version (required)
-capabilities: array[string]     # Capability declarations (required)
-tools: array[string]           # Tool permission list (required)
-system_prompt: string          # Agent behavior definition (required)
----
+```toml
+name = "string"                 # Agent identifier (required)
+version = "string"              # Semantic version (required)
+capabilities = ["string"]       # Capability declarations (required)
+tools = ["string"]             # Tool permission list (required)
+system_prompt = '''             # Agent behavior definition (required)
+Multi-line agent behavior and instructions
+'''
 ```
 
 ### Complete Schema
 
-```yaml
----
+```toml
 # Core Identity
-name: string                    # Agent name (kebab-case recommended)
-version: string                # Semantic versioning (e.g., "1.0.0")
-description: string            # Brief agent purpose
+name = "string"                 # Agent name (kebab-case recommended)
+version = "string"              # Semantic versioning (e.g., "1.0.0")
+description = "string"          # Brief agent purpose
 
 # Capability System
-capabilities: array[string]     # List of capabilities this agent provides
-requires: array[string]        # Capabilities needed from other agents
+capabilities = ["string"]       # List of capabilities this agent provides
+requires = ["string"]          # Capabilities needed from other agents
 
 # Tool Access Control
-tools: array[string]           # Allowed tool names
-tool_config:                   # Tool-specific configuration
-  tool_name:
-    parameter: value
+tools = ["string"]             # Allowed tool names
 
 # Prompting System
-system_prompt: |               # Agent's core behavior definition
-  Multi-line prompt text defining agent personality,
-  constraints, and operating instructions.
+system_prompt = '''
+Multi-line prompt text defining agent personality,
+constraints, and operating instructions.
+'''
 
-user_prompt_template: |        # Template for processing user requests
-  Template with {{variable}} substitutions for dynamic content.
-
-# Conversation Management
-conversation:
-  max_turns: integer           # Maximum conversation length
-  context_window: integer      # Token limit for context
-  memory_strategy: string      # "sliding" | "summarize" | "persist"
+user_prompt_template = '''
+Template with {{variable}} substitutions for dynamic content.
+'''
 
 # Agent Parameters
-parameters:
-  custom_param: value          # Agent-specific configuration values
+[parameters]
+custom_param = "value"         # Agent-specific configuration values
+
+# Tool Configuration
+[tool_config.tool_name]
+parameter = "value"
+
+# Conversation Management
+[conversation]
+max_turns = 50                 # Maximum conversation length
+context_window = 4000          # Token limit for context
+memory_strategy = "sliding"    # "sliding" | "summarize" | "persist"
 
 # Performance Settings
-performance:
-  max_execution_time: string   # Maximum runtime (e.g., "30s", "5m")
-  max_memory_usage: string     # Memory limit (e.g., "100MB", "1GB")
-  concurrent_tools: integer    # Max simultaneous tool calls
+[performance]
+max_execution_time = "60s"     # Maximum runtime (e.g., "30s", "5m")
+max_memory_usage = "256MB"     # Memory limit (e.g., "100MB", "1GB")
+concurrent_tools = 3           # Max simultaneous tool calls
+
+# Memory Configuration
+[memory]
+enabled = true                 # Enable embedded memory system
+scope = "agent"                # Memory scope: "agent" | "global" | "session"
 
 # Metadata
-author: string                 # Agent author
-license: string               # License identifier
-tags: array[string]           # Searchable tags
-created: date                 # Creation date (ISO 8601)
-updated: date                 # Last modification date
----
+author = "string"              # Agent author
+license = "string"             # License identifier
+tags = ["string"]             # Searchable tags
+created = "2025-01-21T00:00:00Z" # Creation date (ISO 8601)
+updated = "2025-01-21T00:00:00Z" # Last modification date
+
+# Embedded Documentation
+documentation = '''
+# Agent Documentation
+
+Markdown content describing the agent, usage examples,
+and implementation notes.
+'''
 ```
 
 ## Field Specifications
@@ -117,44 +130,47 @@ compatibility.
 **capabilities** (required): Array of capabilities this agent provides to other
 agents.
 
-```yaml
-capabilities:
-  - "data-analysis"
-  - "report-generation"
-  - "chart-creation"
+```toml
+capabilities = [
+  "data-analysis",
+  "report-generation",
+  "chart-creation"
+]
 ```
 
 **requires** (optional): Array of capabilities this agent needs from other
 agents.
 
-```yaml
-requires:
-  - "http-client"
-  - "database-access"
+```toml
+requires = [
+  "http-client",
+  "database-access"
+]
 ```
 
 ### Tool Access Control
 
 **tools** (required): Array of tool names this agent is permitted to use.
 
-```yaml
-tools:
-  - "http_client"
-  - "csv_parser"
-  - "chart_generator"
-  - "file_storage"
+```toml
+tools = [
+  "http_client",
+  "csv_parser",
+  "chart_generator",
+  "file_storage"
+]
 ```
 
 **tool_config** (optional): Tool-specific configuration parameters.
 
-```yaml
-tool_config:
-  http_client:
-    timeout: "30s"
-    max_redirects: 5
-  csv_parser:
-    delimiter: ","
-    encoding: "utf-8"
+```toml
+[tool_config.http_client]
+timeout = "30s"
+max_redirects = 5
+
+[tool_config.csv_parser]
+delimiter = ","
+encoding = "utf-8"
 ```
 
 ### Prompting System
@@ -162,39 +178,41 @@ tool_config:
 **system_prompt** (required): Multi-line string defining agent behavior,
 personality, and constraints.
 
-```yaml
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
+```toml
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
 
-  Guidelines:
-  - Always validate data before processing
-  - Provide clear explanations of your analysis
-  - Use visualizations when they enhance understanding
-  - Ask clarifying questions when requirements are unclear
+Guidelines:
+- Always validate data before processing
+- Provide clear explanations of your analysis
+- Use visualizations when they enhance understanding
+- Ask clarifying questions when requirements are unclear
 
-  Constraints:
-  - Maximum file size: 10MB
-  - Supported formats: CSV, JSON, Excel
-  - Always respect data privacy and security
+Constraints:
+- Maximum file size: 10MB
+- Supported formats: CSV, JSON, Excel
+- Always respect data privacy and security
+'''
 ```
 
 **user_prompt_template** (optional): Template for processing user requests with
 variable substitution.
 
-```yaml
-user_prompt_template: |
-  Analyze the following data request:
+```toml
+user_prompt_template = '''
+Analyze the following data request:
 
-  User Request: {{request}}
+User Request: {{request}}
 
-  Available Data: {{data_source}}
-  Requirements: {{requirements}}
+Available Data: {{data_source}}
+Requirements: {{requirements}}
 
-  Please provide:
-  1. Data summary and validation
-  2. Analysis results
-  3. Visualization recommendations
-  4. Next steps or follow-up questions
+Please provide:
+1. Data summary and validation
+2. Analysis results
+3. Visualization recommendations
+4. Next steps or follow-up questions
+'''
 ```
 
 ### Template Variables
@@ -214,11 +232,11 @@ syntax:
 **conversation** (optional): Configuration for conversation handling and
 context management.
 
-```yaml
-conversation:
-  max_turns: 50                # Maximum conversation length
-  context_window: 4000         # Token limit for context
-  memory_strategy: "sliding"   # Context management strategy
+```toml
+[conversation]
+max_turns = 50               # Maximum conversation length
+context_window = 4000        # Token limit for context
+memory_strategy = "sliding"  # Context management strategy
 ```
 
 Memory strategies:
@@ -231,18 +249,18 @@ Memory strategies:
 
 **performance** (optional): Resource limits and execution constraints.
 
-```yaml
-performance:
-  max_execution_time: "60s"    # Maximum runtime per request
-  max_memory_usage: "256MB"    # Memory limit for agent execution
-  concurrent_tools: 3          # Maximum simultaneous tool calls
+```toml
+[performance]
+max_execution_time = "60s"   # Maximum runtime per request
+max_memory_usage = "256MB"   # Memory limit for agent execution
+concurrent_tools = 3         # Maximum simultaneous tool calls
 ```
 
 ## Validation Rules
 
 ### Schema Validation
 
-The runtime validates YAML frontmatter against the schema:
+The runtime validates TOML configuration against the schema:
 
 1. **Required field presence**: name, version, capabilities, tools,
    system_prompt
@@ -270,27 +288,27 @@ Template syntax and variables are validated:
 
 ## Example Minimal Agent
 
-```yaml
----
-name: echo-agent
-version: "1.0.0"
-capabilities:
-  - "message-echo"
-tools:
-  - "text_processor"
-system_prompt: |
-  You are a simple echo agent that repeats user messages with a friendly
-  greeting. Always be polite and add "Hello!" before echoing the message.
----
+```toml
+name = "echo-agent"
+version = "1.0.0"
+capabilities = ["message-echo"]
+tools = ["text_processor"]
 
-## Echo Agent
+system_prompt = '''
+You are a simple echo agent that repeats user messages with a friendly
+greeting. Always be polite and add "Hello!" before echoing the message.
+'''
+
+documentation = '''
+# Echo Agent
 
 This is a minimal example agent that demonstrates the basic configuration
 format. The agent simply echoes user messages with a greeting.
 
-### Usage
+## Usage
 
 Send any message to this agent and it will respond with "Hello! [your message]".
+'''
 ```
 
 ## Next Steps

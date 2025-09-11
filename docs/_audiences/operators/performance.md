@@ -367,60 +367,59 @@ caxton memory migration-readiness --detailed
 
 **High-performance agent template:**
 
-```yaml
----
-name: OptimizedDataProcessor
-version: "1.0.0"
-capabilities:
-  - data-processing                    # Specific, focused capability
-tools:
-  - http_client                        # Only necessary tools
-  - csv_parser
-memory:
-  enabled: true
-  scope: "workspace"                   # Appropriate scope
-  auto_store: false                    # Manual memory control
-  search_limit: 50                     # Limit search results
+```toml
+name = "OptimizedDataProcessor"
+version = "1.0.0"
+capabilities = ["data-processing"]  # Specific, focused capability
+tools = ["http_client", "csv_parser"]  # Only necessary tools
+
+[memory]
+enabled = true
+scope = "workspace"  # Appropriate scope
+auto_store = false   # Manual memory control
+search_limit = 50    # Limit search results
 
 # Performance optimization parameters
-parameters:
-  response_timeout: "15s"              # Appropriate timeout
-  max_context_length: 6000             # Reasonable context limit
-  batch_processing: true               # Enable batch processing
-  cache_responses: true                # Cache similar responses
+[parameters]
+response_timeout = "15s"      # Appropriate timeout
+max_context_length = 6000     # Reasonable context limit
+batch_processing = true       # Enable batch processing
+cache_responses = true        # Cache similar responses
 
 # Resource management
-resource_limits:
-  max_conversations: 100               # Conversation limit
-  max_memory_entities: 5000            # Memory entity limit
-  tool_call_timeout: "8s"              # Tool timeout
-  memory_search_timeout: "50ms"        # Fast memory searches
-  context_switch_limit: 10             # Limit context switches
+[resource_limits]
+max_conversations = 100              # Conversation limit
+max_memory_entities = 5000           # Memory entity limit
+tool_call_timeout = "8s"             # Tool timeout
+memory_search_timeout = "50ms"       # Fast memory searches
+context_switch_limit = 10            # Limit context switches
 
 # Performance hints
-performance:
-  lazy_tool_loading: true              # Load tools on demand
-  optimize_prompts: true               # Optimize templates
-  preload_memory: false                # Don't preload unless needed
-  parallel_tool_calls: true           # Allow parallel tool execution
-  response_streaming: true             # Stream responses when possible
+[performance]
+lazy_tool_loading = true             # Load tools on demand
+optimize_prompts = true              # Optimize templates
+preload_memory = false               # Don't preload unless needed
+parallel_tool_calls = true          # Allow parallel tool execution
+response_streaming = true            # Stream responses when possible
 
-system_prompt: |
-  You are an optimized data processing agent. Focus on efficient,
-  accurate data analysis with minimal resource usage.
+system_prompt = '''
+You are an optimized data processing agent. Focus on efficient,
+accurate data analysis with minimal resource usage.
 
-  Performance guidelines:
-  - Use specific, targeted queries
-  - Minimize memory searches
-  - Cache frequently accessed data
-  - Process data in batches when possible
-  - Provide concise, structured responses
----
+Performance guidelines:
+- Use specific, targeted queries
+- Minimize memory searches
+- Cache frequently accessed data
+- Process data in batches when possible
+- Provide concise, structured responses
+'''
 
+documentation = '''
 # Optimized Data Processor
 
 High-performance agent for data analysis tasks with optimized resource usage
 and response times.
+'''
 ```
 
 **Agent resource tuning by use case:**
@@ -1145,7 +1144,7 @@ caxton agents memory-usage --show-heavy-users
 
 **Resolution steps:**
 
-1. **Cache YAML validation results**
+1. **Cache TOML validation results**
 2. **Optimize agent configuration complexity**
 3. **Tune tool call timeouts per tool type**
 4. **Implement lazy loading for agent tools**

@@ -109,8 +109,8 @@ implementation patterns following type-driven development principles.
 
 ### Core Principles
 
-1. **Configuration First**: 5-10 minute agent creation through YAML+Markdown
-   files (ADR-0028)
+1. **Configuration First**: 5-10 minute agent creation through TOML
+   configuration files (ADR-0032)
 2. **Hybrid Runtime**: Configuration agents for 90% of use cases, WASM for
    custom algorithms
 3. **Type-Driven Design**: All illegal states are unrepresentable through the
@@ -134,7 +134,7 @@ implementation patterns following type-driven development principles.
 
 **Configuration Agents (Primary - 90% of use cases)**:
 
-- **Definition**: Markdown files with YAML frontmatter
+- **Definition**: TOML configuration files with embedded documentation
 - **Capabilities**: Declare what they can do (e.g., "data-analysis")
 - **Tools**: Allowlist of MCP tools they can access
 - **Runtime**: Executed in host process with LLM orchestration
@@ -154,35 +154,35 @@ implementation patterns following type-driven development principles.
 
 ### Configuration Agent Domain Model
 
-```yaml
+```toml
 # Example Configuration Agent Definition
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-  - chart_generator
-memory:
-  enabled: true
-  scope: workspace
-parameters:
-  max_file_size: "10MB"
-  supported_formats: ["csv", "json", "xlsx"]
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
-  You can fetch data from URLs, parse various formats, and create
-  visualizations.
-user_prompt_template: |
-  Analyze the following data request: {{request}}
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser", "chart_generator"]
 
-  Available data: {{context}}
-  User requirements: {{requirements}}
----
+[memory]
+enabled = true
+scope = "workspace"
 
+[parameters]
+max_file_size = "10MB"
+supported_formats = ["csv", "json", "xlsx"]
+
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create
+visualizations.
+'''
+
+user_prompt_template = '''
+Analyze the following data request: {{request}}
+
+Available data: {{context}}
+User requirements: {{requirements}}
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 
 This agent specializes in data analysis tasks and can:
@@ -190,6 +190,7 @@ This agent specializes in data analysis tasks and can:
 - Parse CSV, JSON, and Excel files
 - Generate charts and visualizations
 - Provide statistical summaries
+'''
 ```
 
 ### WASM Agent Domain Model (Advanced Use Cases)
@@ -1113,18 +1114,17 @@ impl EmbeddedMemorySystem {
 
 #### Agent Memory Integration
 
-Configuration agents can enable memory through their YAML configuration:
+Configuration agents can enable memory through their TOML configuration:
 
-```yaml
----
-name: DataAnalyzer
-memory:
-  enabled: true
-  scope: workspace  # agent-only, workspace, or global
-  auto_store: true  # Automatically store successful interactions
-  search_limit: 10
-  min_similarity: 0.7
----
+```toml
+name = "DataAnalyzer"
+
+[memory]
+enabled = true
+scope = "workspace"  # agent-only, workspace, or global
+auto_store = true    # Automatically store successful interactions
+search_limit = 10
+min_similarity = 0.7
 ```
 
 #### Memory Scopes and Isolation
@@ -1770,7 +1770,7 @@ creation** while maintaining production-grade capabilities:
 ### Core Value Propositions
 
 1. **Configuration-First Experience**: 90% of agents are created through
-   YAML+Markdown files, eliminating compilation complexity
+   TOML configuration files, eliminating compilation complexity
 2. **Zero Dependencies**: Embedded SQLite+Candle memory system works
    immediately without external setup
 3. **Hybrid Runtime**: Simple config agents for most use cases, WASM for

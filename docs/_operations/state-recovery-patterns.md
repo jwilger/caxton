@@ -111,7 +111,7 @@ validate_config_agents() {
     local config_dir=$1
     local all_valid=true
 
-    for config_file in "$config_dir"/*.md; do
+    for config_file in "$config_dir"/*.toml; do
         if [[ -f "$config_file" ]]; then
             if ! caxton agents validate "$config_file"; then
                 echo "Invalid configuration: $config_file"
@@ -403,7 +403,7 @@ recover_configuration_agents() {
 
     # 1. Validate all existing configurations
     local corrupted_agents=()
-    for config_file in "$agents_dir"/*.md; do
+    for config_file in "$agents_dir"/*.toml; do
         if [[ -f "$config_file" ]]; then
             if ! caxton agents validate "$config_file"; then
                 corrupted_agents+=("$(basename "$config_file")")
@@ -484,18 +484,18 @@ recover_single_agent() {
 attempt_config_repair() {
     local config_file=$1
 
-    # Common repair strategies for YAML corruption
+    # Common repair strategies for TOML corruption
 
     # Fix 1: Remove null bytes
     sed -i 's/\x0//g' "$config_file"
 
-    # Fix 2: Fix common YAML syntax errors
-    sed -i 's/: $/: ""/g' "$config_file"  # Empty values
+    # Fix 2: Fix common TOML syntax errors
+    sed -i 's/= $/= ""/g' "$config_file"  # Empty values
     sed -i 's/^\t/  /g' "$config_file"    # Convert tabs to spaces
 
-    # Fix 3: Ensure proper YAML structure
-    if ! grep -q '^---$' "$config_file"; then
-        echo "---" | cat - "$config_file" > temp && mv temp "$config_file"
+    # Fix 3: Ensure proper TOML structure
+    if ! grep -q '^name = ' "$config_file"; then
+        echo 'name = "recovered_agent"' | cat - "$config_file" > temp && mv temp "$config_file"
     fi
 
     # Test if repair worked
@@ -504,28 +504,31 @@ attempt_config_repair() {
 
 create_minimal_agent_config() {
     local config_file=$1
-    local agent_name=$(basename "$config_file" .md)
+    local agent_name=$(basename "$config_file" .toml)
 
     cat > "$config_file" << EOF
----
-name: $agent_name
-version: "1.0.0"
-capabilities:
-  - general
-tools: []
-parameters: {}
-resource_limits:
-  memory_scope: "agent"
-  max_conversations: 10
-system_prompt: |
-  You are a general purpose agent. Your configuration was recovered
-  from corruption and needs to be properly configured.
----
+name = "$agent_name"
+version = "1.0.0"
+capabilities = ["general"]
+tools = []
 
+[parameters]
+
+[resource_limits]
+memory_scope = "agent"
+max_conversations = 10
+
+system_prompt = '''
+You are a general purpose agent. Your configuration was recovered
+from corruption and needs to be properly configured.
+'''
+
+documentation = '''
 # $agent_name Agent
 
 This agent configuration was automatically recovered from corruption.
 Please update the configuration with proper capabilities and tools.
+'''
 EOF
 
     echo "Created minimal configuration for $agent_name"
@@ -604,7 +607,7 @@ identify_hotreload_failure_type() {
 
 recover_from_validation_failure() {
     local agent_name=$1
-    local config_file="/var/lib/caxton/agents/${agent_name}.md"
+    local config_file="/var/lib/caxton/agents/${agent_name}.toml"
 
     echo "Recovering from validation failure for $agent_name"
 
@@ -654,7 +657,7 @@ recover_from_memory_corruption() {
 
 recover_from_tool_failure() {
     local agent_name=$1
-    local config_file="/var/lib/caxton/agents/${agent_name}.md"
+    local config_file="/var/lib/caxton/agents/${agent_name}.toml"
 
     echo "Recovering from tool loading failure for $agent_name"
 
@@ -970,9 +973,9 @@ recover_from_config_corruption() {
 
     # 2. Identify corrupted agents
     local corrupted_agents=()
-    for config_file in "$agents_dir"/*.md; do
+    for config_file in "$agents_dir"/*.toml; do
         if [[ -f "$config_file" ]]; then
-            local agent_name=$(basename "$config_file" .md)
+            local agent_name=$(basename "$config_file" .toml)
             if ! caxton agents validate "$config_file"; then
                 corrupted_agents+=("$agent_name")
             fi
@@ -999,7 +1002,7 @@ recover_from_config_corruption() {
     # 4. Validate all configurations
     echo "Validating all configurations..."
     local validation_passed=true
-    for config_file in "$agents_dir"/*.md; do
+    for config_file in "$agents_dir"/*.toml; do
         if [[ -f "$config_file" ]]; then
             if ! caxton agents validate "$config_file"; then
                 validation_passed=false

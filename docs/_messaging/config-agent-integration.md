@@ -9,7 +9,7 @@ date: 2025-09-10
 
 ## Overview
 
-Configuration agents (defined through YAML and markdown) participate in
+Configuration agents (defined through TOML configuration files) participate in
 Caxton's agent messaging system through intelligent runtime integration.
 The system automatically translates between structured agent messages and
 natural language prompts that configuration agents can understand and respond
@@ -51,75 +51,80 @@ graph TD
 
 ### Agent Configuration for Messaging
 
-Configuration agents specify messaging behavior through their YAML frontmatter:
+Configuration agents specify messaging behavior through their TOML configuration:
 
-```yaml
----
-name: CustomerSupportAgent
-version: "1.0.0"
-capabilities:
-  - customer-support
-  - order-tracking
-  - billing-inquiries
-
-# Messaging configuration
-messaging:
-  auto_respond: true       # Automatically respond to capability requests
-  conversation_timeout: "2h"  # Custom timeout for support conversations
-  max_conversation_length: 20          # Limit conversation turns
-  context_window: 8                    # Messages to include in context
-  response_format: "structured"        # structured|natural|hybrid
+```toml
+name = "CustomerSupportAgent"
+version = "1.0.0"
+capabilities = [
+  "customer-support",
+  "order-tracking",
+  "billing-inquiries"
+]
 
 # Tools for messaging operations
-tools:
-  - message_client                     # For sending messages
-  - customer_database                  # For looking up customer info
-  - order_system                       # For tracking orders
+tools = [
+  "message_client",      # For sending messages
+  "customer_database",   # For looking up customer info
+  "order_system"         # For tracking orders
+]
+
+# Messaging configuration
+[messaging]
+auto_respond = true                    # Automatically respond to capability requests
+conversation_timeout = "2h"            # Custom timeout for support conversations
+max_conversation_length = 20           # Limit conversation turns
+context_window = 8                     # Messages to include in context
+response_format = "structured"         # structured|natural|hybrid
 
 # Prompt templates for different message types
-prompt_templates:
-  request_handler: |
-    You are handling a customer service request.
+[prompt_templates]
+request_handler = '''
+You are handling a customer service request.
 
-    Request: {{message_content}}
-    Customer Context: {{customer_info}}
-    Conversation History: {{conversation_summary}}
+Request: {{message_content}}
+Customer Context: {{customer_info}}
+Conversation History: {{conversation_summary}}
 
-    Provide helpful, accurate assistance. If you need to perform actions,
-    use your available tools. Format your response to include:
-    - Direct answer to the customer's question
-    - Any actions you took
-    - Next steps if applicable
+Provide helpful, accurate assistance. If you need to perform actions,
+use your available tools. Format your response to include:
+- Direct answer to the customer's question
+- Any actions you took
+- Next steps if applicable
+'''
 
-  query_handler: |
-    Answer this information request about {{capability}}:
+query_handler = '''
+Answer this information request about {{capability}}:
 
-    Question: {{message_content}}
-    Available Data: {{context_data}}
+Question: {{message_content}}
+Available Data: {{context_data}}
 
-    Provide a clear, factual response based on available information.
+Provide a clear, factual response based on available information.
+'''
 
-  inform_handler: |
-    You received this information update:
+inform_handler = '''
+You received this information update:
 
-    Information: {{message_content}}
-    Source: {{sender_agent}}
+Information: {{message_content}}
+Source: {{sender_agent}}
 
-    Acknowledge receipt and indicate any actions you will take based on
-    this information.
+Acknowledge receipt and indicate any actions you will take based on
+this information.
+'''
 
-system_prompt: |
-  You are a customer support specialist who helps customers with orders,
-  billing, and general inquiries.
-  You have access to customer databases and order systems. Always be
-  helpful, professional, and accurate.
+system_prompt = '''
+You are a customer support specialist who helps customers with orders,
+billing, and general inquiries.
+You have access to customer databases and order systems. Always be
+helpful, professional, and accurate.
 
-  When participating in conversations, maintain context and refer to
-  previous interactions appropriately.
-  If you cannot help with something, politely explain your limitations
-  and suggest alternatives.
----
+When participating in conversations, maintain context and refer to
+previous interactions appropriately.
+If you cannot help with something, politely explain your limitations
+and suggest alternatives.
+'''
 
+documentation = '''
 # CustomerSupportAgent
 
 This agent handles customer service inquiries including order tracking,
@@ -137,6 +142,7 @@ Ask me to:
 - "Check the status of order #12345"
 - "Help resolve a billing discrepancy"
 - "Explain our return policy"
+'''
 ```
 
 ## Message Transformation Examples
@@ -457,31 +463,36 @@ Configuration agents participate in the <100ms context preparation target:
 
 #### Context Configuration Options
 
-Configuration agents can specify context preferences in their YAML frontmatter:
+Configuration agents can specify context preferences in their TOML configuration:
 
-```yaml
----
-name: AdvancedSalesAgent
-capabilities:
-  - lead-qualification
-  - technical-consultation
-context_requirements:
-  conversation_depth: 8                    # Include 8 previous messages
-  memory_search:
-    query_template: "sales {{lead_industry}} {{conversation_topic}}"
-    max_results: 10
-    relevance_threshold: 0.7
-  tool_context:
-    - "lead_database_state"
-    - "crm_customer_profile"
-    - "pricing_calculator_cache"
-  cross_conversation_refs: true            # Reference related conversations
-  context_window_preference: "large"       # Optimize for detailed context
-domain_specializations:
-  - "enterprise_sales"
-  - "technical_requirements"
-  - "solution_architecture"
----
+```toml
+name = "AdvancedSalesAgent"
+capabilities = [
+  "lead-qualification",
+  "technical-consultation"
+]
+domain_specializations = [
+  "enterprise_sales",
+  "technical_requirements",
+  "solution_architecture"
+]
+
+[context_requirements]
+conversation_depth = 8                    # Include 8 previous messages
+cross_conversation_refs = true            # Reference related conversations
+context_window_preference = "large"       # Optimize for detailed context
+
+[context_requirements.memory_search]
+query_template = "sales {{lead_industry}} {{conversation_topic}}"
+max_results = 10
+relevance_threshold = 0.7
+
+[context_requirements.tool_context]
+include = [
+  "lead_database_state",
+  "crm_customer_profile",
+  "pricing_calculator_cache"
+]
 ```
 
 ### Context-Aware Agent Behavior
@@ -660,48 +671,42 @@ failure_details:
 
 Configuration agents can optimize context usage for better performance:
 
-```yaml
----
-name: HighVolumeAgent
-messaging:
-  context_optimization:
-    summarize_long_conversations: true    # Auto-summarize after 10 messages
-    max_context_tokens: 4000             # Limit context size
-    context_compression: "intelligent"    # Remove less relevant messages
-    preserve_key_messages: true          # Always keep REQUEST/INFORM pairs
----
+```toml
+name = "HighVolumeAgent"
+
+[messaging.context_optimization]
+summarize_long_conversations = true    # Auto-summarize after 10 messages
+max_context_tokens = 4000             # Limit context size
+context_compression = "intelligent"    # Remove less relevant messages
+preserve_key_messages = true          # Always keep REQUEST/INFORM pairs
 ```
 
 ### Response Caching
 
 Agents can cache common responses:
 
-```yaml
----
-name: FAQAgent
-messaging:
-  response_caching:
-    enabled: true
-    cache_duration: "1h"                 # Cache responses for 1 hour
-    cache_key_includes: ["content", "capability"]  # Cache based on content
-    cache_common_queries: true           # Cache FAQ-type responses
----
+```toml
+name = "FAQAgent"
+
+[messaging.response_caching]
+enabled = true
+cache_duration = "1h"                 # Cache responses for 1 hour
+cache_key_includes = ["content", "capability"]  # Cache based on content
+cache_common_queries = true           # Cache FAQ-type responses
 ```
 
 ### Batch Processing
 
 Handle multiple related messages efficiently:
 
-```yaml
----
-name: BulkProcessingAgent
-messaging:
-  batch_processing:
-    enabled: true
-    max_batch_size: 10                   # Process up to 10 messages together
-    batch_timeout: "30s"                 # Wait up to 30 seconds to form batches
-    batch_similar_requests: true         # Group similar request types
----
+```toml
+name = "BulkProcessingAgent"
+
+[messaging.batch_processing]
+enabled = true
+max_batch_size = 10                   # Process up to 10 messages together
+batch_timeout = "30s"                 # Wait up to 30 seconds to form batches
+batch_similar_requests = true         # Group similar request types
 ```
 
 ## Best Practices for Configuration Agent Messaging
@@ -743,5 +748,5 @@ Configuration agents provide a powerful, accessible way to participate in
 sophisticated messaging workflows while maintaining the simplicity and
 flexibility that makes them easy to develop and deploy. Through intelligent
 runtime integration, they can engage in complex multi-agent conversations
-while remaining fundamentally based on natural language and YAML
+while remaining fundamentally based on natural language and TOML
 configuration.

@@ -56,32 +56,31 @@ cases.
 
 ### Configuration-Driven Agent Definition
 
-Agents will be defined as markdown files with YAML frontmatter:
+Agents will be defined as TOML configuration files:
 
-```yaml
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-  - chart_generator
-parameters:
-  max_file_size: "10MB"
-  supported_formats: ["csv", "json", "xlsx"]
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
-  You can fetch data from URLs, parse various formats, and create visualizations.
-user_prompt_template: |
-  Analyze the following data request: {{request}}
+```toml
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser", "chart_generator"]
 
-  Available data: {{context}}
-  User requirements: {{requirements}}
----
+[parameters]
+max_file_size = "10MB"
+supported_formats = ["csv", "json", "xlsx"]
 
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create visualizations.
+'''
+
+user_prompt_template = '''
+Analyze the following data request: {{request}}
+
+Available data: {{context}}
+User requirements: {{requirements}}
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 
 This agent specializes in data analysis tasks and can:
@@ -96,13 +95,14 @@ Ask me to:
 - "Analyze the sales data at https://example.com/sales.csv"
 - "Create a chart showing monthly trends"
 - "Summarize the key metrics in this dataset"
+'''
 ```
 
 ### Architecture Overview
 
 The system will support two types of agents:
 
-- **Configuration agents**: Defined in markdown files with YAML frontmatter,
+- **Configuration agents**: Defined in TOML configuration files,
   executed in the host runtime through LLM orchestration
 - **WASM agents**: Compiled modules for power users requiring custom algorithms,
   executed in sandboxed WebAssembly runtime
@@ -142,7 +142,7 @@ enabling rapid agent development.
 
 The implementation will focus on three core areas:
 
-1. **Configuration Runtime**: YAML schema validation, prompt templating, and
+1. **Configuration Runtime**: TOML schema validation, prompt templating, and
    tool permission systems
 2. **Developer Experience**: Agent templates, hot-reload development, and
    migration utilities from WASM patterns

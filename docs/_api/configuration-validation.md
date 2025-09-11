@@ -14,7 +14,7 @@ of agent configurations before deployment.
 
 **Key Features**:
 
-- **YAML validation**: Syntax and schema validation for frontmatter
+- **TOML validation**: Syntax and schema validation for configuration
 - **Capability verification**: Check that declared capabilities are available
 - **Tool availability**: Verify required MCP tools are accessible
 - **Template management**: Pre-built configurations for common use cases
@@ -33,7 +33,7 @@ Comprehensive validation of agent configuration without deployment.
 
 ```json
 {
-  "content": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\n  - report-generation\ntools:\n  - http_client\n  - csv_parser\n  - chart_generator\nparameters:\n  max_file_size: \"10MB\"\n  supported_formats: [\"csv\", \"json\", \"xlsx\"]\nmemory_enabled: true\nmemory_scope: \"workspace\"\nsystem_prompt: |\n  You are a data analysis expert...\nuser_prompt_template: |\n  Analyze: {{request}}\n---\n\n# DataAnalyzer\n\nSpecializes in data analysis tasks.",
+  "content": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\ncapabilities = [\"data-analysis\", \"report-generation\"]\ntools = [\"http_client\", \"csv_parser\", \"chart_generator\"]\n\n[parameters]\nmax_file_size = \"10MB\"\nsupported_formats = [\"csv\", \"json\", \"xlsx\"]\n\n[memory]\nenabled = true\nscope = \"workspace\"\n\nsystem_prompt = '''\nYou are a data analysis expert...\n'''\n\nuser_prompt_template = '''\nAnalyze: {{request}}\n'''\n\ndocumentation = '''\n# DataAnalyzer\n\nSpecializes in data analysis tasks.\n'''",
   "workspace": "development",
   "strict_mode": true,
   "check_tool_availability": true
@@ -42,7 +42,7 @@ Comprehensive validation of agent configuration without deployment.
 
 #### Request Fields
 
-- `content` (string, required): Complete markdown content with YAML frontmatter
+- `content` (string, required): Complete TOML configuration content
 - `workspace` (string, optional): Target workspace for validation (default: "default")
 - `strict_mode` (boolean, optional): Enable strict validation rules (default: false)
 - `check_tool_availability` (boolean, optional): Verify tool accessibility
@@ -63,13 +63,13 @@ Comprehensive validation of agent configuration without deployment.
       "max_file_size": "10MB",
       "supported_formats": ["csv", "json", "xlsx"]
     },
-    "memory_enabled": true,
+    "memory": { "enabled": true },
     "memory_scope": "workspace",
     "system_prompt": "You are a data analysis expert...",
     "user_prompt_template": "Analyze: {{request}}"
   },
   "validation_results": {
-    "yaml_syntax": "valid",
+    "toml_syntax": "valid",
     "schema_compliance": "valid",
     "name_uniqueness": "valid",
     "capability_availability": "valid",
@@ -123,9 +123,9 @@ Comprehensive validation of agent configuration without deployment.
       "available_alternatives": ["basic_analytics", "statistical_analysis"]
     },
     {
-      "type": "yaml_syntax",
-      "field": "frontmatter",
-      "message": "Invalid YAML: mapping values are not allowed here",
+      "type": "toml_syntax",
+      "field": "configuration",
+      "message": "Invalid TOML: unexpected character in key",
       "location": "line 8, column 15",
       "severity": "error"
     }
@@ -200,17 +200,17 @@ Verify that declared capabilities are valid and available.
 }
 ```
 
-### Validate YAML Syntax
+### Validate TOML Syntax
 
-**POST** `/api/v1/validate/yaml`
+**POST** `/api/v1/validate/toml`
 
-Validate only YAML frontmatter syntax and structure.
+Validate only TOML configuration syntax and structure.
 
 #### Request Body
 
 ```json
 {
-  "yaml_content": "name: DataAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\nmemory_enabled: true"
+  "toml_content": "name = \"DataAnalyzer\"\nversion = \"1.0.0\"\ncapabilities = [\"data-analysis\"]\ntools = [\"http_client\"]\n\n[memory]\nenabled = true"
 }
 ```
 
@@ -219,16 +219,16 @@ Validate only YAML frontmatter syntax and structure.
 ```json
 {
   "valid": true,
-  "parsed_yaml": {
+  "parsed_toml": {
     "name": "DataAnalyzer",
     "version": "1.0.0",
     "capabilities": ["data-analysis"],
     "tools": ["http_client"],
-    "memory_enabled": true
+    "memory": { "enabled": true }
   },
   "syntax_checks": {
-    "yaml_structure": "valid",
-    "indentation": "valid",
+    "toml_structure": "valid",
+    "key_value_pairs": "valid",
     "quotes_balanced": "valid",
     "required_fields": "valid"
   }
@@ -247,7 +247,7 @@ Test agent configuration by simulating behavior without full deployment.
 
 ```json
 {
-  "content": "---\nname: TestAgent\n...",
+  "content": "name = TestAgent\n...",
   "test_scenarios": [
     {
       "name": "basic_data_request",
@@ -440,7 +440,7 @@ Retrieve available configuration agent templates.
       "complexity": "advanced",
       "capabilities": ["web-search", "content-analysis", "fact-checking"],
       "required_tools": ["web_search", "html_parser", "pdf_generator", "fact_checker"],
-      "memory_enabled": true,
+      "memory": { "enabled": true },
       "use_cases": [
         "Academic research",
         "Market intelligence",
@@ -477,7 +477,7 @@ Retrieve detailed template information including full configuration content.
   "version": "1.2.0",
   "created_at": "2025-08-15T10:00:00Z",
   "updated_at": "2025-09-01T14:30:00Z",
-  "content": "---\nname: {{AGENT_NAME}}\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\n  - {{OPTIONAL_CHART_TOOL:chart_generator}}\nparameters:\n  max_file_size: \"{{MAX_FILE_SIZE:10MB}}\"\n  supported_formats: [\"csv\", \"json\", \"xlsx\"]\nmemory_enabled: {{MEMORY_ENABLED:false}}\nsystem_prompt: |\n  You are a data analysis expert specializing in {{SPECIALIZATION:general analysis}}.\n  You help users understand their data through clear insights and visualizations.\n---\n\n# {{AGENT_NAME}}\n\nI specialize in analyzing structured data and providing actionable insights.\n\n## What I Can Do\n\n- Parse CSV, JSON, and Excel files\n- Generate summary statistics\n- Create basic visualizations\n- Identify trends and patterns\n\n## Usage Examples\n\nAsk me to:\n- \"Analyze the sales data at https://example.com/data.csv\"\n- \"Show me the top 10 customers by revenue\"\n- \"Create a chart of monthly trends\"",
+  "content": "name = {{AGENT_NAME}}\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\n  - {{OPTIONAL_CHART_TOOL:chart_generator}}\nparameters:\n  max_file_size: \"{{MAX_FILE_SIZE:10MB}}\"\n  supported_formats: [\"csv\", \"json\", \"xlsx\"]\nmemory_enabled: {{MEMORY_ENABLED:false}}\nsystem_prompt: |\n  You are a data analysis expert specializing in {{SPECIALIZATION:general analysis}}.\n  You help users understand their data through clear insights and visualizations.\n---\n\n# {{AGENT_NAME}}\n\nI specialize in analyzing structured data and providing actionable insights.\n\n## What I Can Do\n\n- Parse CSV, JSON, and Excel files\n- Generate summary statistics\n- Create basic visualizations\n- Identify trends and patterns\n\n## Usage Examples\n\nAsk me to:\n- \"Analyze the sales data at https://example.com/data.csv\"\n- \"Show me the top 10 customers by revenue\"\n- \"Create a chart of monthly trends\"",
   "parameters": [
     {
       "name": "AGENT_NAME",
@@ -576,7 +576,7 @@ Generate agent configuration from template with parameter substitution.
 {
   "generation_id": "gen_yza345bcd678",
   "template_id": "data-analyzer-basic",
-  "generated_content": "---\nname: CustomerAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\n  - chart_generator\nparameters:\n  max_file_size: \"25MB\"\n  supported_formats: [\"csv\", \"json\", \"xlsx\"]\nmemory_enabled: true\nsystem_prompt: |\n  You are a data analysis expert specializing in customer behavior analysis.\n  You help users understand their data through clear insights and visualizations.\n---\n\n# CustomerAnalyzer\n\nI specialize in analyzing structured data and providing actionable insights...",
+  "generated_content": "name = CustomerAnalyzer\nversion: \"1.0.0\"\ncapabilities:\n  - data-analysis\ntools:\n  - http_client\n  - csv_parser\n  - chart_generator\nparameters:\n  max_file_size: \"25MB\"\n  supported_formats: [\"csv\", \"json\", \"xlsx\"]\nmemory_enabled: true\nsystem_prompt: |\n  You are a data analysis expert specializing in customer behavior analysis.\n  You help users understand their data through clear insights and visualizations.\n---\n\n# CustomerAnalyzer\n\nI specialize in analyzing structured data and providing actionable insights...",
   "validation_result": {
     "valid": true,
     "warnings": [],
@@ -606,7 +606,7 @@ Update a running configuration agent with new configuration (development only).
 
 ```json
 {
-  "content": "---\nname: DataAnalyzer\nversion: \"1.1.0\"\n...",
+  "content": "name = DataAnalyzer\nversion: \"1.1.0\"\n...",
   "validate_first": true,
   "backup_current": true
 }
@@ -641,8 +641,8 @@ Compare two configuration versions to identify differences.
 
 ```json
 {
-  "original_content": "---\nname: DataAnalyzer\nversion: \"1.0.0\"\n...",
-  "updated_content": "---\nname: DataAnalyzer\nversion: \"1.1.0\"\n...",
+  "original_content": "name = DataAnalyzer\nversion: \"1.0.0\"\n...",
+  "updated_content": "name = DataAnalyzer\nversion: \"1.1.0\"\n...",
   "comparison_type": "semantic"
 }
 ```
@@ -729,7 +729,7 @@ Compare two configuration versions to identify differences.
 ### Common Error Codes
 
 - `VALIDATION_ERROR` - Configuration validation failed
-- `YAML_SYNTAX_ERROR` - Invalid YAML syntax in frontmatter
+- `TOML_SYNTAX_ERROR` - Invalid TOML syntax in configuration
 - `TEMPLATE_NOT_FOUND` - Requested template does not exist
 - `PARAMETER_MISSING` - Required template parameter not provided
 - `TOOL_UNAVAILABLE` - Required tool not accessible

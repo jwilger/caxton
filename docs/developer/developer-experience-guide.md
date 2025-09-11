@@ -581,7 +581,7 @@ jobs:
 caxton-cli logs <agent-id> --tail 100
 
 # Verify configuration
-caxton-cli validate config agents/<agent-name>/config.toml
+caxton-cli validate config agents/<agent-name>/agent.toml
 
 # Check resource limits
 caxton-cli describe <agent-id> --resources

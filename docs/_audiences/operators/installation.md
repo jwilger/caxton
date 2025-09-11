@@ -718,22 +718,23 @@ Create a test agent to verify everything is working:
 
 ```bash
 # Create simple test agent
-cat > /tmp/test-agent.md << EOF
----
-name: TestAgent
-version: "1.0.0"
-capabilities:
-  - testing
-system_prompt: |
-  You are a test agent. Respond with "Hello, Caxton!" to any message.
----
+cat > /tmp/test-agent.toml << EOF
+name = "TestAgent"
+version = "1.0.0"
+capabilities = ["testing"]
 
+system_prompt = '''
+You are a test agent. Respond with "Hello, Caxton!" to any message.
+'''
+
+documentation = '''
 ## Test Agent
 Simple agent for testing Caxton installation.
+'''
 EOF
 
 # Deploy test agent
-caxton agent deploy /tmp/test-agent.md
+caxton agent deploy /tmp/test-agent.toml
 
 # Send test message
 caxton message send \
@@ -743,7 +744,7 @@ caxton message send \
 
 # Clean up
 caxton agent remove TestAgent
-rm /tmp/test-agent.md
+rm /tmp/test-agent.toml
 ```
 
 ### Performance Benchmarks

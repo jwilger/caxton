@@ -35,11 +35,11 @@ observability.
 Caxton is a multi-agent orchestration server - like Redis for caching or
 PostgreSQL for data, but for coordinating intelligent agents.
 
-You install Caxton, create agent configurations in markdown files, and it handles
+You install Caxton, create agent configurations in TOML files, and it handles
 all the complex distributed systems challenges: message routing, fault
 tolerance, observability, and scaling.
 
-✅ **5-10 minute agent creation** - Simple markdown + YAML configuration files
+✅ **5-10 minute agent creation** - Simple TOML configuration files
 ✅ **Embedded memory system** - Built-in SQLite + vector search, no external
 databases
 ✅ **Production-ready** - Built-in observability, fault tolerance, and
@@ -89,26 +89,25 @@ caxton server start
 # ✓ Embedded memory system initialized
 
 # 2. Create your first agent (2 minutes)
-cat > data-analyzer.md << EOF
----
-name: DataAnalyzer
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-memory_enabled: true
-system_prompt: |
-  You are a data analysis expert. You can fetch CSV data from URLs
-  and provide insights and summaries.
----
+cat > data-analyzer.toml << EOF
+name = "DataAnalyzer"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser"]
+memory_enabled = true
+
+system_prompt = '''
+You are a data analysis expert. You can fetch CSV data from URLs
+and provide insights and summaries.
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 I analyze data and create reports from CSV files.
+'''
 EOF
 
 # 3. Deploy the configuration agent (5 seconds)
-caxton deploy data-analyzer.md
+caxton deploy data-analyzer.toml
 # ✓ Agent 'DataAnalyzer' deployed and ready
 # ✓ Memory system connected
 # ✓ Tools available: http_client, csv_parser
@@ -191,7 +190,7 @@ Rust knowledge required for most use cases.
 
 | Capability | Description |
 |------------|-------------|
-| **Configuration Agents** | Create agents in 5-10 minutes using markdown + YAML files |
+| **Configuration Agents** | Create agents in 5-10 minutes using TOML configuration files |
 | **Embedded Memory System** | Built-in SQLite + vector search, no external databases required |
 | **Message Routing** | Capability-based routing with FIPA-compliant messaging |
 | **WebAssembly Support** | Advanced agents with custom algorithms (for power users) |
@@ -205,32 +204,32 @@ Rust knowledge required for most use cases.
 
 ### Configuration Agents (Recommended)
 
-Most agents can be created using simple markdown files with YAML configuration:
+Most agents can be created using simple TOML configuration files:
 
-```yaml
----
-name: ChatBot
-version: "1.0.0"
-capabilities:
-  - conversation
-  - customer-support
-tools:
-  - knowledge_base
-  - ticket_system
-memory_enabled: true
-system_prompt: |
-  You are a helpful customer support agent. You can access our knowledge base
-  and create support tickets when needed.
-user_prompt_template: |
-  Customer inquiry: {{message}}
-  Previous conversation: {{conversation_history}}
-  Knowledge base context: {{relevant_knowledge}}
----
+```toml
+name = "ChatBot"
+version = "1.0.0"
+capabilities = ["conversation", "customer-support"]
+tools = ["knowledge_base", "ticket_system"]
+memory_enabled = true
 
+system_prompt = '''
+You are a helpful customer support agent. You can access our knowledge base
+and create support tickets when needed.
+'''
+
+user_prompt_template = '''
+Customer inquiry: {{message}}
+Previous conversation: {{conversation_history}}
+Knowledge base context: {{relevant_knowledge}}
+'''
+
+documentation = '''
 # ChatBot Agent
 
 I provide customer support by accessing our knowledge base and
 creating support tickets when needed.
+'''
 ```
 
 ### WebAssembly Agents (Advanced)
@@ -255,8 +254,8 @@ For detailed examples and language-specific guides, see the
 ### Quick Links
 
 - 🚀 [Installation](docs/getting-started/installation.md) - Get Caxton installed
-- ⚡ [Quick Start](docs/getting-started/quickstart.md) - Configuration agents in 5
-  minutes
+- ⚡ [Quick Start](docs/getting-started/quickstart.md) - Configuration agents
+  in 5 minutes
 - 🎯 [First Agent](docs/getting-started/first-agent.md) - Create your first
   configuration agent
 - 🔧 [Configuration](docs/getting-started/configuration.md) - Configure Caxton
@@ -284,7 +283,8 @@ Caxton takes a different approach:
 
 Caxton is a multi-agent orchestration server that handles:
 
-1. **Configuration Agent Runtime**: Deploy and run agents from markdown files
+1. **Configuration Agent Runtime**: Deploy and run agents from TOML
+   configuration files
 2. **Embedded Memory System**: SQLite + vector search with automatic knowledge management
 3. **Capability-Based Messaging**: FIPA-compliant routing between agent capabilities
 4. **Production Observability**: Structured logging, tracing, and metrics

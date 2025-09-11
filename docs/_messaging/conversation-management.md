@@ -72,15 +72,15 @@ Conversations begin when an agent sends the first message with a new
 
 ```yaml
 # Configuration agent starting a conversation
----
-name: CustomerServiceBot
-capabilities:
-  - customer-support
-  - order-tracking
-tools:
-  - message_client
-  - order_database
----
+name = "CustomerServiceBot"
+capabilities = [
+  "customer-support",
+  "order-tracking"
+]
+tools = [
+  "message_client",
+  "order_database"
+]
 
 # First message in conversation
 performative: QUERY
@@ -433,20 +433,21 @@ Configuration agents automatically maintain conversation context:
 
 ```yaml
 # Agent configuration with conversation awareness
----
-name: DataAnalysisAssistant
-capabilities:
-  - data-analysis
-  - statistical-modeling
-conversation_settings:
-  maintain_context: true
-  context_window: 10        # Remember last 10 messages
-  auto_summarize: true      # Summarize long conversations
-  timeout: "4h"            # Custom timeout for data work
-tools:
-  - data_processor
-  - chart_generator
----
+name = "DataAnalysisAssistant"
+capabilities = [
+  "data-analysis",
+  "statistical-modeling"
+]
+tools = [
+  "data_processor",
+  "chart_generator"
+]
+
+[conversation_settings]
+maintain_context = true
+context_window = 10        # Remember last 10 messages
+auto_summarize = true      # Summarize long conversations
+timeout = "4h"            # Custom timeout for data work
 ```
 
 The runtime automatically includes relevant context in agent prompts:

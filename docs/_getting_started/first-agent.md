@@ -18,14 +18,14 @@ categories: [Getting Started]
 
 This guide teaches you to create **agents** - the configuration-driven way
 to build agents in Caxton. No compilation, no complex toolchains, just
-markdown files with YAML frontmatter.
+TOML configuration files.
 
 ## Agent Fundamentals
 
 Every agent consists of:
 
-1. **YAML frontmatter** - Agent metadata, capabilities, and configuration
-2. **Markdown content** - Documentation and usage examples
+1. **TOML configuration** - Agent metadata, capabilities, and configuration
+2. **Documentation section** - Usage examples and feature descriptions
 3. **System prompts** - Instructions defining agent behavior
 4. **Capability declarations** - What the agent can do
 5. **Tool integrations** - External services the agent can use
@@ -34,8 +34,8 @@ Every agent consists of:
 
 Agents follow a simple lifecycle:
 
-- **Creation**: Write markdown file with YAML configuration
-- **Deployment**: `caxton agent deploy agent.md` validates and loads
+- **Creation**: Write TOML configuration file
+- **Deployment**: `caxton agent deploy agent.toml` validates and loads
 - **Execution**: Agent processes capability-based messages via LLM orchestration
 - **Learning**: Agent stores successful patterns in embedded memory
 - **Updates**: Edit config file and redeploy for instant changes
@@ -46,60 +46,58 @@ Let's create a task management agent that helps users organize and track work.
 
 ### 1. Create the Agent File
 
-Create `task-manager.md`:
+Create `task-manager.toml`:
 
-```yaml
----
-name: TaskManager
-version: "1.0.0"
-description: "Intelligent task management and productivity assistant"
-capabilities:
-  - task-management
-  - productivity-coaching
-  - time-tracking
-tools:
-  - calendar_integration
-  - notification_service
-  - file_storage
-memory:
-  enabled: true
-  scope: workspace
-  retention: "30d"
-parameters:
-  max_tasks_per_user: 100
-  default_priority: "medium"
-  time_zone: "UTC"
-system_prompt: |
-  You are TaskManager, an intelligent productivity assistant. Your role is to help
-  users organize, prioritize, and complete their work effectively.
+```toml
+name = "TaskManager"
+version = "1.0.0"
+description = "Intelligent task management and productivity assistant"
+capabilities = ["task-management", "productivity-coaching", "time-tracking"]
+tools = ["calendar_integration", "notification_service", "file_storage"]
 
-  Core responsibilities:
-  1. Create, update, and track tasks with proper metadata
-  2. Suggest priorities based on deadlines and importance
-  3. Provide productivity coaching and time management advice
-  4. Learn user preferences and adapt recommendations
-  5. Integrate with calendars and notification systems
+[memory]
+enabled = true
+scope = "workspace"
+retention = "30d"
 
-  When processing task requests:
-  - Always check memory for user preferences and past patterns
-  - Suggest realistic timelines based on task complexity
-  - Offer productivity tips relevant to the task type
-  - Store successful task completion patterns for future reference
+[parameters]
+max_tasks_per_user = 100
+default_priority = "medium"
+time_zone = "UTC"
 
-  Personality: Encouraging, organized, and practical. Help users feel accomplished.
+system_prompt = '''
+You are TaskManager, an intelligent productivity assistant. Your role is to help
+users organize, prioritize, and complete their work effectively.
 
-user_prompt_template: |
-  Task Request: {{request}}
+Core responsibilities:
+1. Create, update, and track tasks with proper metadata
+2. Suggest priorities based on deadlines and importance
+3. Provide productivity coaching and time management advice
+4. Learn user preferences and adapt recommendations
+5. Integrate with calendars and notification systems
 
-  User Context: {{user_context}}
-  Current Tasks: {{current_tasks}}
-  Relevant Memory: {{memory_context}}
-  Deadline Information: {{deadlines}}
+When processing task requests:
+- Always check memory for user preferences and past patterns
+- Suggest realistic timelines based on task complexity
+- Offer productivity tips relevant to the task type
+- Store successful task completion patterns for future reference
 
-  Please help with this task management request.
----
+Personality: Encouraging, organized, and practical. Help users feel accomplished.
+'''
 
-## TaskManager Agent
+user_prompt_template = '''
+Task Request: {{request}}
+
+User Context: {{user_context}}
+Current Tasks: {{current_tasks}}
+Relevant Memory: {{memory_context}}
+Deadline Information: {{deadlines}}
+
+Please help with this task management request.
+'''
+
+documentation = '''
+# TaskManager Agent
 
 An intelligent task management assistant that helps you stay organized and productive.
 
@@ -137,13 +135,14 @@ The TaskManager learns from your interactions:
 - **Time estimates**: How long different types of tasks actually take
 
 This learning makes the agent more helpful over time.
+'''
 ```
 
 ### 2. Deploy Your Agent
 
 ```bash
 # Deploy the task manager
-caxton agent deploy task-manager.md
+caxton agent deploy task-manager.toml
 
 # Verify it's running
 caxton agent list
@@ -208,136 +207,129 @@ You'll see the agent:
 
 Create an agent that handles multiple related capabilities:
 
-```yaml
----
-name: CustomerSupport
-version: "2.0.0"
-capabilities:
-  - customer-inquiry
-  - order-tracking
-  - technical-support
-  - escalation-management
-tools:
-  - crm_system
-  - knowledge_base
-  - email_service
-  - ticket_system
-memory:
-  enabled: true
-  scope: global  # Share knowledge across all support interactions
-system_prompt: |
-  You are a customer support specialist with access to multiple systems.
-  Route inquiries appropriately and escalate when needed.
+```toml
+name = "CustomerSupport"
+version = "2.0.0"
+capabilities = ["customer-inquiry", "order-tracking", "technical-support", "escalation-management"]
+tools = ["crm_system", "knowledge_base", "email_service", "ticket_system"]
 
-  For each capability:
-  - customer-inquiry: Handle general questions and provide information
-  - order-tracking: Look up order status and shipping information
-  - technical-support: Troubleshoot product issues and provide solutions
-  - escalation-management: Route complex issues to human agents
+[memory]
+enabled = true
+scope = "global"  # Share knowledge across all support interactions
 
-  Always check memory for similar issues and their resolutions.
----
+system_prompt = '''
+You are a customer support specialist with access to multiple systems.
+Route inquiries appropriately and escalate when needed.
+
+For each capability:
+- customer-inquiry: Handle general questions and provide information
+- order-tracking: Look up order status and shipping information
+- technical-support: Troubleshoot product issues and provide solutions
+- escalation-management: Route complex issues to human agents
+
+Always check memory for similar issues and their resolutions.
+'''
 ```
 
 ### Workflow Orchestration Agent
 
 Create an agent that coordinates other agents:
 
-```yaml
----
-name: ProjectOrchestrator
-version: "1.0.0"
-capabilities:
-  - project-coordination
-  - workflow-management
-memory:
-  enabled: true
-  scope: workspace
-system_prompt: |
-  You coordinate complex projects by delegating tasks to other agents.
+```toml
+name = "ProjectOrchestrator"
+version = "1.0.0"
+capabilities = ["project-coordination", "workflow-management"]
 
-  When you receive project requests:
-  1. Break down the project into subtasks
-  2. Send subtasks to appropriate capabilities
-  3. Monitor progress and coordinate between agents
-  4. Aggregate results into final deliverable
+[memory]
+enabled = true
+scope = "workspace"
 
-  Use capability-based messaging to delegate work:
-  - Send data analysis tasks to "data-analysis" capability
-  - Send document creation to "document-generation" capability
-  - Send notifications via "notification-service" capability
----
+system_prompt = '''
+You coordinate complex projects by delegating tasks to other agents.
+
+When you receive project requests:
+1. Break down the project into subtasks
+2. Send subtasks to appropriate capabilities
+3. Monitor progress and coordinate between agents
+4. Aggregate results into final deliverable
+
+Use capability-based messaging to delegate work:
+- Send data analysis tasks to "data-analysis" capability
+- Send document creation to "document-generation" capability
+- Send notifications via "notification-service" capability
+'''
 ```
 
 ### Memory-Intensive Learning Agent
 
 Create an agent optimized for learning and knowledge building:
 
-```yaml
----
-name: KnowledgeAssistant
-version: "1.0.0"
-capabilities:
-  - knowledge-search
-  - learning-assistance
-  - information-synthesis
-tools:
-  - web_search
-  - document_parser
-  - citation_manager
-memory:
-  enabled: true
-  scope: global
-  semantic_search: true
-  relationship_tracking: true
-parameters:
-  max_search_results: 10
-  citation_style: "APA"
-system_prompt: |
-  You are a knowledge assistant that helps users learn and research topics.
+```toml
+name = "KnowledgeAssistant"
+version = "1.0.0"
+capabilities = ["knowledge-search", "learning-assistance", "information-synthesis"]
+tools = ["web_search", "document_parser", "citation_manager"]
 
-  Your unique strength is building and connecting knowledge over time:
-  1. Search your memory for related concepts and prior research
-  2. Identify knowledge gaps and suggest research directions
-  3. Synthesize information from multiple sources
-  4. Store new insights and their relationships to existing knowledge
-  5. Build semantic maps of interconnected concepts
+[memory]
+enabled = true
+scope = "global"
+semantic_search = true
+relationship_tracking = true
 
-  Always explain how new information connects to what you've learned before.
----
+[parameters]
+max_search_results = 10
+citation_style = "APA"
+
+system_prompt = '''
+You are a knowledge assistant that helps users learn and research topics.
+
+Your unique strength is building and connecting knowledge over time:
+1. Search your memory for related concepts and prior research
+2. Identify knowledge gaps and suggest research directions
+3. Synthesize information from multiple sources
+4. Store new insights and their relationships to existing knowledge
+5. Build semantic maps of interconnected concepts
+
+Always explain how new information connects to what you've learned before.
+'''
 ```
 
 ## Configuration Schema Reference
 
 ### Required Fields
 
-```yaml
-name: string              # Unique agent identifier
-version: string          # Semantic version
-capabilities: [string]   # What the agent can do
-system_prompt: string    # Core behavior instructions
+```toml
+name = "string"              # Unique agent identifier
+version = "string"          # Semantic version
+capabilities = ["string"]   # What the agent can do
+system_prompt = "string"    # Core behavior instructions
 ```
 
 ### Optional Configuration
 
-```yaml
-description: string                # Human-readable description
-tools: [string]                   # External services to use
-memory:
-  enabled: boolean                # Enable persistent memory
-  scope: "agent"|"workspace"|"global"  # Memory sharing level
-  retention: string             # How long to keep memories
-  semantic_search: boolean      # Enable vector search
-  relationship_tracking: boolean # Track entity relationships
-parameters:                       # Custom agent parameters
-  key: value
-user_prompt_template: string     # Template for user interactions
-conversation:
-  max_turns: integer            # Conversation length limit
-  timeout: string              # Response timeout
-security:
-  restricted_tools: [string]    # Limit tool access
-  max_memory_usage: string     # Memory usage limit
+```toml
+description = "string"                # Human-readable description
+tools = ["string"]                   # External services to use
+
+[memory]
+enabled = true                        # Enable persistent memory
+scope = "agent"                       # "agent"|"workspace"|"global" - Memory sharing level
+retention = "string"                  # How long to keep memories
+semantic_search = true                # Enable vector search
+relationship_tracking = true          # Track entity relationships
+
+[parameters]                          # Custom agent parameters
+key = "value"
+
+user_prompt_template = "string"       # Template for user interactions
+
+[conversation]
+max_turns = 20                        # Conversation length limit
+timeout = "string"                    # Response timeout
+
+[security]
+restricted_tools = ["string"]         # Limit tool access
+max_memory_usage = "string"           # Memory usage limit
 ```
 
 ### Capability Naming
@@ -363,14 +355,15 @@ Choose memory scope based on use case:
 
 List external tools your agent needs:
 
-```yaml
-tools:
-  - http_client          # Web requests
-  - database_connection  # Database access
-  - email_service       # Email sending
-  - file_storage        # File operations
-  - calendar_integration # Calendar access
-  - notification_service # Push notifications
+```toml
+tools = [
+  "http_client",          # Web requests
+  "database_connection",  # Database access
+  "email_service",       # Email sending
+  "file_storage",        # File operations
+  "calendar_integration", # Calendar access
+  "notification_service" # Push notifications
+]
 ```
 
 ## Testing Your Agent
@@ -379,7 +372,7 @@ tools:
 
 ```bash
 # Test basic functionality
-caxton agent test task-manager.md \
+caxton agent test task-manager.toml \
   --scenario "basic_task_creation" \
   --input '{
     "request": "Add task: Review contract by Thursday",
@@ -387,7 +380,7 @@ caxton agent test task-manager.md \
   }'
 
 # Test memory integration
-caxton agent test task-manager.md \
+caxton agent test task-manager.toml \
   --scenario "memory_recall" \
   --input '{
     "request": "What tasks have I completed this week?",
@@ -425,7 +418,7 @@ Update agents without downtime:
 
 ```bash
 # Deploy new version alongside current
-caxton agent deploy task-manager-v2.md --strategy blue-green
+caxton agent deploy task-manager-v2.toml --strategy blue-green
 
 # Test new version
 caxton agent test TaskManager-v2
@@ -440,7 +433,7 @@ Compare agent versions:
 
 ```bash
 # Deploy variant for testing
-caxton agent deploy task-manager-variant.md \
+caxton agent deploy task-manager-variant.toml \
   --strategy a-b-test \
   --traffic-split 20
 
@@ -495,58 +488,62 @@ caxton capability test task-management
 
 Think in terms of **what** your agent can do, not just **who** it is:
 
-```yaml
+```toml
 # Good: Specific, actionable capabilities
-capabilities:
-  - document-analysis
-  - compliance-checking
-  - risk-assessment
+capabilities = [
+  "document-analysis",
+  "compliance-checking",
+  "risk-assessment"
+]
 
 # Avoid: Generic or overlapping capabilities
-capabilities:
-  - general-assistant
-  - helpful-agent
+capabilities = [
+  "general-assistant",
+  "helpful-agent"
+]
 ```
 
 ### 2. Write Clear System Prompts
 
 Be specific about behavior and responsibilities:
 
-```yaml
-system_prompt: |
-  You are a financial analyst specializing in risk assessment.
+```toml
+system_prompt = '''
+You are a financial analyst specializing in risk assessment.
 
-  When analyzing documents:
-  1. Identify potential financial risks and compliance issues
-  2. Quantify risk levels using standard metrics
-  3. Suggest mitigation strategies based on industry best practices
-  4. Reference relevant regulations and standards
+When analyzing documents:
+1. Identify potential financial risks and compliance issues
+2. Quantify risk levels using standard metrics
+3. Suggest mitigation strategies based on industry best practices
+4. Reference relevant regulations and standards
 
-  Always provide confidence levels for your assessments.
+Always provide confidence levels for your assessments.
+'''
 ```
 
 ### 3. Use Memory Strategically
 
 Enable memory for agents that benefit from learning:
 
-```yaml
-memory:
-  enabled: true
-  scope: workspace        # Share knowledge within team
-  retention: "90d"       # Keep relevant timeframe
-  semantic_search: true  # Find related past experiences
+```toml
+[memory]
+enabled = true
+scope = "workspace"        # Share knowledge within team
+retention = "90d"         # Keep relevant timeframe
+semantic_search = true    # Find related past experiences
 ```
 
 ### 4. Design for Composability
 
 Create agents that work well with others:
 
-```yaml
-system_prompt: |
-  When your analysis is complete, send results to agents with
-  "report-generation" capability for document creation.
+```toml
+system_prompt = '''
+When your analysis is complete, send results to agents with
+"report-generation" capability for document creation.
 
-  Use capability-based messaging to coordinate with other agents.
+Use capability-based messaging to coordinate with other agents.
+'''
 ```
 
 ### 5. Test Thoroughly
@@ -555,7 +552,7 @@ Validate agent behavior before deployment:
 
 ```bash
 # Test core functionality
-caxton agent validate task-manager.md
+caxton agent validate task-manager.toml
 
 # Test capability routing
 caxton capability validate task-management
@@ -569,8 +566,8 @@ caxton memory validate TaskManager
 ### Agent Won't Deploy
 
 ```bash
-# Check YAML syntax
-caxton agent validate task-manager.md --strict
+# Check TOML syntax
+caxton agent validate task-manager.toml --strict
 
 # Verify capability names
 caxton capability list --available
@@ -622,7 +619,7 @@ caxton memory analyze TaskManager --performance
 
 You now understand agents! Continue learning:
 
-- **[Configuration Reference](configuration.md)** - Complete YAML schema
+- **[Configuration Reference](configuration.md)** - Complete TOML schema
 - **[Agent Patterns](../developer-guide/agent-patterns.md)** - Advanced
   composition patterns
 - **[Memory System Guide](../developer-guide/memory-system.md)** - Deep dive into

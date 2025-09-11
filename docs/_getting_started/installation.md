@@ -368,22 +368,23 @@ Create a test agent to verify everything is working:
 
 ```bash
 # Create simple test agent
-cat > test-agent.md << EOF
----
-name: TestAgent
-version: "1.0.0"
-capabilities:
-  - testing
-system_prompt: |
-  You are a test agent. Respond with "Hello, Caxton!" to any message.
----
+cat > test-agent.toml << EOF
+name = "TestAgent"
+version = "1.0.0"
+capabilities = ["testing"]
 
-## Test Agent
+system_prompt = '''
+You are a test agent. Respond with "Hello, Caxton!" to any message.
+'''
+
+documentation = '''
+# Test Agent
 Simple agent for testing Caxton installation.
+'''
 EOF
 
 # Deploy test agent
-caxton agent deploy test-agent.md
+caxton agent deploy test-agent.toml
 
 # Send test message
 caxton message send \

@@ -19,11 +19,11 @@ agent platform.
 Caxton is a hybrid agent platform designed for rapid development and
 production deployment. Unlike traditional platforms that require hours of
 compilation setup, Caxton lets you **create and deploy agents in 5-10
-minutes** using simple markdown configuration files.
+minutes** using simple TOML configuration files.
 
 **Configuration-Driven Agent Development:**
 
-Define agent behavior in markdown files with YAML frontmatter - no
+Define agent behavior in TOML configuration files - no
 compilation or toolchain setup required.
 
 **Zero External Dependencies:** Embedded SQLite memory, local embedding models,
@@ -115,17 +115,17 @@ addresses:
 
 ### Configuration Agents
 
-**Primary Agent Type (90% of use cases)**: Define agent behavior in markdown
-files with YAML frontmatter. No compilation required.
+**Primary Agent Type (90% of use cases)**: Define agent behavior in TOML
+configuration files. No compilation required.
 
-```yaml
----
-name: BillingAgent
-capabilities: [billing, invoices]
-tools: [database, email]
-system_prompt: |
-  You process payments and generate invoices.
----
+```toml
+name = "BillingAgent"
+capabilities = ["billing", "invoices"]
+tools = ["database", "email"]
+
+system_prompt = '''
+You process payments and generate invoices.
+'''
 ```
 
 **Tool Integration**: When you need external system access, agents connect

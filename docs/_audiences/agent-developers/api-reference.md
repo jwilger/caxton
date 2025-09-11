@@ -27,7 +27,7 @@ simplicity and compatibility with standard HTTP tooling.
 
 Caxton supports two agent types:
 
-- **Configuration agents**: Defined in markdown files with YAML frontmatter
+- **Configuration agents**: Defined in TOML configuration files
   (primary experience) - **Beginner Level**
 - **WebAssembly agents**: Compiled modules for advanced use cases requiring
   custom algorithms - **Advanced Level**
@@ -111,14 +111,14 @@ Returns detailed information about a specific agent.
 POST /api/agents
 ```
 
-Deploy a new configuration agent from a markdown definition.
+Deploy a new configuration agent from a TOML definition.
 
 **Request Body:**
 
 ```json
 {
   "type": "configuration",
-  "definition": "---\nname: MyAgent\ndescription: Sample agent\n---\n# Agent Instructions\n..."
+  "definition": "name = \"MyAgent\"\ndescription = \"Sample agent\"\n\ndocumentation = '''\n# Agent Instructions\n...\n'''"
 }
 ```
 
@@ -229,7 +229,7 @@ Validate an agent configuration before deployment.
 
 ```json
 {
-  "definition": "---\nname: TestAgent\ndescription: Test\n---\n# Instructions\n..."
+  "definition": "name = \"TestAgent\"\ndescription = \"Test\"\n\ndocumentation = '''\n# Instructions\n...\n'''"
 }
 ```
 

@@ -13,16 +13,17 @@ audience: agent-developers
 > in ADR-28. This documentation serves as the specification and acceptance
 > criteria for the agent configuration system currently under development.
 >
-> **Target**: Markdown + YAML agent definitions with 5-10 minute creation time
+> **Target**: TOML agent definitions with 5-10 minute creation time
 > **Current Status**: Configuration schema and runtime implementation in
 > progress
 
 ## What Are Configuration-Driven Agents? - **Beginner**
 
-Configuration-driven agents are AI agents defined as markdown files with YAML
-frontmatter, designed to dramatically lower the barrier to entry for agent
-development. Instead of compiling WebAssembly modules, you create agents by
-writing configuration files that combine prompts with tool permissions.
+Configuration-driven agents are AI agents defined as TOML configuration files,
+designed to dramatically lower the barrier to entry for agent development.
+Instead of compiling WebAssembly modules, you create agents by writing TOML
+files that combine prompts, capabilities, and tool permissions in a clean,
+readable format.
 
 ## Key Benefits
 
@@ -45,7 +46,7 @@ context management:
 
 ```text
 ┌─────────────────────┐
-│ Configuration Layer │  ← YAML frontmatter + markdown
+│ Configuration Layer │  ← TOML configuration with embedded docs
 ├─────────────────────┤
 │ Context Layer       │  ← Intelligent context management (ADR-0031)
 ├─────────────────────┤
@@ -57,40 +58,46 @@ context management:
 
 ### Configuration Layer
 
-The top layer where you define agent behavior using standard markdown with YAML
-frontmatter:
+The top layer where you define agent behavior using TOML configuration with
+embedded documentation:
 
-```yaml
----
-name: DataAnalyzer
-version: "1.0.0"
-description: "Analyzes CSV data and generates insights"
+```toml
+name = "DataAnalyzer"
+version = "1.0.0"
+description = "Analyzes CSV data and generates insights"
 
-capabilities:
-  - data_analysis
-  - visualization
+capabilities = [
+  "data_analysis",
+  "visualization"
+]
 
-tools:
-  - csv_reader
-  - chart_generator
+tools = [
+  "csv_reader",
+  "chart_generator"
+]
 
-llm:
-  provider: openai
-  model: gpt-4
-  temperature: 0.1
----
-
-# Data Analysis Agent
-
+system_prompt = '''
 You are an expert data analyst. Your job is to analyze CSV data and provide
 actionable insights.
 
-## Instructions
-
+Instructions:
 1. When given CSV data, examine the structure first
 2. Identify key patterns and trends
 3. Generate appropriate visualizations
 4. Provide clear, actionable recommendations
+'''
+
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.1
+
+documentation = '''
+# Data Analysis Agent
+
+This agent specializes in analyzing CSV data and generating actionable insights
+through statistical analysis and visualizations.
+'''
 ```
 
 ### Context Layer - **Advanced**
@@ -136,7 +143,7 @@ Start with a pre-built template for common use cases:
 curl http://localhost:3000/api/templates
 
 # Get template content
-curl http://localhost:3000/api/templates/data-analyzer > my-agent.md
+curl http://localhost:3000/api/templates/data-analyzer > my-agent.toml
 ```
 
 Available templates:
@@ -149,47 +156,45 @@ Available templates:
 
 ### 2. Customize Configuration
 
-Edit the YAML frontmatter to match your needs:
+Edit the TOML configuration to match your needs:
 
-```yaml
----
-name: MyCustomAnalyzer
-version: "1.0.0"
-description: "Custom data analyzer for sales reports"
+```toml
+name = "MyCustomAnalyzer"
+version = "1.0.0"
+description = "Custom data analyzer for sales reports"
 
-capabilities:
-  - data_analysis
-  - report_generation
+capabilities = [
+  "data_analysis",
+  "report_generation"
+]
 
-tools:
-  - csv_reader
-  - excel_reader        # Added Excel support
-  - chart_generator
-  - pdf_generator       # Added PDF output
+tools = [
+  "csv_reader",
+  "excel_reader",        # Added Excel support
+  "chart_generator",
+  "pdf_generator"        # Added PDF output
+]
 
-llm:
-  provider: openai
-  model: gpt-4
-  temperature: 0.2      # More deterministic
-  max_tokens: 2000
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.2       # More deterministic
+max_tokens = 2000
 
-schedule:
-  cron: "0 9 * * MON"   # Run every Monday at 9 AM
-  timezone: "UTC"
----
+[schedule]
+cron = "0 9 * * MON"    # Run every Monday at 9 AM
+timezone = "UTC"
 ```
 
-### 3. Write Instructions
+### 3. Define System Prompt
 
-Provide clear, specific instructions in markdown:
+Provide clear, specific instructions in the TOML system_prompt field:
 
-```markdown
-# Sales Data Analyzer
-
+```toml
+system_prompt = '''
 You are a sales data analyst specializing in weekly reports.
 
-## Instructions
-
+Instructions:
 1. **Data Loading**: Accept CSV or Excel files with sales data
 2. **Data Validation**: Check for required columns: date, product, amount, region
 3. **Analysis**: Calculate:
@@ -203,8 +208,7 @@ You are a sales data analyst specializing in weekly reports.
    - Product performance bar chart
 5. **Report Generation**: Generate PDF report with findings and recommendations
 
-## Example Interaction
-
+Example Interaction:
 **User**: "Analyze the Q4 sales data"
 **Agent**:
 1. I'll load your sales data and validate the structure
@@ -213,6 +217,14 @@ You are a sales data analyst specializing in weekly reports.
 4. Generate a comprehensive PDF report
 
 Would you like me to start with a specific data file?
+'''
+
+documentation = '''
+# Sales Data Analyzer
+
+This agent specializes in weekly sales report generation with comprehensive
+analysis and visualization capabilities.
+'''
 ```
 
 ### 4. Test and Deploy
@@ -221,14 +233,14 @@ Would you like me to start with a specific data file?
 # Validate configuration
 curl -X POST http://localhost:3000/api/validate \
   -H "Content-Type: application/json" \
-  -d '{"definition": "'$(cat my-agent.md)'"}'
+  -d '{"definition": "'$(cat my-agent.toml)'"}'"}
 
 # Deploy agent
 curl -X POST http://localhost:3000/api/agents \
   -H "Content-Type: application/json" \
   -d '{
     "type": "configuration",
-    "definition": "'$(cat my-agent.md)'"
+    "definition": "'$(cat my-agent.toml)'"
   }'
 
 # Test with sample data
@@ -244,89 +256,101 @@ curl -X POST http://localhost:3000/api/agents/my-custom-analyzer/messages \
 
 ### Core Configuration
 
-```yaml
----
+```toml
 # Required fields
-name: AgentName                    # Unique identifier
-version: "1.0.0"                   # Semantic version
-description: "Brief description"   # One-line summary
+name = "AgentName"                  # Unique identifier
+version = "1.0.0"                  # Semantic version
+description = "Brief description"  # One-line summary
 
 # Agent capabilities
-capabilities:                      # List of high-level capabilities
-  - capability_name
+capabilities = [                   # List of high-level capabilities
+  "capability_name"
+]
 
-tools:                            # Specific tools to use
-  - tool_name
+tools = [                          # Specific tools to use
+  "tool_name"
+]
+
+system_prompt = '''
+Agent behavior and instructions go here.
+'''
 
 # LLM configuration
-llm:
-  provider: openai|anthropic|local # LLM provider
-  model: model_name                # Specific model
-  temperature: 0.0-2.0            # Response randomness
-  max_tokens: 1000                # Max response length
+[llm]
+provider = "openai"               # openai|anthropic|local
+model = "model_name"               # Specific model
+temperature = 1.0                  # Response randomness (0.0-2.0)
+max_tokens = 1000                  # Max response length
 
 # Optional advanced configuration
-permissions:
-  file_access: readonly|readwrite|none
-  network_access: restricted|full|none
-  memory_limit: 100MB
+[permissions]
+file_access = "readonly"           # readonly|readwrite|none
+network_access = "restricted"      # restricted|full|none
+memory_limit = "100MB"
 
-schedule:
-  cron: "0 9 * * MON-FRI"         # Cron expression
-  timezone: "UTC"                  # Timezone
+[schedule]
+cron = "0 9 * * MON-FRI"          # Cron expression
+timezone = "UTC"                   # Timezone
 
-audit:
-  log_operations: true
-  sensitive_data: false
----
+[audit]
+log_operations = true
+sensitive_data = false
+
+documentation = '''
+# Agent Documentation
+
+Agent description and usage instructions.
+'''
 ```
 
 ### Tool Configuration
 
 Tools can have specific configuration:
 
-```yaml
-tools:
-  - name: csv_reader
-    config:
-      encoding: utf-8
-      delimiter: ","
-      max_file_size: 10MB
+```toml
+tools = [
+  "csv_reader",
+  "api_client",
+  "chart_generator"
+]
 
-  - name: api_client
-    config:
-      base_url: "https://api.example.com"
-      timeout: 30s
-      retry_attempts: 3
-      rate_limit: "100/minute"
+[tool_config.csv_reader]
+encoding = "utf-8"
+delimiter = ","
+max_file_size = "10MB"
 
-  - name: chart_generator
-    config:
-      default_format: png
-      max_width: 1024
-      max_height: 768
-      dpi: 300
+[tool_config.api_client]
+base_url = "https://api.example.com"
+timeout = "30s"
+retry_attempts = 3
+rate_limit = "100/minute"
+
+[tool_config.chart_generator]
+default_format = "png"
+max_width = 1024
+max_height = 768
+dpi = 300
 ```
 
 ### Memory Configuration
 
 Control how the agent uses memory:
 
-```yaml
-memory:
-  enabled: true
-  retention_period: "30d"          # How long to keep memories
-  max_entries: 10000               # Maximum memory entries
+```toml
+[memory]
+enabled = true
+retention_period = "30d"           # How long to keep memories
+max_entries = 10000                # Maximum memory entries
 
-  context_preparation:
-    enabled: true
-    max_context_length: 8000       # Max tokens for context
-    relevance_threshold: 0.7       # Minimum relevance score
+[memory.context_preparation]
+enabled = true
+max_context_length = 8000          # Max tokens for context
+relevance_threshold = 0.7          # Minimum relevance score
 
-  learning:
-    enabled: true
-    learning_rate: 0.1             # How quickly to adapt
-    confidence_threshold: 0.8      # Minimum confidence for learning
+[memory.learning]
+enabled = true
+learning_rate = 0.1                # How quickly to adapt
+confidence_threshold = 0.8         # Minimum confidence for learning
 ```
 
 ## Best Practices - **Intermediate**
@@ -361,7 +385,7 @@ memory:
 
 **Agent Won't Deploy**:
 
-- Check YAML syntax with a validator
+- Check TOML syntax with a validator
 - Verify all required fields are present
 - Ensure capabilities and tools exist
 
@@ -412,7 +436,7 @@ curl -X POST http://localhost:3000/api/agents/my-agent/test \
 ## Quick Start Checklist
 
 - [ ] Choose appropriate template
-- [ ] Configure YAML frontmatter
+- [ ] Configure TOML settings
 - [ ] Write clear instructions
 - [ ] Set minimal permissions
 - [ ] Validate configuration

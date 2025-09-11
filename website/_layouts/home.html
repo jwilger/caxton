@@ -70,7 +70,7 @@ layout: default
             <div class="feature-card">
                 <div class="feature-icon">⚙️</div>
                 <h3>Configuration-Driven Agents</h3>
-                <p>Create agents with YAML+Markdown configuration. 5-10 minute onboarding. No compilation or toolchain setup required.</p>
+                <p>Create agents with TOML configuration files. 5-10 minute onboarding. No compilation or toolchain setup required.</p>
                 <div class="feature-metrics">
                     <span class="metric">5-10 min setup</span>
                     <span class="metric">Zero compilation</span>
@@ -195,7 +195,7 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                 <h3>Configuration-Driven Architecture</h3>
                 <p>Caxton provides agents for rapid development. Zero external dependencies with embedded memory and local-first design.</p>
                 <ul>
-                    <li><strong>Agents</strong> - YAML+Markdown for 5-10 minute onboarding</li>
+                    <li><strong>Agents</strong> - TOML configuration for 5-10 minute onboarding</li>
                     <li><strong>MCP Tool Security</strong> - Secure tool execution with permission boundaries</li>
                     <li><strong>Capability Routing</strong> - Lightweight agent messaging with capability-based discovery</li>
                     <li><strong>Embedded Memory</strong> - SQLite + Candle vector database built-in</li>
@@ -391,11 +391,9 @@ caxton server start</code></pre>
                 <h3>Create Your First Agent</h3>
                 <div class="code-snippet">
                     <pre data-language="BASH"><code># Create your first agent configuration file
-cat > order-agent.md << EOF
----
-name: OrderAgent
-capabilities: [order-processing]
----
+cat > order-agent.toml << EOF
+name = "OrderAgent"
+capabilities = ["order-processing"]
 EOF</code></pre>
                 </div>
             </div>
@@ -407,25 +405,25 @@ EOF</code></pre>
                     <div class="step-number">1</div>
                     <h3>Create Two Complementary Agents</h3>
                     <div class="code-snippet">
-                        <pre data-language="YAML"><code># order-processor.yaml
----
-name: order-processor
-capabilities: [order-processing]
-tools: [database, http_client]
-system_prompt: |
-  Process orders and send inventory requests to
-  inventory-checking capability.
----
+                        <pre data-language="TOML"><code># order-processor.toml
+name = "order-processor"
+capabilities = ["order-processing"]
+tools = ["database", "http_client"]
 
-# inventory-checker.yaml
----
-name: inventory-checker
-capabilities: [inventory-checking]
-tools: [database]
-system_prompt: |
-  Check item availability and respond to
-  order-processing requests.
----</code></pre>
+system_prompt = '''
+Process orders and send inventory requests to
+inventory-checking capability.
+'''
+
+# inventory-checker.toml
+name = "inventory-checker"
+capabilities = ["inventory-checking"]
+tools = ["database"]
+
+system_prompt = '''
+Check item availability and respond to
+order-processing requests.
+'''</code></pre>
                     </div>
                 </div>
                 <div class="step-card">
@@ -433,8 +431,8 @@ system_prompt: |
                     <h3>Deploy Both Agents</h3>
                     <div class="code-snippet">
                         <pre data-language="BASH"><code># Deploy both agents
-caxton agent deploy order-processor.yaml
-caxton agent deploy inventory-checker.yaml
+caxton agent deploy order-processor.toml
+caxton agent deploy inventory-checker.toml
 
 # Verify both are running
 caxton agent list

@@ -11,12 +11,12 @@ categories: [api, implementation]
 ## Overview
 
 This document tracks the implementation status of Caxton's REST API endpoints
-following the architectural shift to configuration-driven agents (ADR-0028).
+following the architectural shift to configuration-driven agents (ADR-0028 and ADR-0032).
 Configuration agents are now the primary user experience, with WASM agents
 available for advanced use cases requiring custom algorithms.
 
 **Major Architecture Change**: The API now prioritizes configuration-driven
-agents defined as markdown files with YAML frontmatter, providing 5-10 minute
+agents defined as TOML configuration files, providing 5-10 minute
 onboarding versus the previous 2-4 hour WASM compilation workflow.
 
 ## Implementation Summary
@@ -82,9 +82,9 @@ Priority focuses on configuration-driven agent capabilities.
 
 ### 🔥 Configuration Agent Management (HIGH PRIORITY)
 
-**Primary User Experience** - Configuration-driven agents using markdown + YAML
+**Primary User Experience** - Configuration-driven agents using TOML format
 
-- `POST /api/v1/config-agents` - Deploy configuration agent from markdown
+- `POST /api/v1/config-agents` - Deploy configuration agent from TOML
 - `GET /api/v1/config-agents` - List configuration agents
 - `GET /api/v1/config-agents/{id}` - Get configuration agent details
 - `PUT /api/v1/config-agents/{id}` - Update agent configuration
@@ -116,7 +116,7 @@ Priority focuses on configuration-driven agent capabilities.
 
 **Development Experience** - Help users create valid configurations
 
-- `POST /api/v1/validate/config` - Validate YAML configuration syntax
+- `POST /api/v1/validate/config` - Validate TOML configuration syntax
 - `POST /api/v1/validate/capabilities` - Verify capability declarations
 - `GET /api/v1/templates` - List configuration templates
 
@@ -144,16 +144,16 @@ Priority focuses on configuration-driven agent capabilities.
 
 ### 🔴 Configuration Agent Runtime
 
-- **Impact**: No implementation for config agent execution
+- **Impact**: No implementation for TOML config agent execution
 - **Risk**: HIGH - Primary user experience unavailable
 - **Mitigation**: Continue using WASM agents only
 - **Target Story**: Configuration Agent Runtime Foundation
 
 ### 🔴 Authentication & Authorization for Config Agents
 
-- **Impact**: No access control for configuration deployment
+- **Impact**: No access control for TOML configuration deployment
 - **Risk**: HIGH - Any client can deploy arbitrary agent configurations
-- **Mitigation**: Run only in trusted networks, validate all configurations
+- **Mitigation**: Run only in trusted networks, validate all TOML configurations
 - **Target Story**: Config Agent Security Model
 
 ### 🔴 Rate Limiting

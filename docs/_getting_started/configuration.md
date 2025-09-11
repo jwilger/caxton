@@ -8,8 +8,8 @@ categories: [Getting Started]
 ## Complete reference for configuring Caxton server and configuration agents
 
 This guide covers both **server configuration** (how Caxton runs) and
-**agent configuration** (how to define configuration agents with YAML
-frontmatter).
+**agent configuration** (how to define configuration agents with TOML
+configuration files).
 
 ## Server Configuration
 
@@ -176,149 +176,156 @@ cluster:
 
 ## Configuration Agent Schema
 
-Configuration agents are defined as markdown files with YAML frontmatter.
+Configuration agents are defined as TOML configuration files.
 Here's the complete schema:
 
 ### Required Agent Fields
 
-```yaml
----
-name: string                 # Unique agent identifier
-version: string             # Semantic version (e.g., "1.0.0")
-capabilities: [string]      # List of capabilities this agent provides
-system_prompt: string       # Core behavior instructions
----
+```toml
+name = "string"                 # Unique agent identifier
+version = "string"             # Semantic version (e.g., "1.0.0")
+capabilities = ["string"]      # List of capabilities this agent provides
+system_prompt = "string"       # Core behavior instructions
 ```
 
 ### Complete Agent Configuration
 
-```yaml
----
+```toml
 # Identity and Metadata
-name: AgentName              # Unique identifier (no spaces)
-version: "1.0.0"            # Semantic version
-description: "Brief description of agent purpose"
-author: "Your Name"         # Optional author info
-tags: ["category", "type"]  # Optional tags for organization
+name = "AgentName"              # Unique identifier (no spaces)
+version = "1.0.0"              # Semantic version
+description = "Brief description of agent purpose"
+author = "Your Name"           # Optional author info
+tags = ["category", "type"]    # Optional tags for organization
 
 # Capabilities and Behavior
-capabilities:               # What this agent can do
-  - primary-capability      # Use hyphenated names
-  - secondary-capability
-  - tertiary-capability
+capabilities = [               # What this agent can do
+  "primary-capability",        # Use hyphenated names
+  "secondary-capability",
+  "tertiary-capability"
+]
 
-system_prompt: |            # Core behavior definition
-  You are [AgentName], a [role] that [primary purpose].
+system_prompt = '''            # Core behavior definition
+You are [AgentName], a [role] that [primary purpose].
 
-  Your responsibilities:
-  1. [First responsibility]
-  2. [Second responsibility]
-  3. [Third responsibility]
+Your responsibilities:
+1. [First responsibility]
+2. [Second responsibility]
+3. [Third responsibility]
 
-  When processing requests:
-  - [Guideline 1]
-  - [Guideline 2]
-  - [Guideline 3]
+When processing requests:
+- [Guideline 1]
+- [Guideline 2]
+- [Guideline 3]
 
-  Personality: [Personality traits]
+Personality: [Personality traits]
+'''
 
-user_prompt_template: |     # Template for user interactions
-  Request: {{request}}
+user_prompt_template = '''     # Template for user interactions
+Request: {{request}}
 
-  Context: {{context}}
-  Memory: {{memory_context}}
-  User Info: {{user_info}}
+Context: {{context}}
+Memory: {{memory_context}}
+User Info: {{user_info}}
 
-  Please help with this request.
+Please help with this request.
+'''
 
 # Tools and Integration
-tools:                      # External services this agent can use
-  - http_client            # Web requests
-  - database_connection    # Database access
-  - file_storage          # File operations
-  - email_service         # Email capabilities
-  - calendar_integration  # Calendar access
-  - notification_service  # Push notifications
-  - custom_tool_name     # Your custom MCP tools
+tools = [                      # External services this agent can use
+  "http_client",              # Web requests
+  "database_connection",      # Database access
+  "file_storage",            # File operations
+  "email_service",           # Email capabilities
+  "calendar_integration",    # Calendar access
+  "notification_service",    # Push notifications
+  "custom_tool_name"         # Your custom MCP tools
+]
 
 # Memory Configuration
-memory:
-  enabled: true             # Enable persistent memory
-  scope: workspace          # agent|workspace|global
-  retention: "90d"          # How long to keep memories
-  semantic_search: true     # Enable vector search
-  relationship_tracking: true # Track entity relationships
-  auto_cleanup: true        # Automatically clean old memories
-  learning_rate: "adaptive" # How aggressively to learn patterns
+[memory]
+enabled = true                 # Enable persistent memory
+scope = "workspace"            # agent|workspace|global
+retention = "90d"              # How long to keep memories
+semantic_search = true         # Enable vector search
+relationship_tracking = true   # Track entity relationships
+auto_cleanup = true            # Automatically clean old memories
+learning_rate = "adaptive"     # How aggressively to learn patterns
 
 # Conversation Management
-conversation:
-  max_turns: 50            # Maximum conversation length
-  timeout: "5m"            # Response timeout
-  context_window: 8192     # Token limit for context
-  temperature: 0.7         # LLM temperature setting
-  memory_integration: true # Include memory in conversations
+[conversation]
+max_turns = 50                 # Maximum conversation length
+timeout = "5m"                 # Response timeout
+context_window = 8192          # Token limit for context
+temperature = 0.7              # LLM temperature setting
+memory_integration = true      # Include memory in conversations
 
 # Agent Parameters (Custom Configuration)
-parameters:
-  # Domain-specific settings
-  max_file_size: "10MB"
-  supported_formats: ["json", "yaml", "csv"]
-  default_priority: "medium"
-  time_zone: "UTC"
-  language: "en"
+[parameters]
+# Domain-specific settings
+max_file_size = "10MB"
+supported_formats = ["json", "yaml", "csv"]
+default_priority = "medium"
+time_zone = "UTC"
+language = "en"
 
-  # Processing settings
-  batch_size: 100
-  retry_attempts: 3
-  cache_ttl: "1h"
+# Processing settings
+batch_size = 100
+retry_attempts = 3
+cache_ttl = "1h"
 
 # Security and Limits
-security:
-  restricted_tools: []      # Tools this agent cannot use
-  max_memory_usage: "50MB"  # Memory usage limit
-  max_processing_time: "30s" # Processing time limit
-  allowed_domains: []       # HTTP domains agent can access
-  sandbox_restrictions:     # Additional sandbox restrictions
-    network_access: true
-    file_system_access: false
+[security]
+restricted_tools = []          # Tools this agent cannot use
+max_memory_usage = "50MB"      # Memory usage limit
+max_processing_time = "30s"    # Processing time limit
+allowed_domains = []           # HTTP domains agent can access
+
+[security.sandbox_restrictions] # Additional sandbox restrictions
+network_access = true
+file_system_access = false
 
 # Deployment Configuration
-deployment:
-  replicas: 1              # Number of instances
-  auto_scale:
-    enabled: false
-    min_replicas: 1
-    max_replicas: 5
-    cpu_threshold: 70
-  health_check:
-    enabled: true
-    interval: "30s"
-    timeout: "5s"
-  resource_limits:
-    memory: "100MB"
-    cpu: "100m"
+[deployment]
+replicas = 1                   # Number of instances
+
+[deployment.auto_scale]
+enabled = false
+min_replicas = 1
+max_replicas = 5
+cpu_threshold = 70
+
+[deployment.health_check]
+enabled = true
+interval = "30s"
+timeout = "5s"
+
+[deployment.resource_limits]
+memory = "100MB"
+cpu = "100m"
 
 # Monitoring and Metrics
-monitoring:
-  metrics_enabled: true     # Track agent-specific metrics
-  log_level: "info"        # trace|debug|info|warn|error
-  performance_tracking: true # Track response times
-  conversation_analytics: true # Analyze conversation patterns
-  custom_metrics:          # Custom metrics to track
-    - task_completion_rate
-    - user_satisfaction
-    - knowledge_growth
----
+[monitoring]
+metrics_enabled = true         # Track agent-specific metrics
+log_level = "info"            # trace|debug|info|warn|error
+performance_tracking = true    # Track response times
+conversation_analytics = true  # Analyze conversation patterns
+custom_metrics = [             # Custom metrics to track
+  "task_completion_rate",
+  "user_satisfaction",
+  "knowledge_growth"
+]
 
-## Agent Documentation
+documentation = '''
+# Agent Documentation
 
-The markdown content below the YAML frontmatter documents your agent:
+The documentation section contains your agent documentation:
 
 - Usage examples
 - Feature descriptions
 - API patterns
 - Integration guides
+'''
 ```
 
 ### Field Descriptions
@@ -332,13 +339,13 @@ The markdown content below the YAML frontmatter documents your agent:
 
 #### Memory Configuration
 
-```yaml
-memory:
-  enabled: true              # Turn on persistent memory
-  scope: workspace           # Memory sharing level
-  retention: "90d"           # How long to keep memories
-  semantic_search: true      # Enable vector similarity search
-  relationship_tracking: true # Track entity relationships
+```toml
+[memory]
+enabled = true              # Turn on persistent memory
+scope = "workspace"         # Memory sharing level
+retention = "90d"           # How long to keep memories
+semantic_search = true      # Enable vector similarity search
+relationship_tracking = true # Track entity relationships
 ```
 
 **Memory Scopes**:
@@ -349,130 +356,123 @@ memory:
 
 #### Tool Integration
 
-```yaml
-tools:
-  - http_client             # Make web requests
-  - database_connection     # Query databases
-  - file_storage           # Read/write files
-  - email_service          # Send emails
-  - calendar_integration   # Calendar operations
-  - notification_service   # Push notifications
+```toml
+tools = [
+  "http_client",             # Make web requests
+  "database_connection",     # Query databases
+  "file_storage",           # Read/write files
+  "email_service",          # Send emails
+  "calendar_integration",   # Calendar operations
+  "notification_service"    # Push notifications
+]
 ```
 
 Tools are MCP servers running in WebAssembly sandboxes for security.
 
 #### Conversation Management
 
-```yaml
-conversation:
-  max_turns: 50            # Conversation length limit
-  timeout: "5m"            # Response timeout
-  context_window: 8192     # Token limit for context
-  temperature: 0.7         # LLM creativity setting
+```toml
+[conversation]
+max_turns = 50            # Conversation length limit
+timeout = "5m"            # Response timeout
+context_window = 8192     # Token limit for context
+temperature = 0.7         # LLM creativity setting
 ```
 
 ### Configuration Examples
 
 #### Simple Single-Purpose Agent
 
-```yaml
----
-name: WeatherBot
-version: "1.0.0"
-capabilities:
-  - weather-information
-tools:
-  - http_client
-system_prompt: |
-  You are WeatherBot, a helpful weather information assistant.
+```toml
+name = "WeatherBot"
+version = "1.0.0"
+capabilities = ["weather-information"]
+tools = ["http_client"]
 
-  When users ask about weather:
-  1. Use the HTTP client to fetch current weather data
-  2. Provide clear, accurate weather information
-  3. Include relevant warnings if severe weather is expected
+system_prompt = '''
+You are WeatherBot, a helpful weather information assistant.
 
-  Always be friendly and informative.
----
+When users ask about weather:
+1. Use the HTTP client to fetch current weather data
+2. Provide clear, accurate weather information
+3. Include relevant warnings if severe weather is expected
 
-## WeatherBot
+Always be friendly and informative.
+'''
+
+documentation = '''
+# WeatherBot
 
 Get current weather information for any location worldwide.
+'''
 ```
 
 #### Multi-Capability Learning Agent
 
-```yaml
----
-name: CustomerSupport
-version: "2.1.0"
-capabilities:
-  - customer-inquiry
-  - order-tracking
-  - technical-support
-  - escalation-management
-tools:
-  - database_connection
-  - email_service
-  - notification_service
-memory:
-  enabled: true
-  scope: global
-  retention: "1y"
-  semantic_search: true
-  relationship_tracking: true
-parameters:
-  supported_languages: ["en", "es", "fr"]
-  escalation_threshold: "high"
-  response_time_target: "5m"
-system_prompt: |
-  You are a customer support specialist with access to order systems,
-  knowledge base, and escalation procedures.
+```toml
+name = "CustomerSupport"
+version = "2.1.0"
+capabilities = ["customer-inquiry", "order-tracking", "technical-support", "escalation-management"]
+tools = ["database_connection", "email_service", "notification_service"]
 
-  For each capability:
-  - customer-inquiry: Answer general questions using knowledge base
-  - order-tracking: Look up order status in database
-  - technical-support: Troubleshoot using stored solutions
-  - escalation-management: Route complex issues to humans
+[memory]
+enabled = true
+scope = "global"
+retention = "1y"
+semantic_search = true
+relationship_tracking = true
 
-  Always check memory for similar issues and their resolutions.
-  Learn from each interaction to improve future responses.
----
+[parameters]
+supported_languages = ["en", "es", "fr"]
+escalation_threshold = "high"
+response_time_target = "5m"
+
+system_prompt = '''
+You are a customer support specialist with access to order systems,
+knowledge base, and escalation procedures.
+
+For each capability:
+- customer-inquiry: Answer general questions using knowledge base
+- order-tracking: Look up order status in database
+- technical-support: Troubleshoot using stored solutions
+- escalation-management: Route complex issues to humans
+
+Always check memory for similar issues and their resolutions.
+Learn from each interaction to improve future responses.
+'''
 ```
 
 #### Workflow Orchestrator Agent
 
-```yaml
----
-name: DataPipeline
-version: "3.0.0"
-capabilities:
-  - data-processing
-  - pipeline-orchestration
-tools:
-  - database_connection
-  - file_storage
-  - notification_service
-memory:
-  enabled: true
-  scope: workspace
-  semantic_search: true
-parameters:
-  batch_size: 1000
-  retry_attempts: 3
-  notification_channels: ["email", "slack"]
-system_prompt: |
-  You orchestrate data processing pipelines by coordinating with other agents.
+```toml
+name = "DataPipeline"
+version = "3.0.0"
+capabilities = ["data-processing", "pipeline-orchestration"]
+tools = ["database_connection", "file_storage", "notification_service"]
 
-  Pipeline workflow:
-  1. Receive data processing requests
-  2. Send data extraction tasks to "data-extraction" capability
-  3. Send transformation tasks to "data-transformation" capability
-  4. Send loading tasks to "data-loading" capability
-  5. Monitor progress and handle errors
-  6. Send completion notifications
+[memory]
+enabled = true
+scope = "workspace"
+semantic_search = true
 
-  Use capability-based messaging to coordinate the entire pipeline.
----
+[parameters]
+batch_size = 1000
+retry_attempts = 3
+notification_channels = ["email", "slack"]
+
+system_prompt = '''
+You orchestrate data processing pipelines by coordinating with other agents.
+
+Pipeline workflow:
+1. Receive data processing requests
+2. Send data extraction tasks to "data-extraction" capability
+3. Send transformation tasks to "data-transformation" capability
+4. Send loading tasks to "data-loading" capability
+5. Monitor progress and handle errors
+6. Send completion notifications
+
+Use capability-based messaging to coordinate the entire pipeline.
+'''
 ```
 
 ## Environment Configuration
@@ -580,17 +580,17 @@ caxton config show --effective
 ### Validate Agent Configuration
 
 ```bash
-# Validate agent YAML syntax
-caxton agent validate task-manager.md
+# Validate agent TOML syntax
+caxton agent validate task-manager.toml
 
 # Check capability names against registry
-caxton agent validate task-manager.md --check-capabilities
+caxton agent validate task-manager.toml --check-capabilities
 
 # Validate tool availability
-caxton agent validate task-manager.md --check-tools
+caxton agent validate task-manager.toml --check-tools
 
 # Full validation with schema checking
-caxton agent validate task-manager.md --strict
+caxton agent validate task-manager.toml --strict
 ```
 
 ### Configuration Templates
@@ -639,48 +639,48 @@ memory:
 
 ### 3. Version Your Agent Configs
 
-```yaml
----
-name: CustomerSupport
-version: "2.1.0"          # Increment for each change
-description: "Added Spanish language support"
----
+```toml
+name = "CustomerSupport"
+version = "2.1.0"          # Increment for each change
+description = "Added Spanish language support"
 ```
 
 ### 4. Use Meaningful Capability Names
 
-```yaml
+```toml
 # Good: Specific, actionable capabilities
-capabilities:
-  - customer-inquiry
-  - order-tracking
-  - technical-support
+capabilities = [
+  "customer-inquiry",
+  "order-tracking",
+  "technical-support"
+]
 
 # Avoid: Generic or vague capabilities
-capabilities:
-  - general-help
-  - assistant
+capabilities = [
+  "general-help",
+  "assistant"
+]
 ```
 
 ### 5. Design for Memory Efficiency
 
-```yaml
-memory:
-  enabled: true
-  scope: workspace        # Don't use global unless needed
-  retention: "90d"        # Match your data retention policies
-  semantic_search: true   # Only if you need vector search
+```toml
+[memory]
+enabled = true
+scope = "workspace"        # Don't use global unless needed
+retention = "90d"         # Match your data retention policies
+semantic_search = true    # Only if you need vector search
 ```
 
 ### 6. Configure Appropriate Timeouts
 
-```yaml
-conversation:
-  timeout: "5m"           # Balance user experience vs resource usage
-  max_turns: 20           # Prevent runaway conversations
+```toml
+[conversation]
+timeout = "5m"           # Balance user experience vs resource usage
+max_turns = 20           # Prevent runaway conversations
 
-runtime:
-  agent_timeout: 30s      # Quick enough for real-time use
+[runtime]
+agent_timeout = "30s"      # Quick enough for real-time use
 ```
 
 ### 7. Monitor and Tune Performance
@@ -717,8 +717,8 @@ caxton memory test --config production.yaml
 ### Common Agent Config Issues
 
 ```bash
-# Check YAML frontmatter syntax
-caxton agent validate agent.md --yaml-only
+# Check TOML syntax
+caxton agent validate agent.toml --toml-only
 
 # Verify capability names are valid
 caxton capability list --available
@@ -727,7 +727,7 @@ caxton capability list --available
 caxton tools status
 
 # Test agent deployment
-caxton agent deploy agent.md --dry-run
+caxton agent deploy agent.toml --dry-run
 ```
 
 ### Performance Tuning
@@ -757,19 +757,18 @@ If migrating from WebAssembly agents:
 3. **Replace host functions** with tool integrations
 4. **Migrate state management** to memory system
 
-```yaml
+```toml
 # Before: WASM agent with host functions
 # After: Config agent with tools
----
-name: DataProcessor
-capabilities:
-  - data-processing
-tools:
-  - database_connection  # Replaces database host function
-  - file_storage        # Replaces file I/O host function
-memory:
-  enabled: true         # Replaces manual state management
----
+name = "DataProcessor"
+capabilities = ["data-processing"]
+tools = [
+  "database_connection",  # Replaces database host function
+  "file_storage"        # Replaces file I/O host function
+]
+
+[memory]
+enabled = true         # Replaces manual state management
 ```
 
 ### Scaling Up Memory Backend

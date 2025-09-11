@@ -11,16 +11,17 @@ categories: [Configuration, Agents]
 > in ADR-28. This documentation serves as the specification and acceptance
 > criteria for the agent configuration system currently under development.
 >
-> **Target**: Markdown + YAML agent definitions with 5-10 minute creation time
+> **Target**: TOML agent definitions with 5-10 minute creation time
 > **Current Status**: Configuration schema and runtime implementation in
 > progress
 
 ## What Are Configuration-Driven Agents?
 
-Configuration-driven agents are AI agents defined as markdown files with YAML
-frontmatter, designed to dramatically lower the barrier to entry for agent
-development. Instead of compiling WebAssembly modules, you create agents by
-writing configuration files that combine prompts with tool permissions.
+Configuration-driven agents are AI agents defined as TOML configuration files,
+designed to dramatically lower the barrier to entry for agent development.
+Instead of compiling WebAssembly modules, you create agents by writing TOML
+files that combine prompts, capabilities, and tool permissions in a clean,
+readable format.
 
 ## Key Benefits
 
@@ -43,7 +44,7 @@ context management:
 
 ```text
 ┌─────────────────────┐
-│ Configuration Layer │  ← YAML frontmatter + markdown
+│ Configuration Layer │  ← TOML configuration with embedded docs
 ├─────────────────────┤
 │ Context Layer       │  ← Intelligent context management (ADR-0031)
 ├─────────────────────┤
@@ -104,7 +105,7 @@ Configuration agents maintain security through **capability-based isolation**:
 
 ## Agent Lifecycle
 
-1. **Definition**: Write markdown file with YAML frontmatter configuration
+1. **Definition**: Write TOML file with agent configuration and documentation
 2. **Validation**: Runtime validates schema and tool permissions
 3. **Loading**: Agent registered with capability system
 4. **Context Preparation**: Runtime gathers relevant context from multiple
@@ -142,7 +143,7 @@ Configuration agents support common patterns through templates:
 ## Getting Started
 
 1. Choose an appropriate template from the library
-2. Customize the YAML configuration for your needs
+2. Customize the TOML configuration for your needs
 3. Modify prompts to match your specific requirements
 4. Test the agent in the development environment
 5. Deploy to production with hot-reload capabilities
@@ -178,7 +179,7 @@ Configuration agents support common patterns through templates:
 
 ## Next Steps
 
-- **Agent Format**: Learn the YAML schema and configuration options
+- **Agent Format**: Learn the TOML schema and configuration options
 - **Examples**: Explore practical configuration patterns
 - **Best Practices**: Development guidelines and optimization tips
 - **Migration**: Convert existing WASM agents to configuration format

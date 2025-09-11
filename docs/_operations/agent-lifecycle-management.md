@@ -16,7 +16,7 @@ configuration-driven agents:
 
 ### Configuration Agents (Primary Experience)
 
-- **File-based deployment**: Deploy from markdown files with YAML frontmatter
+- **File-based deployment**: Deploy from TOML configuration files
 - **Hot reload**: Instant configuration changes without process restart
 - **Capability validation**: Verify tools and parameters before activation
 - **Memory integration**: Automatic memory system integration
@@ -35,7 +35,7 @@ Unvalidated → Validated → Registered → Active ⇄ Suspended → Inactive
 **State Descriptions:**
 
 - **Unvalidated**: Configuration file present but not yet validated
-- **Validated**: YAML and configuration syntax verified
+- **Validated**: TOML and configuration syntax verified
 - **Registered**: Agent registered with capability system
 - **Active**: Agent processing messages and conversations
 - **Suspended**: Agent temporarily disabled (config reload, maintenance)
@@ -50,37 +50,38 @@ Unvalidated → Validated → Registered → Active ⇄ Suspended → Inactive
 
 ```bash
 # Create agent configuration file
-cat > agents/data-processor.md << 'EOF'
----
-name: DataProcessor
-version: "1.0.0"
-capabilities:
-  - data-processing
-  - file-analysis
-tools:
-  - http_client
-  - csv_parser
-  - json_validator
-parameters:
-  max_file_size: "50MB"
-  timeout: "30s"
-resource_limits:
-  memory_scope: "workspace"
-  conversation_limit: 100
-system_prompt: |
-  You are a data processing specialist who analyzes files and generates reports.
-user_prompt_template: |
-  Process this data request: {{request}}
-  Available context: {{memory_context}}
----
+cat > agents/data-processor.toml << 'EOF'
+name = "DataProcessor"
+version = "1.0.0"
+capabilities = ["data-processing", "file-analysis"]
+tools = ["http_client", "csv_parser", "json_validator"]
 
+[parameters]
+max_file_size = "50MB"
+timeout = "30s"
+
+[resource_limits]
+memory_scope = "workspace"
+conversation_limit = 100
+
+system_prompt = '''
+You are a data processing specialist who analyzes files and generates reports.
+'''
+
+user_prompt_template = '''
+Process this data request: {{request}}
+Available context: {{memory_context}}
+'''
+
+documentation = '''
 # Data Processor Agent
 
 This agent specializes in data processing tasks.
+'''
 EOF
 
 # Deploy configuration agent
-caxton agents deploy agents/data-processor.md
+caxton agents deploy agents/data-processor.toml
 ```
 
 #### Configuration Agent Lifecycle API
@@ -134,8 +135,8 @@ caxton agents reload data-processor --strategy gradual
 
 ```bash
 caxton agents ab-test data-processor \
-  --config-a agents/data-processor-v1.md \
-  --config-b agents/data-processor-v2.md \
+  --config-a agents/data-processor-v1.toml \
+  --config-b agents/data-processor-v2.toml \
   --split 80/20
 ```
 
@@ -173,14 +174,14 @@ caxton agents rollback data-processor --to-version 1.0.0
 
 Configuration agents have different resource patterns:
 
-```yaml
+```toml
 # In agent configuration file
-resource_limits:
-  memory_scope: "agent"        # agent, workspace, or global
-  max_conversations: 100       # Concurrent conversation limit
-  max_memory_entities: 10000   # Memory system entities
-  response_timeout: "30s"      # Maximum response time
-  tool_call_timeout: "10s"     # Tool execution timeout
+[resource_limits]
+memory_scope = "agent"        # agent, workspace, or global
+max_conversations = 100       # Concurrent conversation limit
+max_memory_entities = 10000   # Memory system entities
+response_timeout = "30s"      # Maximum response time
+tool_call_timeout = "10s"     # Tool execution timeout
 ```
 
 #### Configuration Agent Resource Types
@@ -195,22 +196,22 @@ resource_limits:
 
 ### Configuration Agent Validation
 
-Configuration agents undergo YAML and capability validation:
+Configuration agents undergo TOML and capability validation:
 
 ```bash
 # Validate single agent
-caxton agents validate agents/data-processor.md
+caxton agents validate agents/data-processor.toml
 
 # Validate all agents
 caxton agents validate-all
 
 # Detailed validation report
-caxton agents validate agents/data-processor.md --detailed
+caxton agents validate agents/data-processor.toml --detailed
 ```
 
 #### Configuration Validation Pipeline
 
-1. **YAML Syntax**: Valid frontmatter structure
+1. **TOML Syntax**: Valid configuration structure
 2. **Required Fields**: name, capabilities, tools present
 3. **Capability Registry**: Declared capabilities are valid
 4. **Tool Availability**: Referenced tools are available
@@ -244,7 +245,7 @@ caxton agents logs data-processor --tail 50
 - **Memory system usage per agent (entities, relations)**
 - **Conversation processing latency**
 - **Tool call success rates and latency**
-- **YAML validation error patterns**
+- **TOML validation error patterns**
 
 ## Error Handling and Recovery
 
@@ -277,7 +278,7 @@ caxton agents disable data-processor --preserve-memory
 
 #### Config Agent Error Categories
 
-- **YAML Validation Errors**: Syntax errors in configuration file
+- **TOML Validation Errors**: Syntax errors in configuration file
 - **Tool Availability Errors**: Referenced tools not available
 - **Memory Scope Errors**: Invalid memory access permissions
 - **Capability Errors**: Invalid capability declarations
@@ -339,10 +340,10 @@ For complete API documentation, see the
 
 ```bash
 # Check configuration validation errors
-caxton agents validate agents/my-agent.md --detailed
+caxton agents validate agents/my-agent.toml --detailed
 
 # Common issues:
-# - YAML syntax errors in frontmatter
+# - TOML syntax errors in configuration
 # - Missing required fields (name, capabilities)
 # - Invalid tool references
 # - Malformed prompt templates
@@ -356,7 +357,7 @@ caxton agents reload-status my-agent
 
 # Common issues:
 # - File permission problems
-# - YAML validation failures
+# - TOML validation failures
 # - Tool availability changes
 # - Memory scope conflicts
 ```
@@ -379,13 +380,13 @@ caxton agents logs my-agent --level error
 #### Configuration Agents
 
 - Check file system permissions for agent configs
-- Verify YAML validation pipeline
+- Verify TOML validation pipeline
 - Review capability registration conflicts
 - Check memory system connectivity
 
 ### Common Issues
 
-- **Configuration Errors**: Validate YAML syntax and required fields
+- **Configuration Errors**: Validate TOML syntax and required fields
 - **Resource Allocation**: Ensure sufficient memory and processing capacity
 - **Capability Conflicts**: Multiple agents providing overlapping capabilities
 - **Memory Scope Conflicts**: Agents accessing conflicting memory scopes

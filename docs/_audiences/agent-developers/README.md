@@ -15,7 +15,7 @@ create, deploy, and manage AI agents.
 ### **Beginner** - New to Caxton
 
 1. **[Overview](config-agents/overview.md)** - Understand configuration agents
-2. **[Agent Format](config-agents/agent-format.md)** - Learn the YAML structure
+2. **[Agent Format](config-agents/agent-format.md)** - Learn the TOML structure
 3. **[Building Agents Guide](building-agents.md)** - Step-by-step development
 4. **[Examples](config-agents/examples.md)** - Working examples to copy
 
@@ -39,23 +39,24 @@ create, deploy, and manage AI agents.
 ### Configuration Agents - **Beginner**
 
 Configuration agents are the primary way to build agents on Caxton. They're
-defined as markdown files with YAML frontmatter and can be created in 5-10
+defined as TOML configuration files and can be created in 5-10
 minutes:
 
-```yaml
----
-name: my-agent
-version: "1.0.0"
-description: "Brief description"
-capabilities: [data_analysis]
-tools: [csv_reader]
-llm:
-  provider: openai
-  model: gpt-4
----
+```toml
+name = "my-agent"
+version = "1.0.0"
+description = "Brief description"
+capabilities = ["data_analysis"]
+tools = ["csv_reader"]
 
+[llm]
+provider = "openai"
+model = "gpt-4"
+
+documentation = '''
 # Agent Instructions
 Your instructions here...
+'''
 ```
 
 **Key Benefits**:
@@ -70,15 +71,15 @@ Your instructions here...
 
 ```bash
 # 1. Create agent configuration
-vim my-agent.md
+vim my-agent.toml
 
 # 2. Validate configuration
 curl -X POST http://localhost:3000/api/validate \
-  -d '{"definition": "'$(cat my-agent.md)'"}'
+  -d '{"definition": "'$(cat my-agent.toml)'"}'"}
 
 # 3. Deploy agent
 curl -X POST http://localhost:3000/api/agents \
-  -d '{"type": "configuration", "definition": "'$(cat my-agent.md)'"}'
+  -d '{"type": "configuration", "definition": "'$(cat my-agent.toml)'"}'"}
 
 # 4. Test agent
 curl -X POST http://localhost:3000/api/agents/my-agent/messages \
@@ -93,7 +94,7 @@ curl -X POST http://localhost:3000/api/agents/my-agent/reload
 ### Configuration Agents
 
 - **[Overview](config-agents/overview.md)** - Architecture and concepts
-- **[Agent Format](config-agents/agent-format.md)** - YAML schema reference
+- **[Agent Format](config-agents/agent-format.md)** - TOML schema reference
 - **[Best Practices](config-agents/best-practices.md)** - Professional patterns
 - **[Examples](config-agents/examples.md)** - Working implementations
 - **[LLM Providers](config-agents/llm-providers.md)** - AI model configuration
@@ -108,48 +109,40 @@ curl -X POST http://localhost:3000/api/agents/my-agent/reload
 
 ### Data Analysis Agent - **Beginner**
 
-```yaml
----
-name: data-analyzer
-capabilities: [data_analysis]
-tools: [csv_reader, chart_generator]
----
+```toml
+name = "data-analyzer"
+capabilities = ["data_analysis"]
+tools = ["csv_reader", "chart_generator"]
 ```
 
 Perfect for: CSV analysis, report generation, trend analysis
 
 ### Content Writer Agent - **Beginner**
 
-```yaml
----
-name: content-writer
-capabilities: [content_generation]
-tools: [text_processor, grammar_checker]
----
+```toml
+name = "content-writer"
+capabilities = ["content_generation"]
+tools = ["text_processor", "grammar_checker"]
 ```
 
 Perfect for: Blog posts, documentation, marketing copy
 
 ### API Integration Agent - **Intermediate**
 
-```yaml
----
-name: api-integrator
-capabilities: [api_integration]
-tools: [http_client, json_processor]
----
+```toml
+name = "api-integrator"
+capabilities = ["api_integration"]
+tools = ["http_client", "json_processor"]
 ```
 
 Perfect for: External API connections, data synchronization
 
 ### Workflow Coordinator - **Advanced**
 
-```yaml
----
-name: workflow-coordinator
-capabilities: [workflow_orchestration]
-tools: [task_scheduler, notification_sender]
----
+```toml
+name = "workflow-coordinator"
+capabilities = ["workflow_orchestration"]
+tools = ["task_scheduler", "notification_sender"]
 ```
 
 Perfect for: Multi-step processes, automation pipelines
@@ -183,24 +176,26 @@ curl http://localhost:3000/api/agents/{id}
 
 ### Configuration Template
 
-```yaml
----
-name: agent-name
-version: "1.0.0"
-description: "Brief description"
-capabilities: [capability1]
-tools: [tool1]
-llm:
-  provider: openai
-  model: gpt-4
-  temperature: 0.7
-permissions:
-  file_access: readonly
-  network_access: none
----
+```toml
+name = "agent-name"
+version = "1.0.0"
+description = "Brief description"
+capabilities = ["capability1"]
+tools = ["tool1"]
 
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
+
+[permissions]
+file_access = "readonly"
+network_access = "none"
+
+documentation = '''
 # Agent Role
 Instructions here...
+'''
 ```
 
 ## Getting Help
@@ -216,7 +211,7 @@ Instructions here...
 
 - [OpenAI API Documentation](https://platform.openai.com/docs)
 - [Anthropic API Documentation](https://docs.anthropic.com/)
-- [YAML Specification](https://yaml.org/spec/)
+- [TOML Specification](https://toml.io/en/)
 - [Markdown Guide](https://www.markdownguide.org/)
 
 ### Caxton Architecture

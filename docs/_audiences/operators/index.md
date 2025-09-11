@@ -665,33 +665,34 @@ caxton memory optimize --vacuum --reindex --analyze
 
 ```yaml
 # Optimized config agent
----
-name: OptimizedAgent
-memory:
-  enabled: true
-  scope: agent  # Minimize scope
-  search:
-    similarity_threshold: 0.8  # Higher threshold
-    max_results: 5  # Limit results
-    cache_ttl: "1h"  # Cache search results
+name = "OptimizedAgent"
+tools = ["http_client"]
 
-performance:
-  max_concurrent_requests: 10
-  request_timeout: "30s"
-  llm_config:
-    max_tokens: 1000  # Limit response size
-    temperature: 0.1  # Reduce randomness
+[memory]
+enabled = true
+scope = "agent"  # Minimize scope
 
-tools:
-  - name: http_client
-    config:
-      timeout: "10s"
-      max_connections: 5
+[memory.search]
+similarity_threshold = 0.8  # Higher threshold
+max_results = 5  # Limit results
+cache_ttl = "1h"  # Cache search results
 
-system_prompt: |
-  Be concise and direct. Avoid verbose explanations.
-  Focus on actionable insights and recommendations.
----
+[performance]
+max_concurrent_requests = 10
+request_timeout = "30s"
+
+[performance.llm_config]
+max_tokens = 1000  # Limit response size
+temperature = 0.1  # Reduce randomness
+
+[tool_config.http_client]
+timeout = "10s"
+max_connections = 5
+
+system_prompt = '''
+Be concise and direct. Avoid verbose explanations.
+Focus on actionable insights and recommendations.
+'''
 ```
 
 #### WASM Agent Resource Limits
@@ -967,7 +968,7 @@ caxton logs problematic-agent --tail 50
 
 **Solutions**:
 
-- Fix YAML syntax errors in agent files
+- Fix TOML syntax errors in agent configuration files
 - Ensure required tools are available
 - Check file permissions on agent directory
 - Verify capability declarations

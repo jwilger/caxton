@@ -13,7 +13,7 @@ production with the embedded, zero-dependency architecture (ADRs 28-30).
 | Situation | Command | Page |
 |-----------|---------|------|
 | Server not responding | `curl http://localhost:8080/api/v1/health` | [Health Checks](#health-checks) |
-| Deploy config agent | Create markdown file in agents/ | [Config Agent Deployment](#config-agent-deployment) |
+| Deploy config agent | Create TOML file in agents/ | [Config Agent Deployment](#config-agent-deployment) |
 | List agents | `curl /api/v1/agents` | [Agent Management](#agent-management) |
 | Memory performance | `caxton memory stats` | [Memory Optimization](#memory-performance) |
 | Backup embedded data | `caxton backup --embedded` | [Backup Procedures](#backup-procedures) |
@@ -92,26 +92,26 @@ user experience
 
 ```bash
 # 1. Create agent configuration file
-cat > agents/data-analyzer.md << 'EOF'
----
-name: DataAnalyzer
-version: "1.0.0"
-capabilities:
-  - data-analysis
-  - report-generation
-tools:
-  - http_client
-  - csv_parser
-parameters:
-  max_file_size: "10MB"
-system_prompt: |
-  You are a data analysis expert who helps users understand their data.
----
+cat > agents/data-analyzer.toml << 'EOF'
+name = "DataAnalyzer"
+version = "1.0.0"
+capabilities = ["data-analysis", "report-generation"]
+tools = ["http_client", "csv_parser"]
 
+[parameters]
+max_file_size = "10MB"
+
+system_prompt = '''
+You are a data analysis expert who helps users understand their data.
+You can fetch data from URLs, parse various formats, and create visualizations.
+'''
+
+documentation = '''
 # DataAnalyzer Agent
 
 This agent specializes in data analysis and can fetch data from URLs,
 parse various formats, and generate visualizations.
+'''
 EOF
 
 # 2. Hot-reload the agent (zero-downtime deployment)
@@ -159,8 +159,8 @@ deploy_config_agent "data-analyzer" "agents/data-analyzer.md"
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| YAML Parse Error | Invalid frontmatter syntax | Validate YAML structure |
-| Missing Required Field | name, capabilities missing | Add required YAML fields |
+| TOML Parse Error | Invalid TOML syntax | Validate TOML structure |
+| Missing Required Field | name, capabilities missing | Add required TOML fields |
 | Invalid Tool Reference | Unknown tool in tools list | Check available tools with `caxton tools list` |
 | Capability Conflict | Agent name conflicts with existing | Choose unique agent name |
 | File Not Found | Agent file path incorrect | Verify file exists in agents/ directory |
@@ -225,7 +225,7 @@ caxton agents reload data-analyzer
 caxton agents reload --all-config
 
 # Validate config before reload
-caxton agents validate agents/data-analyzer.md
+caxton agents validate agents/data-analyzer.toml
 if [ $? -eq 0 ]; then
     caxton agents reload data-analyzer
 else
@@ -329,18 +329,20 @@ curl http://localhost:8080/api/v1/health
 # Expected: {"status":"healthy","memory_backend":"embedded"}
 
 # 4. Deploy first config agent
-cat > agents/greeter.md << 'EOF'
----
-name: Greeter
-version: "1.0.0"
-capabilities:
-  - greeting
-tools: []
-system_prompt: |
-  You are a friendly greeter who welcomes users.
----
+cat > agents/greeter.toml << 'EOF'
+name = "Greeter"
+version = "1.0.0"
+capabilities = ["greeting"]
+tools = []
+
+system_prompt = '''
+You are a friendly greeter who welcomes users.
+'''
+
+documentation = '''
 # Greeter Agent
 I help welcome users to Caxton!
+'''
 EOF
 
 # 5. Load the agent
@@ -652,7 +654,7 @@ caxton memory status
 ```bash
 # 1. Validate all config agents
 caxton agents validate-all
-# Reports any YAML syntax errors or missing tools
+# Reports any TOML syntax errors or missing tools
 
 # 2. Update agent tool permissions
 caxton agents audit-tools --show-unused
@@ -815,7 +817,7 @@ caxton storage analyze --show-indexes --show-fragmentation
 
 | Symptom | Likely Cause | Solution |
 |---------|--------------|----------|
-| Config agents not loading | YAML syntax error | Run `caxton agents validate-all` |
+| Config agents not loading | TOML syntax error | Run `caxton agents validate-all` |
 | Slow memory searches | SQLite fragmentation | Run `caxton memory optimize --vacuum` |
 | High memory usage | Embedding cache full | Run `caxton memory cache-clear` |
 | Server won't start | Data corruption | Run `caxton storage verify --repair` |
@@ -826,7 +828,7 @@ caxton storage analyze --show-indexes --show-fragmentation
 
 1. **Backup embedded data daily** (automated cron job)
 2. **Monitor SQLite database size** (approaching 100K entities limit)
-3. **Validate config agents before deployment** (YAML lint)
+3. **Validate config agents before deployment** (TOML lint)
 4. **Use semantic versioning for agent configs** (track changes)
 5. **Monitor memory system performance** (search latency)
 6. **Plan external backend migration** (before hitting capacity)
