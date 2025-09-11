@@ -10,11 +10,11 @@ main:
   - title: Get Started
     url: "/getting-started/quickstart/"
   - title: Developer Guide
-    url: "/developer-guide/"
+    url: "/developer-guide/building-agents/"
   - title: API Reference
-    url: "/api/"
+    url: "/api/implementation-status/"
   - title: Operations
-    url: "/operations/"
+    url: "/operations/operational-runbook/"
   - title: ADRs
     url: "/adr/"
   - title: GitHub
@@ -485,7 +485,7 @@ footer:
   - title: "Documentation"
     url: "/getting-started/quickstart/"
   - title: "API Reference"
-    url: "/developer-guide/api-reference/"
+    url: "/api/implementation-status/"
   - title: "ADRs"
     url: "/adr/"
   - title: "GitHub"
