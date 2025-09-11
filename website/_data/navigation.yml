@@ -1,5 +1,6 @@
 # Navigation structure for Caxton Jekyll documentation site
 # This file defines the hierarchical navigation for all documentation sections
+# URLs match Jekyll collection permalink patterns defined in _config.yml
 
 main:
   - title: Features
@@ -7,7 +8,7 @@ main:
   - title: Architecture
     url: "#architecture"
   - title: Get Started
-    url: "/getting-started/"
+    url: "/getting-started/quickstart/"
   - title: Developer Guide
     url: "/developer-guide/"
   - title: API Reference
@@ -60,13 +61,13 @@ docs:
             url: "/audience/agent-developers/"
             description: "Start here for agent development"
           - title: "Building Agents"
-            url: "/audience/agent-developers-building-agents/"
+            url: "/developer-guide/building-agents/"
             description: "Complete agent development guide"
           - title: "API Reference"
-            url: "/audience/agent-developers-api-reference/"
+            url: "/developer-guide/api-reference/"
             description: "Runtime APIs and interfaces"
           - title: "Security Guidelines"
-            url: "/audience/agent-developers-security/"
+            url: "/developer-guide/security-guide/"
             description: "Secure agent development practices"
           - title: "Config Agents"
             url: "/audience/agent-developers-config-agents/"
@@ -90,10 +91,10 @@ docs:
         icon: "server"
         sections:
           - title: "Installation Guide"
-            url: "/docs/audiences/operators/installation/"
+            url: "/getting-started/installation/"
             description: "Production installation and setup"
           - title: "Operational Runbook"
-            url: "/docs/audiences/operators/runbook/"
+            url: "/operations/operational-runbook/"
             description: "Day-to-day operations and troubleshooting"
           - title: "Operations Guides"
             url: "/operations/"
@@ -117,10 +118,10 @@ docs:
         icon: "beaker"
         sections:
           - title: "Overview"
-            url: "/docs/audiences/experimenters/"
+            url: "/getting-started/quickstart/"
             description: "Getting started with experimentation"
           - title: "Quick Experiments"
-            url: "/docs/audiences/experimenters/quickstart/"
+            url: "/getting-started/quickstart/"
             description: "Fast feedback loops for testing ideas"
 
       # Contributors - People developing Caxton itself
@@ -130,13 +131,13 @@ docs:
         icon: "git-merge"
         sections:
           - title: "Development Setup"
-            url: "/docs/audiences/contributors/development-setup/"
+            url: "/getting-started/installation/"
             description: "Set up development environment"
           - title: "Architecture Overview"
-            url: "/docs/audiences/contributors/architecture-overview/"
+            url: "/adr/"
             description: "High-level system architecture"
           - title: "Contributing Guide"
-            url: "/docs/contributors/development-guide/"
+            url: "/developer-guide/building-agents/"
             description: "Detailed contribution workflow"
 
   # Core Concepts and Architecture
@@ -163,28 +164,28 @@ docs:
     description: "Technical specifications and interfaces"
     sections:
       - title: "Implementation Status"
-        url: "/docs/api/implementation-status/"
+        url: "/api/implementation-status/"
         description: "Current API implementation state"
       - title: "Config Agents"
-        url: "/docs/api/config-agents/"
+        url: "/api/config-agents/"
         description: "Configuration-driven agent API"
       - title: "Config Agent Patterns"
-        url: "/docs/api/config-agent-patterns/"
+        url: "/api/config-agent-patterns/"
         description: "Common configuration patterns"
       - title: "Capability Registration"
-        url: "/docs/api/capability-registration/"
+        url: "/api/capability-registration/"
         description: "Agent capability registration API"
       - title: "Configuration Validation"
-        url: "/docs/api/configuration-validation/"
+        url: "/api/configuration-validation/"
         description: "Configuration validation system"
       - title: "Memory Integration"
-        url: "/docs/api/memory-integration/"
+        url: "/api/memory-integration/"
         description: "Memory system integration APIs"
       - title: "Performance Specifications"
-        url: "/docs/api/performance-specifications/"
+        url: "/api/performance-specifications/"
         description: "Performance requirements and metrics"
       - title: "MCP Integration"
-        url: "/docs/api/mcp-integration/"
+        url: "/api/mcp-integration/"
         description: "Model Context Protocol integration"
 
   # Messaging and Communication
@@ -193,19 +194,19 @@ docs:
     description: "Agent communication protocols and patterns"
     sections:
       - title: "FIPA-ACL Subset"
-        url: "/docs/messaging/fipa-acl-subset/"
+        url: "/messaging/fipa-acl-subset/"
         description: "Supported FIPA message types"
       - title: "FIPA Patterns"
-        url: "/docs/messaging/fipa-patterns/"
+        url: "/messaging/fipa-patterns/"
         description: "Common FIPA interaction patterns"
       - title: "Conversation Management"
-        url: "/docs/messaging/conversation-management/"
+        url: "/messaging/conversation-management/"
         description: "Managing agent conversations"
       - title: "Capability Routing"
-        url: "/docs/messaging/capability-routing/"
+        url: "/messaging/capability-routing/"
         description: "Routing messages by capability"
       - title: "Config Agent Integration"
-        url: "/docs/messaging/config-agent-integration/"
+        url: "/messaging/config-agent-integration/"
         description: "Messaging for config-driven agents"
 
   # Memory System
@@ -214,19 +215,19 @@ docs:
     description: "Embedded memory and context management"
     sections:
       - title: "Overview"
-        url: "/docs/memory-system/overview/"
+        url: "/memory/overview/"
         description: "Memory system architecture"
       - title: "Embedded Backend"
-        url: "/docs/memory-system/embedded-backend/"
+        url: "/memory/embedded-backend/"
         description: "Embedded vector database"
       - title: "Model Management"
-        url: "/docs/memory-system/model-management/"
+        url: "/memory/model-management/"
         description: "Managing embedding models"
       - title: "Usage Patterns"
-        url: "/docs/memory-system/usage-patterns/"
+        url: "/memory/usage-patterns/"
         description: "Common memory usage patterns"
       - title: "Migration Guide"
-        url: "/docs/memory-system/migration/"
+        url: "/memory/migration/"
         description: "Migrating memory system data"
 
   # Developer Resources
@@ -235,13 +236,13 @@ docs:
     description: "Development tools and best practices"
     sections:
       - title: "API Reference"
-        url: "/docs/developer-guide/api-reference/"
+        url: "/developer-guide/api-reference/"
         description: "Complete API documentation"
       - title: "Building Agents"
-        url: "/docs/developer-guide/building-agents/"
+        url: "/developer-guide/building-agents/"
         description: "Agent development guide"
       - title: "Security Guide"
-        url: "/docs/developer-guide/security-guide/"
+        url: "/developer-guide/security-guide/"
         description: "Security best practices"
 
   # Specialized Topics
@@ -253,62 +254,62 @@ docs:
       performance:
         title: "Performance"
         sections:
-          - title: "Benchmarking Guide"
-            url: "/docs/benchmarks/performance-benchmarking-guide/"
+          - title: "Performance Tuning"
+            url: "/operations/performance-tuning/"
             description: "Performance measurement and optimization"
-          - title: "Metrics Integration"
-            url: "/docs/monitoring/metrics-integration-guide/"
+          - title: "Operational Runbook"
+            url: "/operations/operational-runbook/"
             description: "System monitoring and metrics"
 
       # Security
       security:
         title: "Security"
         sections:
-          - title: "Security Audit Checklist"
-            url: "/docs/security/security-audit-checklist/"
+          - title: "Security Guide"
+            url: "/developer-guide/security-guide/"
             description: "Security review processes"
 
       # Patterns and Best Practices
       patterns:
         title: "Patterns"
         sections:
-          - title: "Agent Communication Patterns"
-            url: "/docs/patterns/agent-communication-patterns/"
+          - title: "FIPA Patterns"
+            url: "/messaging/fipa-patterns/"
             description: "Proven communication patterns"
 
       # Research and Learning
       research:
         title: "Research"
         sections:
-          - title: "FIPA Knowledge Base"
-            url: "/docs/learning/fipa-knowledge-base/"
+          - title: "FIPA ACL Subset"
+            url: "/messaging/fipa-acl-subset/"
             description: "FIPA protocol deep dive"
-          - title: "Lightweight State Alternatives"
-            url: "/docs/research/lightweight-state-alternatives/"
+          - title: "Memory System"
+            url: "/memory/overview/"
             description: "State management research"
 
       # Technical Specifications
       specifications:
         title: "Specifications"
         sections:
-          - title: "Message Router Specification"
-            url: "/docs/specifications/message-router-specification/"
+          - title: "Performance Specifications"
+            url: "/api/performance-specifications/"
             description: "Message routing technical spec"
 
       # MCP Integration
       mcp:
         title: "MCP (Model Context Protocol)"
         sections:
-          - title: "State Tool Specification"
-            url: "/docs/mcp/state-tool-specification/"
+          - title: "MCP Integration"
+            url: "/api/mcp-integration/"
             description: "MCP state management tool"
 
       # Technology Guides
       technology:
         title: "Technology"
         sections:
-          - title: "WebAssembly Ecosystem Guide"
-            url: "/docs/technology/webassembly-ecosystem-guide/"
+          - title: "Architecture Overview"
+            url: "/adr/"
             description: "WebAssembly integration details"
 
 # Architecture Decision Records navigation
@@ -482,9 +483,9 @@ adr:
 # Footer navigation
 footer:
   - title: "Documentation"
-    url: "/docs/"
+    url: "/getting-started/quickstart/"
   - title: "API Reference"
-    url: "/docs/developer-guide/api-reference/"
+    url: "/developer-guide/api-reference/"
   - title: "ADRs"
     url: "/adr/"
   - title: "GitHub"
