@@ -390,11 +390,27 @@ caxton server start</code></pre>
                 <div class="step-number">3</div>
                 <h3>Create Your First Agent</h3>
                 <div class="code-snippet">
-                    <pre data-language="BASH"><code># Create your first agent configuration file
-cat > order-agent.toml << EOF
+                    <pre data-language="TOML"><code># order-agent.toml
 name = "OrderAgent"
+version = "1.0.0"
 capabilities = ["order-processing"]
-EOF</code></pre>
+
+system_prompt = '''
+You are an order processing agent. You help customers place orders,
+check inventory, and coordinate with payment systems.
+
+When processing orders:
+1. Validate order details
+2. Check inventory availability
+3. Calculate total cost
+4. Confirm with customer
+'''
+
+documentation = '''
+# OrderAgent
+
+A simple agent that processes customer orders with inventory checking.
+'''</code></pre>
                 </div>
             </div>
         </div>
