@@ -16,45 +16,31 @@ external databases or vector stores.
 - **Operating System**: Linux, macOS, or Windows
 - **Memory**: Minimum 2GB RAM (4GB+ recommended for production)
 - **Disk Space**: 500MB for Caxton binary and embedded memory system
-- **Network**: Ports 8080 (API) and 9090 (metrics) available
+- **Network**: Default ports 8080 (API) and 9090 (metrics) - configurable via
+  config file, environment variables, or command line arguments
 - **Dependencies**: None - Caxton includes everything needed
 
-## Quick Install
+## Installation Methods
 
-### Linux/macOS (Recommended)
-
-```bash
-# Install latest stable release
-curl -sSL https://caxton.io/install.sh | sh
-```
-
-This script will:
-
-1. Detect your OS and architecture
-2. Download the appropriate Caxton binary (includes embedded memory system)
-3. Install to `/usr/local/bin/caxton`
-4. Set up systemd service (Linux) or launchd (macOS)
-5. Create default configuration with embedded memory backend
-
-### Manual Installation
+### Binary Installation (Recommended)
 
 #### Download Binary
 
 ```bash
 # Linux x86_64
-curl -L https://github.com/caxton/caxton/releases/latest/download/caxton-linux-x86_64.tar.gz | tar xz
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-linux-x86_64.tar.gz | tar xz
 
 # Linux ARM64
-curl -L https://github.com/caxton/caxton/releases/latest/download/caxton-linux-arm64.tar.gz | tar xz
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-linux-arm64.tar.gz | tar xz
 
 # macOS x86_64 (Intel)
-curl -L https://github.com/caxton/caxton/releases/latest/download/caxton-darwin-x86_64.tar.gz | tar xz
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-darwin-x86_64.tar.gz | tar xz
 
 # macOS ARM64 (Apple Silicon)
-curl -L https://github.com/caxton/caxton/releases/latest/download/caxton-darwin-arm64.tar.gz | tar xz
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-darwin-arm64.tar.gz | tar xz
 
 # Windows x86_64
-curl -L https://github.com/caxton/caxton/releases/latest/download/caxton-windows-x86_64.zip -o caxton.zip
+curl -L https://github.com/jwilger/caxton/releases/latest/download/caxton-windows-x86_64.zip -o caxton.zip
 unzip caxton.zip
 ```
 
@@ -73,64 +59,6 @@ Expected output:
 
 ```text
 Caxton 1.0.0 (embedded memory: SQLite + all-MiniLM-L6-v2)
-```
-
-### Package Managers
-
-#### Homebrew (macOS/Linux)
-
-```bash
-# Add Caxton tap
-brew tap caxton/caxton
-
-# Install Caxton with embedded memory
-brew install caxton
-```
-
-#### APT (Ubuntu/Debian)
-
-```bash
-# Add Caxton repository
-curl -fsSL https://pkg.caxton.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/caxton.gpg
-echo "deb [signed-by=/usr/share/keyrings/caxton.gpg] https://pkg.caxton.io/apt stable main" | sudo tee /etc/apt/sources.list.d/caxton.list
-
-# Install Caxton
-sudo apt update
-sudo apt install caxton
-```
-
-#### YUM/DNF (RHEL/CentOS/Fedora)
-
-```bash
-# Add Caxton repository
-sudo tee /etc/yum.repos.d/caxton.repo << EOF
-[caxton]
-name=Caxton Repository
-baseurl=https://pkg.caxton.io/rpm/stable
-enabled=1
-gpgcheck=1
-gpgkey=https://pkg.caxton.io/gpg
-EOF
-
-# Install Caxton
-sudo yum install caxton
-# or
-sudo dnf install caxton
-```
-
-#### Arch Linux (AUR)
-
-```bash
-# Using yay
-yay -S caxton
-
-# Using paru
-paru -S caxton
-
-# Manual installation
-git clone https://aur.archlinux.org/caxton.git
-cd caxton
-makepkg -si
 ```
 
 ### Container Installation
@@ -282,7 +210,7 @@ For development or customization:
 - Git
 
 # Clone repository
-git clone https://github.com/caxton/caxton.git
+git clone https://github.com/jwilger/caxton.git
 cd caxton
 
 # Build with embedded memory system
@@ -466,7 +394,7 @@ observability:
 
 ### Linux (systemd)
 
-Create `/etc/systemd/system/caxton.service`:
+You can create a systemd service for Caxton. Create `/etc/systemd/system/caxton.service`:
 
 ```ini
 [Unit]
