@@ -1,7 +1,7 @@
 ---
 title: "ADR-0009: CLI Tool Design"
 date: 2025-08-03
-status: proposed
+status: accepted
 layout: adr
 categories: [Technology]
 ---
@@ -9,7 +9,7 @@ categories: [Technology]
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 

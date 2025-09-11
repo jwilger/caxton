@@ -1,7 +1,8 @@
 ---
 title: "ADR-0014: Coordination Architecture"
 date: 2025-08-09
-status: proposed
+status: superseded
+superseded_by: 0030
 layout: adr
 categories: [Architecture]
 ---
@@ -9,7 +10,7 @@ categories: [Architecture]
 
 ## Status
 
-Proposed (Supersedes ADR-0013)
+Superseded by ADR-0030 (Embedded Memory System)
 
 ## Context
 

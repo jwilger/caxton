@@ -1,7 +1,8 @@
 ---
 title: "ADR-0010: External Agent Routing"
 date: 2025-08-03
-status: proposed
+status: superseded
+superseded_by: 0029
 layout: adr
 categories: [Architecture, Technology]
 ---
@@ -9,7 +10,7 @@ categories: [Architecture, Technology]
 
 ## Status
 
-Proposed
+Superseded by ADR-0029 (FIPA-ACL Lightweight Messaging)
 
 ## Deciders
 

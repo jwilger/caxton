@@ -58,7 +58,7 @@ relative_links:
 
 # Collections Configuration - Include docs/ as single source of truth
 collections:
-  # ADR Collection from docs/adr/
+  # ADR Collection from docs/_adrs/ (canonical source)
   adrs:
     output: true
     permalink: /adr/:name/
@@ -201,8 +201,7 @@ exclude:
   - vendor/ruby/
 
 # Include files that would normally be excluded
-include:
-  - _adrs/
+# Note: ADRs are now sourced from docs/_adrs/ via collections_dir
 
 # Pagination configuration for ADRs
 pagination:

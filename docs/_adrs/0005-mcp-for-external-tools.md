@@ -1,7 +1,7 @@
 ---
 title: "ADR-0005: MCP External Tools"
 date: 2025-01-31
-status: proposed
+status: accepted
 layout: adr
 categories: [Technology]
 ---
@@ -9,7 +9,7 @@ categories: [Technology]
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
