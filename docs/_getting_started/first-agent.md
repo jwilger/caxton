@@ -1,5 +1,5 @@
 ---
-title: "Create Your First Config Agent"
+title: "Create Your First Agent"
 date: 2025-09-10
 layout: page
 categories: [Getting Started]
@@ -7,7 +7,7 @@ categories: [Getting Started]
 
 > **🚧 Implementation Status**
 >
-> This tutorial represents the intended configuration agent development
+> This tutorial represents the intended agent development
 > experience from ADR-28. The YAML schema and agent deployment workflow
 > described here serves as acceptance criteria for implementation.
 >
@@ -16,13 +16,13 @@ categories: [Getting Started]
 
 ## Build intelligent agents in 5 minutes using configuration files
 
-This guide teaches you to create **configuration agents** - the primary way to
-build agents in Caxton. No compilation, no complex toolchains, just markdown
-files with YAML frontmatter.
+This guide teaches you to create **agents** - the way to build agents in
+Caxton. No compilation, no complex toolchains, just markdown files with YAML
+frontmatter.
 
-## Configuration Agent Fundamentals
+## Agent Fundamentals
 
-Every configuration agent consists of:
+Every agent consists of:
 
 1. **YAML frontmatter** - Agent metadata, capabilities, and configuration
 2. **Markdown content** - Documentation and usage examples
@@ -32,7 +32,7 @@ Every configuration agent consists of:
 
 ## Agent Lifecycle
 
-Configuration agents follow a simple lifecycle:
+Agents follow a simple lifecycle:
 
 - **Creation**: Write markdown file with YAML configuration
 - **Deployment**: `caxton agent deploy agent.md` validates and loads
@@ -620,7 +620,7 @@ caxton memory analyze TaskManager --performance
 
 ## Next Steps
 
-You now understand configuration agents! Continue learning:
+You now understand agents! Continue learning:
 
 - **[Configuration Reference](configuration.md)** - Complete YAML schema
 - **[Agent Patterns](../developer-guide/agent-patterns.md)** - Advanced

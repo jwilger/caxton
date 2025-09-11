@@ -56,7 +56,7 @@ server:
 
 # Configuration agent runtime
 runtime:
-  max_agents: 1000            # Maximum concurrent config agents
+  max_agents: 1000            # Maximum concurrent agents
   agent_timeout: 30s          # Default message handling timeout
   enable_hot_reload: true     # Allow agent config hot-reloading
   conversation_cleanup: 24h   # Clean up old conversations
@@ -790,6 +790,6 @@ caxton server restart
 caxton memory import --format json --input backup.json
 ```
 
-This configuration system supports Caxton's evolution from simple config agents
+This configuration system supports Caxton's evolution from simple agents
 to sophisticated multi-agent systems while maintaining zero-dependency
 simplicity for getting started.

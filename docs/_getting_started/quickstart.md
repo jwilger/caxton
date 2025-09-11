@@ -17,9 +17,9 @@ categories: [Getting Started]
 
 ## Get a multi-agent system running in under 10 minutes
 
-This guide uses **configuration agents** - the simplest way to create
-intelligent agents in Caxton. No compilation, no complex toolchains, just
-markdown files with YAML configuration.
+This guide uses **agents** - the way to create intelligent agents in
+Caxton. No compilation, no complex toolchains, just markdown files with YAML
+configuration.
 
 ## Prerequisites
 
@@ -47,7 +47,7 @@ You should see:
 > embedded memory system uses SQLite + local embeddings for semantic search,
 > and scales to 100K+ entities without additional setup.
 
-## 2. Create Your First Configuration Agent
+## 2. Create Your First Agent
 
 Create a file called `data-analyzer.md`:
 
@@ -105,7 +105,7 @@ Send capability-based messages like:
 The agent automatically learns from successful analyses and improves over time.
 ```
 
-## 3. Deploy the Configuration Agent
+## 3. Deploy the Agent
 
 ```bash
 # Deploy from your config file

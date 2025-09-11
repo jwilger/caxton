@@ -13,7 +13,7 @@ layout: default
                 </h1>
                 <p class="hero-subtitle">
                     Configuration-driven agents. Embedded memory. Zero external dependencies.
-                    Build multi-agent systems in <span class="highlight">5-10 minutes</span> using configuration-driven agents.
+                    Build multi-agent systems in <span class="highlight">5-10 minutes</span> using agents.
                 </p>
                 <div class="hero-actions">
                     <a href="#getting-started" class="btn btn-primary">Get Started</a>
@@ -51,7 +51,7 @@ layout: default
                 <h3 class="solution-title">How Caxton Solves Them</h3>
                 <ul class="solution-list">
                     <li>Built-in distributed tracing for every message</li>
-                    <li>Configuration agents with minimal setup</li>
+                    <li>Agents with minimal setup</li>
                     <li>FIPA standard protocols out of the box</li>
                     <li>Graceful degradation during network partitions</li>
                     <li>Embedded memory system - no external dependencies</li>
@@ -193,9 +193,9 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
         <div class="architecture-content">
             <div class="architecture-text">
                 <h3>Configuration-Driven Architecture</h3>
-                <p>Caxton provides configuration-driven agents for rapid development. Zero external dependencies with embedded memory and local-first design.</p>
+                <p>Caxton provides agents for rapid development. Zero external dependencies with embedded memory and local-first design.</p>
                 <ul>
-                    <li><strong>Configuration Agents</strong> - YAML+Markdown for 5-10 minute onboarding</li>
+                    <li><strong>Agents</strong> - YAML+Markdown for 5-10 minute onboarding</li>
                     <li><strong>MCP Tool Security</strong> - Secure tool execution with permission boundaries</li>
                     <li><strong>Capability Routing</strong> - Lightweight FIPA messaging with capability-based discovery</li>
                     <li><strong>Embedded Memory</strong> - SQLite + Candle vector database built-in</li>
@@ -303,7 +303,7 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                         <h5>Agent Isolation</h5>
                                         <div class="agent-failure crashed">
                                             <div class="crashed-agent">
-                                                <span class="agent-name">Config Agent Failed</span>
+                                                <span class="agent-name">Agent Failed</span>
                                                 <span class="crash-icon">💥</span>
                                             </div>
                                             <div class="impact-indicator">
@@ -312,8 +312,8 @@ Memory: 45MB/512MB | Queue: 1,523 messages | Tool calls: 15/s (p99: 5.2s)</code>
                                             </div>
                                         </div>
                                         <div class="healthy-agents">
-                                            <div class="agent-ok">Config Agent A ✓</div>
-                                            <div class="agent-ok">Config Agent B ✓</div>
+                                            <div class="agent-ok">Agent A ✓</div>
+                                            <div class="agent-ok">Agent B ✓</div>
                                         </div>
                                     </div>
                                     <div class="recovery-mechanisms">
@@ -401,67 +401,62 @@ EOF</code></pre>
             </div>
         </div>
         <div class="quick-example">
-            <h3>Simple Multi-Agent Example</h3>
+            <h3>Multi-Agent Example</h3>
             <div class="steps-grid">
                 <div class="step-card">
                     <div class="step-number">1</div>
-                    <h3>Define Your Agent Configuration</h3>
+                    <h3>Create Two Complementary Agents</h3>
                     <div class="code-snippet">
                         <pre data-language="YAML"><code># order-processor.yaml
 ---
 name: order-processor
-capabilities:
-  - order-processing
-  - inventory-checking
-memory:
-  vector_search: true
-tools:
-  - database
-  - http_client
+capabilities: [order-processing]
+tools: [database, http_client]
+system_prompt: |
+  Process orders and send inventory requests to
+  inventory-checking capability.
 ---
 
-# Agent Implementation in Markdown
-
-## Order Processing Agent
-
-This agent handles order processing and inventory validation.
-
-### Capabilities
-
-- **order-processing**: Main order workflow
-- **inventory-checking**: Validates item availability
-
-### Implementation
-
-The agent uses embedded memory for order tracking and
-integrates with external systems via MCP tools.</code></pre>
+# inventory-checker.yaml
+---
+name: inventory-checker
+capabilities: [inventory-checking]
+tools: [database]
+system_prompt: |
+  Check item availability and respond to
+  order-processing requests.
+---</code></pre>
                     </div>
                 </div>
                 <div class="step-card">
                     <div class="step-number">2</div>
-                    <h3>Deploy Configuration Agent</h3>
+                    <h3>Deploy Both Agents</h3>
                     <div class="code-snippet">
-                        <pre data-language="BASH"><code># Deploy your configuration agent
+                        <pre data-language="BASH"><code># Deploy both agents
 caxton agent deploy order-processor.yaml
+caxton agent deploy inventory-checker.yaml
 
-# Check server status
-curl http://localhost:8080/api/v1/health
-# {"status":"healthy","memory_backend":"embedded"}</code></pre>
+# Verify both are running
+caxton agent list
+# NAME              CAPABILITIES
+# order-processor   order-processing
+# inventory-checker inventory-checking</code></pre>
                     </div>
                 </div>
                 <div class="step-card">
                     <div class="step-number">3</div>
-                    <h3>Invoke Your Agent</h3>
+                    <h3>Watch Agents Communicate</h3>
                     <div class="code-snippet">
-                        <pre data-language="BASH"><code># Invoke via REST API
-curl -X POST http://localhost:8080/api/v1/agents/order-processor/invoke \
+                        <pre data-language="BASH"><code># Send order request - triggers multi-agent workflow
+curl -X POST http://localhost:8080/api/v1/capabilities/order-processing \
   -H "Content-Type: application/json" \
-  -d '{
-    "order": {
-      "items": ["item-123", "item-456"],
-      "address": { "street": "123 Main St" }
-    }
-  }'
+  -d '{"items": ["item-123", "item-456"]}'
+
+# Agents communicate automatically:
+# 1. order-processor receives request
+# 2. order-processor sends to inventory-checking capability
+# 3. inventory-checker validates items
+# 4. order-processor completes order
 
 # Response: {"tracking_number": "ORD-20250910-001"}</code></pre>
                     </div>
