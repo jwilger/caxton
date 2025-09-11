@@ -90,6 +90,8 @@ The following ADRs document the architectural decisions for Caxton:
   - **ACCEPTED** - Single REST/HTTP protocol
 - **[ADR-0027: Single Codebase Architecture](0027-single-codebase-architecture)**
   - **ACCEPTED** - Monorepo organization
+- **[ADR-0031: Context Management Architecture](0031-context-management-architecture)**
+  - **ACCEPTED** - Intelligent context management for configuration agents
 
 ## ADR Status Legend
 

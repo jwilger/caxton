@@ -1,14 +1,35 @@
 ---
-layout: adr
-title: "ADR-0012: Pragmatic FIPA Subset"
-status: accepted
+title: "ADR-0012: Pragmatic FIPA"
 date: 2025-08-08
+status: superseded
+superseded_by: "ADR-0029: FIPA-ACL Lightweight Messaging"
+layout: adr
 categories: [Architecture]
 ---
 
+
 ## Status
 
-Accepted
+**Superseded** by [ADR-0029: FIPA-ACL Lightweight Messaging](0029-fipa-acl-lightweight-messaging.md)
+
+This ADR defined a pragmatic FIPA subset for compiled WASM agents. ADR-0029
+provides an updated lightweight FIPA implementation specifically optimized
+for configuration-driven agents with capability-based routing and simplified
+interaction patterns.
+
+## Relationship to ADR-0003
+
+This ADR refines and supersedes certain aspects of
+[ADR-0003: FIPA Messaging Protocol](0003-fipa-messaging-protocol.md). While
+ADR-0003 established FIPA as our messaging foundation, this ADR pragmatically
+adapts FIPA for production use by:
+
+- Keeping only the valuable core patterns
+- Replacing academic complexity with modern alternatives
+- Focusing on developer experience and operational simplicity
+
+ADR-0003 remains valid for understanding why we chose FIPA patterns. This ADR
+defines **how** we implement them practically.
 
 ## Context
 
@@ -18,6 +39,22 @@ FIPA provides useful patterns for agent communication, it includes significant
 complexity that doesn't add value in modern production systems.
 
 Caxton needs reliable agent coordination, not academic purity.
+
+### Relationship to SWIM Protocol
+
+FIPA operates at the **application layer** for semantic agent messaging, while
+SWIM operates at the **infrastructure layer** for cluster coordination. They are
+complementary:
+
+- **SWIM**: Manages which Caxton instances are alive and where agents are
+  located
+- **FIPA**: Defines how agents communicate once SWIM has established routing
+- **Clear Separation**: SWIM handles infrastructure concerns, FIPA handles
+  business logic
+
+See
+[ADR-0015: Distributed Protocol Architecture](0015-distributed-protocol-architecture.md)
+for detailed protocol interaction.
 
 ## Decision
 
@@ -124,37 +161,12 @@ stateless WebAssembly modules. **Why**: Container orchestration handles
 - Still message-passing coordination
 - Still using proven interaction patterns
 
-## Implementation Example
+## Conceptual Comparison
 
-### What FIPA Wants
-
-```xml
-<fipa-message ontology="logistics-ontology" language="fipa-sl">
-  <performative>REQUEST</performative>
-  <content>
-    ((action
-      (agent-identifier :name dispatcher@platform)
-      (deliver
-        :item (package :id pkg-123 :weight 5kg)
-        :destination (location :address "123 Main St"))))
-  </content>
-</fipa-message>
-```
-
-### What We Actually Do
-
-```json
-{
-  "performative": "request",
-  "sender": "dispatcher",
-  "receiver": "delivery-agent",
-  "content": {
-    "action": "deliver",
-    "package_id": "pkg-123",
-    "destination": "123 Main St"
-  }
-}
-```
+Our pragmatic approach chooses JSON over FIPA's semantic languages (SL, KIF) and
+complex ontologies. This results in significantly simpler message formats that
+developers can immediately understand and work with using standard tooling,
+while preserving the core communication patterns that make FIPA valuable.
 
 ## Guidelines for Future Decisions
 

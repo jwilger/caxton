@@ -1,16 +1,15 @@
 ---
-title: "0007. Management API Design"
+title: "ADR-0007: Management API Design"
 date: 2025-08-03
-status: proposed
+status: superseded
 layout: adr
 categories: [Architecture, Technology]
 ---
 
-Date: 2025-08-03
 
 ## Status
 
-Proposed
+Superseded by ADR-0026 (Simplified Management API Protocol)
 
 ## Context
 

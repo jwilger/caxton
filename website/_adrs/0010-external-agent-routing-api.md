@@ -1,14 +1,20 @@
 ---
-title: "0010. External Agent Routing API"
+title: "ADR-0010: External Agent Routing"
 date: 2025-08-03
 status: proposed
 layout: adr
 categories: [Architecture, Technology]
-deciders: [Platform Systems Architect, UX Research Expert, Async Rust Expert, Observability Expert]
 ---
 
-Date: 2025-01-03 Status: Proposed Deciders: Platform Systems Architect, UX
-Research Expert, Async Rust Expert, Observability Expert
+
+## Status
+
+Proposed
+
+## Deciders
+
+Platform Systems Architect, UX Research Expert, Async Rust Expert, Observability
+Expert
 
 ## Context and Problem Statement
 
@@ -181,31 +187,19 @@ debugging" philosophy.
 
 ## Implementation Notes
 
-### Phase 1: Core External Routing
-
-- gRPC service definition and server implementation
-- Actor-per-agent concurrency model
-- Basic job tracking and lifecycle management
-- API key authentication for development
-
-### Phase 2: Production Features
-
-- REST gateway via grpc-gateway
-- mTLS and RBAC authorization
-- Advanced observability and debugging APIs
-- Performance optimizations and benchmarking
-
-### Phase 3: Advanced Patterns
-
-- Streaming invocation patterns
-- Batch job processing
-- Advanced rate limiting and quotas
-- Integration with cloud provider auth systems
+This ADR defines the architectural decision for external agent routing.
+Implementation will follow the standard development process with appropriate
+technical design and TDD practices.
 
 ## Links
 
-- [ADR-0006: Application Server Architecture](0006-application-server-architecture.md)
+- [ADR-0006: Application Server Architecture]
+  (0006-application-server-architecture.md)
 - [ADR-0007: Management API Design](0007-management-api-design.md)
-- [ADR-0001: Observability First Architecture](0001-observability-first-architecture.md)
-- [FIPA Agent Communication Language Specification](http://www.fipa.org/specs/fipa00061/)
-- [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/)
+- [ADR-0001: Observability First Architecture]
+  (0001-observability-first-architecture.md)
+- [FIPA Agent Communication Language Specification]
+  (http://www.fipa.org/specs/fipa00061/)
+- [OpenTelemetry Semantic Conventions]
+  (https://opentelemetry.io/docs/reference/specification/trace/semantic\_
+  conventions/)

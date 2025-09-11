@@ -1,16 +1,15 @@
 ---
-title: "0002. WebAssembly for Agent Isolation"
-date: 2025-07-31
-status: proposed
+title: "ADR-0002: WebAssembly Isolation"
+date: 2025-01-31
+status: accepted
 layout: adr
 categories: [Architecture, Technology]
 ---
 
-Date: 2025-01-31
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -93,27 +92,18 @@ Key aspects:
 - **Pros**: Full system access, maximum performance
 - **Cons**: No isolation, security risks, platform-specific
 
-## Implementation Notes
+## Implementation Considerations
 
-```rust
-// Example agent interface
-#[no_mangle]
-pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
-    // Agent processes message and returns status
-}
+The WebAssembly isolation approach requires:
 
-#[no_mangle]
-pub extern "C" fn get_response(buf_ptr: *mut u8, buf_len: usize) -> i32 {
-    // Agent writes response to provided buffer
-}
-```
-
-The host will:
-
-1. Load WASM modules using wasmtime or similar runtime
-2. Provide imports for MCP tool access
-3. Marshal messages in/out of WASM memory
-4. Enforce resource limits (memory, CPU time)
+- **Standard interface contracts**: Agents must implement well-defined entry
+  points for message handling and response generation
+- **Memory marshalling**: The host must safely transfer data between host memory
+  and WASM instance memory spaces
+- **Resource governance**: CPU time and memory limits must be enforced at the
+  WASM runtime level
+- **Capability injection**: External tool access (MCP) must be provided through
+  controlled import mechanisms
 
 ## References
 

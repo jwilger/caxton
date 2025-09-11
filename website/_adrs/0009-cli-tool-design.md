@@ -1,12 +1,11 @@
 ---
-title: "0009. CLI Tool Design"
+title: "ADR-0009: CLI Tool Design"
 date: 2025-08-03
 status: proposed
 layout: adr
 categories: [Technology]
 ---
 
-Date: 2025-08-03
 
 ## Status
 
@@ -41,214 +40,85 @@ We will implement a noun-verb CLI structure with progressive disclosure:
 
 **Noun-Verb Pattern**:
 
-```bash
-caxton <noun> <verb> [options]
+The CLI will follow a noun-verb structure where users specify the resource type
+(noun) followed by the action (verb). This pattern aligns with established CLI
+tools and matches user mental models from tools like kubectl, docker, and git.
 
-# Examples:
-caxton agent deploy processor.wasm
-caxton agent list
-caxton message send --to processor --type task
-caxton server status
-```
+### 2. Core Command Categories
 
-**Rationale**: Matches user mental models (kubectl, docker, git)
+**Agent Management**: Deploy, list, monitor, and remove agents from the system
 
-### 2. Core Commands
+**Message Operations**: Send messages between agents, trace message flows, and
+monitor communication
 
-```bash
-# Agent Management
-caxton agent deploy <file>      # Deploy new agent
-caxton agent list              # List running agents
-caxton agent logs <id>         # Stream agent logs
-caxton agent delete <id>       # Remove agent
-caxton agent inspect <id>      # Detailed agent info
+**Server Operations**: Check system health, manage configuration, and access
+system-level logging
 
-# Message Operations
-caxton message send            # Send message to agent
-caxton message trace <id>      # Trace message flow
-caxton message stream          # Stream all messages
-
-# Server Operations
-caxton server status           # Health and metrics
-caxton server config           # View/edit configuration
-caxton server logs            # Server-level logs
-
-# Development Workflow
-caxton dev watch <file>        # Auto-reload on changes
-caxton dev test <file>         # Test agent locally
-caxton dev validate <file>     # Pre-deployment checks
-```
+**Development Workflow**: Support iterative development with testing,
+validation, and auto-reload capabilities
 
 ### 3. Progressive Disclosure
 
-**Level 1 - Getting Started**:
+The CLI design follows progressive disclosure principles, where:
 
-```bash
-$ caxton
-Caxton Multi-Agent Orchestration (v1.0.0)
+**Level 1 - Getting Started**: Simple commands with clear guidance for
+first-time users and common workflows
 
-Quick Start:
-  caxton agent deploy my-agent.wasm    Deploy your first agent
-  caxton agent list                    See running agents
-  caxton help                          Get detailed help
+**Level 2 - Common Tasks**: Expanded options and detailed help for typical
+operational tasks
 
-Examples:
-  caxton agent deploy processor.wasm --name my-processor
-  caxton message send --to my-processor --type task --data '{"id": 123}'
+**Level 3 - Power User**: Advanced configuration options, complex deployment
+strategies, and expert-level features
 
-Run 'caxton help <command>' for more information.
-```
-
-**Level 2 - Common Tasks**:
-
-```bash
-$ caxton agent deploy --help
-Deploy a WebAssembly agent to the server
-
-Usage: caxton agent deploy <file> [options]
-
-Options:
-  -n, --name <name>           Agent name (default: from file)
-  -c, --capabilities <list>   Comma-separated capabilities
-  -r, --replicas <count>      Number of instances (default: 1)
-  --canary                    Use canary deployment
-  --shadow                    Deploy as shadow for testing
-
-Examples:
-  # Simple deployment
-  caxton agent deploy processor.wasm
-
-  # Production deployment with canary
-  caxton agent deploy processor.wasm --canary --name prod-processor
-
-  # High-availability deployment
-  caxton agent deploy processor.wasm --replicas 3
-```
-
-**Level 3 - Power User**:
-
-```bash
-$ caxton agent deploy processor.wasm \
-  --strategy canary \
-  --canary-stages "5:5m,25:10m,50:10m" \
-  --rollback-on "error_rate>1%,p99>100ms" \
-  --resource-limits "memory=100Mi,cpu=1000m" \
-  --env-from secrets/prod.env \
-  --trace
-```
+This approach allows new users to be productive quickly while providing the
+depth that experienced operators require.
 
 ### 4. Output Formats
 
-**Human-Friendly Default**:
+**Human-Friendly Default**: Tabular format with clear headings, aligned columns,
+and summary information for easy reading
 
-```bash
-$ caxton agent list
-AGENT ID        NAME            STATUS    UPTIME    MESSAGES
-proc-7f8d9      processor       Running   2h30m     45,231
-calc-2a4e1      calculator      Running   1h15m     12,054
-filter-9b3c2    filter          Failed    -         0
+**Machine-Readable Options**: JSON output for scripting and automation, wide
+format with additional columns, and customizable column selection for specific
+use cases
 
-3 agents (2 running, 1 failed)
-```
-
-**Machine-Readable Options**:
-
-```bash
-# JSON output for scripting
-$ caxton agent list --output json
-
-# Wide output with more columns
-$ caxton agent list --output wide
-
-# Custom columns
-$ caxton agent list --output custom-columns=NAME:.name,MEM:.resources.memory
-```
+This dual approach supports both interactive use and programmatic integration.
 
 ### 5. Interactive Features
 
-**Auto-completion**:
+**Auto-completion**: Shell completion support for commands, subcommands, and
+dynamic resource names (agent IDs, message types, etc.)
 
-```bash
-# Bash/Zsh completion
-$ caxton agent delete proc<TAB>
-proc-7f8d9  proc-2a4e1  proc-9b3c2
+**Interactive Mode**: Optional REPL-style interface for exploration and
+experimentation, with context-aware prompts and built-in help
 
-# Dynamic completion for agent names
-$ caxton message send --to <TAB>
-processor  calculator  filter
-```
-
-**Interactive Mode**:
-
-```bash
-$ caxton interactive
-caxton> agent list
-[agent list output]
-caxton> message send --to processor
-Message type: task
-Message data (JSON): {"work": "process_order", "id": 123}
-✓ Message sent (trace: 7f8d9a2b)
-caxton> trace 7f8d9a2b
-[shows message flow through agents]
-```
+These features reduce cognitive load and enable faster, more accurate command
+execution.
 
 ### 6. Error Handling
 
-**Clear, Actionable Errors**:
+**Clear, Actionable Errors**: Error messages that explain what went wrong, why
+it happened, and how to fix it, with specific remediation steps
 
-```bash
-$ caxton agent deploy broken.wasm
-✗ Deployment failed: Validation error
+**Intelligent Suggestions**: Detection of common typos and mistakes with helpful
+suggestions for correct commands
 
-The WebAssembly module failed validation:
-  - Missing required export: 'handle_message'
-  - Memory limit exceeds maximum (requested: 500MB, max: 100MB)
-
-To fix:
-  1. Ensure your agent exports 'handle_message' function
-  2. Reduce memory usage or request limit increase
-
-Run 'caxton dev validate broken.wasm' for detailed analysis.
-```
-
-**Suggestions for Common Mistakes**:
-
-```bash
-$ caxton agents list
-✗ Unknown command: 'agents'
-
-Did you mean?
-  caxton agent list
-
-Run 'caxton help' to see all commands.
-```
+**Context-Aware Help**: Error messages that link to relevant help topics and
+diagnostic commands
 
 ### 7. Development Workflow Integration
 
-**Watch Mode**:
+**Watch Mode**: Automatic redeployment when agent files change, enabling rapid
+iteration during development
 
-```bash
-$ caxton dev watch processor.wasm
-👁  Watching processor.wasm for changes...
-✓ Initial deployment successful
-⟳ File changed, redeploying...
-✓ Validation passed
-✓ Agent updated (0.3s)
-```
+**Testing Workflow**: Built-in testing capabilities with scenario-based test
+execution and coverage reporting
 
-**Testing Workflow**:
+**Validation Pipeline**: Pre-deployment validation tools to catch issues early
+in the development cycle
 
-```bash
-$ caxton dev test processor.wasm --scenario order-processing
-Running test scenario: order-processing
-  ✓ Agent initialized
-  ✓ Received order message
-  ✓ Sent confirmation
-  ✓ State correctly updated
-
-All tests passed! (4/4)
-Coverage: 92% of message handlers
-```
+These features support modern development practices and reduce the feedback loop
+between code changes and deployment.
 
 ## Consequences
 

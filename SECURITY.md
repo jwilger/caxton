@@ -468,13 +468,13 @@ We are working toward:
 
 #### Core Security Architecture
 
-- [Architecture Decision Records](/docs/adr/): Security-related architectural
+- [Architecture Decision Records](/docs/_adrs/): Security-related architectural
   decisions
-- [WebAssembly Isolation ADR](/docs/adr/0002-webassembly-for-agent-isolation.md):
+- [WebAssembly Isolation ADR](/docs/_adrs/0002-webassembly-for-agent-isolation.md):
   Agent sandboxing design
-- [FIPA Messaging Protocol ADR](/docs/adr/0003-fipa-messaging-protocol.md):
+- [FIPA Messaging Protocol ADR](/docs/_adrs/0003-fipa-messaging-protocol.md):
   Secure messaging architecture
-- [Observability Architecture ADR](/docs/adr/0001-observability-first-architecture.md):
+- [Observability Architecture ADR](/docs/_adrs/0001-observability-first-architecture.md):
   Security monitoring approach
 
 #### Security Configuration Files

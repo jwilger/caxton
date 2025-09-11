@@ -303,7 +303,7 @@ Caxton includes an **embedded memory system** that works out of the box:
 
 Configuration agents automatically use the memory system to provide context-aware
 responses and learn from successful interactions. See
-[ADR-0030](docs/adr/0030-embedded-memory-system.md) for technical details.
+[ADR-0030](docs/_adrs/0030-embedded-memory-system.md) for technical details.
 
 ## External Tools via MCP
 

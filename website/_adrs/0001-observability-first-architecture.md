@@ -1,16 +1,15 @@
 ---
-title: "0001. Observability-First Architecture"
-date: 2025-07-31
-status: proposed
+title: "ADR-0001: Observability Architecture"
+date: 2025-01-31
+status: accepted
 layout: adr
 categories: [Architecture]
 ---
 
-Date: 2025-01-31
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -75,33 +74,18 @@ Key aspects:
 - **Tool diversity**: Many backend options available, but no single "best"
   choice
 
-## Implementation Notes
+## Implementation Considerations
 
-```rust
-// Every message automatically includes tracing context
-pub struct FipaMessage {
-    pub id: MessageId,
-    pub trace_id: TraceId,
-    pub span_id: SpanId,
-    pub correlation_id: CorrelationId,
-    // ... other fields
-}
+The observability-first approach requires:
 
-// Structured logging with consistent fields
-info!(
-    agent_id = %agent.id,
-    message_type = msg.performative(),
-    correlation_id = %msg.correlation_id,
-    duration_ms = elapsed.as_millis(),
-    "Message processed successfully"
-);
-
-// Automatic span creation for operations
-#[instrument(skip(self, msg))]
-pub async fn handle_message(&self, msg: FipaMessage) -> Result<(), Error> {
-    // Implementation automatically traced
-}
-```
+- **Trace context propagation**: All messages must carry distributed tracing
+  identifiers to enable correlation across agents
+- **Structured logging**: Consistent log fields across all components to enable
+  effective querying and analysis
+- **Automatic instrumentation**: Operations should be instrumented by default
+  rather than requiring manual trace creation
+- **Storage agnosticism**: The framework emits standard OpenTelemetry data that
+  can be consumed by any compatible backend
 
 ## References
 

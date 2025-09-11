@@ -99,7 +99,7 @@ configuration:
 
 - SQLite + local embedding model
 - Zero external dependencies
-- Suitable for single-node deployments up to ~100K entities
+- Scales to 100K+ entities for single-node deployments
 
 **External Backends (Optional)**:
 
@@ -122,8 +122,9 @@ implementation at startup.
 
 **Scaling Guidance**:
 
-- **Embedded backend**: Effective up to ~100K entities, 1M relations
-- **External backends**: Recommended beyond 1M entities for optimal performance
+- **Embedded backend**: Scales to 100K+ entities, 1M relations
+- **External backends**: Optional migration path for larger deployments
+  requiring scale beyond embedded capacity
 
 ### Migration and Data Portability
 
@@ -145,7 +146,7 @@ systems scale.
 
 ### Negative
 
-- **Embedded limitations**: Single-node only, limited to ~100K entities
+- **Embedded limitations**: Single-node only, scaling limit at 100K+ entities
 - **Model size**: 23MB embedding model increases binary size
 - **CPU overhead**: Local embedding generation uses CPU cycles
 - **Memory usage**: ~200MB baseline memory usage for embedding model
@@ -178,7 +179,7 @@ systems scale.
 4. Memory usage monitoring
 5. Configuration management
 
-### Phase 3: External Backends (Post-1.0)
+### Future Enhancement: External Backends
 
 1. Neo4j backend implementation
 2. Qdrant backend implementation

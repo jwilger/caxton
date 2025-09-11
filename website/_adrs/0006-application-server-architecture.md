@@ -1,16 +1,15 @@
 ---
-title: "0006. Application Server Architecture"
+title: "ADR-0006: Application Server"
 date: 2025-08-03
-status: proposed
+status: accepted
 layout: adr
 categories: [Architecture]
 ---
 
-Date: 2025-08-03
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -88,105 +87,32 @@ that:
 
 ### Mitigation Strategies
 
-- **Performance**:
+- **Performance**: Efficient binary protocols and connection management to
+  minimize API overhead
+- **Deployment**: Standard packaging and installation methods for common
+  platforms
+- **Migration**: Transition support and compatibility layers for existing
+  integrations
+- **Resources**: Isolation and limits to ensure predictable resource usage
+- **API stability**: Versioning and backward compatibility policies
 
-  - Use gRPC for efficient binary protocol
-  - Implement connection pooling and multiplexing
-  - Target < 1ms API overhead for local deployments
-  - Benchmark: 100K+ messages/second on single core
+## Operational Considerations
 
-- **Deployment**:
-
-  - Provide Docker images, Helm charts within 30 days
-  - Package managers: brew, apt, yum support
-  - systemd unit files with proper service management
-  - One-line installation scripts
-
-- **Migration**:
-
-  - Clear documentation and automated migration tools
-  - Maintain library adapter for 6-month transition period
-  - Direct support for early adopters
-
-- **Resources**:
-
-  - Implement cgroup-based resource isolation
-  - Publish sizing guidelines: 100 agents/GB RAM baseline
-  - CPU quotas and memory limits per agent
-  - Automatic resource recommendation engine
-
-- **API stability**:
-
-  - Semantic versioning from v1.0.0
-  - 12-month deprecation policy
-  - Generated SDKs for major languages
-  - gRPC backward/forward compatibility
-
-## Operational Requirements
-
-### State Management
-
-- **Persistence**: Event sourcing for agent state with snapshots
-- **Recovery**: Automatic state restoration after crashes
-- **Migration**: Zero-downtime state migration during upgrades
-- **Backup**: Point-in-time recovery capabilities
-
-### Capacity Planning
-
-- **Scaling metrics**: Agents per server, memory per agent, messages/second
-- **Resource isolation**: cgroup v2 integration for hard limits
-- **Horizontal scaling**: Consistent hashing for agent distribution
-- **Vertical scaling**: Hot-reload configuration for resource adjustments
-
-### High Availability
-
-- **Active-passive**: Automatic failover with < 30s RTO
-- **Health checks**: L4 (TCP), L7 (HTTP), and business logic health
-- **Load balancing**: Built-in support for HAProxy, nginx, cloud LBs
-- **Split-brain prevention**: Consensus-based leader election
-
-### Security Operations
-
-- **Authentication**: mTLS, API keys, OIDC/OAuth2 integration
-- **Authorization**: RBAC with per-agent permissions
-- **Audit logging**: Structured logs for all API access
-- **Secrets management**: Integration with Vault, K8s secrets
+As a standalone server, Caxton must address typical enterprise operational
+requirements including state persistence, scaling strategies, high availability
+patterns, and security policies. These operational aspects will be implemented
+following standard server deployment patterns.
 
 ## Deployment Models
 
-### systemd Service
+Caxton will support standard deployment patterns:
 
-```ini
-[Unit]
-Description=Caxton Multi-Agent Orchestration Server
-After=network.target
+- **System service**: Native OS service management (systemd, etc.)
+- **Container**: Docker and OCI-compatible container deployment
+- **Orchestrated**: Kubernetes and similar container orchestration platforms
 
-[Service]
-Type=notify
-ExecStart=/usr/bin/caxton server --config /etc/caxton/config.yaml
-Restart=always
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### Docker Container
-
-```dockerfile
-FROM caxton/caxton:latest
-EXPOSE 8080 9090
-HEALTHCHECK CMD caxton health
-```
-
-### Kubernetes Deployment
-
-- StatefulSet for persistent agent state
-- Service for load balancing
-- ConfigMap for configuration
-- PersistentVolumeClaim for state storage
+Each deployment method follows established patterns from comparable server
+applications.
 
 ## Comparison with Familiar Servers
 
