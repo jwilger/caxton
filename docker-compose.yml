@@ -1,0 +1,58 @@
+# Docker Compose for Caxton local development
+# Minimal setup to unblock MVP development
+
+services:
+  caxton-server:
+    build: .
+    container_name: caxton-server
+    ports:
+      - "8080:8080"    # REST API
+      - "9090:9090"    # Metrics endpoint
+    environment:
+      - RUST_LOG=debug
+      - CAXTON_DATA_DIR=/var/lib/caxton/data
+      - CAXTON_CONFIG_PATH=/etc/caxton/config.yaml
+      # Development-friendly settings
+      - CAXTON_LOG_FORMAT=pretty
+      - CAXTON_ENABLE_TRACING=true
+    volumes:
+      # Persistent data for SQLite database
+      - caxton-data:/var/lib/caxton/data
+      # Mount config if it exists (optional for development)
+      - ${PWD}/config/caxton.yaml:/etc/caxton/config.yaml:ro
+      # Mount local agents directory for development
+      - ${PWD}/examples/agents:/var/lib/caxton/agents:ro
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/caxton-cli", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - caxton-network
+
+  # Optional: Development container for CLI operations
+  caxton-cli:
+    build: .
+    container_name: caxton-cli
+    environment:
+      - CAXTON_SERVER_URL=http://caxton-server:8080
+    entrypoint: ["/usr/local/bin/caxton-cli"]
+    command: ["--help"]
+    depends_on:
+      caxton-server:
+        condition: service_healthy
+    networks:
+      - caxton-network
+    profiles:
+      - cli
+
+volumes:
+  # Single volume for persistent SQLite data and embeddings
+  caxton-data:
+    driver: local
+
+networks:
+  caxton-network:
+    driver: bridge

@@ -11,25 +11,168 @@
 
 ## Priority-Ordered Story List
 
-### 🚀 Foundation (Minimum Viable Product)
+### 🎯 v0.8 MVP (Minimum Viable Product - 8 Stories)
+
+**Target**: Deliver "5-10 minute agent creation" experience in 2 weeks
 
 1. [ ] **STORY-001**: Command Line Interface Foundation
 2. [ ] **STORY-002**: Server Process Lifecycle Management
 3. [ ] **STORY-003**: Basic Configuration Agent Creation
 4. [ ] **STORY-004**: TOML Agent Configuration Parsing
-5. [ ] **STORY-005**: Simple Agent Runtime Environment
-6. [ ] **STORY-041**: LLM Provider Abstraction Layer
-   *(Critical for 5-10 min experience)*
-7. [ ] **STORY-042**: OpenAI Integration with API Key Management
-   *(Critical for 5-10 min experience)*
-8. [ ] **STORY-020**: Basic MCP Tool Integration
-9. [ ] **STORY-044**: MCP Tool Permission and Capability System
-   *(Critical for safe execution)*
-10. [ ] **STORY-006**: Basic Message Routing Between Agents
-11. [ ] **STORY-007**: Embedded SQLite Memory System
-12. [ ] **STORY-008**: REST API for Agent Management
-13. [ ] **STORY-009**: Agent Health Monitoring and Status
-14. [ ] **STORY-010**: Basic Error Handling and Recovery
+5. [ ] **STORY-041**: LLM Provider Abstraction Layer _(Critical for 5-10 min experience)_
+6. [ ] **STORY-042**: OpenAI Integration with API Key Management
+   _(Critical for 5-10 min experience)_
+7. [ ] **STORY-005**: Simple Agent Runtime Environment
+8. [ ] **STORY-008**: REST API for Agent Management _(Essential for tutorial completion)_
+
+**v0.8 Success Criteria**:
+
+- New user can create working agent in under 10 minutes following tutorial
+- Agent responds to messages via OpenAI GPT integration
+- CLI and REST API provide complete agent lifecycle management
+- System runs reliably for demonstration and experimentation
+
+### 🔄 v1.0 Foundation (Deferred from v0.8)
+
+1. [ ] **STORY-020**: Basic MCP Tool Integration
+2. [ ] **STORY-044**: MCP Tool Permission and Capability System
+   _(Critical for safe execution)_
+3. [ ] **STORY-007**: Embedded SQLite Memory System
+   _(v0.8 uses simple in-memory storage)_
+4. [ ] **STORY-006**: Basic Message Routing Between Agents
+   _(v0.8 focuses on single-agent interactions)_
+5. [ ] **STORY-009**: Agent Health Monitoring and Status
+6. [ ] **STORY-010**: Basic Error Handling and Recovery
+
+---
+
+## v0.8 MVP Implementation Plan
+
+### Dependencies and Critical Path
+
+**Sequential Dependencies (must be completed in order):**
+
+1. **STORY-001** → **STORY-002**: CLI must exist before server can be managed
+2. **STORY-002** → **STORY-003**: Server must run before agents can be created
+3. **STORY-003** → **STORY-004**: Agent creation needs TOML parsing
+4. **STORY-004** → **STORY-041** → **STORY-042**: Configuration parsing
+   enables LLM integration
+5. **STORY-042** → **STORY-005**: LLM provider needed for agent runtime
+6. **STORY-005** → **STORY-008**: Runtime enables API management operations
+
+**Parallel Development Opportunities:**
+
+- Stories 001-002 can be developed by different developers
+- Stories 041-042 (LLM integration) can be developed in parallel with 001-004
+- Story 008 (REST API) can begin once 003 (agent creation) is defined
+
+### 2-Week Sprint Breakdown
+
+#### Week 1 (Sprint 1): Foundation Infrastructure
+
+**Goal**: Get basic server and agent creation working
+
+- **Days 1-2**: STORY-001 (CLI Foundation) + STORY-002 (Server Lifecycle)
+- **Days 3-4**: STORY-003 (Agent Creation) + STORY-004 (TOML Parsing)
+- **Days 5**: STORY-041 (LLM Provider Abstraction)
+
+**Week 1 Milestone**: `caxton server start` works, agents can be created
+from TOML files
+
+#### Week 2 (Sprint 2): LLM Integration and API
+
+**Goal**: Complete end-to-end agent interaction experience
+
+- **Days 6-7**: STORY-042 (OpenAI Integration)
+- **Days 8-9**: STORY-005 (Agent Runtime Environment)
+- **Day 10**: STORY-008 (REST API for Management)
+
+**Week 2 Milestone**: Complete 5-10 minute tutorial works end-to-end
+
+### What's Deferred to v1.0
+
+**MCP Tool Integration (Stories 020, 044)**:
+
+- Deferred because v0.8 focuses on basic LLM chat functionality
+- MCP tools add complexity that's not essential for initial validation
+- Can be added in v1.0 without breaking existing agent configurations
+
+**Memory System (Story 007)**:
+
+- v0.8 uses simple in-memory storage that resets on restart
+- SQLite persistence adds database management complexity
+- Deferred until core functionality is proven
+
+**Message Routing (Story 006)**:
+
+- v0.8 supports single-agent interactions via API
+- Multi-agent communication deferred until MCP integration is complete
+- Direct agent addressing sufficient for initial use cases
+
+**Monitoring & Recovery (Stories 009, 010)**:
+
+- Basic error handling included in core stories
+- Comprehensive monitoring deferred until production readiness phase
+- v0.8 focuses on happy path demonstration
+
+### v0.8 Scope Boundaries
+
+#### What's IN v0.8
+
+✅ **Single-agent creation and interaction**
+✅ **TOML configuration parsing and validation**
+✅ **OpenAI GPT integration (API key required)**
+✅ **CLI management commands (start/stop server, create agents)**
+✅ **REST API for agent CRUD operations**
+✅ **Basic agent runtime with LLM orchestration**
+✅ **In-memory agent state (not persistent)**
+✅ **Simple error handling and validation**
+
+#### What's OUT of v0.8
+
+❌ **MCP tool integration** - No file system, HTTP, or external tool access
+❌ **Persistent memory/state** - Agents reset on server restart
+❌ **Multi-agent communication** - Single agent interactions only
+❌ **WebAssembly sandboxing** - Configuration agents run in host runtime
+❌ **Local LLM support** - OpenAI only for MVP validation
+❌ **Agent templates** - Users write TOML from scratch
+❌ **Hot reloading** - Manual restart required for config changes
+❌ **Production monitoring** - Basic logging only
+❌ **Security validation** - Basic TOML validation only
+
+### v0.8 Success Definition
+
+**Primary Success Criterion**:
+New user completes "5-10 minute agent creation" tutorial successfully
+
+**Measurable Outcomes**:
+
+1. **Tutorial Completion**: 90% of users complete without assistance
+2. **Time to First Response**: Under 10 minutes from `git clone` to agent response
+3. **Technical Functionality**: All 8 core stories pass acceptance criteria
+4. **API Coverage**: All CRUD operations work via CLI and REST API
+5. **Error Handling**: Invalid configurations produce helpful error messages
+
+**Acceptance Test Scenario**:
+
+```bash
+# User journey that must work end-to-end
+git clone https://github.com/project/caxton
+cd caxton
+cargo build --release
+./target/release/caxton --help
+./target/release/caxton server start
+./target/release/caxton create --config my-agent.toml
+# Agent responds to test message within 30 seconds
+curl -X POST localhost:8080/agents/my-agent/message -d '{"text":"Hello"}'
+```
+
+**Quality Gates**:
+
+- All clippy warnings resolved (no `#[allow]` attributes)
+- TDD discipline maintained throughout development
+- Domain types implemented with nutype validation
+- Comprehensive error types for all failure modes
 
 ### 🔧 Developer Productivity (Developer Experience)
 
@@ -52,7 +195,7 @@
 2. [ ] **STORY-022**: Prometheus Metrics Integration
 3. [ ] **STORY-023**: Resource Limits and Management
 4. [ ] **STORY-046**: Agent State Machine with Phantom Types
-   *(Critical for reliability)*
+       _(Critical for reliability)_
 5. [ ] **STORY-047**: Configuration Hot-Reload Reliability (Cross-Platform)
 6. [ ] **STORY-024**: Agent Isolation and Fault Recovery
 7. [ ] **STORY-025**: Configuration File Reloading
@@ -67,7 +210,7 @@
 1. [ ] **STORY-031**: Vector Search and Semantic Memory
 2. [ ] **STORY-032**: Multi-Agent Conversation Management
 3. [ ] **STORY-033**: WebAssembly MCP Server Deployment with Enhanced
-   Resource Management
+       Resource Management
 4. [ ] **STORY-035**: Agent Capability Registration System
 5. [ ] **STORY-036**: Advanced Message Routing Patterns
 6. [ ] **STORY-037**: Agent Memory Scope Management
@@ -75,7 +218,7 @@
 8. [ ] **STORY-039**: Performance Optimization and Caching
 9. [ ] **STORY-040**: External Tool Integration via MCP
 10. [ ] **STORY-034**: External Memory Backend Integration
-    *(Moved to P4 - not immediate need)*
+        _(Moved to P4 - not immediate need)_
 
 ---
 
@@ -133,7 +276,7 @@ minutes **So that** I can quickly validate if Caxton meets my needs.
 **Acceptance Criteria:**
 
 - [ ] TOML file with `name`, `system_prompt`, and `capabilities` creates
-  functional agent
+      functional agent
 - [ ] Agent responds to messages with LLM-generated responses
 - [ ] Agent can be deployed with single CLI command
 - [ ] Agent appears in agent list immediately after deployment
@@ -196,23 +339,23 @@ workflows without tight coupling to specific agent names.
 **Acceptance Criteria:**
 
 - [ ] Agents can request capabilities (e.g., "data-analysis",
-  "file-processing") rather than specific agent names
+      "file-processing") rather than specific agent names
 - [ ] Message router discovers available agents with matching capabilities
-  automatically
+      automatically
 - [ ] Multiple agents with the same capability can be load-balanced or
-  selected based on availability
+      selected based on availability
 - [ ] Message routing handles unavailable capabilities gracefully with
-  meaningful error messages
+      meaningful error messages
 - [ ] Capability registration and discovery happens dynamically as agents
-  start/stop
+      start/stop
 - [ ] Message content is preserved during routing with full conversation
-  context
+      context
 - [ ] Routing system logs successful and failed deliveries with capability
-  matching details
+      matching details
 - [ ] Circular message loops are detected and prevented through conversation
-  tracking
+      tracking
 - [ ] Direct agent addressing remains available as fallback for specific use
-  cases
+      cases
 
 **Definition of Done:**
 
@@ -337,7 +480,7 @@ than starting from scratch.
 
 - [ ] `caxton create --template [name]` generates agent from template
 - [ ] Templates cover common patterns: chatbot, data-analyzer,
-  task-scheduler
+      task-scheduler
 - [ ] Each template includes documentation and usage examples
 - [ ] Templates demonstrate different tool integrations
 - [ ] Templates validate successfully and run immediately
@@ -360,24 +503,24 @@ understand the business rules being violated.
 **Acceptance Criteria:**
 
 - [ ] Validation runs on configuration load with structured, domain-specific
-  error types
+      error types
 - [ ] Missing required fields are identified with clear explanations of why
-  they're required
+      they're required
 - [ ] Invalid field values include suggestions for correct format and valid
-  alternatives
+      alternatives
 - [ ] Cross-field validation catches logical inconsistencies using domain
-  rules
+      rules
 - [ ] Warnings highlight potentially problematic configurations with business
-  context
+      context
 - [ ] Validation results use Scott Wlaschin's domain error patterns with
-  specific error variants
+      specific error variants
 - [ ] Error aggregation presents multiple validation failures in a structured
-  format
+      format
 - [ ] Validation errors map to documentation sections explaining the business
-  rules
+      rules
 - [ ] Configuration schema validation includes custom domain constraints
 - [ ] Validation results are available via CLI and API with machine-readable
-  error codes
+      error codes
 
 **Definition of Done:**
 
@@ -548,7 +691,7 @@ agent configurations.
 **Acceptance Criteria:**
 
 - [ ] Abstract provider interface supports common operations (chat,
-  completion, streaming)
+      completion, streaming)
 - [ ] Provider implementations handle service-specific details transparently
 - [ ] Configuration schema allows provider selection via `llm_provider` field
 - [ ] Provider capabilities (function calling, vision, etc.) are discoverable
@@ -570,7 +713,7 @@ can create agents using GPT models with proper API key handling.
 **Acceptance Criteria:**
 
 - [ ] OpenAI provider supports GPT-4, GPT-3.5-turbo, and other available
-  models
+      models
 - [ ] API key configuration through environment variables and config files
 - [ ] Function calling integration works with MCP tools
 - [ ] Streaming responses are supported for real-time interaction
@@ -593,9 +736,9 @@ that** my data never leaves my infrastructure.
 **Acceptance Criteria:**
 
 - [ ] Ollama provider integration supports popular local models (Llama 2,
-  Mistral, Code Llama)
+      Mistral, Code Llama)
 - [ ] LocalAI integration provides OpenAI-compatible interface for local
-  models
+      models
 - [ ] Model downloading and management handled automatically
 - [ ] Local providers work offline without internet connectivity
 - [ ] Performance monitoring includes local inference timing
@@ -645,7 +788,7 @@ rejected before deployment.
 - [ ] Configuration security policies can be enforced organization-wide
 - [ ] Security violations provide clear explanations for rejection
 - [ ] Validation rules can be customized for different deployment
-  environments
+      environments
 
 **Definition of Done:**
 
@@ -664,11 +807,11 @@ predictable.
 **Acceptance Criteria:**
 
 - [ ] Agent states (Unloaded, Loaded, Running, Stopped, Failed) use phantom
-  types
+      types
 - [ ] State transitions are validated at compile time
 - [ ] Invalid operations for current state cause compilation errors
 - [ ] State machine implementation follows Scott Wlaschin's domain modeling
-  patterns
+      patterns
 - [ ] Agent lifecycle events are properly typed and traceable
 - [ ] State persistence and recovery handle all valid states correctly
 
@@ -842,24 +985,24 @@ provide secure, isolated tools with guaranteed performance characteristics.
 **Acceptance Criteria:**
 
 - [ ] WASM modules can be deployed as MCP servers via API with detailed
-  resource specifications
+      resource specifications
 - [ ] MCP servers execute in isolated WebAssembly sandbox with configurable
-  fuel limits
+      fuel limits
 - [ ] Memory constraints are enforced with configurable limits per MCP server
-  instance
+      instance
 - [ ] CPU usage isolation prevents MCP servers from starving other system
-  components
+      components
 - [ ] Resource limit violations trigger graceful degradation with informative
-  error messages
+      error messages
 - [ ] Agents can invoke MCP tools through standard MCP protocol with timeout
-  controls
+      controls
 - [ ] MCP server lifecycle (start, stop, restart) includes resource cleanup
-  verification
+      verification
 - [ ] WASM modules support multiple programming languages (Rust, JavaScript,
-  Python, Go)
+      Python, Go)
 - [ ] Performance monitoring tracks resource usage patterns per MCP server
 - [ ] Resource pools allow sharing compute resources across multiple MCP
-  server instances
+      server instances
 
 **Definition of Done:**
 

@@ -3,6 +3,8 @@
 //! This module contains the core domain types that represent the
 //! business concepts and rules of the Caxton system.
 
+pub mod routing;
+
 /// Placeholder for domain types during the domain modeling experiment phase.
 ///
 /// This module will be populated with actual domain types as part of

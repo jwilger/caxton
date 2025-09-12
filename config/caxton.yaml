@@ -1,0 +1,61 @@
+# Basic Caxton server configuration for local development
+# This file provides minimal configuration to get started
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+  # API configuration
+  api:
+    timeout_seconds: 30
+    max_request_size: "10MB"
+
+# Memory system configuration (embedded SQLite + Candle)
+memory:
+  backend: "embedded"
+  embedded:
+    database_path: "/var/lib/caxton/data/memory.db"
+    embedding_model: "all-MiniLM-L6-v2"
+    max_entities: 100000
+
+# Agent runtime configuration
+agents:
+  # Directory for configuration-based agents
+  config_dir: "/var/lib/caxton/agents"
+
+  # Resource limits for agents
+  default_limits:
+    max_memory_mb: 256
+    max_cpu_millis: 5000
+    max_execution_time_seconds: 30
+
+# WebAssembly runtime configuration
+wasm:
+  # Security constraints
+  disable_simd: true
+  disable_reference_types: true
+  disable_bulk_memory: true
+  enable_fuel: true
+
+  # Resource limits for WASM modules
+  default_limits:
+    max_memory_mb: 128
+    max_cpu_millis: 2000
+
+# Logging and observability
+logging:
+  level: "debug"
+  format: "pretty"  # or "json" for structured logs
+
+observability:
+  enable_tracing: true
+  enable_metrics: true
+  metrics_port: 9090
+
+  # OpenTelemetry (optional)
+  # otel_endpoint: "http://jaeger:14268"
+
+# Development settings
+development:
+  enable_hot_reload: true
+  auto_create_missing_dirs: true
