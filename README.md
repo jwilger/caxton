@@ -21,9 +21,10 @@
 > experience goals.
 
 Caxton is a production-ready server that orchestrates multi-agent systems.
-Deploy agents written in any WebAssembly-compatible language - JavaScript,
-Python, Go, or Rust - with built-in message routing, fault tolerance, and
-observability.
+Create simple agents using TOML configuration files, with deployable WebAssembly
+MCP servers providing tools and functionality. Includes built-in message
+routing,
+fault tolerance, and observability.
 
 > ⚠️ **Important**: Caxton is a standalone server application, not a Rust
 > library. You install and run it like any other server (Redis, Nginx, etc.) and
@@ -46,8 +47,8 @@ databases
 horizontal scaling
 ✅ **Zero compilation** - Configuration agents run immediately, no toolchain
 setup
-✅ **Advanced options available** - WebAssembly agents for power users needing
-custom algorithms
+✅ **Deployable MCP servers** - WebAssembly MCP servers provide tools and
+functionality to agents
 
 ## Installation
 
@@ -113,7 +114,8 @@ caxton deploy data-analyzer.toml
 # ✓ Tools available: http_client, csv_parser
 
 # 4. Test it immediately (30 seconds)
-caxton chat DataAnalyzer "Analyze the sales data at https://example.com/sales.csv"
+caxton chat DataAnalyzer \
+  "Analyze the sales data at https://example.com/sales.csv"
 # [DataAnalyzer] Fetching CSV data...
 # [DataAnalyzer] Found 1,247 sales records from Q3 2024
 # [DataAnalyzer] Key insights: Revenue up 23%, top product is Widget Pro...
@@ -153,12 +155,12 @@ agents using a hybrid architecture:
 │  │  │         Agent Runtime Environment           │  │ │
 │  │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐     │  │ │
 │  │  │  │ Agent A │ │ Agent B │ │ Agent C │ ... │  │ │
-│  │  │  │(Config) │ │(Config) │ │ (WASM)  │     │  │ │
+│  │  │  │(Config) │ │(Config) │ │(Config) │     │  │ │
 │  │  │  └────┬────┘ └────┬────┘ └────┬────┘     │  │ │
 │  │  │       └───────────┼───────────┘           │  │ │
 │  │  │                   │                        │  │ │
 │  │  │  ┌────────────────▼────────────────────┐  │  │ │
-│  │  │  │ FIPA Message Bus + Memory System    │  │  │ │
+│  │  │  │ Message Bus + Memory System         │  │  │ │
 │  │  │  │ (SQLite + Vector Search)            │  │  │ │
 │  │  │  └─────────────────────────────────────┘  │  │ │
 │  │  └─────────────────────────────────────────────┘  │ │
@@ -176,9 +178,10 @@ agents using a hybrid architecture:
 **Key Points:**
 
 - **Server Process**: Runs as a system service (systemd, Docker, or Kubernetes)
-- **Hybrid Agent Model**: Configuration agents (primary) + WebAssembly agents (advanced)
+- **Simple Agent Model**: Configuration agents (primary) with deployable MCP
+  servers
 - **Embedded Memory**: SQLite + vector search with no external dependencies
-- **Capability-Based Messaging**: Agents communicate via lightweight FIPA messaging
+- **Simple Messaging**: Agents communicate via lightweight message patterns
 - **Management API**: Control plane for deploying and managing agents
 - **Observable by Design**: Built-in logging, metrics, and distributed tracing
 
@@ -190,19 +193,19 @@ Rust knowledge required for most use cases.
 
 | Capability | Description |
 |------------|-------------|
-| **Configuration Agents** | Create agents in 5-10 minutes using TOML configuration files |
-| **Embedded Memory System** | Built-in SQLite + vector search, no external databases required |
-| **Message Routing** | Capability-based routing with FIPA-compliant messaging |
-| **WebAssembly Support** | Advanced agents with custom algorithms (for power users) |
+| **Simple Agents** | Create agents in 5-10 minutes using TOML config files |
+| **Embedded Memory System** | Built-in SQLite + vector search, no external DBs |
+| **Message Routing** | Simple agent communication patterns |
+| **MCP Server Deployment** | Deployable WebAssembly MCP servers provide tools |
 | **Fault Isolation** | Agent crashes don't affect other agents or the server |
-| **Resource Management** | CPU and memory limits per agent with built-in monitoring |
+| **Resource Management** | CPU and memory limits per agent with monitoring |
 | **Observability** | Logs, metrics, and traces out of the box |
 | **Hot Deployment** | Deploy/update agents without server restart |
 | **API Access** | Full control via REST/HTTP API |
 
 ## Building Agents
 
-### Configuration Agents (Recommended)
+### Simple Agents (Recommended)
 
 Most agents can be created using simple TOML configuration files:
 
@@ -232,15 +235,16 @@ creating support tickets when needed.
 '''
 ```
 
-### WebAssembly Agents (Advanced)
+### Deployable MCP Servers (Tool Providers)
 
-For custom algorithms or performance-critical code, you can create WebAssembly agents:
+For custom tools or functionality, you can create WebAssembly MCP servers:
 
 ```rust
-// Example agent in Rust
+// Example MCP server in Rust
 #[no_mangle]
-pub extern "C" fn handle_message(msg_ptr: *const u8, msg_len: usize) -> i32 {
-    // Your custom algorithm logic here
+pub extern "C" fn handle_tool_call(call_ptr: *const u8, call_len: usize)
+    -> i32 {
+    // Your custom tool logic here
 }
 ```
 
@@ -283,10 +287,11 @@ Caxton takes a different approach:
 
 Caxton is a multi-agent orchestration server that handles:
 
-1. **Configuration Agent Runtime**: Deploy and run agents from TOML
+1. **Simple Agent Runtime**: Deploy and run agents from TOML
    configuration files
-2. **Embedded Memory System**: SQLite + vector search with automatic knowledge management
-3. **Capability-Based Messaging**: FIPA-compliant routing between agent capabilities
+2. **Embedded Memory System**: SQLite + vector search with automatic knowledge
+   management
+3. **Simple Messaging**: Lightweight agent communication patterns
 4. **Production Observability**: Structured logging, tracing, and metrics
 
 Caxton runs as a standalone server (like PostgreSQL or Redis) and manages all
@@ -296,12 +301,16 @@ agent coordination for you.
 
 Caxton includes an **embedded memory system** that works out of the box:
 
-- **Zero external dependencies** - Built-in SQLite + vector search using All-MiniLM-L6-v2
-- **Automatic knowledge management** - Agents learn from interactions and store patterns
-- **Semantic search capabilities** - Find relevant context using vector similarity
+- **Zero external dependencies** - Built-in SQLite + vector search using
+  All-MiniLM-L6-v2
+- **Automatic knowledge management** - Agents learn from interactions and store
+  patterns
+- **Semantic search capabilities** - Find relevant context using vector
+  similarity
 - **Pluggable backends** - Upgrade to Neo4j or Qdrant for high-scale deployments
 
-Configuration agents automatically use the memory system to provide context-aware
+Configuration agents automatically use the memory system to provide
+context-aware
 responses and learn from successful interactions. See
 [ADR-0030](docs/_adrs/0030-embedded-memory-system.md) for technical details.
 
@@ -330,10 +339,10 @@ await mcp_call("state_tool", {
 Caxton provides:
 
 - **Configuration-driven agent runtime** with 5-10 minute onboarding experience
-- **Embedded memory system** with SQLite + vector search for knowledge management
-- **Capability-based messaging** using lightweight FIPA protocols
-- **WebAssembly support** for advanced agents requiring custom
-  algorithms
+- **Embedded memory system** with SQLite + vector search for knowledge
+  management
+- **Simple messaging** using lightweight agent communication patterns
+- **MCP server deployment** for WebAssembly tools and functionality
 - **Observable agent communications** with full tracing and debugging support
 
 ## What's Out of Scope
@@ -343,11 +352,13 @@ We're intentionally NOT building:
 - AI/LLM providers or model hosting (agents use external providers)
 - Complex orchestration languages or workflow engines
 - Agent hierarchies or permissions systems beyond basic capability routing
-- **Infrastructure-level consensus protocols** (Raft, Paxos, PBFT) - use external
+- **Infrastructure-level consensus protocols** (Raft, Paxos, PBFT) - use
+  external
   coordination services
 - Built-in code compilation or language toolchains
 
-These can all be built as libraries or external services that integrate with Caxton.
+These can all be built as libraries or external services that integrate with
+Caxton.
 
 ## Development
 

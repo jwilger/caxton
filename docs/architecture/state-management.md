@@ -380,7 +380,7 @@ If currently stateless:
 
 ## References
 
-- [ADR-0030: Embedded Memory System](../adr/0030-embedded-memory-system.md)
+- [ADR-0030: Embedded Memory System](../adrs/0030-embedded-memory-system.md)
 - [MCP Integration Guide](../api/mcp-integration.md)
 - [Performance Tuning](../operations/performance-tuning.md)
 - [SWIM Protocol Paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)

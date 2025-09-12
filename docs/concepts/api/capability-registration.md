@@ -474,10 +474,10 @@ observability tools
 
 ## References
 
-- [ADR-0029: Lightweight Agent Messaging](../../adr/0029-fipa-acl-lightweight-messaging.md)
+- [ADR-0029: Lightweight Agent Messaging](../../adrs/0029-fipa-acl-lightweight-messaging.md)
   - Capability-based routing design decisions
 
-- [ADR-0011: Capability Registration in Code](../../adr/0011-capability-registration-in-code.md)
+- [ADR-0011: Capability Registration in Code](../../adrs/0011-capability-registration-in-code.md)
   - Core capability registration patterns
   Original capability registration approach
 - [Performance Specifications](performance-specifications.md) - Performance

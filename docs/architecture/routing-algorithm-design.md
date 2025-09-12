@@ -1,10 +1,4 @@
----
-title: "O(1) Routing Algorithm Design"
-date: 2025-01-14
-layout: page
-categories: [architecture, routing, algorithms]
----
-
+# O(1) Routing Algorithm Design
 
 ## Overview
 
@@ -48,13 +42,17 @@ pub struct RoutingAlgorithm {
 impl RoutingAlgorithm {
     /// O(1) agent lookup with intelligent caching and fallback
     #[tracing::instrument(skip(self))]
-    pub async fn lookup_agent(&self, agent_id: &AgentId) -> Result<AgentLocation, LookupError> {
+    pub async fn lookup_agent(
+        &self,
+        agent_id: &AgentId
+    ) -> Result<AgentLocation, LookupError> {
         let start = Instant::now();
 
         // Step 1: Check positive cache first (fastest path)
         if let Some(cached_route) = self.route_cache.get(agent_id) {
             if cached_route.is_valid() {
-                self.lookup_metrics.record_cache_hit("positive", start.elapsed());
+                self.lookup_metrics.record_cache_hit(
+                    "positive", start.elapsed());
                 return Ok(cached_route.location.clone());
             } else {
                 // Expired entry, remove from cache
@@ -66,7 +64,8 @@ impl RoutingAlgorithm {
         // Step 2: Check negative cache to avoid repeated failed lookups
         if let Some(negative_entry) = self.negative_cache.get(agent_id) {
             if negative_entry.is_valid() {
-                self.lookup_metrics.record_cache_hit("negative", start.elapsed());
+                self.lookup_metrics.record_cache_hit(
+                    "negative", start.elapsed());
                 return Ok(AgentLocation::Unknown);
             } else {
                 self.negative_cache.remove(agent_id);
@@ -98,7 +97,9 @@ impl RoutingAlgorithm {
                 // Cache the result
                 self.route_cache.put(
                     *agent_id,
-                    CachedRoute::new(location.clone(), self.config.remote_cache_ttl)
+                    CachedRoute::new(
+                        location.clone(),
+                        self.config.remote_cache_ttl)
                 );
 
                 self.lookup_metrics.record_remote_lookup(start.elapsed());
@@ -178,7 +179,8 @@ impl RoutingAlgorithm {
             results.extend(batch_result);
         }
 
-        self.lookup_metrics.record_batch_lookup(agent_ids.len(), start.elapsed());
+        self.lookup_metrics.record_batch_lookup(
+            agent_ids.len(), start.elapsed());
         results
     }
 
@@ -234,18 +236,28 @@ pub struct RoutingCache {
 
 impl RoutingCache {
     /// Implements adaptive TTL based on agent stability
-    fn calculate_adaptive_ttl(&self, agent_id: AgentId, base_ttl: Duration) -> Duration {
+    fn calculate_adaptive_ttl(
+        &self,
+        agent_id: AgentId,
+        base_ttl: Duration
+    ) -> Duration {
         let agent_stability = self.get_agent_stability(agent_id);
 
         match agent_stability {
-            AgentStability::Stable => base_ttl.mul_f64(2.0),      // Longer TTL for stable agents
-            AgentStability::Normal => base_ttl,                   // Standard TTL
-            AgentStability::Unstable => base_ttl.div_f64(2.0),   // Shorter TTL for unstable agents
+            AgentStability::Stable =>
+                base_ttl.mul_f64(2.0),      // Longer TTL for stable agents
+            AgentStability::Normal =>
+                base_ttl,                   // Standard TTL
+            AgentStability::Unstable =>
+                base_ttl.div_f64(2.0),   // Shorter TTL for unstable agents
         }
     }
 
     /// Preemptive cache warming for predictable patterns
-    pub async fn warm_cache(&self, predicted_agents: Vec<AgentId>) -> Result<(), CacheError> {
+    pub async fn warm_cache(
+        &self,
+        predicted_agents: Vec<AgentId>
+    ) -> Result<(), CacheError> {
         let warming_tasks: Vec<_> = predicted_agents
             .into_iter()
             .map(|agent_id| self.warm_agent_entry(agent_id))
@@ -305,7 +317,8 @@ impl ConsistencyManager {
         match self.compare_versions(local_version, source_version) {
             VersionComparison::LocalNewer => {
                 // Local state is newer, reject update
-                self.send_version_mismatch_response(source_node, local_version).await?;
+                self.send_version_mismatch_response(
+                    source_node, local_version).await?;
                 Ok(ApplyResult::Rejected)
             }
             VersionComparison::SourceNewer => {
@@ -316,20 +329,24 @@ impl ConsistencyManager {
             }
             VersionComparison::Concurrent => {
                 // Concurrent updates, resolve conflict
-                let resolution = self.conflict_resolver.resolve(update, local_version, source_version).await?;
+                let resolution = self.conflict_resolver.resolve(
+                    update, local_version, source_version).await?;
                 match resolution {
                     ConflictResolution::AcceptRemote => {
                         self.apply_update_unconditionally(update).await?;
-                        self.local_version.store(source_version + 1, Ordering::SeqCst);
+                        self.local_version.store(
+                            source_version + 1, Ordering::SeqCst);
                         Ok(ApplyResult::Applied)
                     }
                     ConflictResolution::RejectRemote => {
-                        self.send_conflict_resolution_response(source_node).await?;
+                        self.send_conflict_resolution_response(
+                            source_node).await?;
                         Ok(ApplyResult::Rejected)
                     }
                     ConflictResolution::Merge(merged_update) => {
                         self.apply_update_unconditionally(merged_update).await?;
-                        let new_version = std::cmp::max(local_version, source_version) + 1;
+                        let new_version =
+                            std::cmp::max(local_version, source_version) + 1;
                         self.local_version.store(new_version, Ordering::SeqCst);
                         Ok(ApplyResult::Merged)
                     }
@@ -339,7 +356,9 @@ impl ConsistencyManager {
     }
 
     /// Periodic consistency check across cluster
-    pub async fn perform_consistency_check(&self) -> Result<ConsistencyReport, ConsistencyError> {
+    pub async fn perform_consistency_check(
+        &self
+    ) -> Result<ConsistencyReport, ConsistencyError> {
         let mut report = ConsistencyReport::new();
 
         // Check version alignment across nodes
@@ -406,7 +425,11 @@ struct AtomicCapabilitySet {
 
 impl LockFreeCapabilityIndex {
     /// Lock-free capability set update
-    pub fn add_agent_capability(&self, capability: CapabilityName, agent_id: AgentId) -> Result<(), IndexError> {
+    pub fn add_agent_capability(
+        &self,
+        capability: CapabilityName,
+        agent_id: AgentId
+    ) -> Result<(), IndexError> {
         let entry = self.index.entry(capability).or_insert_with(|| {
             AtomicCapabilitySet::new()
         });
@@ -516,10 +539,14 @@ pub struct MemoryEstimator {
 
 impl MemoryEstimator {
     /// Estimates memory usage for given agent count
-    pub fn estimate_memory_usage(&self, agent_count: usize) -> MemoryUsageEstimate {
+    pub fn estimate_memory_usage(
+        &self,
+        agent_count: usize
+    ) -> MemoryUsageEstimate {
         let local_agents_memory = agent_count * size_of::<LocalAgentEntry>();
         let remote_routes_memory = agent_count * size_of::<RemoteRouteEntry>();
-        let capability_index_memory = self.estimate_capability_index_memory(agent_count);
+        let capability_index_memory =
+            self.estimate_capability_index_memory(agent_count);
         let cache_memory = self.estimate_cache_memory();
 
         MemoryUsageEstimate {
@@ -533,19 +560,27 @@ impl MemoryEstimator {
     }
 
     /// Calculates optimal cache sizes based on memory constraints
-    pub fn calculate_optimal_cache_sizes(&self, available_memory: usize) -> CacheConfiguration {
+    pub fn calculate_optimal_cache_sizes(
+        &self,
+        available_memory: usize
+    ) -> CacheConfiguration {
         let base_memory = self.calculate_base_memory_usage();
         let available_for_cache = available_memory - base_memory;
 
         // Allocate cache memory based on access patterns
-        let positive_cache_ratio = 0.60; // 60% for positive cache (most frequent)
-        let negative_cache_ratio = 0.25; // 25% for negative cache (prevents spam)
+        let positive_cache_ratio = 0.60;
+            // 60% for positive cache (most frequent)
+        let negative_cache_ratio = 0.25;
+            // 25% for negative cache (prevents spam)
         let capability_cache_ratio = 0.15; // 15% for capability cache
 
         CacheConfiguration {
-            positive_cache_size: (available_for_cache as f64 * positive_cache_ratio) as usize,
-            negative_cache_size: (available_for_cache as f64 * negative_cache_ratio) as usize,
-            capability_cache_size: (available_for_cache as f64 * capability_cache_ratio) as usize,
+            positive_cache_size:
+                (available_for_cache as f64 * positive_cache_ratio) as usize,
+            negative_cache_size:
+                (available_for_cache as f64 * negative_cache_ratio) as usize,
+            capability_cache_size:
+                (available_for_cache as f64 * capability_cache_ratio) as usize,
         }
     }
 }
@@ -609,11 +644,13 @@ mod benchmarks {
 
         for agents_per_capability in [10, 100, 1_000].iter() {
             group.bench_with_input(
-                BenchmarkId::new("agents_per_capability", agents_per_capability),
+                BenchmarkId::new(
+                    "agents_per_capability", agents_per_capability),
                 agents_per_capability,
                 |b, &count| {
                     let routing = setup_routing_with_capabilities(count);
-                    let capability = CapabilityName::try_new("test_capability".to_string()).unwrap();
+                    let capability = CapabilityName::try_new(
+                        "test_capability".to_string()).unwrap();
 
                     b.iter(|| {
                         routing.find_agents_by_capability(&capability)

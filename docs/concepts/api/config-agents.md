@@ -459,7 +459,7 @@ tracking
 
 ## References
 
-- [ADR-0028: Configuration-Driven Agent Architecture](../../adr/0028-configuration-driven-agent-architecture.md)
+- [ADR-0028: Configuration-Driven Agent Architecture](../../adrs/0028-configuration-driven-agent-architecture.md)
   - Architectural foundation for configuration agents
 - [Performance Specifications](performance-specifications.md) - Performance
   characteristics of configuration agents

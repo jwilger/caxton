@@ -15,8 +15,8 @@ dependencies like databases or message queues. Each Caxton instance:
 
 For architectural details, see:
 
-- [ADR-0014: Coordination-First Architecture](../adr/0014-coordination-first-architecture.md)
-- [ADR-0015: Distributed Protocol Architecture](../adr/0015-distributed-protocol-architecture.md)
+- [ADR-0014: Coordination-First Architecture](../adrs/0014-coordination-first-architecture.md)
+- [ADR-0015: Distributed Protocol Architecture](../adrs/0015-distributed-protocol-architecture.md)
 
 ## Starting a Cluster
 
@@ -114,7 +114,7 @@ security:
       verify_peer: true
 ```
 
-See [ADR-0016: Security Architecture](../adr/0016-security-architecture.md) for
+See [ADR-0016: Security Architecture](../adrs/0016-security-architecture.md) for
 details.
 
 ## Agent Distribution
@@ -236,9 +236,8 @@ Agent startup P50         10ms        8.2ms     ✓
 Gossip convergence        <5s         2.1s      ✓
 ```
 
-See
-[ADR-0017: Performance Requirements](../adr/0017-performance-requirements.md)
-for targets.
+See [Performance Specifications](../api/performance-specifications.md) for
+detailed performance targets.
 
 ## Operations
 
@@ -258,7 +257,7 @@ caxton cluster upgrade --version v1.2.0
 # 5. Roll out to remaining nodes
 ```
 
-See [ADR-0018: Operational Procedures](../adr/0018-operational-procedures.md)
+See [ADR-0018: Operational Procedures](../adrs/0018-domain-types-nutype.md)
 for details.
 
 ### Backup and Recovery

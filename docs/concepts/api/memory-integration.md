@@ -485,7 +485,7 @@ patterns
 
 ## References
 
-- [ADR-0030: Embedded Memory System](../../adr/0030-embedded-memory-system.md) -
+- [ADR-0030: Embedded Memory System](../../adrs/0030-embedded-memory-system.md) -
   Memory system architecture decisions
 - [Performance Specifications](performance-specifications.md) - Memory
   system performance characteristics

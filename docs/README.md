@@ -1,136 +1,86 @@
 # Caxton Documentation
 
-Welcome to the Caxton documentation! Caxton is a production-ready server that
-orchestrates multi-agent systems.
+Welcome to the Caxton documentation. Caxton is a multi-agent orchestration
+server that provides WebAssembly-based agent isolation, FIPA-compliant
+messaging, and comprehensive observability.
 
 ## Documentation Structure
 
-### 📚 Getting Started
+This documentation is organized into seven main sections:
 
-- [Installation Guide](getting-started/installation.md) - Install Caxton on your
-  system
-- [Quick Start](getting-started/quickstart.md) - Get agents running in 3 minutes
-- [First Agent Tutorial](getting-started/first-agent.md) - Build your first
-  WebAssembly agent
-- [Configuration Guide](getting-started/configuration.md) - Configure Caxton for
-  your needs
+### 🚀 [Getting Started](getting-started/)
 
-### 👤 User Guide
+Quick onboarding guides to get you running with Caxton in minutes.
 
-- [CLI Reference](user-guide/cli-reference.md) - Complete command-line
-  documentation
-- [Dashboard Guide](user-guide/dashboard.md) - Web dashboard overview
-- [Deployment Guide](user-guide/deployment.md) - Deploy agents and manage
-  versions
-- [Monitoring Guide](user-guide/monitoring.md) - Monitor agents and system
-  health
-- [Clustering Guide](user-guide/clustering.md) - Multi-node cluster
-  configuration
+- Installation and setup
+- Your first agent
+- Basic configuration
 
-### ⚙️ Operations Guide
+### 🏗️ [Architecture](architecture/)
 
-- [Agent Lifecycle Management](operations/agent-lifecycle-management.md) -
-  Deploy, manage, and maintain agents
-- [Performance Tuning](operations/performance-tuning.md) - Optimize system
-  performance
-- [Security Guide](operations/devops-security-guide.md) - Security best
-  practices
-- [Operational Runbook](operations/operational-runbook.md) - Troubleshooting and
-  maintenance
+System design, architectural decisions, and core concepts.
 
-### 🛠️ Developer Guide
+- Architecture Decision Records (ADRs)
+- Component interaction diagrams
+- Design patterns and rationale
 
-- [API Reference](developer-guide/api-reference.md) - Complete API documentation
-- [Building Agents](developer-guide/building-agents.md) - Agent development in
-  depth
-- [Message Protocols](developer-guide/message-protocols.md) - Agent messaging protocol
-  implementation
-- [WebAssembly Integration](developer-guide/wasm-integration.md) - WASM module
-  details
-- [Security Guide](developer-guide/security-guide.md) - Security features and
-  best practices
-- [Testing Guide](developer-guide/testing.md) - Testing agents and integrations
-- [Testing Strategy](development/testing-strategy.md) - Comprehensive testing
-  approach
+### 🔌 [API](api/)
 
-### 🚀 Operations
+Integration guides for REST API, config agents, and MCP tools.
 
-- [Production Deployment](operations/production-deployment.md) - Deploy Caxton
-  to production
-- [DevOps & Security Guide](operations/devops-security-guide.md) - Security best
-  practices
-- [Operational Runbook](operations/operational-runbook.md) - Step-by-step
-  operational procedures
-- [Performance Tuning](operations/performance-tuning.md) - Optimize Caxton
-  performance
-- [Kubernetes Guide](operations/kubernetes.md) - Run Caxton on Kubernetes
-- [Docker Guide](operations/docker.md) - Container deployment
-- [Troubleshooting](operations/troubleshooting.md) - Common issues and solutions
+- Config agent patterns and examples
+- REST API reference
+- MCP integration guide
 
-### 🏗️ Architecture
+### ⚙️ [Operations](operations/)
 
-- [Coordination-First Overview](architecture/coordination-first-overview.md) -
-  Complete architecture guide
-- [Architecture Decision Records](adr/) - Key architectural decisions
-  - [ADR-0001: Observability First](adr/0001-observability-first-architecture.md)
-  - [ADR-0002: WebAssembly Isolation](adr/0002-webassembly-for-agent-isolation.md)
-  - [ADR-0003: Agent Messaging](adr/0003-fipa-messaging-protocol.md)
-  - [ADR-0004: Minimal Core](adr/0004-minimal-core-philosophy.md)
-  - [ADR-0005: MCP Integration](adr/0005-mcp-for-external-tools.md)
-  - [ADR-0006: Application Server](adr/0006-application-server-architecture.md)
-  - [ADR-0007: Management API](adr/0007-management-api-design.md)
-  - [ADR-0008: Agent Deployment](adr/0008-agent-deployment-model.md)
-  - [ADR-0009: CLI Design](adr/0009-cli-tool-design.md)
-  - [ADR-0010: External Routing](adr/0010-external-agent-routing-api.md)
-  - [ADR-0011: Capability Registration](adr/0011-capability-registration-in-code.md)
-  - [ADR-0012: Pragmatic Agent Messaging](adr/0012-pragmatic-fipa-subset.md)
-  - [ADR-0013: State Management](adr/0013-state-management-architecture.md)
-    *(Superseded)*
-  - [ADR-0014: Coordination-First Architecture](adr/0014-coordination-first-architecture.md)
-  - [ADR-0015: Distributed Protocol Architecture](adr/0015-distributed-protocol-architecture.md)
-  - [ADR-0016: Security Architecture](adr/0016-security-architecture.md)
-  - [ADR-0017: Performance Requirements](adr/0017-performance-requirements.md)
-  - [ADR-0018: Operational Procedures](adr/0018-operational-procedures.md)
+Production deployment, monitoring, security, and troubleshooting.
 
-### 🔧 Development
+- Deployment guides
+- Performance tuning
+- Security best practices
+- Troubleshooting procedures
 
-- [CLAUDE.md](development/CLAUDE.md) - Claude Code integration
-- [Coordination](development/coordination.md) - Task coordination
-- [Memory Bank](development/memory-bank.md) - Persistent context
+### 👥 [Contributors](contributors/)
 
-## Quick Links
+Development guides for those working on Caxton itself.
 
-- **Main README**: [/README.md](../README.md)
-- **Architecture**: [/ARCHITECTURE.md](../ARCHITECTURE.md)
-- **Contributing**: [/CONTRIBUTING.md](../CONTRIBUTING.md)
-- **Roadmap**: [/ROADMAP.md](../ROADMAP.md)
-- **Security**: [/SECURITY.md](../SECURITY.md)
-- **Changelog**: [/CHANGELOG.md](../CHANGELOG.md)
+- Development environment setup
+- Testing strategies
+- Code contribution guidelines
+
+### 📚 [Concepts](concepts/)
+
+Deep dives into messaging, memory systems, and FIPA protocols.
+
+- Agent communication patterns
+- Memory system architecture
+- FIPA knowledge base
+
+### 🎯 [Audiences](audiences/)
+
+Audience-specific documentation paths.
+
+- Experimenters (quick trials)
+- Agent Developers (building agents)
+- Operators (production deployment)
+- Contributors (code development)
+
+## Quick Navigation
+
+- **Project Root**: [../README.md](../README.md) - Main project overview
+- **Architecture Overview**: [../ARCHITECTURE.md](../ARCHITECTURE.md) -
+  High-level system design
+- **Contributing**: [../CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
+- **ADRs**: [adrs/](adrs/) - Architecture Decision Records
 
 ## Getting Help
 
-- **GitHub Issues**:
-  [Report bugs or request features](https://github.com/caxton/caxton/issues)
-- **Discussions**:
-  [Ask questions and share ideas](https://github.com/caxton/caxton/discussions)
-- **Discord**: [Join our community](https://discord.gg/caxton)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/jwilger/caxton/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/jwilger/caxton/discussions)
 
-## Documentation Conventions
+## Documentation Status
 
-### Code Examples
-
-- Examples are provided in multiple languages where applicable
-- All examples are tested and working with the latest Caxton version
-- Replace placeholder values (like `your-api-key`) with actual values
-
-### Version Compatibility
-
-- Documentation is for Caxton v1.0+ unless otherwise noted
-- Breaking changes are clearly marked
-- Legacy documentation is available in version branches
-
-### Contributing to Docs
-
-- See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines
-- Documentation uses Markdown with GitHub Flavored Markdown extensions
-- Run `caxton docs validate` to check documentation
+This documentation serves as both current state and architectural specification
+for Caxton development. Some features described may be in planning or
+development phases - check individual sections for implementation status.

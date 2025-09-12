@@ -1,16 +1,11 @@
----
-title: "Configuration and Deployment Architecture"
-date: 2025-01-14
-layout: page
-categories: [architecture, deployment]
----
+# Configuration and Deployment Architecture
 
 ## Overview
 
 This document specifies the comprehensive configuration architecture and
-deployment patterns for the Caxton Message Router. The design supports multiple
-deployment scenarios from development to large-scale production with
-hot-reloading and operational flexibility.
+deployment patterns for the Caxton Message Router. The design supports
+multiple deployment scenarios from development to large-scale production
+with hot-reloading and operational flexibility.
 
 ## Configuration Architecture
 
@@ -128,7 +123,8 @@ pub struct DeliveryConfig {
 
 ```rust
 impl RouterConfig {
-    /// Validates configuration for internal consistency and resource feasibility
+    /// Validates configuration for internal consistency and resource
+    /// feasibility
     pub fn validate(&self) -> Result<ValidationReport, ConfigError> {
         let mut report = ValidationReport::new();
 
@@ -155,22 +151,29 @@ impl RouterConfig {
     }
 
     /// Validates performance configuration consistency
-    fn validate_performance_config(&self, report: &mut ValidationReport) -> Result<(), ConfigError> {
+    fn validate_performance_config(
+        &self,
+        report: &mut ValidationReport
+    ) -> Result<(), ConfigError> {
         // Queue size relationships
-        if self.performance.inbound_queue_size.as_usize() < self.performance.batch_size.as_usize() {
+        if self.performance.inbound_queue_size.as_usize() <
+           self.performance.batch_size.as_usize() {
             report.add_error(
                 "performance.inbound_queue_size",
-                "Queue size must be at least 2x batch size for optimal performance"
+                "Queue size must be at least 2x batch size for optimal \
+                 performance"
             );
         }
 
         // Thread count vs CPU cores
         let available_cores = num_cpus::get();
-        if self.performance.worker_thread_count.as_usize() > available_cores * 2 {
+        if self.performance.worker_thread_count.as_usize() >
+           available_cores * 2 {
             report.add_warning(
                 "performance.worker_thread_count",
                 format!("Thread count ({}) exceeds 2x CPU cores ({})",
-                       self.performance.worker_thread_count.as_usize(), available_cores)
+                       self.performance.worker_thread_count.as_usize(),
+                       available_cores)
             );
         }
 
@@ -180,7 +183,8 @@ impl RouterConfig {
             report.add_error(
                 "performance.memory_limit",
                 format!("Estimated memory usage ({}) exceeds limit ({})",
-                       estimated_memory, self.performance.memory_limit)
+                       estimated_memory,
+                       self.performance.memory_limit)
             );
         }
 
@@ -203,7 +207,10 @@ impl RouterConfig {
     }
 
     /// Provides configuration recommendations based on deployment profile
-    pub fn recommend_optimizations(&self, profile: DeploymentProfile) -> ConfigRecommendations {
+    pub fn recommend_optimizations(
+        &self,
+        profile: DeploymentProfile
+    ) -> ConfigRecommendations {
         let mut recommendations = ConfigRecommendations::new();
 
         match profile {
@@ -245,8 +252,10 @@ impl RouterConfig {
                 pipeline_count: PipelineCount::try_new(2).unwrap(),
                 batch_size: MessageBatchSize::try_new(10).unwrap(),
                 message_timeout: MessageTimeoutMs::try_new(30_000).unwrap(),
-                processing_timeout: ProcessingTimeoutMs::try_new(5_000).unwrap(),
-                max_concurrent_messages: MaxConcurrentMessages::try_new(1_000).unwrap(),
+                processing_timeout:
+                    ProcessingTimeoutMs::try_new(5_000).unwrap(),
+                max_concurrent_messages:
+                    MaxConcurrentMessages::try_new(1_000).unwrap(),
                 memory_limit: MemoryBytes::from_mb(512).unwrap(),
                 positive_cache_size: CacheSize::try_new(1_000).unwrap(),
                 negative_cache_size: CacheSize::try_new(500).unwrap(),
@@ -259,8 +268,10 @@ impl RouterConfig {
             delivery: DeliveryConfig {
                 max_retries: MaxRetries::try_new(2).unwrap(),
                 base_retry_delay: RetryDelayMs::try_new(1_000).unwrap(),
-                circuit_breaker_threshold: CircuitBreakerThreshold::try_new(3).unwrap(),
-                dead_letter_queue_size: DeadLetterQueueSize::try_new(1_000).unwrap(),
+                circuit_breaker_threshold:
+                    CircuitBreakerThreshold::try_new(3).unwrap(),
+                dead_letter_queue_size:
+                    DeadLetterQueueSize::try_new(1_000).unwrap(),
                 enable_batch_delivery: false, // Simpler debugging
                 enable_compression: false,
                 ..Default::default()
@@ -268,8 +279,10 @@ impl RouterConfig {
             observability: ObservabilityConfig {
                 tracing_enabled: true,
                 metrics_enabled: true,
-                sampling_ratio: TraceSamplingRatio::try_new(1.0).unwrap(), // 100% sampling
-                export_interval: MetricsExportIntervalMs::try_new(5_000).unwrap(),
+                sampling_ratio:
+                    TraceSamplingRatio::try_new(1.0).unwrap(), // 100% sampling
+                export_interval:
+                    MetricsExportIntervalMs::try_new(5_000).unwrap(),
                 log_level: LogLevel::Debug,
                 structured_logging: true,
                 ..Default::default()
@@ -289,8 +302,10 @@ impl RouterConfig {
                 pipeline_count: PipelineCount::try_new(8).unwrap(),
                 batch_size: MessageBatchSize::try_new(1_000).unwrap(),
                 message_timeout: MessageTimeoutMs::try_new(10_000).unwrap(),
-                processing_timeout: ProcessingTimeoutMs::try_new(2_000).unwrap(),
-                max_concurrent_messages: MaxConcurrentMessages::try_new(1_000_000).unwrap(),
+                processing_timeout:
+                    ProcessingTimeoutMs::try_new(2_000).unwrap(),
+                max_concurrent_messages:
+                    MaxConcurrentMessages::try_new(1_000_000).unwrap(),
                 memory_limit: MemoryBytes::from_mb(8_192).unwrap(), // 8GB
                 positive_cache_size: CacheSize::try_new(100_000).unwrap(),
                 negative_cache_size: CacheSize::try_new(10_000).unwrap(),
@@ -304,8 +319,10 @@ impl RouterConfig {
                 connection_pool_size: ConnectionPoolSize::try_new(100).unwrap(),
                 max_retries: MaxRetries::try_new(5).unwrap(),
                 base_retry_delay: RetryDelayMs::try_new(500).unwrap(),
-                circuit_breaker_threshold: CircuitBreakerThreshold::try_new(20).unwrap(),
-                dead_letter_queue_size: DeadLetterQueueSize::try_new(1_000_000).unwrap(),
+                circuit_breaker_threshold:
+                    CircuitBreakerThreshold::try_new(20).unwrap(),
+                dead_letter_queue_size:
+                    DeadLetterQueueSize::try_new(1_000_000).unwrap(),
                 enable_batch_delivery: true,
                 enable_compression: true,
                 compression_algorithm: CompressionAlgorithm::Lz4,
@@ -314,8 +331,10 @@ impl RouterConfig {
             observability: ObservabilityConfig {
                 tracing_enabled: true,
                 metrics_enabled: true,
-                sampling_ratio: TraceSamplingRatio::try_new(0.01).unwrap(), // 1% sampling
-                export_interval: MetricsExportIntervalMs::try_new(60_000).unwrap(),
+                sampling_ratio:
+                    TraceSamplingRatio::try_new(0.01).unwrap(), // 1% sampling
+                export_interval:
+                    MetricsExportIntervalMs::try_new(60_000).unwrap(),
                 log_level: LogLevel::Info,
                 structured_logging: true,
                 ..Default::default()
@@ -329,25 +348,36 @@ impl RouterConfig {
         let mut config = Self::production();
 
         // Maximize throughput settings
-        config.performance.inbound_queue_size = ChannelCapacity::try_new(1_000_000).unwrap();
-        config.performance.outbound_queue_size = ChannelCapacity::try_new(1_000_000).unwrap();
-        config.performance.batch_size = MessageBatchSize::try_new(10_000).unwrap();
-        config.performance.worker_thread_count = WorkerThreadCount::try_new(32).unwrap();
+        config.performance.inbound_queue_size =
+            ChannelCapacity::try_new(1_000_000).unwrap();
+        config.performance.outbound_queue_size =
+            ChannelCapacity::try_new(1_000_000).unwrap();
+        config.performance.batch_size =
+            MessageBatchSize::try_new(10_000).unwrap();
+        config.performance.worker_thread_count =
+            WorkerThreadCount::try_new(32).unwrap();
         config.performance.pipeline_count = PipelineCount::try_new(16).unwrap();
-        config.performance.memory_limit = MemoryBytes::from_mb(32_768).unwrap(); // 32GB
+        config.performance.memory_limit =
+            MemoryBytes::from_mb(32_768).unwrap(); // 32GB
 
         // Aggressive caching
-        config.performance.positive_cache_size = CacheSize::try_new(1_000_000).unwrap();
-        config.performance.negative_cache_size = CacheSize::try_new(100_000).unwrap();
+        config.performance.positive_cache_size =
+            CacheSize::try_new(1_000_000).unwrap();
+        config.performance.negative_cache_size =
+            CacheSize::try_new(100_000).unwrap();
 
         // Optimized delivery
         config.delivery.enable_batch_delivery = true;
-        config.delivery.max_batch_size = MessageBatchSize::try_new(10_000).unwrap();
-        config.delivery.batch_timeout = BatchTimeoutMs::try_new(10).unwrap(); // Very low latency
+        config.delivery.max_batch_size =
+            MessageBatchSize::try_new(10_000).unwrap();
+        config.delivery.batch_timeout =
+            BatchTimeoutMs::try_new(10).unwrap(); // Very low latency
 
         // Minimal observability overhead
-        config.observability.sampling_ratio = TraceSamplingRatio::try_new(0.001).unwrap(); // 0.1%
-        config.observability.export_interval = MetricsExportIntervalMs::try_new(300_000).unwrap();
+        config.observability.sampling_ratio =
+            TraceSamplingRatio::try_new(0.001).unwrap(); // 0.1%
+        config.observability.export_interval =
+            MetricsExportIntervalMs::try_new(300_000).unwrap();
 
         config
     }
@@ -382,7 +412,8 @@ impl ConfigManager {
 
         // Check compatibility with current config
         let current_config = self.current_config.read().await;
-        let compatibility = self.check_compatibility(&current_config, &new_config)?;
+        let compatibility =
+            self.check_compatibility(&current_config, &new_config)?;
 
         match compatibility {
             CompatibilityResult::HotReloadable(changes) => {
@@ -443,7 +474,10 @@ impl ConfigManager {
     }
 
     /// Validates that hot-reload changes are safe to apply
-    fn validate_hot_reload_safety(&self, changes: &[ConfigChange]) -> Result<(), ConfigError> {
+    fn validate_hot_reload_safety(
+        &self,
+        changes: &[ConfigChange]
+    ) -> Result<(), ConfigError> {
         for change in changes {
             match change {
                 ConfigChange::QueueSizeIncrease { .. } => {
@@ -456,7 +490,8 @@ impl ConfigManager {
                     if current_usage > to.as_usize() {
                         return Err(ConfigError::UnsafeHotReload {
                             change: change.clone(),
-                            reason: format!("Queue usage ({}) exceeds new size ({})",
+                            reason: format!(
+                                "Queue usage ({}) exceeds new size ({})",
                                           current_usage, to.as_usize())
                         });
                     }
@@ -467,7 +502,8 @@ impl ConfigManager {
                     if !long_running_ops.is_empty() {
                         return Err(ConfigError::UnsafeHotReload {
                             change: change.clone(),
-                            reason: format!("{} long-running operations would timeout",
+                            reason: format!(
+                                "{} long-running operations would timeout",
                                           long_running_ops.len())
                         });
                     }
@@ -479,7 +515,9 @@ impl ConfigManager {
                 ConfigChange::SecuritySettings { .. } => {
                     // Security changes require restart for safety
                     return Err(ConfigError::RequiresRestart {
-                        reason: "Security configuration changes require restart".to_string()
+                        reason:
+                            "Security configuration changes require restart"
+                            .to_string()
                     });
                 }
             }
@@ -524,18 +562,23 @@ impl FileConfigSource {
     }
 
     /// Enables file watching for automatic reloads
-    pub async fn enable_watching(&mut self) -> Result<ConfigWatcher, ConfigError> {
+    pub async fn enable_watching(
+        &mut self
+    ) -> Result<ConfigWatcher, ConfigError> {
         let (tx, rx) = tokio::sync::mpsc::channel(10);
 
-        let watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
+        let watcher = notify::recommended_watcher(
+            move |result: notify::Result<notify::Event>| {
             match result {
                 Ok(event) => {
                     if event.kind.is_modify() {
-                        let _ = tx.blocking_send(ConfigChangeEvent::FileModified);
+                        let _ = tx.blocking_send(
+                            ConfigChangeEvent::FileModified);
                     }
                 }
                 Err(e) => {
-                    let _ = tx.blocking_send(ConfigChangeEvent::WatchError(e.to_string()));
+                    let _ = tx.blocking_send(
+                        ConfigChangeEvent::WatchError(e.to_string()));
                 }
             }
         })?;
@@ -736,7 +779,8 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: CAXTON_CLUSTER_SEEDS
-          value: "caxton-message-router-0.caxton-message-router:7946,caxton-message-router-1.caxton-message-router:7946"
+          value: "caxton-message-router-0.caxton-message-router:7946,\
+                  caxton-message-router-1.caxton-message-router:7946"
         - name: RUST_LOG
           value: "caxton=info,caxton::message_router=debug"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -876,7 +920,8 @@ spec:
         severity: critical
       annotations:
         summary: "Caxton Message Router is down"
-        description: "Message Router instance {{ $labels.instance }} has been down for more than 1 minute."
+        description: "Message Router instance {{ $labels.instance }} has been \
+                      down for more than 1 minute."
 
     - alert: CaxtonHighMessageLatency
       expr: caxton_message_routing_duration_p99 > 0.005  # 5ms
@@ -885,16 +930,20 @@ spec:
         severity: warning
       annotations:
         summary: "High message routing latency"
-        description: "P99 message routing latency is {{ $value }}s on {{ $labels.instance }}"
+        description: "P99 message routing latency is {{ $value }}s on \
+                      {{ $labels.instance }}"
 
     - alert: CaxtonHighErrorRate
-      expr: rate(caxton_message_routing_errors_total[5m]) > 0.01  # 1% error rate
+      expr: rate(caxton_message_routing_errors_total[5m]) > 0.01  \
+            # 1% error rate
       for: 2m
       labels:
         severity: critical
       annotations:
         summary: "High message routing error rate"
-        description: "Message routing error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+        description: "Message routing error rate is \
+                      {{ $value | humanizePercentage }} on \
+                      {{ $labels.instance }}"
 
     - alert: CaxtonQueueDepthHigh
       expr: caxton_message_queue_depth > 10000
@@ -903,7 +952,8 @@ spec:
         severity: warning
       annotations:
         summary: "High message queue depth"
-        description: "Message queue depth is {{ $value }} on {{ $labels.instance }}"
+        description: "Message queue depth is {{ $value }} on \
+                      {{ $labels.instance }}"
 
     - alert: CaxtonMemoryUsageHigh
       expr: caxton_memory_usage_bytes / caxton_memory_limit_bytes > 0.9
@@ -912,7 +962,8 @@ spec:
         severity: warning
       annotations:
         summary: "High memory usage"
-        description: "Memory usage is {{ $value | humanizePercentage }} of limit on {{ $labels.instance }}"
+        description: "Memory usage is {{ $value | humanizePercentage }} of \
+                      limit on {{ $labels.instance }}"
 ```
 
 ## Operational Runbooks
@@ -938,7 +989,8 @@ sudo sysctl -w net.core.netdev_budget=600
 
 # CPU optimization
 echo "2. Setting CPU governor to performance..."
-echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+echo performance | \
+    sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 
 # Memory optimization
 echo "3. Configuring memory settings..."
@@ -956,7 +1008,8 @@ cat > /tmp/caxton-optimized.toml <<EOF
 worker_thread_count = $((CPU_CORES * 2))
 inbound_queue_size = 1000000
 outbound_queue_size = 1000000
-memory_limit = $((MEMORY_GB * 1024 * 1024 * 1024 * 3 / 4))  # 75% of system memory
+memory_limit = \
+    $((MEMORY_GB * 1024 * 1024 * 1024 * 3 / 4))  # 75% of system memory
 enable_simd_optimizations = true
 enable_zero_copy = true
 

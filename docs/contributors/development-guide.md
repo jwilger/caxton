@@ -654,7 +654,7 @@ participating.
 
 ## References
 
-- [Architecture Decision Records](../adr/)
+- [Architecture Decision Records](../adrs/)
 - [Security Guidelines](../operations/devops-security-guide.md)
 - [Performance Benchmarks](../operations/performance-tuning.md)
 - [State Recovery Patterns](../operations/state-recovery-patterns.md)

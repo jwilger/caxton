@@ -1,9 +1,4 @@
----
-title: "Message Router Architecture"
-date: 2025-01-15
-layout: page
-categories: [Architecture]
----
+# Message Router Architecture
 
 ## Executive Summary
 
@@ -540,8 +535,8 @@ router:
 
 ## References
 
-- [ADR-0003: Agent Messaging Protocol](../adr/0003-fipa-messaging-protocol.md)
-- [ADR-0012: Pragmatic Agent Messaging Subset](../adr/0012-pragmatic-fipa-subset.md)
-- [ADR-0031: Context Management Architecture](../adr/0031-context-management-architecture.md)
+- [ADR-0003: Agent Messaging Protocol](../adrs/0003-fipa-messaging-protocol.md)
+- [ADR-0012: Pragmatic Agent Messaging Subset](../adrs/0012-pragmatic-fipa-subset.md)
+- [ADR-0031: Context Management Architecture](../adrs/0031-context-management-architecture.md)
 - [Performance Tuning Guide](../operations/performance-tuning.md)
 - [Security Guide](../operations/devops-security-guide.md)

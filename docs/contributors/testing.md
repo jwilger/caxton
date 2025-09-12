@@ -637,5 +637,5 @@ pub struct TestMetrics {
 
 - [Development Guide](development-guide.md)
 - [Performance Benchmarks](../operations/performance-tuning.md)
-- [Architecture Decision Records](../adr/)
+- [Architecture Decision Records](../adrs/)
 - [Security Guide](../operations/devops-security-guide.md)

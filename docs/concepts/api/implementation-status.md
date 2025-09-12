@@ -450,7 +450,7 @@ innovation
 ## References
 
 - [ADR-0028: Configuration-Driven Agent
-  Architecture](../../adr/0028-configuration-driven-agent-architecture.md) -
+  Architecture](../../adrs/0028-configuration-driven-agent-architecture.md) -
   Major architectural shift driving implementation priorities
 - [Performance Specifications](performance-specifications.md) - Production
   readiness criteria

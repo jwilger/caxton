@@ -1,9 +1,4 @@
----
-title: "Coordination-First Architecture Overview"
-date: 2025-01-14
-layout: page
-categories: [architecture, coordination]
----
+# Coordination-First Architecture Overview
 
 This document provides a comprehensive overview of Caxton's coordination-first
 architecture, which eliminates external dependencies while providing distributed
@@ -25,7 +20,7 @@ fundamental shift provides:
 
 ### 1. Minimal Core Philosophy
 
-Following [ADR-0004](../adr/0004-minimal-core-philosophy.md), Caxton maintains a
+Following [ADR-0004](../adrs/0004-minimal-core-philosophy.md), Caxton maintains a
 minimal core that handles only:
 
 - Agent lifecycle management
@@ -37,7 +32,7 @@ Business logic and state persistence are delegated to agents and MCP tools.
 
 ### 2. Coordination Over Consensus
 
-Using [SWIM protocol](../adr/0014-coordination-first-architecture.md) for:
+Using [SWIM protocol](../adrs/0014-coordination-first-architecture.md) for:
 
 - Membership management
 - Failure detection
@@ -88,7 +83,7 @@ Handles infrastructure-level coordination:
 - **Gossip Dissemination**: Share agent registry updates
 - **Partition Handling**: Graceful degradation in minority partitions
 
-See [ADR-0015](../adr/0015-distributed-protocol-architecture.md) for protocol
+See [ADR-0015](../adrs/0015-distributed-protocol-architecture.md) for protocol
 details.
 
 ### Agent Messaging Layer
@@ -100,7 +95,7 @@ Handles application-level communication:
 - **Conversation Management**: Track multi-message conversations
 - **Protocol Support**: Request/Reply, Contract Net, etc.
 
-See [ADR-0012](../adr/0012-pragmatic-fipa-subset.md) for protocol subset.
+See [ADR-0012](../adrs/0012-pragmatic-fipa-subset.md) for protocol subset.
 
 ### Local State Management
 
@@ -177,7 +172,7 @@ Comprehensive security at every layer:
 - **Rate Limiting**: Prevent abuse
 - **Audit Logging**: Complete security trail
 
-See [ADR-0016](../adr/0016-security-architecture.md) for details.
+See [ADR-0016](../adrs/0016-security-architecture.md) for details.
 
 ## Performance Characteristics
 
@@ -195,7 +190,8 @@ See [ADR-0016](../adr/0016-security-architecture.md) for details.
 - **Concurrent agents**: 10,000 per instance
 - **Cluster size**: Up to 100 nodes
 
-See [ADR-0017](../adr/0017-performance-requirements.md) for requirements.
+See [Performance Specifications](../api/performance-specifications.md) for
+detailed requirements.
 
 ## Operational Procedures
 
@@ -229,7 +225,7 @@ caxton cluster performance
 caxton agents list --by-node
 ```
 
-See [ADR-0018](../adr/0018-operational-procedures.md) for procedures.
+See [ADR-0018](../adrs/0018-domain-types-nutype.md) for procedures.
 
 ## Migration Path
 
@@ -291,8 +287,8 @@ failure | Degraded operation |
 
 1. **Read the ADRs**: Understand architectural decisions
 
-   - [ADR-0014: Coordination-First Architecture](../adr/0014-coordination-first-architecture.md)
-   - [ADR-0015: Distributed Protocol Architecture](../adr/0015-distributed-protocol-architecture.md)
+   - [ADR-0014: Coordination-First Architecture](../adrs/0014-coordination-first-architecture.md)
+   - [ADR-0015: Distributed Protocol Architecture](../adrs/0015-distributed-protocol-architecture.md)
 
 2. **Follow the Guides**:
 
@@ -306,7 +302,7 @@ failure | Degraded operation |
 
    - [Security Guide](../developer-guide/security-guide.md) - Security best
      practices
-   - [ADR-0016: Security Architecture](../adr/0016-security-architecture.md) -
+   - [ADR-0016: Security Architecture](../adrs/0016-security-architecture.md) -
      Security design
 
 4. **Test Thoroughly**:

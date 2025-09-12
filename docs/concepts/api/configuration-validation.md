@@ -491,7 +491,7 @@ configurations
 
 ## References
 
-- [ADR-0028: Configuration-Driven Agent Architecture](../../adr/0028-configuration-driven-agent-architecture.md)
+- [ADR-0028: Configuration-Driven Agent Architecture](../../adrs/0028-configuration-driven-agent-architecture.md)
   - Foundation for configuration validation
 - [Implementation Status](implementation-status.md) - Current validation
   implementation status

@@ -18,10 +18,11 @@ with the hybrid agent architecture vision.
 ## Executive Summary
 
 Caxton is a production-ready multi-agent orchestration server that provides
-**configuration-driven agents** as the primary user experience, with optional
-WebAssembly isolation for advanced use cases. The system offers FIPA-compliant
-messaging, embedded memory capabilities, and comprehensive observability. This
-document defines the complete hybrid architecture, domain model, and
+**configuration-driven agents** as the primary user experience. The system
+offers
+simple agent communication, embedded memory capabilities, and comprehensive
+observability. WebAssembly is used for deployable MCP servers that provide tools
+to agents. This document defines the complete architecture, domain model, and
 implementation patterns following type-driven development principles.
 
 ## Table of Contents
@@ -59,31 +60,24 @@ implementation patterns following type-driven development principles.
 │  └─────────────────┬─────────────────────────────────────┘ │
 │                    │                                       │
 │  ┌─────────────────▼─────────────────────────────────────┐ │
-│  │         Hybrid Agent Runtime Environment             │ │
+│  │            Agent Runtime Environment                 │ │
 │  │                                                       │ │
-│  │ Configuration Agents (Primary UX - 5-10 min setup)   │ │
+│  │ Simple Agents (Primary UX - 5-10 min setup)          │ │
 │  │  ┌────────────┐  ┌────────────┐  ┌────────────┐     │ │
-│  │  │Config A    │  │Config B    │  │Config C    │     │ │
-│  │  │(YAML+MD)   │  │(YAML+MD)   │  │(YAML+MD)   │     │ │
+│  │  │Agent A     │  │Agent B     │  │Agent C     │     │ │
+│  │  │(TOML)      │  │(TOML)      │  │(TOML)      │     │ │
 │  │  │Host Runtime│  │Host Runtime│  │Host Runtime│     │ │
 │  │  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘     │ │
-│  │         │               │               │           │ │
-│  │ WASM Agents (Advanced Use Cases)                     │ │
-│  │  ┌─────────┐            │            ┌─────────┐    │ │
-│  │  │Agent X  │            │            │Agent Z  │    │ │
-│  │  │(WASM)   │            │            │(WASM)   │    │ │
-│  │  │Sandbox  │            │            │Sandbox  │    │ │
-│  │  └────┬────┘            │            └────┬────┘    │ │
-│  │       └─────────────────┼─────────────────┘         │ │
+│  │         └───────────────┼───────────────┘           │ │
 │  │                         │                           │ │
 │  │  ┌─────────────────────▼─────────────────────────┐  │ │
-│  │  │      Capability-Based FIPA Message Router     │  │ │
-│  │  │  • Capability Routing • Conversation Mgmt     │  │ │
+│  │  │         Simple Message Router                 │  │ │
+│  │  │  • Message Routing • Conversation Mgmt        │  │ │
 │  │  │  • Protocol Handling  • Error Recovery        │  │ │
 │  │  └─────────────────────────────────────────────────┘  │ │
 │  │                                                       │ │
 │  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │           MCP Tool Sandboxes (WASM)            │  │ │
+│  │  │         Deployable MCP Servers (WASM)          │  │ │
 │  │  │  • HTTP Client    • CSV Parser                 │  │ │
 │  │  │  • Chart Gen      • File System                │  │ │
 │  │  │  • Database       • Custom Tools                │  │ │
@@ -111,17 +105,16 @@ implementation patterns following type-driven development principles.
 
 1. **Configuration First**: 5-10 minute agent creation through TOML
    configuration files (ADR-0032)
-2. **Hybrid Runtime**: Configuration agents for 90% of use cases, WASM for
-   custom algorithms
+2. **Simple Agent Runtime**: Configuration agents provide simple orchestration
+   without complex sandboxing
 3. **Type-Driven Design**: All illegal states are unrepresentable through the
    type system
 4. **Observability First**: Every operation is traced, logged, and measured
 5. **Zero Dependencies by Default**: Zero external dependencies by default, with
    pluggable external backends available for scaling (ADR-0030)
-6. **Capability-Based Messaging**: Lightweight FIPA with capability routing
-   (ADR-0029)
-7. **Security Through Isolation**: MCP tools run in WASM sandboxes, not
-   configuration agents
+6. **Simple Messaging**: Lightweight agent communication patterns
+7. **MCP Server Deployment**: WebAssembly used for deployable MCP servers that
+   provide tools to agents
 8. **Pluggable LLM Integration**: Users can integrate any LLM/SLM API through
    configurable provider system. OpenAI chat completion provided as default
    reference implementation
@@ -132,27 +125,28 @@ implementation patterns following type-driven development principles.
 > These agent types represent the target user experience designed in ADR-28.
 > Implementation is in progress following type-driven development principles.
 
-**Configuration Agents (Primary - 90% of use cases)**:
+**Simple Agents (Primary use cases)**:
 
 - **Definition**: TOML configuration files with embedded documentation
 - **Capabilities**: Declare what they can do (e.g., "data-analysis")
 - **Tools**: Allowlist of MCP tools they can access
 - **Runtime**: Executed in host process with LLM orchestration
 - **Setup Time**: 5-10 minutes from idea to working agent
-- **Security**: Tools run in WASM sandboxes, not the agent logic
+- **Security**: Simple agents focus on orchestration; complex operations
+  delegated to MCP servers
 
-**WASM Agents (Advanced - 10% of use cases)**:
+**Deployable MCP Servers (Tool providers)**:
 
-- **Definition**: Compiled WebAssembly modules
-- **Use Cases**: Custom algorithms, performance-critical logic, proprietary
-  code
+- **Definition**: WebAssembly modules that provide tools to agents
+- **Use Cases**: File operations, HTTP requests, data processing, custom
+  algorithms
 - **Languages**: Rust, JavaScript, Python, Go, or any WASM-compatible language
 - **Runtime**: Executed in isolated WASM sandboxes with resource limits
-- **Setup Time**: 2-4 hours including compilation toolchain setup
+- **Setup Time**: Variable depending on complexity
 
 ## Domain Model
 
-### Configuration Agent Domain Model
+### Simple Agent Domain Model
 
 ```toml
 # Example Configuration Agent Definition
@@ -193,67 +187,66 @@ This agent specializes in data analysis tasks and can:
 '''
 ```
 
-### WASM Agent Domain Model (Advanced Use Cases)
+### MCP Server Domain Model (Tool Providers)
 
 ```rust
-// Agent Identity and Lifecycle
+// MCP Server Identity and Lifecycle
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct AgentId(NonZeroU64);
+pub struct McpServerId(NonZeroU64);
 
 #[derive(Debug, Clone)]
-pub struct Agent<State> {
-    id: AgentId,
-    name: AgentName,
+pub struct McpServer<State> {
+    id: McpServerId,
+    name: McpServerName,
     wasm_module: WasmModule,
+    tools: Vec<ToolDefinition>,
     resources: ResourceLimits,
     _state: PhantomData<State>,
 }
 
-// Agent States - Make illegal state transitions impossible
+// MCP Server States - Make illegal state transitions impossible
 pub struct Unloaded;
 pub struct Loaded;
 pub struct Running;
 pub struct Draining;
 pub struct Failed;
 
-impl Agent<Unloaded> {
-    pub fn load(self, module: WasmModule) -> Result<Agent<Loaded>, LoadError> {
-        // Only unloaded agents can be loaded
+impl McpServer<Unloaded> {
+    pub fn load(self, module: WasmModule)
+        -> Result<McpServer<Loaded>, LoadError> {
+        // Only unloaded servers can be loaded
     }
 }
 
-impl Agent<Loaded> {
-    pub fn start(self) -> Result<Agent<Running>, StartError> {
-        // Only loaded agents can start
+impl McpServer<Loaded> {
+    pub fn start(self) -> Result<McpServer<Running>, StartError> {
+        // Only loaded servers can start
     }
 }
 
-impl Agent<Running> {
-    pub fn drain(self) -> Result<Agent<Draining>, DrainError> {
-        // Only running agents can be drained
+impl McpServer<Running> {
+    pub fn drain(self) -> Result<McpServer<Draining>, DrainError> {
+        // Only running servers can be drained
     }
 
-    pub fn handle_message(
+    pub fn handle_tool_call(
         &self,
-        msg: FipaMessage
-    ) -> Result<(), ProcessingError> {
-        // Only running agents can process messages
+        tool_call: ToolCall
+    ) -> Result<ToolResult, ProcessingError> {
+        // Only running servers can process tool calls
     }
 }
 
-// FIPA Message Domain Model
+// Simple Message Domain Model
 #[derive(Debug, Clone)]
-pub struct FipaMessage {
+pub struct Message {
     pub id: MessageId,
-    pub performative: Performative,
+    pub message_type: MessageType,
     pub sender: AgentId,
-    pub receiver: AgentId,
+    pub receiver: Option<AgentId>,
     pub conversation_id: ConversationId,
-    pub reply_with: Option<ReplyWith>,
-    pub in_reply_to: Option<InReplyTo>,
+    pub reply_to: Option<MessageId>,
     pub content: MessageContent,
-    pub ontology: Option<Ontology>,
-    pub language: Option<Language>,
     // Observability context
     pub trace_id: TraceId,
     pub span_id: SpanId,
@@ -261,26 +254,14 @@ pub struct FipaMessage {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Performative {
-    // Information exchange
-    Inform,
-    Query,
+pub enum MessageType {
+    // Basic communication
     Request,
-
-    // Negotiation
-    Propose,
-    AcceptProposal,
-    RejectProposal,
-
-    // Contract Net Protocol
-    Cfp,  // Call for Proposals
+    Response,
+    Notification,
 
     // Error handling
-    NotUnderstood,
-    Failure,
-
-    // Conversation management
-    Cancel,
+    Error,
 }
 
 // Resource Management
@@ -613,32 +594,25 @@ impl AgentLifecycleManager {
 }
 ```
 
-## FIPA Message Flow
+## Agent Communication
 
-### Capability-Based Messaging (ADR-0029)
+### Simple Message Routing
 
-The Caxton messaging system implements a lightweight FIPA-ACL protocol
-optimized for configuration-driven agents with capability-based routing rather
-than agent-specific addressing.
+The Caxton messaging system implements simple agent communication
+optimized for configuration-driven agents with straightforward routing.
 
 #### Message Structure
 
 ```rust
 #[derive(Debug, Clone)]
-pub struct FipaMessage {
+pub struct Message {
     pub id: MessageId,
-    pub performative: Performative,
+    pub message_type: MessageType,
     pub sender: AgentId,
-
-    // Capability-based addressing
-    pub target_capability: Capability,
+    pub receiver: Option<AgentId>,
     pub conversation_id: ConversationId,
-
-    pub reply_with: Option<ReplyWith>,
-    pub in_reply_to: Option<InReplyTo>,
+    pub reply_to: Option<MessageId>,
     pub content: MessageContent,
-    pub ontology: Option<Ontology>,
-    pub language: Option<Language>,
 
     // Observability context
     pub trace_id: TraceId,
@@ -647,104 +621,73 @@ pub struct FipaMessage {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Performative {
-    // Basic Communication (1.0 scope)
+pub enum MessageType {
+    // Basic Communication
     Request,
-    Inform,
-    Query,
-
-    // Simple Negotiation
-    Propose,
-    AcceptProposal,
-    RejectProposal,
+    Response,
+    Notification,
 
     // Error Handling
-    Failure,
-    NotUnderstood,
-
-    // Deferred to post-1.0
-    // Cfp, ConfirmProposal, etc.
+    Error,
 }
 ```
 
-#### Capability-Based Routing
+#### Simple Message Routing
 
-Instead of sending messages to specific agents, messages target capabilities:
+Messages are routed between agents based on direct addressing or simple
+patterns:
 
 ```rust
-pub struct CapabilityRouter {
-    capability_registry: Arc<CapabilityRegistry>,
+pub struct SimpleRouter {
+    agent_registry: Arc<AgentRegistry>,
     conversation_manager: Arc<ConversationManager>,
-    config_agent_runtime: Arc<ConfigAgentRuntime>,
-    wasm_agent_runtime: Arc<WasmAgentRuntime>,
+    agent_runtime: Arc<AgentRuntime>,
 }
 
-impl CapabilityRouter {
+impl SimpleRouter {
     #[instrument(skip(self, message))]
-    pub async fn route_by_capability(
+    pub async fn route_message(
         &self,
-        message: FipaMessage
+        message: Message
     ) -> Result<(), RoutingError> {
-        // 1. Find agents that provide the target capability
-        let capable_agents = self.capability_registry
-            .find_agents_with_capability(&message.target_capability)
-            .await?;
-
-        if capable_agents.is_empty() {
-            return Err(RoutingError::NoCapabilityProviders {
-                capability: message.target_capability,
-            });
-        }
-
-        // 2. Select routing strategy based on message type
-        let selected_agents = match message.performative {
-            Performative::Request | Performative::Query => {
-                // Route to single best-match agent
-                vec![self.select_best_agent(&capable_agents, &message).await?]
-            },
-            Performative::Inform => {
-                // Broadcast to all interested agents
-                capable_agents
-            },
-            _ => capable_agents,
+        // 1. Find target agent
+        let target_agent_id = match message.receiver {
+            Some(agent_id) => agent_id,
+            None => {
+                return Err(RoutingError::NoReceiver {
+                    message_id: message.id,
+                });
+            }
         };
 
-        // 3. Route to selected agents
-        for agent_id in selected_agents {
-            let mut agent_message = message.clone();
-            agent_message.receiver = agent_id;
-
-            // Determine agent type and route accordingly
-            if self.config_agent_runtime.has_agent(agent_id).await? {
-                self.route_to_config_agent(agent_message).await?;
-            } else if self.wasm_agent_runtime.has_agent(agent_id).await? {
-                self.route_to_wasm_agent(agent_message).await?;
-            } else {
-                return Err(RoutingError::AgentNotFound(agent_id));
-            }
+        // 2. Route to agent
+        if self.agent_runtime.has_agent(target_agent_id).await? {
+            self.route_to_agent(message).await?;
+        } else {
+            return Err(RoutingError::AgentNotFound(target_agent_id));
         }
 
         Ok(())
     }
 
-    async fn route_to_config_agent(
+    async fn route_to_agent(
         &self,
-        message: FipaMessage
+        message: Message
     ) -> Result<(), RoutingError> {
-        // Convert FIPA message to natural language prompt for config agent
+        // Convert message to natural language prompt for agent
         let prompt_context = self.format_message_as_prompt(&message).await?;
 
-        // Execute config agent with message context
-        let agent_response = self.config_agent_runtime
-            .execute_agent(message.receiver, prompt_context)
+        // Execute agent with message context
+        let agent_response = self.agent_runtime
+            .execute_agent(message.receiver.unwrap(), prompt_context)
             .await?;
 
-        // Parse agent response for FIPA performatives
+        // Parse agent response for follow-up messages
         if let Some(response_message) = self.parse_agent_response(
             &agent_response,
             &message
         ).await? {
-            self.route_by_capability(response_message).await?;
+            self.route_message(response_message).await?;
         }
 
         Ok(())
@@ -752,36 +695,26 @@ impl CapabilityRouter {
 
     async fn format_message_as_prompt(
         &self,
-        message: &FipaMessage
+        message: &Message
     ) -> Result<String, RoutingError> {
-        match message.performative {
-            Performative::Request => {
+        match message.message_type {
+            MessageType::Request => {
                 format!(
-                    "A user is requesting: {}\n\nPlease help them by {}.",
-                    message.content.as_text(),
-                    message.target_capability.description()
+                    "A user is requesting: {}\n\nPlease help them.",
+                    message.content.as_text()
                 )
             },
-            Performative::Query => {
+            MessageType::Notification => {
                 format!(
-                    "A user is asking: {}\n\nPlease provide information using your {} capability.",
-                    message.content.as_text(),
-                    message.target_capability.description()
-                )
-            },
-            Performative::Inform => {
-                format!(
-                    "Information update: {}\n\nPlease process this information in the context of {}.",
-                    message.content.as_text(),
-                    message.target_capability.description()
+                    "Information update: {}\n\n\
+                     Please process this information.",
+                    message.content.as_text()
                 )
             },
             _ => {
                 format!(
-                    "Message ({}): {}\n\nPlease respond appropriately using your {} capability.",
-                    message.performative.as_str(),
-                    message.content.as_text(),
-                    message.target_capability.description()
+                    "Message: {}\n\nPlease respond appropriately.",
+                    message.content.as_text()
                 )
             },
         }
@@ -791,29 +724,27 @@ impl CapabilityRouter {
 
 ## Security Architecture
 
-### Hybrid Security Model
+### Simple Security Model
 
-The Caxton security model balances ease of use with robust isolation by
-applying sandboxing where it matters most - at the tool level rather than
-agent level for configuration agents.
+The Caxton security model focuses on practical isolation where it matters most -
+at the MCP server level rather than agent level for simple agents.
 
-#### Configuration Agent Security
+#### Simple Agent Security
 
-Configuration agents run in the host runtime without WebAssembly isolation
-because:
+Simple agents run in the host runtime without WebAssembly isolation because:
 
 - They contain only orchestration logic (no direct system access)
-- All dangerous operations are delegated to MCP tools
+- All dangerous operations are delegated to MCP servers
 - They operate through LLM calls that are naturally constrained
 - Rapid development requires minimal friction
 
-#### MCP Tool Sandboxing (Primary Security Boundary)
+#### MCP Server Sandboxing (Primary Security Boundary)
 
-All actual system access happens through MCP (Model Context Protocol) tools
+All actual system access happens through MCP (Model Context Protocol) servers
 that run in isolated WebAssembly sandboxes:
 
 ```rust
-pub struct McpToolSandbox {
+pub struct McpServerSandbox {
     engine: wasmtime::Engine,
     store: wasmtime::Store<McpContext>,
     instance: wasmtime::Instance,
@@ -823,16 +754,16 @@ pub struct McpToolSandbox {
 
 #[derive(Debug)]
 pub struct McpContext {
-    tool_id: ToolId,
+    server_id: McpServerId,
     requesting_agent: AgentId,
     resource_limits: ResourceLimits,
     allowed_capabilities: CapabilityAllowlist,
     observability: Arc<ObservabilityLayer>,
 }
 
-impl McpToolSandbox {
+impl McpServerSandbox {
     pub fn new(
-        tool_id: ToolId,
+        server_id: McpServerId,
         wasm_bytes: &[u8],
         capabilities: CapabilityAllowlist,
         resource_limits: ResourceLimits
@@ -848,7 +779,7 @@ impl McpToolSandbox {
 
         // Create store with resource limits
         let context = McpContext {
-            tool_id,
+            server_id: tool_id,
             requesting_agent: AgentId::system(),
             resource_limits: resource_limits.clone(),
             allowed_capabilities: capabilities,
@@ -873,67 +804,27 @@ impl McpToolSandbox {
     }
 }
 
-impl WasmSandbox {
-    pub fn new(
-        agent_id: AgentId,
-        wasm_bytes: &[u8],
-        resource_limits: ResourceLimits
-    ) -> Result<Self, SandboxError> {
-        // Create engine with security configurations
-        let mut config = wasmtime::Config::new();
-        config.wasm_simd(false);  // Disable SIMD for security
-        config.wasm_reference_types(false);  // Disable ref types
-        config.wasm_bulk_memory(false);  // Disable bulk memory
-        config.consume_fuel(true);  // Enable fuel for CPU limiting
-
-        let engine = wasmtime::Engine::new(&config)?;
-
-        // Create store with resource limits
-        let context = WasmContext {
-            agent_id,
-            resource_limits: resource_limits.clone(),
-            mcp_tools: Arc::new(McpToolRegistry::new()),
-            observability: Arc::new(ObservabilityLayer::new()),
-        };
-
-        let mut store = wasmtime::Store::new(&engine, context);
-        store.limiter(|ctx| &mut ctx.resource_limits);
-
-        // Set fuel limit for CPU control
-        store.set_fuel(resource_limits.max_cpu_millis.into())?;
-
-        // Load and instantiate module
-        let module = wasmtime::Module::new(&engine, wasm_bytes)?;
-        let instance = wasmtime::Instance::new(&mut store, &module, &[])?;
-
-        Ok(Self {
-            engine,
-            store,
-            instance,
-            resource_limiter: ResourceLimiter::new(resource_limits),
-        })
-    }
-
-    #[instrument(skip(self, message))]
-    pub async fn handle_message(
+impl McpServerSandbox {
+    #[instrument(skip(self, tool_call))]
+    pub async fn handle_tool_call(
         &mut self,
-        message: FipaMessage
-    ) -> Result<Option<FipaMessage>, SandboxError> {
-        // Serialize message for WASM
-        let message_bytes = serde_json::to_vec(&message)?;
+        tool_call: ToolCall
+    ) -> Result<ToolResult, SandboxError> {
+        // Serialize tool call for WASM
+        let call_bytes = serde_json::to_vec(&tool_call)?;
 
         // Get WASM function
-        let handle_message = self.instance
+        let handle_call = self.instance
             .get_typed_func::<(i32, i32), i32>(
                 &mut self.store,
-                "handle_message"
+                "handle_tool_call"
             )?;
 
         // Allocate memory in WASM instance
         let memory = self.instance.get_memory(&mut self.store, "memory")
             .ok_or(SandboxError::NoMemoryExport)?;
 
-        let message_ptr = self.allocate_in_wasm(memory, &message_bytes)?;
+        let call_ptr = self.allocate_in_wasm(memory, &call_bytes)?;
 
         // Set fuel before execution
         self.store.set_fuel(self.resource_limiter.remaining_cpu())?;
@@ -942,9 +833,9 @@ impl WasmSandbox {
         let result = tokio::time::timeout(
             self.resource_limiter.max_execution_time(),
             async {
-                handle_message.call_async(
+                handle_call.call_async(
                     &mut self.store,
-                    (message_ptr, message_bytes.len() as i32)
+                    (call_ptr, call_bytes.len() as i32)
                 ).await
             }
         ).await??;
@@ -956,15 +847,14 @@ impl WasmSandbox {
 
         // Handle result
         match result {
-            0 => Ok(None), // No response
-            1 => {
-                // Agent produced a response
-                let response_bytes = self.get_response_from_wasm(memory)?;
-                let response_message: FipaMessage =
-                    serde_json::from_slice(&response_bytes)?;
-                Ok(Some(response_message))
+            0 => {
+                // Get tool result from WASM
+                let result_bytes = self.get_response_from_wasm(memory)?;
+                let tool_result: ToolResult =
+                    serde_json::from_slice(&result_bytes)?;
+                Ok(tool_result)
             },
-            error_code => Err(SandboxError::AgentError(error_code)),
+            error_code => Err(SandboxError::ToolError(error_code)),
         }
     }
 }
@@ -1158,10 +1048,14 @@ pub enum MemoryBackend {
 }
 
 pub trait MemoryBackend: Send + Sync {
-    async fn store_entity(&self, entity: Entity) -> Result<EntityId, MemoryError>;
-    async fn find_entities(&self, query: &EntityQuery) -> Result<Vec<Entity>, MemoryError>;
-    async fn store_relation(&self, relation: Relation) -> Result<RelationId, MemoryError>;
-    async fn semantic_search(&self, query: &str, limit: usize) -> Result<Vec<EntityMatch>, MemoryError>;
+    async fn store_entity(&self, entity: Entity)
+        -> Result<EntityId, MemoryError>;
+    async fn find_entities(&self, query: &EntityQuery)
+        -> Result<Vec<Entity>, MemoryError>;
+    async fn store_relation(&self, relation: Relation)
+        -> Result<RelationId, MemoryError>;
+    async fn semantic_search(&self, query: &str, limit: usize)
+        -> Result<Vec<EntityMatch>, MemoryError>;
     async fn export_data(&self) -> Result<MemoryExport, MemoryError>;
     async fn import_data(&self, data: MemoryImport) -> Result<(), MemoryError>;
 }
@@ -1193,7 +1087,8 @@ impl EmbeddedMemorySystem {
         })
     }
 
-    pub async fn import_from_export(&self, export: MemoryExport) -> Result<(), MemoryError> {
+    pub async fn import_from_export(&self, export: MemoryExport)
+        -> Result<(), MemoryError> {
         // Validate version compatibility
         self.validate_export_version(&export.version)?;
 
@@ -1310,21 +1205,21 @@ pub struct PerformanceEvent {
 
 ### Hybrid Performance Characteristics
 
-**Configuration Agents (Primary UX)**:
+**Simple Agents (Primary UX)**:
 
-- **Startup Time**: < 50ms (YAML parsing + prompt loading)
-- **Memory Efficiency**: < 100KB per idle config agent
+- **Startup Time**: < 50ms (TOML parsing + prompt loading)
+- **Memory Efficiency**: < 100KB per idle agent
 - **Message Latency**: ~10-100ms (includes LLM orchestration)
 - **Throughput**: 100-1,000 messages/second per agent (LLM dependent)
-- **Concurrent Agents**: 10,000+ config agents per instance
+- **Concurrent Agents**: 10,000+ agents per instance
 
-**WASM Agents (Advanced Use Cases)**:
+**MCP Servers (Tool Providers)**:
 
 - **Startup Time**: < 100ms (WASM instantiation)
-- **Memory Efficiency**: < 1MB per idle WASM agent
-- **Message Latency**: < 1ms p99 for local processing
-- **Throughput**: 100,000+ messages/second (native-like performance)
-- **Concurrent Agents**: 1,000+ WASM agents per instance
+- **Memory Efficiency**: < 1MB per idle MCP server
+- **Tool Call Latency**: < 1ms p99 for local processing
+- **Throughput**: 100,000+ tool calls/second (native-like performance)
+- **Concurrent Servers**: 1,000+ MCP servers per instance
 
 **Memory System Performance**:
 
@@ -1454,7 +1349,8 @@ pub enum AgentError {
     NotFound { agent_id: AgentId },
 
     #[error(
-        "Agent {agent_id} is in state {current_state}, cannot perform {operation}"
+        "Agent {agent_id} is in state {current_state}, \
+         cannot perform {operation}"
     )]
     InvalidState {
         agent_id: AgentId,
@@ -1782,9 +1678,9 @@ creation** while maintaining production-grade capabilities:
 6. **Production Ready**: Comprehensive observability, error handling, and
    deployment patterns
 
-### When to Use Each Agent Type
+### When to Use Each Component
 
-**Choose Configuration Agents when**:
+**Choose Simple Agents when**:
 
 - Building orchestration workflows
 - Combining prompts with tool calls
@@ -1792,13 +1688,13 @@ creation** while maintaining production-grade capabilities:
 - No custom algorithms required
 - 5-10 minute setup time acceptable
 
-**Choose WASM Agents when**:
+**Deploy MCP Servers when**:
 
-- Custom algorithms or proprietary logic needed
+- Custom tools or functionality needed
 - Performance-critical processing required
 - Language-agnostic development desired
 - Full isolation and resource limits needed
-- 2-4 hour setup time acceptable
+- Reusable tools across multiple agents
 
 ### Architecture Alignment
 
@@ -1812,6 +1708,5 @@ This architecture aligns with modern agent platform trends:
 - **Observability First**: Every operation traced, logged, and measured
 - **Production Scale**: Supports growth from embedded to external backends
 
-The hybrid approach enables the **best of both worlds**: rapid configuration-
-based development for most use cases, with full WASM power for advanced
-scenarios.
+The simple approach enables rapid configuration-based development for agents,
+with deployable WASM MCP servers providing powerful tools and functionality.
