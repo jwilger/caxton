@@ -84,13 +84,13 @@ body {
 }
 
 /* Global link styles */
-a:not(.btn):not(.nav-link):not(.link-card) {
+a:not(.btn):not(.nav-link):not(.link-card):not(.nav-brand-link) {
     color: var(--ctp-blue);
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
-a:not(.btn):not(.nav-link):not(.link-card):hover {
+a:not(.btn):not(.nav-link):not(.link-card):not(.nav-brand-link):hover {
     color: var(--ctp-sapphire);
     text-decoration: underline;
 }
@@ -134,6 +134,19 @@ a:not(.btn):not(.nav-link):not(.link-card):focus {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+}
+
+.nav-brand-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.2s ease;
+}
+
+.nav-brand-link:hover {
+    opacity: 0.8;
 }
 
 .logo-container {
