@@ -40,6 +40,10 @@ reqwest = { version = "0.12", features = ["json"] }
 name = "caxton"
 path = "src/main.rs"
 
+[[bin]]
+name = "caxton-cli"
+path = "src/bin/caxton-cli.rs"
+
 [lib]
 name = "caxton"
 path = "src/lib.rs"
@@ -86,3 +90,4 @@ wasmtime-wasi = "36.0"
 wat = "1.223"
 axum = "0.8"
 tower = "0.5"
+clap = { version = "4.5", features = ["derive"] }
