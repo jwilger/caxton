@@ -8,7 +8,6 @@
 
 # Build artifacts
 target/
-Cargo.lock
 
 # Development files
 .vscode/
