@@ -21,6 +21,7 @@ README.md
 docs/
 *.md
 !Cargo.toml
+!Cargo.lock
 
 # Test files
 tests/fixtures/

@@ -119,23 +119,23 @@ unlicensed = "deny"
 # Approved licenses for Caxton dependencies
 # Selected for compatibility with MIT/Apache-2.0 and enterprise use
 allow = [
-    # Primary permissive licenses
-    "MIT",                           # MIT License - most common, fully compatible
-    "Apache-2.0",                    # Apache 2.0 - our primary license
-    "Apache-2.0 WITH LLVM-exception", # LLVM exception for WASM toolchain
+  # Primary permissive licenses
+  "MIT",                            # MIT License - most common, fully compatible
+  "Apache-2.0",                     # Apache 2.0 - our primary license
+  "Apache-2.0 WITH LLVM-exception", # LLVM exception for WASM toolchain
 
-    # BSD family - permissive and compatible
-    "BSD-2-Clause",                  # Simplified BSD License
-    "BSD-3-Clause",                  # New BSD License
+  # BSD family - permissive and compatible
+  "BSD-2-Clause", # Simplified BSD License
+  "BSD-3-Clause", # New BSD License
 
-    # Other permissive licenses
-    "ISC",                           # Internet Systems Consortium License
-    "Unicode-DFS-2016",              # Unicode Data Files and Software License
+  # Other permissive licenses
+  "ISC",              # Internet Systems Consortium License
+  "Unicode-DFS-2016", # Unicode Data Files and Software License
 
-    # Note: Additional licenses may be needed for:
-    # - WebAssembly runtime dependencies (wasmtime ecosystem)
-    # - Cryptographic libraries (if we add TLS/crypto features)
-    # - Observability stack (OpenTelemetry, Prometheus)
+  # Note: Additional licenses may be needed for:
+  # - WebAssembly runtime dependencies (wasmtime ecosystem)
+  # - Cryptographic libraries (if we add TLS/crypto features)
+  # - Observability stack (OpenTelemetry, Prometheus)
 ]
 
 # No explicitly denied licenses currently
@@ -164,16 +164,12 @@ confidence-threshold = 0.8
 # =============================================================================
 [bans]
 # Multiple versions policy for multi-agent runtime
-# Rationale: Multiple versions can cause issues with:
-# - Shared state between WASM modules
-# - Type compatibility in message passing
-# - Memory usage in resource-constrained environments
-multiple-versions = "warn"
+multiple-versions = "deny"
 
 # Allow wildcard dependencies in development
 # Rationale: Development tools may use wildcards, but production
 # dependencies should have explicit version constraints
-wildcards = "allow"
+wildcards = "deny"
 
 # Highlight all duplicate dependencies for review
 # Helps identify optimization opportunities in the dependency graph
@@ -184,9 +180,7 @@ highlight = "all"
 workspace-default-features = "allow"
 
 # External default features policy
-# Allow external crates to use default features
-# Note: May be restricted in future for minimal WASM runtime
-external-default-features = "allow"
+external-default-features = "deny"
 
 # Skip checking MySQL-related crates that appear in Cargo.lock due to SQLx weak features bug
 # These crates are NOT actually compiled (verified with `cargo tree | grep mysql` showing no output)
@@ -197,9 +191,9 @@ external-default-features = "allow"
 # even when only using SQLite. This is a false positive that cannot be fixed without
 # removing the `migrate` feature, which we need for database migrations.
 skip = [
-    { name = "sqlx-mysql", version = "*" },  # False positive from SQLx weak features
-    { name = "mysql_common", version = "*" }, # Transitive dependency of sqlx-mysql
-    { name = "mysql-common-derive", version = "*" }, # Transitive dependency of sqlx-mysql
+  { name = "sqlx-mysql", version = "*" },          # False positive from SQLx weak features
+  { name = "mysql_common", version = "*" },        # Transitive dependency of sqlx-mysql
+  { name = "mysql-common-derive", version = "*" }, # Transitive dependency of sqlx-mysql
 ]
 
 # No banned dependency trees currently
@@ -214,15 +208,14 @@ skip-tree = []
 # Package source validation for supply chain security
 # Critical for multi-agent systems handling untrusted code
 
-# Warn about packages from unknown registries
 # Rationale: Unknown registries may not have the same security
 # review processes as crates.io
-unknown-registry = "warn"
+unknown-registry = "deny"
 
 # Warn about packages from unknown git sources
 # Rationale: Git dependencies bypass crates.io security review
 # and may introduce supply chain vulnerabilities
-unknown-git = "warn"
+unknown-git = "deny"
 
 # Approved registries for Caxton dependencies
 # Currently limited to the official Rust package registry
