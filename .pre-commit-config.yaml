@@ -56,9 +56,11 @@ repos:
         args: ["--autofix", "--indent=2"]
         exclude: '\.devcontainer/devcontainer\.json$'
 
-  # Markdown linting and auto-formatting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.30.0
+  # Prettier formatting for markdown, HTML, JS/TS
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
     hooks:
-      - id: markdownlint
-        args: ["--fix"]
+      - id: prettier
+        types_or: [markdown, html, javascript, json, yaml]
+        files: '\.(md|html|js|ts|json|yaml|yml)$'
+        args: ["--write"]

@@ -32,6 +32,7 @@
             rustToolchain
             cargo-nextest
             nodejs
+            nodePackages.prettier
             uv
             git
             gh
