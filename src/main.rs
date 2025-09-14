@@ -1,6 +1,6 @@
 //! Caxton CLI binary
 //!
-//! Main entry point for the Caxton AI agent collaboration platform.
+//! Placeholder CLI binary for Caxton development.
 
 /// Caxton CLI entry point
 fn main() {
