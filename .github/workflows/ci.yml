@@ -55,7 +55,7 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Run tests
-        run: cargo nextest run --all-targets
+        run: cargo nextest run --all-targets --no-tests=pass
 
       - name: Run doctests
         run: cargo test --doc
