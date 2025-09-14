@@ -3,14 +3,14 @@ name = "caxton"
 version = "0.1.4"
 edition = "2024"
 authors = ["John Wilger <john.wilger@gmail.com>"]
-description = "A secure WebAssembly runtime for multi-agent systems"
+description = "An application server hosting AI Agents and secure, WASM MCP tools"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/jwilger/caxton"
 homepage = "https://github.com/jwilger/caxton"
 documentation = "https://docs.rs/caxton"
 readme = "README.md"
-keywords = ["wasm", "agent", "runtime", "sandbox", "distributed"]
-categories = ["wasm", "concurrency", "network-programming"]
+keywords = ["wasm", "agent", "runtime", "mcp", "ai", "llm"]
+categories = ["wasm", "ai", "server"]
 
 [lints.rust]
 warnings = "deny"
@@ -20,21 +20,6 @@ rust_2018_idioms = "warn"
 [lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
-# Note: Changed from forbid to deny to allow proc macro generated allows
-# Zero-tolerance for manual allows enforced via:
-# 1. Pre-commit hooks with pattern detection
-# 2. CI checks for clippy allow attributes
-# 3. --no-deps flag ensures only local code is linted
-
-[dev-dependencies]
-approx = "0.5"
-criterion = "0.7"
-tempfile = "3.14"
-test-log = "0.2"
-proptest = "1.6"
-toml = "0.9"
-wat = "1.223"
-reqwest = { version = "0.12", features = ["json"] }
 
 [[bin]]
 name = "caxton"
@@ -52,37 +37,3 @@ codegen-units = 1
 
 [profile.bench]
 inherits = "release"
-
-[dependencies]
-anyhow = "1.0.98"
-async-trait = "0.1.88"
-bytes = "1.10.1"
-dashmap = "6.1.0"
-futures = "0.3.31"
-num_cpus = "1.17.0"
-nutype = { version = "0.6.2", features = ["serde"] }
-rust_decimal = "1.37.2"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
-# Security: default-features = false excludes MySQL/PostgreSQL drivers that include vulnerable RSA crate (RUSTSEC-2023-0071)
-# SQLx with SQLite-only support
-# NOTE: The "migrate" feature causes MySQL dependencies to appear in Cargo.lock
-# due to a known Cargo bug with weak features (https://github.com/launchbadge/sqlx/issues/3211).
-# These MySQL dependencies are NOT actually compiled or used (verify with `cargo tree | grep mysql`).
-# We've configured cargo-deny to skip these false positives in deny.toml.
-sqlx = { version = "0.8", default-features = false, features = [
-  "sqlite",
-  "runtime-tokio-rustls",
-  "migrate",
-  "macros",
-] }
-thiserror = "2.0.12"
-tokio = { version = "1.47.1", features = ["full"] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
-uuid = { version = "1.17.0", features = ["v4", "serde"] }
-wasmtime = "36.0"
-wasmtime-wasi = "36.0"
-wat = "1.223"
-axum = "0.8"
-tower = "0.5"

@@ -1,7 +1,8 @@
-//! Caxton server binary - domain modeling experiment
+//! Caxton CLI binary
 //!
-//! This is a placeholder binary for the domain modeling experiment.
+//! Placeholder CLI binary for Caxton development.
 
+/// Caxton CLI entry point
 fn main() {
     println!("Hello, world!");
 }

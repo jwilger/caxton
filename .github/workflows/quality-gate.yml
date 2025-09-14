@@ -47,7 +47,7 @@ jobs:
       run: cargo build --verbose
 
     - name: Run all tests
-      run: cargo nextest run --nocapture
+      run: cargo nextest run --nocapture --no-tests=pass
 
     - name: Security audit
       run: cargo audit

@@ -1,7 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc 79c43b540f8de54aa85677f5640d40b959eed700191d8bf195e1dc3f09cc6459 # shrinks to config = DatabaseConfig { path: DatabasePath("/tmp/nix-shell.12iefX/A0"), pool_size: ConnectionPoolSize(1), connection_timeout: DatabaseConnectionTimeoutMs(2000), query_timeout: DatabaseQueryTimeoutMs(500), busy_timeout: DatabaseBusyTimeoutMs(100), journal_mode: Off, synchronous_mode: Normal, temp_store: Default, cache_size: SqliteCacheSize(0), enable_foreign_keys: false, schema_version: SchemaVersion(0) }
