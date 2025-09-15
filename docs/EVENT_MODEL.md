@@ -5,11 +5,16 @@
 **Status**: Collaborative Revision incorporating Product and UX feedback
 **Technical Architect**: technical-architect
 **Contributors**: product-manager, ux-ui-design-expert
-**Methodology**: [Event Modeling](https://eventmodeling.org/posts/event-modeling-cheatsheet/)
+**Methodology**: [Event Modeling Cheatsheet](https://eventmodeling.org/posts/event-modeling-cheatsheet/)
 
 ## Executive Summary
 
-This Event Model captures the complete system behavior of Caxton as an agent orchestration application server, with particular emphasis on the **5-10 minute onboarding experience**. It defines the events that occur in the system, the commands that trigger them, the views that users observe, and the workflows that connect everything together. The model ensures technical feasibility while centering the user experience and business value.
+This Event Model captures the complete system behavior of Caxton as an agent
+orchestration application server, with particular emphasis on the **5-10 minute
+onboarding experience**. It defines the events that occur in the system, the
+commands that trigger them, the views that users observe, and the workflows
+that connect everything together. The model ensures technical feasibility while
+centering the user experience and business value.
 
 ## Event Modeling Principles
 
@@ -26,11 +31,17 @@ Following the Event Modeling methodology:
 ```
 Time ─────────────────────────────────────────────────────────────────────────>
 
-[User Onboarding]──>[System Bootstrap]──>[Agent Creation]──>[Capability Discovery]──>[Message Routing]──>[Tool Execution]──>[Memory Storage]
-        │                    │                    │                    │                     │                   │                │
-    Install &            Server              Template            Register             Route            Execute          Store
-    Quickstart          Ready               Applied           Skills Available    Requests Handled        Tools          Memories
-    (0-5 min)          (< 2s)              (< 2s)              (< 100ms)           (< 5ms)              (< 50ms)        (< 100ms)
+[User Onboarding]──>[System Bootstrap]──>[Agent Creation]──>
+    [Capability Discovery]──>[Message Routing]──>[Tool Execution]──>
+    [Memory Storage]
+        │                    │                    │
+                    │                     │                   │                │
+    Install &            Server              Template
+        Register             Route            Execute          Store
+    Quickstart          Ready               Applied
+    Skills Available    Requests Handled        Tools          Memories
+    (0-5 min)          (< 2s)              (< 2s)
+        (< 100ms)           (< 5ms)              (< 50ms)        (< 100ms)
 
 ONBOARDING MILESTONES:
 ├─ Minute 0-1: Download and install Caxton
@@ -55,7 +66,8 @@ InstallCaxton:
     - CaxtonInstalled (success)
     - InstallationFailed (failure)
   user_experience:
-    feedback: "Installing Caxton..." → Progress bar → "✓ Caxton installed successfully!"
+    feedback: |
+      "Installing Caxton..." → Progress bar → "✓ Caxton installed successfully!"
     time_budget: 30-60 seconds
 
 RunQuickstart:
@@ -141,7 +153,9 @@ AgentInitialized:
   template_used: TemplateId?
   files_created: [FilePath]
   next_steps_shown: Boolean
-  success_message: String # e.g., "✓ Agent 'my-analyzer' created! Run: caxton agent start my-analyzer"
+  success_message:
+    String
+    # e.g., "✓ Agent 'my-analyzer' created! Run: caxton agent start my-analyzer"
 
 InitializationFailed:
   timestamp: DateTime
@@ -229,7 +243,9 @@ SuccessCelebration:
   condition: is_first_time_user
   action: ShowSuccessMessage
   produces: OnboardingComplete
-  message: "🎉 Congratulations! You've created your first Caxton agent in {time_elapsed}!"
+  message: |
+    "🎉 Congratulations! You've created your first Caxton agent in
+    {time_elapsed}!"
 ```
 
 ## Phase 1: System Bootstrap
@@ -1481,7 +1497,8 @@ MonitorDeveloperVelocity:
 
 ## 5-10 Minute Demo Flow
 
-This sequence demonstrates the complete MVP functionality with emphasis on the 5-10 minute experience:
+This sequence demonstrates the complete MVP functionality with emphasis on the
+5-10 minute experience:
 
 ```yaml
 DemoFlow:
@@ -1588,25 +1605,31 @@ This comprehensive Event Model revision addresses all critical feedback:
 
 1. **Phase 0 Onboarding**: Complete journey from installation to first success
 2. **Template System**: Embedded throughout as primary creation mechanism
-3. **User-Centric Naming**: CaxtonReady, AgentActive, SkillsAvailable, RequestHandled
+3. **User-Centric Naming**: CaxtonReady, AgentActive, SkillsAvailable,
+   RequestHandled
 4. **Error Recovery**: Actionable guidance, auto-fix offers, recovery workflows
-5. **Business Metrics**: Comprehensive views for measuring the 5-10 minute promise
-6. **CLI Feedback**: Sub-100ms acknowledgments, progress updates, success celebrations
+5. **Business Metrics**: Comprehensive views for measuring the 5-10 minute
+   promise
+6. **CLI Feedback**: Sub-100ms acknowledgments, progress updates, success
+   celebrations
 
 ## Next Steps
 
-1. **Final Review**: product-manager and ux-ui-design-expert validate completeness
-2. **Consensus Check**: Confirm model is complete, cohesive, accurate, and sufficient
+1. **Final Review**: product-manager and ux-ui-design-expert validate
+   completeness
+2. **Consensus Check**: Confirm model is complete, cohesive, accurate, and
+   sufficient
 3. **Approval**: All three agents agree model is ready
 4. **Handoff**: Proceed to Phase 3 (Architectural Decision Records)
 
 ## Revision History
 
-| Version   | Date       | Author              | Changes                                                                                                                                                                                      |
-| --------- | ---------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1.0-draft | 2025-09-14 | technical-architect | Initial Event Model draft from requirements                                                                                                                                                  |
-| 2.0       | 2025-09-14 | technical-architect | Comprehensive revision incorporating product-manager and ux-ui-design-expert feedback: Added Phase 0 onboarding, template system, user-centric terminology, error recovery, business metrics |
+| Version   | Date       | Author              | Changes                               |
+| --------- | ---------- | ------------------- | ------------------------------------- |
+| 1.0-draft | 2025-09-14 | technical-architect | Initial Event Model from requirements |
+| 2.0       | 2025-09-14 | technical-architect | Added onboarding, templates, metrics  |
 
 ---
 
-**Status**: Ready for final collaborative review. Model now captures technical behavior, business workflows, and user experience comprehensively.
+**Status**: Ready for final collaborative review. Model now captures technical
+behavior, business workflows, and user experience comprehensively.

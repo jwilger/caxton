@@ -70,33 +70,40 @@ tight coupling
 
 #### FR1.1: Configuration-Driven Agents
 
-Agents SHALL be defined using TOML configuration files without requiring code compilation.
+Agents SHALL be defined using TOML configuration files without requiring code
+compilation.
 
 #### FR1.2: Agent Deployment
 
-The system SHALL support deploying agents through CLI commands within 30 seconds.
+The system SHALL support deploying agents through CLI commands within 30
+seconds.
 
 #### FR1.3: Hot Reload
 
-Configuration changes SHALL take effect without server restart or agent redeployment.
+Configuration changes SHALL take effect without server restart or agent
+redeployment.
 
 #### FR1.4: Agent Lifecycle
 
-The system SHALL manage agent startup, shutdown, and health monitoring automatically.
+The system SHALL manage agent startup, shutdown, and health monitoring
+automatically.
 
 ### FR2: Capability-Based Routing
 
 #### FR2.1: Capability Declaration
 
-Agents SHALL declare their capabilities in configuration without hardcoded addresses.
+Agents SHALL declare their capabilities in configuration without hardcoded
+addresses.
 
 #### FR2.2: Intelligent Routing
 
-The system SHALL route messages to appropriate agents based on capability matching.
+The system SHALL route messages to appropriate agents based on capability
+matching.
 
 #### FR2.3: Dynamic Discovery
 
-Agents SHALL discover available capabilities without prior knowledge of other agents.
+Agents SHALL discover available capabilities without prior knowledge of other
+agents.
 
 #### FR2.4: Routing Performance
 
@@ -150,7 +157,8 @@ The system SHALL expose metrics via OpenTelemetry for external monitoring.
 
 #### FR5.3: Security Compliance
 
-The system SHALL meet enterprise security requirements for customer-facing applications.
+The system SHALL meet enterprise security requirements for customer-facing
+applications.
 
 #### FR5.4: Performance Targets
 
@@ -464,7 +472,8 @@ The system SHALL handle 1,000+ messages per second with <100ms p99 latency.
 
 - **Impact**: High - Blocks enterprise adoption
 - **Probability**: Low
-- **Mitigation**: Early security review, penetration testing, compliance documentation
+- **Mitigation**: Early security review, penetration testing, compliance
+  documentation
 
 ## Acceptance Test Scenarios
 
@@ -504,7 +513,8 @@ This requirements analysis provides the foundation for collaborative Event
 Modeling. The next phase requires:
 
 1. **Participants**: product-manager, technical-architect, ux-ui-design-expert
-2. **Goal**: Create comprehensive EVENT_MODEL.md following eventmodeling.org methodology
+2. **Goal**: Create comprehensive EVENT_MODEL.md following eventmodeling.org
+   methodology
 3. **Focus Areas**:
    - User workflows from requirements
    - System events and state transitions
@@ -525,9 +535,9 @@ events.
 
 ## Revision History
 
-| Version | Date       | Author          | Changes                                       |
-| ------- | ---------- | --------------- | --------------------------------------------- |
-| 1.0     | 2025-09-14 | product-manager | Initial requirements analysis from user input |
+| Version | Date       | Author          | Changes                              |
+| ------- | ---------- | --------------- | ------------------------------------ |
+| 1.0     | 2025-09-14 | product-manager | Initial requirements from user input |
 
 ---
 

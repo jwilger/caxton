@@ -100,3 +100,4 @@ hive-mind-prompt-*.txt
 .claude/plan.approved
 
 .dependencies
+node_modules
