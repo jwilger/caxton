@@ -27,7 +27,9 @@ async fn main() {
     match args.command {
         Some(Commands::Serve) => {
             // Start HTTP server on port 8080
-            let app = Router::new().route("/", get(|| async { Html("Caxton Server") }));
+            let app = Router::new()
+                .route("/", get(|| async { Html("Caxton Server") }))
+                .route("/health", get(|| async { "OK" }));
 
             let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
             let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
