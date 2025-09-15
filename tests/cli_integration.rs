@@ -79,19 +79,28 @@ async fn test_serve_command_starts_http_server_on_port_8080() {
         .spawn()
         .expect("Failed to start serve command");
 
-    // Give server time to start
-    sleep(Duration::from_millis(100)).await;
-
-    // Attempt to connect to HTTP server on port 8080
+    // Wait for server to be ready with retry mechanism
     let client = reqwest::Client::new();
-    let response = client.get("http://localhost:8080/").send().await;
+    let mut server_ready = false;
+
+    for _ in 0..30 {
+        // Try for up to 3 seconds (30 * 100ms)
+        sleep(Duration::from_millis(100)).await;
+
+        if let Ok(response) = client.get("http://localhost:8080/").send().await
+            && response.status().is_success()
+        {
+            server_ready = true;
+            break;
+        }
+    }
 
     // Clean up: terminate the serve process
     let _ = child.kill();
     let _ = child.wait();
 
     assert!(
-        response.is_ok(),
+        server_ready,
         "HTTP server should be reachable on port 8080 after running 'caxton serve'"
     );
 }
