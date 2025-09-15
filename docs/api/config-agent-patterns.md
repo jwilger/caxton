@@ -26,49 +26,57 @@ markdown + YAML definitions versus 2-4 hour WASM compilation workflows.
 
 ```javascript
 // Find templates suitable for data analysis
-const templates = await fetch('/api/v1/templates?category=data-processing&complexity=simple');
+const templates = await fetch(
+  "/api/v1/templates?category=data-processing&complexity=simple",
+);
 const { templates: availableTemplates } = await templates.json();
 
-console.log('Available templates:', availableTemplates.map(t => ({
-  id: t.id,
-  name: t.name,
-  setup_time: t.estimated_setup_time
-})));
+console.log(
+  "Available templates:",
+  availableTemplates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    setup_time: t.estimated_setup_time,
+  })),
+);
 ```
 
 #### Step 2: Get Template Details
 
 ```javascript
 // Get detailed template information
-const templateDetails = await fetch('/api/v1/templates/data-analyzer-basic');
+const templateDetails = await fetch("/api/v1/templates/data-analyzer-basic");
 const template = await templateDetails.json();
 
-console.log('Template parameters:', template.parameters);
-console.log('Required tools:', template.dependencies.required_tools);
+console.log("Template parameters:", template.parameters);
+console.log("Required tools:", template.dependencies.required_tools);
 ```
 
 #### Step 3: Generate Configuration
 
 ```javascript
 // Generate configuration with custom parameters
-const generated = await fetch('/api/v1/templates/data-analyzer-basic/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    parameters: {
-      AGENT_NAME: 'SalesAnalyzer',
-      MAX_FILE_SIZE: '25MB',
-      MEMORY_ENABLED: true,
-      SPECIALIZATION: 'sales performance analysis'
-    },
-    workspace: 'sales-team',
-    validate: true
-  })
-});
+const generated = await fetch(
+  "/api/v1/templates/data-analyzer-basic/generate",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      parameters: {
+        AGENT_NAME: "SalesAnalyzer",
+        MAX_FILE_SIZE: "25MB",
+        MEMORY_ENABLED: true,
+        SPECIALIZATION: "sales performance analysis",
+      },
+      workspace: "sales-team",
+      validate: true,
+    }),
+  },
+);
 
 const config = await generated.json();
 if (!config.ready_to_deploy) {
-  throw new Error('Generated configuration failed validation');
+  throw new Error("Generated configuration failed validation");
 }
 ```
 
@@ -76,15 +84,15 @@ if (!config.ready_to_deploy) {
 
 ```javascript
 // Deploy the generated configuration
-const deployment = await fetch('/api/v1/config-agents', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const deployment = await fetch("/api/v1/config-agents", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: 'SalesAnalyzer',
+    name: "SalesAnalyzer",
     content: config.generated_content,
-    workspace: 'sales-team',
-    auto_start: true
-  })
+    workspace: "sales-team",
+    auto_start: true,
+  }),
 });
 
 const agent = await deployment.json();
@@ -94,53 +102,62 @@ console.log(`Agent ${agent.name} deployed with ID: ${agent.id}`);
 **Complete Pattern Function**:
 
 ```javascript
-async function createAgentFromTemplate(templateId, parameters, workspace = 'default') {
+async function createAgentFromTemplate(
+  templateId,
+  parameters,
+  workspace = "default",
+) {
   try {
     // Generate configuration
-    const configResponse = await fetch(`/api/v1/templates/${templateId}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        parameters,
-        workspace,
-        validate: true
-      })
-    });
+    const configResponse = await fetch(
+      `/api/v1/templates/${templateId}/generate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parameters,
+          workspace,
+          validate: true,
+        }),
+      },
+    );
 
     const config = await configResponse.json();
     if (!config.ready_to_deploy) {
-      throw new Error(`Configuration validation failed: ${JSON.stringify(config.validation_result.errors)}`);
+      throw new Error(
+        `Configuration validation failed: ${JSON.stringify(config.validation_result.errors)}`,
+      );
     }
 
     // Deploy agent
-    const deployResponse = await fetch('/api/v1/config-agents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const deployResponse = await fetch("/api/v1/config-agents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: parameters.AGENT_NAME,
         content: config.generated_content,
         workspace,
-        auto_start: true
-      })
+        auto_start: true,
+      }),
     });
 
     const agent = await deployResponse.json();
 
     // Wait for agent to be running
-    await waitForAgentStatus(agent.id, 'running', 30000);
+    await waitForAgentStatus(agent.id, "running", 30000);
 
     return agent;
   } catch (error) {
-    console.error('Failed to create agent from template:', error);
+    console.error("Failed to create agent from template:", error);
     throw error;
   }
 }
 
 // Usage
-const salesAgent = await createAgentFromTemplate('data-analyzer-basic', {
-  AGENT_NAME: 'SalesAnalyzer',
-  SPECIALIZATION: 'sales analysis',
-  MEMORY_ENABLED: true
+const salesAgent = await createAgentFromTemplate("data-analyzer-basic", {
+  AGENT_NAME: "SalesAnalyzer",
+  SPECIALIZATION: "sales analysis",
+  MEMORY_ENABLED: true,
 });
 ```
 
@@ -151,31 +168,31 @@ const salesAgent = await createAgentFromTemplate('data-analyzer-basic', {
 #### Step 1: Comprehensive Validation
 
 ```javascript
-async function validateConfiguration(content, workspace = 'development') {
-  const validation = await fetch('/api/v1/validate/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+async function validateConfiguration(content, workspace = "development") {
+  const validation = await fetch("/api/v1/validate/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       content,
       workspace,
       strict_mode: true,
-      check_tool_availability: true
-    })
+      check_tool_availability: true,
+    }),
   });
 
   const result = await validation.json();
 
   if (!result.valid) {
-    console.error('Validation errors:', result.errors);
-    console.warn('Validation warnings:', result.warnings);
+    console.error("Validation errors:", result.errors);
+    console.warn("Validation warnings:", result.warnings);
     return false;
   }
 
-  console.log('Configuration valid!');
-  console.log('Estimated resources:', result.estimated_resources);
+  console.log("Configuration valid!");
+  console.log("Estimated resources:", result.estimated_resources);
 
   if (result.warnings.length > 0) {
-    console.warn('Warnings to consider:', result.warnings);
+    console.warn("Warnings to consider:", result.warnings);
   }
 
   return result;
@@ -186,33 +203,35 @@ async function validateConfiguration(content, workspace = 'development') {
 
 ```javascript
 async function testConfiguration(content, testScenarios) {
-  const test = await fetch('/api/v1/test/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const test = await fetch("/api/v1/test/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       content,
       test_scenarios: testScenarios,
-      workspace: 'testing'
-    })
+      workspace: "testing",
+    }),
   });
 
   const result = await test.json();
 
   console.log(`Test result: ${result.overall_result}`);
-  console.log('Performance metrics:', result.performance_metrics);
+  console.log("Performance metrics:", result.performance_metrics);
 
-  result.scenarios.forEach(scenario => {
+  result.scenarios.forEach((scenario) => {
     console.log(`Scenario "${scenario.name}": ${scenario.status}`);
-    if (scenario.status === 'passed') {
-      console.log(`  - Capabilities: ${scenario.capabilities_triggered.join(', ')}`);
-      console.log(`  - Tools used: ${scenario.tools_used.join(', ')}`);
+    if (scenario.status === "passed") {
+      console.log(
+        `  - Capabilities: ${scenario.capabilities_triggered.join(", ")}`,
+      );
+      console.log(`  - Tools used: ${scenario.tools_used.join(", ")}`);
       console.log(`  - Response time: ${scenario.execution_time_ms}ms`);
     } else {
       console.error(`  - Error: ${scenario.error}`);
     }
   });
 
-  return result.overall_result === 'passed';
+  return result.overall_result === "passed";
 }
 ```
 
@@ -223,46 +242,45 @@ async function validateAndTestConfiguration(content) {
   // Define test scenarios based on agent capabilities
   const testScenarios = [
     {
-      name: 'basic_analysis_request',
-      input: 'Analyze the sales data from Q3 2024',
-      expected_capabilities: ['data-analysis'],
-      expected_tools: ['http_client', 'csv_parser']
+      name: "basic_analysis_request",
+      input: "Analyze the sales data from Q3 2024",
+      expected_capabilities: ["data-analysis"],
+      expected_tools: ["http_client", "csv_parser"],
     },
     {
-      name: 'chart_generation',
-      input: 'Create a bar chart showing monthly revenue',
-      expected_capabilities: ['report-generation'],
-      expected_tools: ['chart_generator']
+      name: "chart_generation",
+      input: "Create a bar chart showing monthly revenue",
+      expected_capabilities: ["report-generation"],
+      expected_tools: ["chart_generator"],
     },
     {
-      name: 'memory_recall',
-      input: 'What insights do you remember about Q2 performance?',
-      expected_capabilities: ['data-analysis'],
-      expected_tools: [] // Memory system integration
-    }
+      name: "memory_recall",
+      input: "What insights do you remember about Q2 performance?",
+      expected_capabilities: ["data-analysis"],
+      expected_tools: [], // Memory system integration
+    },
   ];
 
   try {
     // Validate configuration
-    console.log('Validating configuration...');
+    console.log("Validating configuration...");
     const validation = await validateConfiguration(content);
     if (!validation) {
       return false;
     }
 
     // Test behavior
-    console.log('Testing configuration behavior...');
+    console.log("Testing configuration behavior...");
     const testsPassed = await testConfiguration(content, testScenarios);
     if (!testsPassed) {
-      console.error('Configuration tests failed');
+      console.error("Configuration tests failed");
       return false;
     }
 
-    console.log('✅ Configuration is ready for deployment!');
+    console.log("✅ Configuration is ready for deployment!");
     return true;
-
   } catch (error) {
-    console.error('Validation/testing failed:', error);
+    console.error("Validation/testing failed:", error);
     return false;
   }
 }
@@ -288,33 +306,36 @@ class ConfigAgentDeveloper {
       if (validateFirst) {
         const validation = await validateConfiguration(newConfig);
         if (!validation) {
-          throw new Error('Configuration validation failed');
+          throw new Error("Configuration validation failed");
         }
       }
 
       // Perform hot-reload
-      const reload = await fetch(`/api/v1/dev/config-agents/${this.agentId}/hot-reload`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: newConfig,
-          validate_first: validateFirst,
-          backup_current: createBackup
-        })
-      });
+      const reload = await fetch(
+        `/api/v1/dev/config-agents/${this.agentId}/hot-reload`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: newConfig,
+            validate_first: validateFirst,
+            backup_current: createBackup,
+          }),
+        },
+      );
 
       const result = await reload.json();
 
-      if (result.status === 'success') {
+      if (result.status === "success") {
         console.log(`✅ Hot-reloaded in ${result.reload_time_ms}ms`);
-        console.log('Changes:', result.changes_detected);
+        console.log("Changes:", result.changes_detected);
 
         // Track backup for rollback
         if (result.backup_created) {
           this.backups.push({
             id: result.backup_created,
             version: result.previous_version,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -323,29 +344,30 @@ class ConfigAgentDeveloper {
       } else {
         throw new Error(`Hot-reload failed: ${result.error}`);
       }
-
     } catch (error) {
-      console.error('Hot-reload failed:', error);
+      console.error("Hot-reload failed:", error);
       return false;
     }
   }
 
   async compareWithCurrent(newConfig) {
-    const comparison = await fetch('/api/v1/dev/config/compare', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const comparison = await fetch("/api/v1/dev/config/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         original_content: this.currentConfig,
         updated_content: newConfig,
-        comparison_type: 'semantic'
-      })
+        comparison_type: "semantic",
+      }),
     });
 
     const result = await comparison.json();
 
     console.log(`Found ${result.differences_found} differences:`);
-    result.changes.forEach(change => {
-      console.log(`  - ${change.type}: ${change.field} (impact: ${change.impact})`);
+    result.changes.forEach((change) => {
+      console.log(
+        `  - ${change.type}: ${change.field} (impact: ${change.impact})`,
+      );
     });
 
     return result;
@@ -353,7 +375,7 @@ class ConfigAgentDeveloper {
 
   async rollbackToBackup(backupIndex = 0) {
     if (this.backups.length === 0) {
-      throw new Error('No backups available for rollback');
+      throw new Error("No backups available for rollback");
     }
 
     const backup = this.backups[backupIndex];
@@ -366,7 +388,7 @@ class ConfigAgentDeveloper {
 }
 
 // Usage example
-const developer = new ConfigAgentDeveloper('config-12345', originalConfig);
+const developer = new ConfigAgentDeveloper("config-12345", originalConfig);
 
 // Compare changes
 await developer.compareWithCurrent(modifiedConfig);
@@ -374,7 +396,7 @@ await developer.compareWithCurrent(modifiedConfig);
 // Hot-reload with validation
 await developer.hotReload(modifiedConfig, {
   validateFirst: true,
-  createBackup: true
+  createBackup: true,
 });
 ```
 
@@ -400,22 +422,23 @@ async function deployAgentEnsemble(agentConfigs, workspace) {
       }
 
       // Deploy agent
-      const deployment = await fetch('/api/v1/config-agents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const deployment = await fetch("/api/v1/config-agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: config.name,
           content: config.content,
           workspace,
-          auto_start: true
-        })
+          auto_start: true,
+        }),
       });
 
       const agent = await deployment.json();
       deployedAgents.push(agent);
 
-      console.log(`✅ Deployed ${agent.name} with capabilities: ${agent.capabilities.join(', ')}`);
-
+      console.log(
+        `✅ Deployed ${agent.name} with capabilities: ${agent.capabilities.join(", ")}`,
+      );
     } catch (error) {
       console.error(`❌ Failed to deploy ${config.name}:`, error);
       // Continue deploying other agents
@@ -424,7 +447,9 @@ async function deployAgentEnsemble(agentConfigs, workspace) {
 
   // Wait for all agents to be running
   await Promise.all(
-    deployedAgents.map(agent => waitForAgentStatus(agent.id, 'running', 30000))
+    deployedAgents.map((agent) =>
+      waitForAgentStatus(agent.id, "running", 30000),
+    ),
   );
 
   return deployedAgents;
@@ -435,14 +460,16 @@ async function deployAgentEnsemble(agentConfigs, workspace) {
 
 ```javascript
 async function monitorCapabilityCoverage(workspace) {
-  const capabilities = await fetch(`/api/v1/capabilities?workspace=${workspace}`);
+  const capabilities = await fetch(
+    `/api/v1/capabilities?workspace=${workspace}`,
+  );
   const { capabilities: capabilityList } = await capabilities.json();
 
-  console.log('Capability coverage:');
-  capabilityList.forEach(cap => {
+  console.log("Capability coverage:");
+  capabilityList.forEach((cap) => {
     console.log(`  ${cap.capability}: ${cap.providers.length} providers`);
 
-    const healthyProviders = cap.providers.filter(p => p.status === 'active');
+    const healthyProviders = cap.providers.filter((p) => p.status === "active");
     if (healthyProviders.length === 0) {
       console.warn(`    ⚠️  No healthy providers for ${cap.capability}`);
     } else if (healthyProviders.length === 1) {
@@ -465,26 +492,32 @@ async function orchestrateWorkflow(workflowSteps, workspace) {
   for (const step of workflowSteps) {
     try {
       // Find agent with required capability
-      const capabilityResponse = await fetch(`/api/v1/capabilities/${step.capability}?routing_strategy=least_loaded`);
+      const capabilityResponse = await fetch(
+        `/api/v1/capabilities/${step.capability}?routing_strategy=least_loaded`,
+      );
       const { providers } = await capabilityResponse.json();
 
       if (providers.length === 0) {
-        throw new Error(`No providers found for capability: ${step.capability}`);
+        throw new Error(
+          `No providers found for capability: ${step.capability}`,
+        );
       }
 
       const bestProvider = providers[0];
-      console.log(`Routing step "${step.name}" to agent: ${bestProvider.agent_name}`);
+      console.log(
+        `Routing step "${step.name}" to agent: ${bestProvider.agent_name}`,
+      );
 
       // Send agent message to capability
-      const message = await fetch('/api/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const message = await fetch("/api/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to_capability: step.capability,
-          performative: 'REQUEST',
+          performative: "REQUEST",
           content: step.request,
-          conversation_context: results.map(r => r.result) // Pass previous results
-        })
+          conversation_context: results.map((r) => r.result), // Pass previous results
+        }),
       });
 
       const result = await message.json();
@@ -492,15 +525,14 @@ async function orchestrateWorkflow(workflowSteps, workspace) {
         step: step.name,
         provider: bestProvider.agent_name,
         result: result.content,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       console.error(`❌ Step "${step.name}" failed:`, error);
       results.push({
         step: step.name,
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -511,23 +543,26 @@ async function orchestrateWorkflow(workflowSteps, workspace) {
 // Example workflow
 const workflowSteps = [
   {
-    name: 'data_collection',
-    capability: 'data-analysis',
-    request: 'Collect and analyze Q3 sales data from all regions'
+    name: "data_collection",
+    capability: "data-analysis",
+    request: "Collect and analyze Q3 sales data from all regions",
   },
   {
-    name: 'trend_analysis',
-    capability: 'data-analysis',
-    request: 'Identify trends and patterns in the collected data'
+    name: "trend_analysis",
+    capability: "data-analysis",
+    request: "Identify trends and patterns in the collected data",
   },
   {
-    name: 'report_generation',
-    capability: 'report-generation',
-    request: 'Generate executive summary report with visualizations'
-  }
+    name: "report_generation",
+    capability: "report-generation",
+    request: "Generate executive summary report with visualizations",
+  },
 ];
 
-const workflowResults = await orchestrateWorkflow(workflowSteps, 'analytics-workspace');
+const workflowResults = await orchestrateWorkflow(
+  workflowSteps,
+  "analytics-workspace",
+);
 ```
 
 ### Pattern 5: Memory-Enabled Agent Collaboration
@@ -545,19 +580,18 @@ async function deployLearningAgents(agentConfigs, sharedWorkspace) {
     // Ensure memory is enabled for learning
     const memoryEnabledConfig = {
       ...config,
-      content: config.content.replace(
-        /memory_enabled: false/g,
-        'memory_enabled: true'
-      ).replace(
-        /memory_scope: "agent-only"/g,
-        'memory_scope: "workspace"' // Enable shared learning
-      )
+      content: config.content
+        .replace(/memory_enabled: false/g, "memory_enabled: true")
+        .replace(
+          /memory_scope: "agent-only"/g,
+          'memory_scope: "workspace"', // Enable shared learning
+        ),
     };
 
     const agent = await createAgentFromTemplate(
       config.template_id,
       memoryEnabledConfig.parameters,
-      sharedWorkspace
+      sharedWorkspace,
     );
 
     agents.push(agent);
@@ -570,49 +604,55 @@ async function deployLearningAgents(agentConfigs, sharedWorkspace) {
 #### Step 2: Knowledge Sharing Pattern
 
 ```javascript
-async function shareKnowledge(fromAgentId, toCapability, knowledgeType, workspace) {
+async function shareKnowledge(
+  fromAgentId,
+  toCapability,
+  knowledgeType,
+  workspace,
+) {
   try {
     // Agent stores its findings in memory
-    await fetch('/api/v1/memory/entities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/v1/memory/entities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         agent_id: fromAgentId,
         entity_name: `Knowledge_${knowledgeType}_${Date.now()}`,
-        entity_type: 'shared_insight',
+        entity_type: "shared_insight",
         observations: [
-          'This insight is shared with the team',
+          "This insight is shared with the team",
           `Type: ${knowledgeType}`,
-          `Available for: ${toCapability}`
+          `Available for: ${toCapability}`,
         ],
-        memory_scope: 'workspace',
+        memory_scope: "workspace",
         metadata: {
           knowledge_type: knowledgeType,
           target_capability: toCapability,
-          shared_at: new Date().toISOString()
-        }
-      })
+          shared_at: new Date().toISOString(),
+        },
+      }),
     });
 
     // Notify other agents about new knowledge
-    await fetch('/api/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         to_capability: toCapability,
-        performative: 'INFORM',
+        performative: "INFORM",
         content: {
-          type: 'knowledge_update',
+          type: "knowledge_update",
           knowledge_type: knowledgeType,
-          message: 'New shared insight available in workspace memory'
-        }
-      })
+          message: "New shared insight available in workspace memory",
+        },
+      }),
     });
 
-    console.log(`✅ Knowledge shared from agent ${fromAgentId} to ${toCapability} capability`);
-
+    console.log(
+      `✅ Knowledge shared from agent ${fromAgentId} to ${toCapability} capability`,
+    );
   } catch (error) {
-    console.error('Knowledge sharing failed:', error);
+    console.error("Knowledge sharing failed:", error);
   }
 }
 ```
@@ -626,7 +666,7 @@ async function facilitateCollaborativeLearning(workspace, learningTopics) {
       // Search for existing knowledge on the topic
       const searchResponse = await fetch(
         `/api/v1/memory/search?query=${encodeURIComponent(topic)}` +
-        `&memory_scope=workspace&limit=10`
+          `&memory_scope=workspace&limit=10`,
       );
       const { results } = await searchResponse.json();
 
@@ -637,27 +677,26 @@ async function facilitateCollaborativeLearning(workspace, learningTopics) {
 
       // Create relationships between related knowledge
       for (let i = 0; i < results.length - 1; i++) {
-        await fetch('/api/v1/memory/relations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        await fetch("/api/v1/memory/relations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             agent_id: results[i].agent_id,
             from_entity: results[i].entity_name,
             to_entity: results[i + 1].entity_name,
-            relation_type: 'relates_to',
+            relation_type: "relates_to",
             strength: 0.7,
             confidence: 0.8,
-            memory_scope: 'workspace',
+            memory_scope: "workspace",
             metadata: {
               topic: topic,
-              relationship_basis: 'collaborative_learning'
-            }
-          })
+              relationship_basis: "collaborative_learning",
+            },
+          }),
         });
       }
 
       console.log(`✅ Created knowledge relationships for topic: ${topic}`);
-
     } catch (error) {
       console.error(`Learning facilitation failed for ${topic}:`, error);
     }
@@ -678,12 +717,14 @@ class ProductionMonitor {
     this.metrics = {
       agent_health: new Map(),
       capability_coverage: new Map(),
-      performance_stats: []
+      performance_stats: [],
     };
   }
 
   async startMonitoring(intervalMs = 30000) {
-    console.log(`Starting production monitoring for workspace: ${this.workspace}`);
+    console.log(
+      `Starting production monitoring for workspace: ${this.workspace}`,
+    );
 
     // Initial health check
     await this.checkSystemHealth();
@@ -707,14 +748,15 @@ class ProductionMonitor {
 
       // Log overall system status
       this.logSystemStatus();
-
     } catch (error) {
-      console.error('Health check failed:', error);
+      console.error("Health check failed:", error);
     }
   }
 
   async checkAgentHealth() {
-    const agents = await fetch(`/api/v1/config-agents?workspace=${this.workspace}`);
+    const agents = await fetch(
+      `/api/v1/config-agents?workspace=${this.workspace}`,
+    );
     const { agents: agentList } = await agents.json();
 
     for (const agent of agentList) {
@@ -722,14 +764,16 @@ class ProductionMonitor {
       const currentHealth = {
         status: agent.status,
         timestamp: new Date(),
-        last_activity: new Date(agent.last_activity)
+        last_activity: new Date(agent.last_activity),
       };
 
       // Detect status changes
       if (previousHealth && previousHealth.status !== currentHealth.status) {
-        console.log(`🔄 Agent ${agent.name} status changed: ${previousHealth.status} → ${currentHealth.status}`);
+        console.log(
+          `🔄 Agent ${agent.name} status changed: ${previousHealth.status} → ${currentHealth.status}`,
+        );
 
-        if (currentHealth.status === 'error') {
+        if (currentHealth.status === "error") {
           await this.handleAgentError(agent);
         }
       }
@@ -747,15 +791,17 @@ class ProductionMonitor {
       overall_health: health.overall_health,
       healthy_capabilities: health.healthy_capabilities,
       degraded_capabilities: health.degraded_capabilities,
-      unhealthy_capabilities: health.unhealthy_capabilities
+      unhealthy_capabilities: health.unhealthy_capabilities,
     });
 
     // Alert on degraded capabilities
     if (health.degraded_capabilities > 0 || health.unhealthy_capabilities > 0) {
-      console.warn(`⚠️  Capability health degraded: ${health.degraded_capabilities} degraded, ${health.unhealthy_capabilities} unhealthy`);
+      console.warn(
+        `⚠️  Capability health degraded: ${health.degraded_capabilities} degraded, ${health.unhealthy_capabilities} unhealthy`,
+      );
 
       for (const cap of health.capabilities) {
-        if (cap.health !== 'healthy') {
+        if (cap.health !== "healthy") {
           await this.handleCapabilityIssue(cap);
         }
       }
@@ -763,14 +809,14 @@ class ProductionMonitor {
   }
 
   async checkMemoryHealth() {
-    const memoryHealth = await fetch('/api/v1/memory/health');
+    const memoryHealth = await fetch("/api/v1/memory/health");
     const health = await memoryHealth.json();
 
-    if (health.status !== 'healthy') {
+    if (health.status !== "healthy") {
       console.warn(`⚠️  Memory system health: ${health.status}`);
 
       for (const check of health.checks) {
-        if (check.status !== 'pass') {
+        if (check.status !== "pass") {
           console.warn(`  - ${check.check}: ${check.status}`);
         }
       }
@@ -783,13 +829,15 @@ class ProductionMonitor {
     // Attempt automatic recovery
     try {
       await fetch(`/api/v1/config-agents/${agent.id}/restart`, {
-        method: 'POST'
+        method: "POST",
       });
 
       console.log(`🔄 Attempted automatic restart for agent ${agent.name}`);
-
     } catch (error) {
-      console.error(`❌ Automatic restart failed for agent ${agent.name}:`, error);
+      console.error(
+        `❌ Automatic restart failed for agent ${agent.name}:`,
+        error,
+      );
       // Could trigger alerts to operations team here
     }
   }
@@ -799,37 +847,44 @@ class ProductionMonitor {
 
     // Find healthy alternative providers
     const alternativeProviders = await fetch(
-      `/api/v1/capabilities/${capability.capability}?include_unhealthy=false`
+      `/api/v1/capabilities/${capability.capability}?include_unhealthy=false`,
     );
     const { providers } = await alternativeProviders.json();
 
     if (providers.length === 0) {
-      console.error(`❌ No healthy providers available for ${capability.capability}`);
+      console.error(
+        `❌ No healthy providers available for ${capability.capability}`,
+      );
       // Could trigger emergency deployment of backup agents
     } else {
-      console.log(`✅ ${providers.length} healthy providers available for ${capability.capability}`);
+      console.log(
+        `✅ ${providers.length} healthy providers available for ${capability.capability}`,
+      );
     }
   }
 
   logSystemStatus() {
     const totalAgents = this.metrics.agent_health.size;
-    const healthyAgents = Array.from(this.metrics.agent_health.values())
-      .filter(h => h.status === 'running').length;
+    const healthyAgents = Array.from(this.metrics.agent_health.values()).filter(
+      (h) => h.status === "running",
+    ).length;
 
-    console.log(`📊 System Status - Agents: ${healthyAgents}/${totalAgents} healthy`);
+    console.log(
+      `📊 System Status - Agents: ${healthyAgents}/${totalAgents} healthy`,
+    );
   }
 
   stopMonitoring() {
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
       this.healthCheckInterval = null;
-      console.log('Production monitoring stopped');
+      console.log("Production monitoring stopped");
     }
   }
 }
 
 // Usage
-const monitor = new ProductionMonitor('production-workspace');
+const monitor = new ProductionMonitor("production-workspace");
 await monitor.startMonitoring(30000); // Check every 30 seconds
 ```
 
@@ -843,8 +898,8 @@ class CaxtonConfigAgentSDK {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
     this.defaultHeaders = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     };
   }
 
@@ -852,67 +907,81 @@ class CaxtonConfigAgentSDK {
   async createAgent(config) {
     const validation = await this.validateConfig(config.content);
     if (!validation.valid) {
-      throw new Error(`Configuration invalid: ${JSON.stringify(validation.errors)}`);
+      throw new Error(
+        `Configuration invalid: ${JSON.stringify(validation.errors)}`,
+      );
     }
 
-    return await this.request('POST', '/api/v1/config-agents', config);
+    return await this.request("POST", "/api/v1/config-agents", config);
   }
 
   async getAgent(agentId) {
-    return await this.request('GET', `/api/v1/config-agents/${agentId}`);
+    return await this.request("GET", `/api/v1/config-agents/${agentId}`);
   }
 
   async updateAgent(agentId, content) {
-    return await this.request('PUT', `/api/v1/config-agents/${agentId}`, { content });
+    return await this.request("PUT", `/api/v1/config-agents/${agentId}`, {
+      content,
+    });
   }
 
   async deleteAgent(agentId, force = false) {
-    return await this.request('DELETE', `/api/v1/config-agents/${agentId}?force=${force}`);
+    return await this.request(
+      "DELETE",
+      `/api/v1/config-agents/${agentId}?force=${force}`,
+    );
   }
 
   // Configuration Validation
   async validateConfig(content, options = {}) {
-    return await this.request('POST', '/api/v1/validate/config', {
+    return await this.request("POST", "/api/v1/validate/config", {
       content,
-      ...options
+      ...options,
     });
   }
 
   async testConfig(content, scenarios) {
-    return await this.request('POST', '/api/v1/test/config', {
+    return await this.request("POST", "/api/v1/test/config", {
       content,
-      test_scenarios: scenarios
+      test_scenarios: scenarios,
     });
   }
 
   // Template Management
   async listTemplates(filters = {}) {
     const queryString = new URLSearchParams(filters).toString();
-    return await this.request('GET', `/api/v1/templates?${queryString}`);
+    return await this.request("GET", `/api/v1/templates?${queryString}`);
   }
 
   async generateFromTemplate(templateId, parameters, options = {}) {
-    return await this.request('POST', `/api/v1/templates/${templateId}/generate`, {
-      parameters,
-      ...options
-    });
+    return await this.request(
+      "POST",
+      `/api/v1/templates/${templateId}/generate`,
+      {
+        parameters,
+        ...options,
+      },
+    );
   }
 
   // Capability Management
   async discoverCapabilities(filters = {}) {
     const queryString = new URLSearchParams(filters).toString();
-    return await this.request('GET', `/api/v1/capabilities?${queryString}`);
+    return await this.request("GET", `/api/v1/capabilities?${queryString}`);
   }
 
-  async findCapabilityProviders(capability, strategy = 'priority') {
-    return await this.request('GET', `/api/v1/capabilities/${capability}?routing_strategy=${strategy}`);
+  async findCapabilityProviders(capability, strategy = "priority") {
+    return await this.request(
+      "GET",
+      `/api/v1/capabilities/${capability}?routing_strategy=${strategy}`,
+    );
   }
 
   // Memory Operations
   async storeMemory(agentId, entity) {
-    return await this.request('POST', '/api/v1/memory/entities', {
+    return await this.request("POST", "/api/v1/memory/entities", {
       agent_id: agentId,
-      ...entity
+      ...entity,
     });
   }
 
@@ -920,41 +989,45 @@ class CaxtonConfigAgentSDK {
     const params = new URLSearchParams({
       agent_id: agentId,
       query,
-      ...options
+      ...options,
     });
-    return await this.request('GET', `/api/v1/memory/search?${params}`);
+    return await this.request("GET", `/api/v1/memory/search?${params}`);
   }
 
   // Messaging
-  async sendMessage(toCapability, content, performative = 'REQUEST') {
-    return await this.request('POST', '/api/v1/messages', {
+  async sendMessage(toCapability, content, performative = "REQUEST") {
+    return await this.request("POST", "/api/v1/messages", {
       to_capability: toCapability,
       performative,
-      content
+      content,
     });
   }
 
   // Health Monitoring
   async getSystemHealth() {
-    return await this.request('GET', '/api/v1/capabilities/health');
+    return await this.request("GET", "/api/v1/capabilities/health");
   }
 
   async getMemoryHealth() {
-    return await this.request('GET', '/api/v1/memory/health');
+    return await this.request("GET", "/api/v1/memory/health");
   }
 
   // Development Tools
   async hotReload(agentId, content, options = {}) {
-    return await this.request('PUT', `/api/v1/dev/config-agents/${agentId}/hot-reload`, {
-      content,
-      ...options
-    });
+    return await this.request(
+      "PUT",
+      `/api/v1/dev/config-agents/${agentId}/hot-reload`,
+      {
+        content,
+        ...options,
+      },
+    );
   }
 
   async compareConfigs(original, updated) {
-    return await this.request('POST', '/api/v1/dev/config/compare', {
+    return await this.request("POST", "/api/v1/dev/config/compare", {
       original_content: original,
-      updated_content: updated
+      updated_content: updated,
     });
   }
 
@@ -962,7 +1035,7 @@ class CaxtonConfigAgentSDK {
   async request(method, endpoint, body = null) {
     const config = {
       method,
-      headers: this.defaultHeaders
+      headers: this.defaultHeaders,
     };
 
     if (body) {
@@ -989,35 +1062,42 @@ class CaxtonConfigAgentSDK {
         return agent;
       }
 
-      if (agent.status === 'error') {
-        throw new Error(`Agent entered error state while waiting for ${targetStatus}`);
+      if (agent.status === "error") {
+        throw new Error(
+          `Agent entered error state while waiting for ${targetStatus}`,
+        );
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    throw new Error(`Timeout waiting for agent ${agentId} to reach status ${targetStatus}`);
+    throw new Error(
+      `Timeout waiting for agent ${agentId} to reach status ${targetStatus}`,
+    );
   }
 }
 
 // Usage
-const sdk = new CaxtonConfigAgentSDK('https://caxton.example.com', 'your-api-key');
+const sdk = new CaxtonConfigAgentSDK(
+  "https://caxton.example.com",
+  "your-api-key",
+);
 
 // Create agent from template
-const templates = await sdk.listTemplates({ category: 'data-processing' });
-const config = await sdk.generateFromTemplate('data-analyzer-basic', {
-  AGENT_NAME: 'ProductionAnalyzer',
-  MEMORY_ENABLED: true
+const templates = await sdk.listTemplates({ category: "data-processing" });
+const config = await sdk.generateFromTemplate("data-analyzer-basic", {
+  AGENT_NAME: "ProductionAnalyzer",
+  MEMORY_ENABLED: true,
 });
 
 const agent = await sdk.createAgent({
-  name: 'ProductionAnalyzer',
+  name: "ProductionAnalyzer",
   content: config.generated_content,
-  workspace: 'production'
+  workspace: "production",
 });
 
-await sdk.waitForStatus(agent.id, 'running');
-console.log('Agent ready for production!');
+await sdk.waitForStatus(agent.id, "running");
+console.log("Agent ready for production!");
 ```
 
 ## Error Handling Patterns
@@ -1028,7 +1108,7 @@ console.log('Agent ready for production!');
 class CaxtonError extends Error {
   constructor(message, code, details = null) {
     super(message);
-    this.name = 'CaxtonError';
+    this.name = "CaxtonError";
     this.code = code;
     this.details = details;
   }
@@ -1044,21 +1124,23 @@ async function safeApiCall(apiFunction, retries = 3, backoffMs = 1000) {
       lastError = error;
 
       // Don't retry validation errors
-      if (error.code === 'VALIDATION_ERROR') {
+      if (error.code === "VALIDATION_ERROR") {
         throw error;
       }
 
       // Exponential backoff
       if (i < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, backoffMs * Math.pow(2, i)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, backoffMs * Math.pow(2, i)),
+        );
       }
     }
   }
 
   throw new CaxtonError(
     `API call failed after ${retries} retries: ${lastError.message}`,
-    'MAX_RETRIES_EXCEEDED',
-    { originalError: lastError, retries }
+    "MAX_RETRIES_EXCEEDED",
+    { originalError: lastError, retries },
   );
 }
 
@@ -1069,10 +1151,10 @@ try {
   if (error instanceof CaxtonError) {
     console.error(`Caxton Error [${error.code}]:`, error.message);
     if (error.details) {
-      console.error('Details:', error.details);
+      console.error("Details:", error.details);
     }
   } else {
-    console.error('Unexpected error:', error);
+    console.error("Unexpected error:", error);
   }
 }
 ```

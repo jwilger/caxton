@@ -101,10 +101,10 @@ server:
   agents_dir: "/var/lib/caxton/agents"
 
 memory:
-  backend: "embedded"  # SQLite + Candle
+  backend: "embedded" # SQLite + Candle
   sqlite_path: "memory.db"
   embedding_model: "all-MiniLM-L6-v2"
-  max_entities: 100000  # Recommended limit
+  max_entities: 100000 # Recommended limit
 
 logging:
   level: "info"
@@ -159,15 +159,15 @@ sudo systemctl start caxton
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   caxton:
     image: caxton/caxton:latest
     container_name: caxton-server
     ports:
-      - "8080:8080"    # API
-      - "9090:9090"    # Metrics
+      - "8080:8080" # API
+      - "9090:9090" # Metrics
     environment:
       - CAXTON_CONFIG_PATH=/etc/caxton/config.yaml
       - RUST_LOG=info
@@ -248,7 +248,7 @@ metadata:
   namespace: caxton
 spec:
   serviceName: caxton
-  replicas: 1  # Embedded backend: single instance only
+  replicas: 1 # Embedded backend: single instance only
   selector:
     matchLabels:
       app: caxton
@@ -258,50 +258,50 @@ spec:
         app: caxton
     spec:
       containers:
-      - name: caxton
-        image: caxton/caxton:latest
-        ports:
-        - containerPort: 8080
-          name: api
-        - containerPort: 9090
-          name: metrics
-        env:
-        - name: CAXTON_CONFIG_PATH
-          value: /etc/caxton/config.yaml
-        volumeMounts:
+        - name: caxton
+          image: caxton/caxton:latest
+          ports:
+            - containerPort: 8080
+              name: api
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: CAXTON_CONFIG_PATH
+              value: /etc/caxton/config.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caxton
+            - name: data
+              mountPath: /var/lib/caxton
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
         - name: config
-          mountPath: /etc/caxton
-        - name: data
-          mountPath: /var/lib/caxton
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
+          configMap:
+            name: caxton-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-      volumes:
-      - name: config
-        configMap:
-          name: caxton-config
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
+            storage: 10Gi
 ```
 
 ### High Availability with External Backends
@@ -310,7 +310,7 @@ spec:
 
 ```yaml
 # Enterprise deployment with external backends
-version: '3.8'
+version: "3.8"
 
 services:
   caxton-1:
@@ -405,9 +405,9 @@ rule_files:
   - "caxton_rules.yml"
 
 scrape_configs:
-  - job_name: 'caxton'
+  - job_name: "caxton"
     static_configs:
-      - targets: ['caxton:9090']
+      - targets: ["caxton:9090"]
     scrape_interval: 5s
     metrics_path: /metrics
 
@@ -415,7 +415,7 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 ```
 
 ### Alerting Rules
@@ -423,43 +423,43 @@ alerting:
 ```yaml
 # caxton_rules.yml
 groups:
-- name: caxton.rules
-  rules:
-  - alert: CaxtonDown
-    expr: up{job="caxton"} == 0
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "Caxton server is down"
-      description: "Caxton has been down for more than 1 minute"
+  - name: caxton.rules
+    rules:
+      - alert: CaxtonDown
+        expr: up{job="caxton"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Caxton server is down"
+          description: "Caxton has been down for more than 1 minute"
 
-  - alert: MemorySystemSlow
-    expr: caxton_memory_search_latency_p99 > 0.1
-    for: 2m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Memory system performance degraded"
-      description: "P99 search latency is {{ $value }}s"
+      - alert: MemorySystemSlow
+        expr: caxton_memory_search_latency_p99 > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory system performance degraded"
+          description: "P99 search latency is {{ $value }}s"
 
-  - alert: ApproachingMemoryLimit
-    expr: (caxton_memory_entities_total / 100000) > 0.9
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Approaching embedded memory limit"
-      description: "{{ $value }}% of recommended entity limit reached"
+      - alert: ApproachingMemoryLimit
+        expr: (caxton_memory_entities_total / 100000) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Approaching embedded memory limit"
+          description: "{{ $value }}% of recommended entity limit reached"
 
-  - alert: ConfigAgentReloadFailure
-    expr: increase(caxton_agent_reload_failed_total[5m]) > 0
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Config agent reload failures"
-      description: "{{ $value }} agent reloads failed in the last 5 minutes"
+      - alert: ConfigAgentReloadFailure
+        expr: increase(caxton_agent_reload_failed_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Config agent reload failures"
+          description: "{{ $value }} agent reloads failed in the last 5 minutes"
 ```
 
 ### Grafana Dashboard
@@ -620,20 +620,20 @@ fi
 memory:
   backend: "embedded"
   sqlite_config:
-    cache_size: 100000  # 100MB SQLite cache
-    journal_mode: "WAL"  # Write-Ahead Logging
-    synchronous: "NORMAL"  # Balance safety/performance
-    temp_store: "MEMORY"  # Temp tables in RAM
+    cache_size: 100000 # 100MB SQLite cache
+    journal_mode: "WAL" # Write-Ahead Logging
+    synchronous: "NORMAL" # Balance safety/performance
+    temp_store: "MEMORY" # Temp tables in RAM
 
   embedding_config:
-    batch_size: 32  # Process embeddings in batches
-    cache_size: 10000  # Cache 10K recent embeddings
-    model_device: "cpu"  # or "cuda" if available
+    batch_size: 32 # Process embeddings in batches
+    cache_size: 10000 # Cache 10K recent embeddings
+    model_device: "cpu" # or "cuda" if available
 
   cleanup:
-    vacuum_interval: "24h"  # Defragment database
-    analyze_interval: "12h"  # Update query statistics
-    cleanup_threshold: 0.1  # Trigger cleanup at 10% fragmentation
+    vacuum_interval: "24h" # Defragment database
+    analyze_interval: "12h" # Update query statistics
+    cleanup_threshold: 0.1 # Trigger cleanup at 10% fragmentation
 ```
 
 #### Performance Monitoring

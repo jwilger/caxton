@@ -6,7 +6,6 @@ layout: adr
 categories: [Architecture, Technology]
 ---
 
-
 ## Status
 
 Superseded by ADR-0026 (Simplified Management API Protocol)

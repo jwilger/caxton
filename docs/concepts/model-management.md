@@ -220,7 +220,7 @@ memory:
     directory: "~/.cache/caxton/models"
     max_size_gb: 5.0
     max_models: 10
-    cleanup_policy: "lru"  # lru, fifo, manual
+    cleanup_policy: "lru" # lru, fifo, manual
     validation_interval: "24h"
     download_timeout: "30m"
     parallel_downloads: 3
@@ -298,11 +298,11 @@ pub struct ModelValidation {
 
 ```yaml
 download:
-  strategy: "adaptive"     # adaptive, conservative, aggressive
-  max_concurrent: 3        # Maximum parallel downloads
-  chunk_size_kb: 1024     # Download chunk size
-  retry_delay_ms: 5000    # Delay between retries
-  compression: true       # Use gzip compression when available
+  strategy: "adaptive" # adaptive, conservative, aggressive
+  max_concurrent: 3 # Maximum parallel downloads
+  chunk_size_kb: 1024 # Download chunk size
+  retry_delay_ms: 5000 # Delay between retries
+  compression: true # Use gzip compression when available
 ```
 
 **Network Resilience**:
@@ -353,10 +353,10 @@ caxton model export \
 memory:
   embedding_model: "all-MiniLM-L6-v2"
   fallback_models:
-    - "all-MiniLM-L12-v2"      # Same architecture, larger
-    - "distiluse-base-multilingual-cased"  # Different arch, similar dims
-    - "bundled-mini"            # Minimal bundled model
-  fallback_strategy: "auto"    # auto, manual, strict
+    - "all-MiniLM-L12-v2" # Same architecture, larger
+    - "distiluse-base-multilingual-cased" # Different arch, similar dims
+    - "bundled-mini" # Minimal bundled model
+  fallback_strategy: "auto" # auto, manual, strict
   allow_dimension_mismatch: false
 ```
 
@@ -425,10 +425,10 @@ pub enum EvictionPolicy {
 
 ```yaml
 embedding:
-  batch_size: 32           # Sentences per batch
-  max_batch_wait_ms: 100   # Wait time to accumulate batch
-  queue_size: 1000         # Maximum queued embedding requests
-  parallel_batches: 2      # Concurrent batch processing
+  batch_size: 32 # Sentences per batch
+  max_batch_wait_ms: 100 # Wait time to accumulate batch
+  queue_size: 1000 # Maximum queued embedding requests
+  parallel_batches: 2 # Concurrent batch processing
 ```
 
 **Performance Optimization**:
@@ -505,7 +505,7 @@ memory:
 # caxton-prod.yaml
 memory:
   backend: "embedded"
-  embedding_model: "all-mpnet-base-v2"  # Higher quality for production
+  embedding_model: "all-mpnet-base-v2" # Higher quality for production
   fallback_models:
     - "all-MiniLM-L6-v2"
     - "bundled-mini"
@@ -534,9 +534,9 @@ memory:
   embedding_model: "bundled-mini"
   model_cache:
     directory: "/data/caxton/models"
-    auto_download: false      # Disable downloads
+    auto_download: false # Disable downloads
     bundled_models_only: true
-  fallback_strategy: "strict"  # Only use pre-installed models
+  fallback_strategy: "strict" # Only use pre-installed models
   download:
     enabled: false
 ```

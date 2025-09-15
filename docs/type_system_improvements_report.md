@@ -345,7 +345,7 @@ types | 🟢 Centralized validation | | **Test Clarity** | Primitive value testi
 2. **Type-safe configuration** - Configuration files with domain validation
 3. **API evolution safety** - Version-safe API evolution with domain types
 
-______________________________________________________________________
+---
 
 ## 📜 Conclusion
 

@@ -34,16 +34,16 @@ best practices.
 
 ### Migration Decision Matrix
 
-| Requirement | Embedded | Neo4j | Qdrant | Hybrid |
-|-------------|----------|-------|---------|---------|
-| <100K entities | ✅ | ⚠️ | ⚠️ | ✅ |
-| >1M entities | ❌ | ✅ | ✅ | ✅ |
-| Complex graph queries | ⚠️ | ✅ | ❌ | ✅ |
-| High-speed semantic search | ⚠️ | ❌ | ✅ | ✅ |
-| Zero configuration | ✅ | ❌ | ❌ | ❌ |
-| Multi-node deployment | ❌ | ✅ | ✅ | ✅ |
-| Advanced analytics | ❌ | ✅ | ⚠️ | ✅ |
-| Cost optimization | ✅ | ❌ | ❌ | ⚠️ |
+| Requirement                | Embedded | Neo4j | Qdrant | Hybrid |
+| -------------------------- | -------- | ----- | ------ | ------ |
+| <100K entities             | ✅       | ⚠️    | ⚠️     | ✅     |
+| >1M entities               | ❌       | ✅    | ✅     | ✅     |
+| Complex graph queries      | ⚠️       | ✅    | ❌     | ✅     |
+| High-speed semantic search | ⚠️       | ❌    | ✅     | ✅     |
+| Zero configuration         | ✅       | ❌    | ❌     | ❌     |
+| Multi-node deployment      | ❌       | ✅    | ✅     | ✅     |
+| Advanced analytics         | ❌       | ✅    | ⚠️     | ✅     |
+| Cost optimization          | ✅       | ❌    | ❌     | ⚠️     |
 
 ## Migration Strategies
 
@@ -528,9 +528,9 @@ migration:
         collection: "caxton_vectors"
 
   distribution:
-    entities: "both"      # Store in both backends
-    relations: "neo4j"    # Only in graph backend
-    embeddings: "qdrant"  # Only in vector backend
+    entities: "both" # Store in both backends
+    relations: "neo4j" # Only in graph backend
+    embeddings: "qdrant" # Only in vector backend
 ```
 
 ## Migration Tools and CLI
@@ -925,7 +925,7 @@ After successful migration, update Caxton configuration:
 # Updated caxton.yaml
 memory:
   # Switch from embedded to new backend
-  backend: "neo4j"  # or "qdrant", "hybrid"
+  backend: "neo4j" # or "qdrant", "hybrid"
 
   neo4j:
     uri: "bolt://neo4j:7687"
@@ -1027,7 +1027,7 @@ impl PostMigrationMonitor {
 - [ ] **Test migration in staging** - Never migrate production directly
 - [ ] **Verify resource requirements** - Disk, memory, network capacity
 - [ ] **Plan downtime window** - Even "zero-downtime" migrations need
-  maintenance windows
+      maintenance windows
 - [ ] **Prepare rollback plan** - Know how to revert if migration fails
 - [ ] **Monitor destination backend** - Ensure target system is healthy
 - [ ] **Update application configuration** - Prepare config changes
@@ -1087,8 +1087,8 @@ FOR (e:Entity) ON (e.name, e.entity_type)
 ```yaml
 # Reduce batch size
 migration:
-  batch_size: 100  # Reduce from default 1000
-  parallel_workers: 2  # Reduce parallelism
+  batch_size: 100 # Reduce from default 1000
+  parallel_workers: 2 # Reduce parallelism
   memory_limit_mb: 1024
 ```
 

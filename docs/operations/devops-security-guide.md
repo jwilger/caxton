@@ -154,21 +154,21 @@ validation:
 ```yaml
 # Embedded architecture security configuration
 server:
-  data_dir: "/var/lib/caxton/data"  # Secure data directory
-  agents_dir: "/var/lib/caxton/agents"  # Agent config directory
-  file_permissions: "644"  # Secure file permissions
+  data_dir: "/var/lib/caxton/data" # Secure data directory
+  agents_dir: "/var/lib/caxton/agents" # Agent config directory
+  file_permissions: "644" # Secure file permissions
 
 config_agents:
   validation:
-    yaml_schema_strict: true     # Strict YAML validation
-    tool_whitelist_enforced: true  # Only allow approved tools
-    capability_validation: true   # Validate declared capabilities
-    prompt_injection_detection: true  # Detect prompt injection
+    yaml_schema_strict: true # Strict YAML validation
+    tool_whitelist_enforced: true # Only allow approved tools
+    capability_validation: true # Validate declared capabilities
+    prompt_injection_detection: true # Detect prompt injection
 
   isolation:
-    memory_scope_isolation: true  # Isolate memory scopes
-    conversation_limits: 100      # Per-agent conversation limits
-    file_access_restricted: true  # Restrict file system access
+    memory_scope_isolation: true # Isolate memory scopes
+    conversation_limits: 100 # Per-agent conversation limits
+    file_access_restricted: true # Restrict file system access
 
   security_policies:
     allowed_tools: ["http_client", "csv_parser", "json_validator"]
@@ -179,15 +179,15 @@ config_agents:
 memory:
   backend: "embedded"
   sqlite_security:
-    journal_mode: "wal"    # Secure journaling
-    foreign_keys: true      # Enforce referential integrity
-    recursive_triggers: false  # Prevent trigger loops
-    trusted_schema: true    # Validate schema changes
+    journal_mode: "wal" # Secure journaling
+    foreign_keys: true # Enforce referential integrity
+    recursive_triggers: false # Prevent trigger loops
+    trusted_schema: true # Validate schema changes
 
   access_control:
-    scope_isolation: true   # agent/workspace/global isolation
-    entity_ownership: true  # Track entity owners
-    relation_permissions: true  # Permission-based relations
+    scope_isolation: true # agent/workspace/global isolation
+    entity_ownership: true # Track entity owners
+    relation_permissions: true # Permission-based relations
 ```
 
 **Embedded Architecture Security Benefits:**
@@ -210,7 +210,7 @@ communication:
   max_message_size_kb: 1024
   conversation_timeout_minutes: 30
   content_sanitization: enabled
-  capability_based_routing: true  # Route by capability, not agent ID
+  capability_based_routing: true # Route by capability, not agent ID
 
   # Configuration agent communication
   config_agent_messaging:
@@ -291,21 +291,21 @@ When deploying Caxton in containers (less common with embedded architecture):
 
 ```yaml
 # Docker container security for embedded architecture
-version: '3.8'
+version: "3.8"
 services:
   caxton:
     image: caxton:embedded-latest
-    user: "65534:65534"  # Non-root user
-    read_only: true      # Read-only root filesystem
+    user: "65534:65534" # Non-root user
+    read_only: true # Read-only root filesystem
     cap_drop:
-      - ALL              # Drop all capabilities
+      - ALL # Drop all capabilities
     security_opt:
       - no-new-privileges:true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - caxton-data:/var/lib/caxton/data:rw  # SQLite data volume
-      - ./agents:/var/lib/caxton/agents:ro   # Read-only agent configs
+      - caxton-data:/var/lib/caxton/data:rw # SQLite data volume
+      - ./agents:/var/lib/caxton/agents:ro # Read-only agent configs
     environment:
       - CAXTON_MEMORY_BACKEND=embedded
       - CAXTON_CONFIG_AGENT_VALIDATION=strict
@@ -332,7 +332,7 @@ kind: Deployment
 metadata:
   name: caxton-embedded
 spec:
-  replicas: 1  # Single instance for embedded architecture
+  replicas: 1 # Single instance for embedded architecture
   template:
     spec:
       securityContext:
@@ -341,40 +341,40 @@ spec:
         runAsGroup: 65534
         fsGroup: 65534
       containers:
-      - name: caxton
-        image: caxton:embedded-latest
-        securityContext:
-          readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          seccompProfile:
-            type: RuntimeDefault
-          capabilities:
-            drop: ["ALL"]
-        resources:
-          requests:
-            memory: "256Mi"   # Embedded baseline
-            cpu: "100m"
-          limits:
-            memory: "1Gi"     # Include embedding model
-            cpu: "500m"
-        env:
-        - name: CAXTON_MEMORY_BACKEND
-          value: "embedded"
-        - name: CAXTON_CONFIG_AGENT_VALIDATION
-          value: "strict"
-        volumeMounts:
-        - name: caxton-data
-          mountPath: /var/lib/caxton/data
-        - name: agent-configs
-          mountPath: /var/lib/caxton/agents
-          readOnly: true
+        - name: caxton
+          image: caxton:embedded-latest
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              memory: "256Mi" # Embedded baseline
+              cpu: "100m"
+            limits:
+              memory: "1Gi" # Include embedding model
+              cpu: "500m"
+          env:
+            - name: CAXTON_MEMORY_BACKEND
+              value: "embedded"
+            - name: CAXTON_CONFIG_AGENT_VALIDATION
+              value: "strict"
+          volumeMounts:
+            - name: caxton-data
+              mountPath: /var/lib/caxton/data
+            - name: agent-configs
+              mountPath: /var/lib/caxton/agents
+              readOnly: true
       volumes:
-      - name: caxton-data
-        persistentVolumeClaim:
-          claimName: caxton-data-pvc
-      - name: agent-configs
-        configMap:
-          name: caxton-agent-configs
+        - name: caxton-data
+          persistentVolumeClaim:
+            claimName: caxton-data-pvc
+        - name: agent-configs
+          configMap:
+            name: caxton-agent-configs
 ```
 
 ## Configuration Agent Security
@@ -422,10 +422,10 @@ Implement strict tool access control for configuration agents:
 tool_security:
   # Global tool whitelist
   allowed_tools:
-    - "http_client"      # HTTP requests
-    - "csv_parser"       # Data parsing
-    - "json_validator"   # JSON validation
-    - "text_processor"   # Text manipulation
+    - "http_client" # HTTP requests
+    - "csv_parser" # Data parsing
+    - "json_validator" # JSON validation
+    - "text_processor" # Text manipulation
 
   # Forbidden tools (never allow)
   forbidden_tools:
@@ -500,27 +500,27 @@ spec:
     matchLabels:
       app: caxton-embedded
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: authorized-clients
-    ports:
-    - protocol: TCP
-      port: 8080  # API port
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: authorized-clients
+      ports:
+        - protocol: TCP
+          port: 8080 # API port
   egress:
-  # Allow HTTPS for tool calls (restricted by tool policies)
-  - to: []
-    ports:
-    - protocol: TCP
-      port: 443
-  # Allow DNS
-  - to: []
-    ports:
-    - protocol: UDP
-      port: 53
+    # Allow HTTPS for tool calls (restricted by tool policies)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
 ```
 
 ### TLS Configuration for API Security
@@ -590,7 +590,7 @@ Configure memory scope security to prevent data leakage:
 memory_security:
   scope_isolation:
     enabled: true
-    default_scope: "agent"  # Most restrictive by default
+    default_scope: "agent" # Most restrictive by default
 
     # Scope permissions
     agent_scope:
@@ -681,56 +681,55 @@ Set up alerts for embedded security incidents:
 ```yaml
 # Prometheus alerting rules for embedded architecture
 groups:
-- name: caxton_embedded_security
-  rules:
-  - alert: CaxtonConfigValidationFailures
-    expr: rate(caxton_config_validation_failures_total[5m]) > 5
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High rate of configuration validation failures"
+  - name: caxton_embedded_security
+    rules:
+      - alert: CaxtonConfigValidationFailures
+        expr: rate(caxton_config_validation_failures_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of configuration validation failures"
 
-  - alert: CaxtonMemoryScopeViolation
-    expr: caxton_memory_scope_violations_total > 0
-    for: 0m
-    labels:
-      severity: critical
-    annotations:
-      summary: "Memory scope isolation violation detected"
+      - alert: CaxtonMemoryScopeViolation
+        expr: caxton_memory_scope_violations_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Memory scope isolation violation detected"
 
-  - alert: CaxtonToolAccessDenials
-    expr: rate(caxton_tool_access_denials_total[5m]) > 10
-    for: 2m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High rate of tool access denials - possible attack"
+      - alert: CaxtonToolAccessDenials
+        expr: rate(caxton_tool_access_denials_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of tool access denials - possible attack"
 
-  - alert: CaxtonHotReloadSecurity
-    expr: caxton_hot_reload_security_violations_total > 0
-    for: 0m
-    labels:
-      severity: high
-    annotations:
-      summary: "Hot reload security violation - malicious config attempt"
+      - alert: CaxtonHotReloadSecurity
+        expr: caxton_hot_reload_security_violations_total > 0
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: "Hot reload security violation - malicious config attempt"
 
-  - alert: CaxtonSQLiteAnomalies
-    expr: rate(caxton_sqlite_security_events_total[10m]) > 1
-    for: 3m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Unusual SQLite access patterns detected"
+      - alert: CaxtonSQLiteAnomalies
+        expr: rate(caxton_sqlite_security_events_total[10m]) > 1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual SQLite access patterns detected"
 
-  - alert: CaxtonPromptInjection
-    expr: caxton_prompt_injection_attempts_total > 0
-    for: 0m
-    labels:
-      severity: high
-    annotations:
-      summary: "Prompt injection attempt detected"
-
+      - alert: CaxtonPromptInjection
+        expr: caxton_prompt_injection_attempts_total > 0
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: "Prompt injection attempt detected"
 ```
 
 ### Security Incident Response
@@ -1066,7 +1065,7 @@ production environments.
 - Monitor the releases page for updates:
   [GitHub Releases](https://github.com/your-org/caxton/releases)
 
-______________________________________________________________________
+---
 
 **Document Version**: 2.0 **Last Updated**: 2025-08-16 **Target Audience**:
 End-users, Operators, DevOps Teams **Next Review**: 2025-09-16

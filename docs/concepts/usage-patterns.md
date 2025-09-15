@@ -37,7 +37,7 @@ memory:
 ```yaml
 memory:
   enabled: true
-  scope: "agent-only"  # or "workspace", "global"
+  scope: "agent-only" # or "workspace", "global"
   backend: "embedded"
 
   settings:
@@ -833,9 +833,9 @@ memory:
     model_cache_path: "./dev-data/models"
   settings:
     auto_store: true
-    search_threshold: 0.6  # Lower threshold for exploration
+    search_threshold: 0.6 # Lower threshold for exploration
     max_results: 15
-    retention_days: 30     # Shorter retention in dev
+    retention_days: 30 # Shorter retention in dev
     auto_cleanup: true
 ```
 
@@ -844,7 +844,7 @@ memory:
 ```yaml
 # prod-memory-config.yaml
 memory:
-  backend: "embedded"  # or external for large scale
+  backend: "embedded" # or external for large scale
   embedded:
     database_path: "/var/lib/caxton/memory/memory.db"
     model_cache_path: "/var/lib/caxton/models"
@@ -852,9 +852,9 @@ memory:
     cache_size_mb: 128
   settings:
     auto_store: true
-    search_threshold: 0.75  # Higher threshold for production
+    search_threshold: 0.75 # Higher threshold for production
     max_results: 10
-    retention_days: 730     # 2 years
+    retention_days: 730 # 2 years
     auto_cleanup: true
     content_filtering:
       exclude_patterns: ["password", "secret", "key", "token"]

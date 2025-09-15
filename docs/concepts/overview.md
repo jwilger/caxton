@@ -99,8 +99,8 @@ entity:
   entityType: "Categorization (e.g., 'concept', 'pattern', 'solution')"
   observations: ["Array of content strings describing the entity"]
   metadata:
-    confidence: 0.95  # Confidence level (0.0-1.0)
-    strength: 0.85    # Importance weighting (0.0-1.0)
+    confidence: 0.95 # Confidence level (0.0-1.0)
+    strength: 0.85 # Importance weighting (0.0-1.0)
     validFrom: timestamp
     validTo: timestamp
     version: 1
@@ -115,8 +115,8 @@ relation:
   from: "source entity name"
   to: "target entity name"
   relationType: "implements|relates_to|depends_on|contains|etc"
-  strength: 0.9      # Connection strength (0.0-1.0)
-  confidence: 0.85   # Confidence in relation (0.0-1.0)
+  strength: 0.9 # Connection strength (0.0-1.0)
+  confidence: 0.85 # Confidence in relation (0.0-1.0)
   metadata:
     context: "Additional relation context"
     source: "Where this relation was discovered"
@@ -162,7 +162,7 @@ relation:
 - Distributed architecture with sharding and replication
 - Advanced filtering and hybrid search capabilities
 - Recommended for large-scale semantic search workloads requiring
-  >100K+ entities
+  > 100K+ entities
 
 ## Agent Integration
 
@@ -175,7 +175,7 @@ configuration:
 # agent-config.yaml
 memory:
   enabled: true
-  scope: "workspace"  # agent-only, workspace, global
+  scope: "workspace" # agent-only, workspace, global
   backend: "embedded" # embedded, neo4j, qdrant
   settings:
     auto_store: true
@@ -329,7 +329,7 @@ Memory backends are configured in `caxton.yaml`:
 ```yaml
 # caxton.yaml
 memory:
-  backend: "embedded"  # embedded (default), neo4j, qdrant
+  backend: "embedded" # embedded (default), neo4j, qdrant
 
   embedded:
     database_path: "./data/memory.db"
@@ -404,7 +404,7 @@ caxton memory import --format json --input backup.json --backend neo4j
 **When to Migrate to External Backends**:
 
 - Multi-node distributed deployments
-- >1M entities or complex graph queries
+- > 1M entities or complex graph queries
 - High-concurrency semantic search requirements
 - Advanced analytics and reporting needs
 - Enterprise compliance requirements
@@ -482,15 +482,12 @@ policies
 ## Related Documentation
 
 - [ADR-0030: Embedded Memory System](/docs/_adrs/0030-embedded-memory-system.md)
-- [ADR-0031: Context Management Architecture](
-  /docs/_adrs/0031-context-management-architecture.md)
+- [ADR-0031: Context Management Architecture](/docs/_adrs/0031-context-management-architecture.md)
 - [Embedded Backend Guide](/docs/memory-system/embedded-backend.md)
 - [Usage Patterns](/docs/memory-system/usage-patterns.md)
 - [Migration Guide](/docs/memory-system/migration.md)
-- [Configuration-Driven Agents](
-  /docs/_adrs/0028-configuration-driven-agent-architecture.md)
-- [Lightweight Agent Messaging](
-  /docs/_adrs/0029-fipa-acl-lightweight-messaging.md)
+- [Configuration-Driven Agents](/docs/_adrs/0028-configuration-driven-agent-architecture.md)
+- [Lightweight Agent Messaging](/docs/_adrs/0029-fipa-acl-lightweight-messaging.md)
 
 ## Next Steps
 

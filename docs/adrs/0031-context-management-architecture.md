@@ -6,7 +6,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-
 ## Status
 
 Accepted
@@ -84,7 +83,7 @@ MCP tools declare their context needs in YAML specifications:
 
 ```yaml
 context_requirements:
-  conversation_depth: 5  # Last 5 messages
+  conversation_depth: 5 # Last 5 messages
   memory_search:
     query_template: "{{capability}} tasks similar to {{request}}"
     max_results: 10

@@ -61,14 +61,14 @@ description: "Security-conscious data processor"
 
 # Explicit tool permissions
 tools:
-  - csv_reader        # File reading capability
-  - data_validator    # Data validation
+  - csv_reader # File reading capability
+  - data_validator # Data validation
 
 # Security configuration
 permissions:
-  file_access: readonly    # No file modification
-  network_access: none     # No external network access
-  memory_limit: 100MB      # Resource constraint
+  file_access: readonly # No file modification
+  network_access: none # No external network access
+  memory_limit: 100MB # Resource constraint
 
 # Audit configuration
 audit:
@@ -202,14 +202,15 @@ All agent messages include security context:
   "sender": "agent-456",
   "recipient": "agent-789",
   "content": "Process this data",
-  "security": {
-    "classification": "internal",
-    "encryption": "aes-256-gcm",
-    "integrity_hash": "sha256:abc123...",
-    "sender_signature": "ed25519:def456..."
-  },
+  "security":
+    {
+      "classification": "internal",
+      "encryption": "aes-256-gcm",
+      "integrity_hash": "sha256:abc123...",
+      "sender_signature": "ed25519:def456...",
+    },
   "conversation_id": "conv-101",
-  "timestamp": "2025-01-14T10:30:00Z"
+  "timestamp": "2025-01-14T10:30:00Z",
 }
 ```
 

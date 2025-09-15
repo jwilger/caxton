@@ -286,12 +286,10 @@ failure | Degraded operation |
 ## Getting Started
 
 1. **Read the ADRs**: Understand architectural decisions
-
    - [ADR-0014: Coordination-First Architecture](../adrs/0014-coordination-first-architecture.md)
    - [ADR-0015: Distributed Protocol Architecture](../adrs/0015-distributed-protocol-architecture.md)
 
 2. **Follow the Guides**:
-
    - [Clustering Guide](../user-guide/clustering.md) - Set up multi-node cluster
    - [Operational Runbook](../operations/operational-runbook.md) - Day-to-day
      operations
@@ -299,14 +297,12 @@ failure | Degraded operation |
      performance
 
 3. **Implement Security**:
-
    - [Security Guide](../developer-guide/security-guide.md) - Security best
      practices
    - [ADR-0016: Security Architecture](../adrs/0016-security-architecture.md) -
      Security design
 
 4. **Test Thoroughly**:
-
    - [Testing Strategy](../development/testing-strategy.md) - Comprehensive
      testing
    - Include chaos testing for partition scenarios

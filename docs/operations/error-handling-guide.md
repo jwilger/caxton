@@ -301,10 +301,10 @@ pub enum MessageContext {
 ```yaml
 llm:
   timeouts:
-    connect_seconds: 10      # Connection establishment
-    read_seconds: 60         # Response reading (streaming)
-    total_seconds: 120       # Total request timeout
-    retry_multiplier: 1.5    # Timeout increase per retry
+    connect_seconds: 10 # Connection establishment
+    read_seconds: 60 # Response reading (streaming)
+    total_seconds: 120 # Total request timeout
+    retry_multiplier: 1.5 # Timeout increase per retry
 ```
 
 **Timeout Recovery Pattern**:
@@ -613,10 +613,10 @@ async fn recover_from_index_corruption(
 ```yaml
 monitoring:
   error_thresholds:
-    agent_deployment_failures: 10%    # Per hour
-    llm_provider_errors: 5%          # Per minute
-    memory_search_timeouts: 2%       # Per minute
-    message_delivery_failures: 1%    # Per minute
+    agent_deployment_failures: 10% # Per hour
+    llm_provider_errors: 5% # Per minute
+    memory_search_timeouts: 2% # Per minute
+    message_delivery_failures: 1% # Per minute
 
   alert_conditions:
     critical:
@@ -690,15 +690,17 @@ alerts:
 
 **Complete System Recovery**:
 
-```markdown
+````markdown
 # Emergency System Recovery Procedure
 
 ## Prerequisites
+
 - System administrator access
 - Recent backup files
 - Network connectivity to external dependencies
 
 ## Step 1: Assess System State
+
 ```bash
 # Check system health
 caxton status --detailed
@@ -709,6 +711,7 @@ df -h
 free -m
 ps aux | grep caxton
 ```
+````
 
 ## Step 2: Stop All Services
 
@@ -757,15 +760,17 @@ caxton health-check --wait-ready --timeout 300s
 
 **LLM Provider Recovery**:
 
-```markdown
+````markdown
 # LLM Provider Recovery Procedure
 
 ## Symptoms
+
 - All LLM providers showing connection errors
 - Configuration agents unable to execute
 - Timeout errors in logs
 
 ## Diagnosis
+
 ```bash
 # Check provider connectivity
 caxton llm test-connection --all-providers
@@ -775,6 +780,7 @@ caxton llm check-models --provider anthropic
 # Review error logs
 caxton logs --component llm-provider --level error --tail 100
 ```
+````
 
 ## Recovery Steps
 
@@ -822,7 +828,7 @@ caxton llm set-priority --provider ollama --priority 100
 caxton agent test --agent-id test-agent --use-fallback
 ```
 
-```text
+````text
 
 #### Data Recovery Procedures
 
@@ -838,7 +844,7 @@ caxton memory check-consistency --repair-minor
 
 # Generate corruption report
 caxton memory diagnose --output corruption-report.json
-```
+````
 
 ## Recovery Options
 
@@ -880,7 +886,7 @@ caxton memory rebuild --complete --confirm-data-loss
 caxton memory import --source full-backup.json --validate
 ```
 
-```text
+````text
 
 ### Configuration Examples
 
@@ -938,7 +944,7 @@ error_handling:
     manual_intervention_required:
       - "data_corruption"
       - "security_breach"
-```
+````
 
 ## Related Documentation
 

@@ -364,9 +364,7 @@ Validate configuration agent TOML configuration without deploying.
     "capabilities": ["data-analysis", "report-generation"],
     "tools": ["http_client", "csv_parser", "chart_generator"]
   },
-  "warnings": [
-    "Tool 'advanced_analytics' not available, requests will fail"
-  ]
+  "warnings": ["Tool 'advanced_analytics' not available, requests will fail"]
 }
 ```
 
@@ -482,19 +480,19 @@ Core configuration agent representation:
 
 ```typescript
 interface ConfigurationAgent {
-  id: string;                    // Unique identifier (config-{uuid})
-  name: string;                  // Agent name from YAML
-  version: string;               // Agent version from YAML
-  status: AgentStatus;           // Current runtime status
-  capabilities: string[];        // Declared capabilities
-  tools: string[];              // Required MCP tools
+  id: string; // Unique identifier (config-{uuid})
+  name: string; // Agent name from YAML
+  version: string; // Agent version from YAML
+  status: AgentStatus; // Current runtime status
+  capabilities: string[]; // Declared capabilities
+  tools: string[]; // Required MCP tools
   parameters: Record<string, any>; // Custom parameters
-  workspace: string;             // Workspace scope
-  memory_enabled: boolean;       // Memory system integration
-  memory_scope: MemoryScope;     // Memory sharing scope
-  deployed_at: string;          // ISO 8601 deployment timestamp
-  last_activity: string;        // ISO 8601 last activity timestamp
-  content: string;              // Full TOML content
+  workspace: string; // Workspace scope
+  memory_enabled: boolean; // Memory system integration
+  memory_scope: MemoryScope; // Memory sharing scope
+  deployed_at: string; // ISO 8601 deployment timestamp
+  last_activity: string; // ISO 8601 last activity timestamp
+  content: string; // Full TOML content
 }
 ```
 

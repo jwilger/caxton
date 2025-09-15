@@ -40,7 +40,7 @@ curl http://localhost:8080/api/v1/health
 You should see:
 
 ```json
-{"status":"healthy","memory_backend":"embedded","agents_count":0}
+{ "status": "healthy", "memory_backend": "embedded", "agents_count": 0 }
 ```
 
 > **Zero Dependencies**: Caxton runs with no external dependencies. The

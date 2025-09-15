@@ -174,7 +174,11 @@ Expected response:
       "receiver": "api_client",
       "content": {
         "analysis": "Q3 shows 15% growth with strong seasonal patterns in September...",
-        "insights": ["Peak sales in September", "Steady growth trend", "Inventory recommendations"],
+        "insights": [
+          "Peak sales in September",
+          "Steady growth trend",
+          "Inventory recommendations"
+        ],
         "memory_used": ["similar_q3_analysis", "seasonal_patterns"]
       },
       "timestamp": "2025-09-10T15:35:30Z"
@@ -668,21 +672,21 @@ curl -X POST http://localhost:8080/api/v1/agents/from-template \
 ### JavaScript/Node.js
 
 ```javascript
-const caxton = require('@caxton/client');
+const caxton = require("@caxton/client");
 
-const client = new caxton.Client('http://localhost:8080');
+const client = new caxton.Client("http://localhost:8080");
 
 // Deploy configuration agent
 const agent = await client.agents.deploy({
-  name: 'DataAnalyzer',
-  capabilities: ['data-analysis'],
-  system_prompt: 'You analyze data...'
+  name: "DataAnalyzer",
+  capabilities: ["data-analysis"],
+  system_prompt: "You analyze data...",
 });
 
 // Send capability-based message
 const response = await client.messages.send({
-  capability: 'data-analysis',
-  content: { dataset: 'sales.csv' }
+  capability: "data-analysis",
+  content: { dataset: "sales.csv" },
 });
 ```
 

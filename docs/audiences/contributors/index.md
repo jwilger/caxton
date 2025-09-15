@@ -52,13 +52,11 @@ Master the technical architecture and design principles.
    - Type-driven API design
 
 2. **[ADR Documentation](../../docs/_adrs/)** (60 min)
-   - **[ADR-28: Config Agents](
-     ../../docs/_adrs/0028-configuration-driven-agent-architecture.md)**
+   - **[ADR-28: Config Agents](../../docs/_adrs/0028-configuration-driven-agent-architecture.md)**
      Primary UX
    - **[ADR-29: Agent Messaging](../../docs/_adrs/0029-agent-messaging.md)**
      Capability routing
-   - **[ADR-30: Memory System](
-     ../../docs/_adrs/0030-embedded-memory-system.md)**
+   - **[ADR-30: Memory System](../../docs/_adrs/0030-embedded-memory-system.md)**
      Zero-dependency backend
 
 3. **[Security Architecture](../../docs/_adrs/0016-security-architecture.md)**
@@ -99,21 +97,21 @@ Deep technical areas for specialized contributions.
 
 2. **[Message Router Architecture](../../docs/architecture/message-router.md)**
    (45 min)
-    - Agent messaging protocol implementation
-    - Capability-based routing algorithms
-    - Conversation state management
+   - Agent messaging protocol implementation
+   - Capability-based routing algorithms
+   - Conversation state management
 
 3. **[Memory System](../../docs/memory-system/embedded-backend.md)**
    (45 min)
-    - SQLite + Candle integration
-    - Semantic search with All-MiniLM-L6-v2
-    - Migration patterns for external backends
+   - SQLite + Candle integration
+   - Semantic search with All-MiniLM-L6-v2
+   - Migration patterns for external backends
 
 4. **[Performance Optimization](../../docs/performance_and_safety_metrics.md)**
    (45 min)
-    - Benchmarking methodology
-    - Memory usage patterns
-    - Async runtime optimization
+   - Benchmarking methodology
+   - Memory usage patterns
+   - Async runtime optimization
 
 ## Development Environment Setup
 
@@ -489,13 +487,13 @@ criterion_main!(benches);
 
 ### Performance Targets
 
-| Component | Target | Measurement |
-|-----------|---------|------------|
-| Semantic search | <50ms P99 | 100K entities |
-| WASM agent startup | <100ms P99 | Cold start |
-| Config agent reload | <10ms P99 | Hot reload |
-| Message routing | <1ms P99 | Local delivery |
-| Memory store | <20ms P99 | Entity with embeddings |
+| Component           | Target     | Measurement            |
+| ------------------- | ---------- | ---------------------- |
+| Semantic search     | <50ms P99  | 100K entities          |
+| WASM agent startup  | <100ms P99 | Cold start             |
+| Config agent reload | <10ms P99  | Hot reload             |
+| Message routing     | <1ms P99   | Local delivery         |
+| Memory store        | <20ms P99  | Entity with embeddings |
 
 ## Documentation Contributions
 

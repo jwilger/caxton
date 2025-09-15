@@ -40,13 +40,13 @@ This configuration provides:
 ```yaml
 # Server configuration
 server:
-  host: 0.0.0.0              # Bind address
-  port: 8080                  # REST API port
-  metrics_port: 9090          # Prometheus metrics port
-  dashboard_enabled: true     # Enable web dashboard
+  host: 0.0.0.0 # Bind address
+  port: 8080 # REST API port
+  metrics_port: 9090 # Prometheus metrics port
+  dashboard_enabled: true # Enable web dashboard
   cors:
     enabled: true
-    allowed_origins: ["*"]    # Configure for production
+    allowed_origins: ["*"] # Configure for production
     allowed_methods: ["GET", "POST", "PUT", "DELETE"]
   tls:
     enabled: false
@@ -56,15 +56,15 @@ server:
 
 # Configuration agent runtime
 runtime:
-  max_agents: 1000            # Maximum concurrent agents
-  agent_timeout: 30s          # Default message handling timeout
-  enable_hot_reload: true     # Allow agent config hot-reloading
-  conversation_cleanup: 24h   # Clean up old conversations
+  max_agents: 1000 # Maximum concurrent agents
+  agent_timeout: 30s # Default message handling timeout
+  enable_hot_reload: true # Allow agent config hot-reloading
+  conversation_cleanup: 24h # Clean up old conversations
 
 # LLM Provider Configuration (Pluggable System)
 llm:
-  provider: "openai"          # openai|anthropic|azure|local|custom
-  default_model: "gpt-4o"     # Default model for agent orchestration
+  provider: "openai" # openai|anthropic|azure|local|custom
+  default_model: "gpt-4o" # Default model for agent orchestration
 
   # OpenAI Configuration (default reference implementation)
   openai:
@@ -88,21 +88,21 @@ llm:
 
   # Local Model Configuration
   local:
-    endpoint: "http://localhost:11434"  # Ollama/vLLM/etc
+    endpoint: "http://localhost:11434" # Ollama/vLLM/etc
     model: "llama3:8b"
     timeout: 60s
 
 # Memory system configuration
 memory:
-  backend: embedded           # embedded|neo4j|qdrant
+  backend: embedded # embedded|neo4j|qdrant
 
   # Embedded backend settings (SQLite + Candle)
   embedded:
     database_path: "./caxton.db"
-    embedding_model: "all-MiniLM-L6-v2"  # Local embedding model
-    max_entities: 100000      # Scaling limit for embedded backend
-    cleanup_interval: 1h      # Memory cleanup frequency
-    semantic_threshold: 0.6   # Minimum similarity for semantic search
+    embedding_model: "all-MiniLM-L6-v2" # Local embedding model
+    max_entities: 100000 # Scaling limit for embedded backend
+    cleanup_interval: 1h # Memory cleanup frequency
+    semantic_threshold: 0.6 # Minimum similarity for semantic search
 
   # Optional external backends
   neo4j:
@@ -119,27 +119,27 @@ memory:
 
 # Agent messaging configuration
 messaging:
-  max_message_size: 1MB       # Maximum message size
-  queue_size: 10000          # Message queue size
-  delivery_timeout: 5s       # Message delivery timeout
-  conversation_ttl: 24h      # Conversation lifetime
-  enable_message_persistence: true  # Store message history
+  max_message_size: 1MB # Maximum message size
+  queue_size: 10000 # Message queue size
+  delivery_timeout: 5s # Message delivery timeout
+  conversation_ttl: 24h # Conversation lifetime
+  enable_message_persistence: true # Store message history
   capability_routing:
-    strategy: "best_match"    # best_match|load_balance|broadcast
-    timeout: 5s              # Capability resolution timeout
+    strategy: "best_match" # best_match|load_balance|broadcast
+    timeout: 5s # Capability resolution timeout
 
 # Capability registry
 capabilities:
-  discovery_interval: 30s     # How often to refresh capability registry
+  discovery_interval: 30s # How often to refresh capability registry
   health_check_interval: 60s # How often to check agent health
-  auto_cleanup: true         # Remove unhealthy agents from registry
+  auto_cleanup: true # Remove unhealthy agents from registry
 
 # Tool integration (MCP servers in WASM sandbox)
 tools:
   sandbox_memory_limit: 100MB # Memory limit for tool execution
-  sandbox_cpu_limit: 100m     # CPU limit for tool execution
-  sandbox_timeout: 30s        # Tool execution timeout
-  allowed_tools:             # Whitelist of allowed tools
+  sandbox_cpu_limit: 100m # CPU limit for tool execution
+  sandbox_timeout: 30s # Tool execution timeout
+  allowed_tools: # Whitelist of allowed tools
     - http_client
     - file_storage
     - database_connection
@@ -148,13 +148,13 @@ tools:
 # Observability
 observability:
   logging:
-    level: info               # trace|debug|info|warn|error
-    format: json             # json|text
+    level: info # trace|debug|info|warn|error
+    format: json # json|text
     file: /var/log/caxton/caxton.log
   metrics:
     enabled: true
     prometheus_endpoint: /metrics
-    custom_metrics: true     # Track agent-specific metrics
+    custom_metrics: true # Track agent-specific metrics
   tracing:
     enabled: false
     jaeger_endpoint: "http://localhost:14268/api/traces"
@@ -165,12 +165,12 @@ observability:
 cluster:
   enabled: false
   node_name: "caxton-1"
-  bind_port: 7946            # SWIM protocol port
-  seeds: []                  # Other cluster nodes
+  bind_port: 7946 # SWIM protocol port
+  seeds: [] # Other cluster nodes
   gossip_interval: 1s
   probe_interval: 5s
   coordination:
-    leader_election: false   # No leader needed
+    leader_election: false # No leader needed
     state_sync_interval: 30s # Sync agent state
 ```
 
@@ -689,7 +689,7 @@ agent_timeout = "30s"      # Quick enough for real-time use
 observability:
   metrics:
     enabled: true
-    custom_metrics: true  # Track agent-specific performance
+    custom_metrics: true # Track agent-specific performance
 
 monitoring:
   performance_tracking: true

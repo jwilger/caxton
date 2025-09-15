@@ -250,11 +250,11 @@ for better performance:
 ```yaml
 # Optimized for fast iteration and low resource usage
 memory:
-  embedding_model: "all-MiniLM-L6-v2"  # Small, fast model
+  embedding_model: "all-MiniLM-L6-v2" # Small, fast model
   model_cache:
-    max_size_gb: 2.0                   # Limited cache size
-    auto_download: true                # Convenient downloads
-    cleanup_policy: "aggressive"       # Free space quickly
+    max_size_gb: 2.0 # Limited cache size
+    auto_download: true # Convenient downloads
+    cleanup_policy: "aggressive" # Free space quickly
 ```
 
 **Production Configuration**:
@@ -263,13 +263,13 @@ memory:
 # Optimized for performance and reliability
 memory:
   embedding_model: "all-mpnet-base-v2" # Higher quality model
-  fallback_models:                     # Resilience options
+  fallback_models: # Resilience options
     - "all-MiniLM-L6-v2"
     - "bundled-mini"
   model_cache:
-    max_size_gb: 10.0                  # Generous cache size
-    cleanup_policy: "conservative"     # Keep models longer
-    validation_interval: "6h"          # Regular integrity checks
+    max_size_gb: 10.0 # Generous cache size
+    cleanup_policy: "conservative" # Keep models longer
+    validation_interval: "6h" # Regular integrity checks
 ```
 
 **Edge/Embedded Configuration**:
@@ -277,11 +277,11 @@ memory:
 ```yaml
 # Optimized for minimal resource usage
 memory:
-  embedding_model: "bundled-mini"      # Minimal embedded model
+  embedding_model: "bundled-mini" # Minimal embedded model
   model_cache:
-    max_size_gb: 0.5                   # Very limited storage
-    auto_download: false               # No network downloads
-    bundled_only: true                 # Use only pre-installed models
+    max_size_gb: 0.5 # Very limited storage
+    auto_download: false # No network downloads
+    bundled_only: true # Use only pre-installed models
 ```
 
 ### Multi-Tenant Model Management

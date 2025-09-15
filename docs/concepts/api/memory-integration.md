@@ -195,7 +195,7 @@ over time
 ```yaml
 # Customer support agent with memory
 memory_enabled: true
-memory_scope: "workspace"  # Share customer knowledge across support team
+memory_scope: "workspace" # Share customer knowledge across support team
 ```
 
 **Memory Usage**: Agent remembers that Customer A prefers technical details

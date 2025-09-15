@@ -1,6 +1,7 @@
 ---
 title: "Lightweight Agent Messaging Patterns"
-description: "Practical patterns for using agent messaging performatives in Caxton's
+description:
+  "Practical patterns for using agent messaging performatives in Caxton's
   configuration agent system"
 layout: documentation
 categories: [Messaging, Agent Communication, Communication Patterns]
@@ -96,8 +97,8 @@ Used to share information or report results without expecting a response.
 
 ```yaml
 performative: INFORM
-capability: target-capability  # Optional for broadcasts
-conversation_id: thread-id     # Optional for new information
+capability: target-capability # Optional for broadcasts
+conversation_id: thread-id # Optional for new information
 content: "Information to share"
 ```
 
@@ -338,8 +339,7 @@ error:
   details: "File appears to be Excel (.xlsx) format, but agent only supports
     CSV"
   file_info:
-    detected_format:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    detected_format: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     expected_format: "text/csv"
     file_size: 2458623
   recovery_suggestions:
@@ -420,7 +420,7 @@ Agents can broadcast information to all agents with specific capabilities:
 
 ```yaml
 performative: INFORM
-capability: system-monitoring  # Broadcast to all monitoring agents
+capability: system-monitoring # Broadcast to all monitoring agents
 content: |
   Scheduled maintenance notification:
   - Date: 2024-09-15

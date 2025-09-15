@@ -63,7 +63,7 @@ docker-compose up -d
 
 ```bash
 # Use the agent generator
-cargo run --bin caxton-cli -- agent new my-agent \
+cargo run --bin caxton -- agent new my-agent \
   --language rust \
   --template basic \
   --capabilities process,communicate
@@ -464,15 +464,18 @@ pub async fn process_message(&mut self, message: Message) -> Result<Response> {
 Brief description of what this agent does.
 
 ## Features
+
 - Feature 1
 - Feature 2
 
 ## Installation
+
 \```bash
 cargo install agent-name
 \```
 
 ## Usage
+
 \```rust
 use agent_name::Agent;
 
@@ -481,11 +484,13 @@ agent.start().await?;
 \```
 
 ## Configuration
-| Option | Description | Default |
-|--------|-------------|---------|
-| timeout | Request timeout | 30s |
+
+| Option  | Description     | Default |
+| ------- | --------------- | ------- |
+| timeout | Request timeout | 30s     |
 
 ## Contributing
+
 See [CONTRIBUTING.md](../CONTRIBUTING.md)
 ````
 
@@ -495,20 +500,20 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ```bash
 # Development commands
-caxton-cli agent new <name>          # Create new agent
-caxton-cli agent test <name>         # Test agent
-caxton-cli agent build <name>        # Build agent
-caxton-cli agent deploy <name>       # Deploy agent
+caxton agent new <name>          # Create new agent
+caxton agent test <name>         # Test agent
+caxton agent build <name>        # Build agent
+caxton agent deploy <name>       # Deploy agent
 
 # Debugging commands
-caxton-cli debug trace <agent-id>    # Trace agent execution
-caxton-cli debug logs <agent-id>     # Show agent logs
-caxton-cli debug metrics <agent-id>  # Show agent metrics
+caxton debug trace <agent-id>    # Trace agent execution
+caxton debug logs <agent-id>     # Show agent logs
+caxton debug metrics <agent-id>  # Show agent metrics
 
 # Management commands
-caxton-cli list agents               # List all agents
-caxton-cli describe <agent-id>       # Show agent details
-caxton-cli restart <agent-id>        # Restart agent
+caxton list agents               # List all agents
+caxton describe <agent-id>       # Show agent details
+caxton restart <agent-id>        # Restart agent
 ```
 
 ### 2. IDE Integration
@@ -578,13 +583,13 @@ jobs:
 
 ```bash
 # Check logs
-caxton-cli logs <agent-id> --tail 100
+caxton logs <agent-id> --tail 100
 
 # Verify configuration
-caxton-cli validate config agents/<agent-name>/agent.toml
+caxton validate config agents/<agent-name>/agent.toml
 
 # Check resource limits
-caxton-cli describe <agent-id> --resources
+caxton describe <agent-id> --resources
 ```
 
 #### Issue: Performance Problems
@@ -597,7 +602,7 @@ cargo flamegraph --bin <agent-name>
 valgrind --tool=massif target/debug/<agent-name>
 
 # Monitor metrics
-caxton-cli metrics <agent-id> --interval 1s
+caxton metrics <agent-id> --interval 1s
 ```
 
 #### Issue: Message Not Received
@@ -611,7 +616,7 @@ async fn handle_message(&mut self, msg: Message) -> Result<()> {
 }
 
 // Check message routing
-caxton-cli trace message <conversation-id>
+caxton trace message <conversation-id>
 ```
 
 ## Learning Resources

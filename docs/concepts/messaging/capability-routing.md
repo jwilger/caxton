@@ -30,7 +30,6 @@ name. The system finds an available agent who can fulfill the request.
 to: "sales_agent_instance_3"
 performative: REQUEST
 content: "Generate Q3 sales report"
-
 # What happens when sales_agent_instance_3 is:
 # - Overloaded with requests?
 # - Offline for maintenance?
@@ -45,7 +44,6 @@ content: "Generate Q3 sales report"
 capability: "sales-reporting"
 performative: REQUEST
 content: "Generate Q3 sales report"
-
 # System automatically:
 # - Finds agents with "sales-reporting" capability
 # - Routes to best available agent
@@ -62,9 +60,9 @@ content: "Generate Q3 sales report"
 ---
 name: SalesAnalyzer
 capabilities:
-  - data-analysis      # General analysis capability
-  - sales-reporting    # Specific reporting capability
-  - chart-generation   # Visualization capability
+  - data-analysis # General analysis capability
+  - sales-reporting # Specific reporting capability
+  - chart-generation # Visualization capability
 tools:
   - csv_parser
   - chart_generator
@@ -200,8 +198,8 @@ capabilities:
   - budget-planning
 context_metadata:
   specializations: ["budget_variance", "cost_optimization"]
-  context_window: "large"           # Can handle extensive context
-  conversation_continuity: "excellent"  # Maintains thread context well
+  context_window: "large" # Can handle extensive context
+  conversation_continuity: "excellent" # Maintains thread context well
   domain_expertise: ["financial_planning", "variance_analysis"]
 ```
 
@@ -278,13 +276,13 @@ When switching agents is better:
 ```yaml
 # Agent supports multiple capability versions
 capabilities:
-  - data-analysis:v1.0    # Legacy compatibility
-  - data-analysis:v2.0    # Current version with new features
-  - advanced-analytics:v1.0  # New specialized capability
+  - data-analysis:v1.0 # Legacy compatibility
+  - data-analysis:v2.0 # Current version with new features
+  - advanced-analytics:v1.0 # New specialized capability
 
 # Request with version preferences
 capability: "data-analysis:v2.0"
-fallback_versions: ["v2.0", "v1.0"]  # Try v2.0 first, fall back to v1.0
+fallback_versions: ["v2.0", "v1.0"] # Try v2.0 first, fall back to v1.0
 ```
 
 **Capability Evolution Strategy**:
@@ -356,7 +354,7 @@ context_hints:
   specialization_needed: "budget_variance"
   complexity: "high"
   context_requirements: "extensive"
-  performance_priority: "accuracy"  # vs "speed"
+  performance_priority: "accuracy" # vs "speed"
 ```
 
 ### Monitoring and Observability

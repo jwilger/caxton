@@ -47,15 +47,15 @@ capabilities:
 
 # Tool permissions (enforced at runtime)
 tools:
-  - http_client        # HTTP requests via MCP server
-  - csv_parser         # File parsing via MCP server
-  - database_reader    # Database access via MCP server
+  - http_client # HTTP requests via MCP server
+  - csv_parser # File parsing via MCP server
+  - database_reader # Database access via MCP server
 
 # Memory settings
 memory:
   enabled: true
-  scope: workspace     # Shared within workspace
-  max_entities: 10000  # Prevent memory abuse
+  scope: workspace # Shared within workspace
+  max_entities: 10000 # Prevent memory abuse
 
 # Security constraints
 security:
@@ -63,7 +63,6 @@ security:
   require_auth: true
   allowed_capabilities: ["data-analysis", "report-generation"]
 ---
-
 # Agent implementation in markdown...
 ```
 
@@ -85,15 +84,15 @@ Configuration agents declare capabilities in their YAML frontmatter:
 ---
 name: CustomerAnalyzer
 capabilities:
-  - message-send      # Can send agent messages
-  - message-receive   # Can receive agent messages
-  - tool-access       # Can use declared tools
-  - memory-read       # Can read from agent memory
-  - memory-write      # Can write to agent memory
+  - message-send # Can send agent messages
+  - message-receive # Can receive agent messages
+  - tool-access # Can use declared tools
+  - memory-read # Can read from agent memory
+  - memory-write # Can write to agent memory
 
 tools:
-  - database_reader   # Specific tool capability
-  - email_sender     # Another tool capability
+  - database_reader # Specific tool capability
+  - email_sender # Another tool capability
 ---
 ```
 
@@ -168,7 +167,7 @@ authorization:
         - pattern: "admin-*"
     inventory-check:
       allowed_requesters:
-        - "*"  # Public capability
+        - "*" # Public capability
 
   # Rate limiting per capability
   rate_limits:
@@ -227,9 +226,9 @@ Configuration agents use the embedded memory system with built-in security contr
 name: CustomerAgent
 memory:
   enabled: true
-  scope: workspace      # Options: agent, workspace, global
-  max_entities: 10000   # Prevent memory exhaustion
-  max_relations: 50000  # Limit relationship complexity
+  scope: workspace # Options: agent, workspace, global
+  max_entities: 10000 # Prevent memory exhaustion
+  max_relations: 50000 # Limit relationship complexity
 ---
 ```
 
@@ -318,17 +317,17 @@ curl -H "X-Caxton-Api-Key: cax_live_xxxxxxxxxxx" \
 // Client-side JWT usage
 const token = jwt.sign(
   {
-    sub: 'user-123',
-    permissions: ['agent:read', 'message:send']
+    sub: "user-123",
+    permissions: ["agent:read", "message:send"],
   },
   process.env.JWT_SECRET,
-  { expiresIn: '1h' }
+  { expiresIn: "1h" },
 );
 
-fetch('https://api.caxton.example.com/agents', {
+fetch("https://api.caxton.example.com/agents", {
   headers: {
-    'Authorization': `Bearer ${token}`
-  }
+    Authorization: `Bearer ${token}`,
+  },
 });
 ```
 
@@ -581,7 +580,7 @@ Use secure defaults in your configurations:
 # Secure by default
 security:
   authentication:
-    enabled: true  # Always on
+    enabled: true # Always on
     require_tls: true
     session_timeout: 15m
 

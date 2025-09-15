@@ -144,7 +144,7 @@ When adding or updating concept documentation:
 1. **Progressive Complexity**: Structure from basic principles to advanced
    patterns
 2. **Cross-Audience**: Include perspectives for all four audience types
-3. **Concept Focus**: Explain *what* and *why* before *how*
+3. **Concept Focus**: Explain _what_ and _why_ before _how_
 4. **Perfect Formatting**: 80-character lines, proper headings, code block
    languages
 5. **Jekyll Metadata**: Include proper frontmatter with concept classification

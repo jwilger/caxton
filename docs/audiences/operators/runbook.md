@@ -14,16 +14,16 @@ architecture following ADRs 28-30.
 
 ## Quick Reference
 
-| Situation | Command | Section |
-|-----------|---------|---------|
-| Server health check | `curl localhost:8080/api/v1/health` | [Health](#health-monitoring) |
-| Deploy config agent | Create `.toml` in `agents/` | [Config Agents](#config-agent-deployment) |
-| Deploy WASM agent | `curl -X POST /api/v1/agents` | [WASM Agents](#wasm-agent-deployment) |
-| List all agents | `curl /api/v1/agents` | [Management](#agent-management) |
-| Memory diagnostics | `caxton memory stats` | [Memory](#memory-operations) |
-| Backup system | `caxton backup --embedded` | [Backup](#backup-procedures) |
-| Hot-reload agent | `caxton reload --agent <name>` | [Operations](#config-agent-operations) |
-| Emergency stop | `caxton shutdown` | [Emergency](#emergency-procedures) |
+| Situation           | Command                             | Section                                   |
+| ------------------- | ----------------------------------- | ----------------------------------------- |
+| Server health check | `curl localhost:8080/api/v1/health` | [Health](#health-monitoring)              |
+| Deploy config agent | Create `.toml` in `agents/`         | [Config Agents](#config-agent-deployment) |
+| Deploy WASM agent   | `curl -X POST /api/v1/agents`       | [WASM Agents](#wasm-agent-deployment)     |
+| List all agents     | `curl /api/v1/agents`               | [Management](#agent-management)           |
+| Memory diagnostics  | `caxton memory stats`               | [Memory](#memory-operations)              |
+| Backup system       | `caxton backup --embedded`          | [Backup](#backup-procedures)              |
+| Hot-reload agent    | `caxton reload --agent <name>`      | [Operations](#config-agent-operations)    |
+| Emergency stop      | `caxton shutdown`                   | [Emergency](#emergency-procedures)        |
 
 ## Health Monitoring
 
@@ -248,14 +248,14 @@ deploy_config_agent "data-analyzer" \
 
 ### Common Deployment Issues
 
-| Error Pattern | Root Cause | Resolution |
-|---------------|------------|------------|
-| `TOML parse error: line 5` | Invalid configuration | Validate TOML syntax with `toml check` |
-| `Missing required field: name` | Incomplete config | Add all required fields per TOML schema |
-| `Unknown tool: unknown_tool` | Invalid tool reference | Check `caxton tools list` for available tools |
-| `Agent name conflict` | Duplicate agent name | Use unique names or unload existing agent |
-| `File not found` | Incorrect file path | Verify file exists in `agents/` directory |
-| `Permission denied` | File system permissions | Check read access to agent files |
+| Error Pattern                  | Root Cause              | Resolution                                    |
+| ------------------------------ | ----------------------- | --------------------------------------------- |
+| `TOML parse error: line 5`     | Invalid configuration   | Validate TOML syntax with `toml check`        |
+| `Missing required field: name` | Incomplete config       | Add all required fields per TOML schema       |
+| `Unknown tool: unknown_tool`   | Invalid tool reference  | Check `caxton tools list` for available tools |
+| `Agent name conflict`          | Duplicate agent name    | Use unique names or unload existing agent     |
+| `File not found`               | Incorrect file path     | Verify file exists in `agents/` directory     |
+| `Permission denied`            | File system permissions | Check read access to agent files              |
 
 **Diagnostic commands for deployment issues:**
 
@@ -574,15 +574,15 @@ systemctl status caxton --no-pager -l
 
 ```yaml
 # docker-compose.yml for production
-version: '3.8'
+version: "3.8"
 
 services:
   caxton:
     image: caxton/caxton:latest
     container_name: caxton-server
     ports:
-      - "8080:8080"    # API server
-      - "9090:9090"    # Metrics endpoint
+      - "8080:8080" # API server
+      - "9090:9090" # Metrics endpoint
 
     environment:
       - RUST_LOG=info
@@ -683,88 +683,88 @@ spec:
         fsGroup: 1000
 
       containers:
-      - name: caxton
-        image: caxton/caxton:latest
-        ports:
-        - containerPort: 8080
-          name: api
-        - containerPort: 9090
-          name: metrics
+        - name: caxton
+          image: caxton/caxton:latest
+          ports:
+            - containerPort: 8080
+              name: api
+            - containerPort: 9090
+              name: metrics
 
-        env:
-        - name: RUST_LOG
-          value: "info"
-        - name: CAXTON_CONFIG
-          value: "/etc/caxton/caxton.yaml"
-        - name: CAXTON_DATA_DIR
-          value: "/var/lib/caxton/data"
+          env:
+            - name: RUST_LOG
+              value: "info"
+            - name: CAXTON_CONFIG
+              value: "/etc/caxton/caxton.yaml"
+            - name: CAXTON_DATA_DIR
+              value: "/var/lib/caxton/data"
 
-        volumeMounts:
-        - name: config
-          mountPath: /etc/caxton
-          readOnly: true
-        - name: data
-          mountPath: /var/lib/caxton/data
-        - name: agents
-          mountPath: /var/lib/caxton/agents
-          readOnly: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caxton
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/caxton/data
+            - name: agents
+              mountPath: /var/lib/caxton/agents
+              readOnly: true
 
-        # Resource management
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
+          # Resource management
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
 
-        # Health probes
-        livenessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          # Health probes
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
 
-        readinessProbe:
-          httpGet:
-            path: /api/v1/ready
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/v1/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
 
-        # Graceful shutdown
-        terminationGracePeriodSeconds: 60
+          # Graceful shutdown
+          terminationGracePeriodSeconds: 60
 
-        # Security context
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
+          # Security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
 
       volumes:
-      - name: config
-        configMap:
-          name: caxton-config
-      - name: agents
-        configMap:
-          name: caxton-agents
+        - name: config
+          configMap:
+            name: caxton-config
+        - name: agents
+          configMap:
+            name: caxton-agents
 
   volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      storageClassName: fast-ssd
-      resources:
-        requests:
-          storage: 20Gi
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 20Gi
 ```
 
 ## Backup Procedures
@@ -1015,9 +1015,9 @@ rule_files:
   - "caxton_alerts.yml"
 
 scrape_configs:
-  - job_name: 'caxton'
+  - job_name: "caxton"
     static_configs:
-      - targets: ['caxton:9090']
+      - targets: ["caxton:9090"]
     scrape_interval: 5s
     metrics_path: /metrics
 ```
@@ -1025,34 +1025,34 @@ scrape_configs:
 ```yaml
 # caxton_alerts.yml - Critical alerts
 groups:
-- name: caxton.critical
-  rules:
-  - alert: CaxtonDown
-    expr: up{job="caxton"} == 0
-    for: 30s
-    labels:
-      severity: critical
-    annotations:
-      summary: "Caxton server is down"
-      description: "Caxton server has been down for more than 30 seconds"
+  - name: caxton.critical
+    rules:
+      - alert: CaxtonDown
+        expr: up{job="caxton"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Caxton server is down"
+          description: "Caxton server has been down for more than 30 seconds"
 
-  - alert: CaxtonMemoryUsageHigh
-    expr: caxton_memory_usage_percentage > 90
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Caxton memory usage is high"
-      description: "Memory usage is {{ $value }}% - consider cleanup"
+      - alert: CaxtonMemoryUsageHigh
+        expr: caxton_memory_usage_percentage > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Caxton memory usage is high"
+          description: "Memory usage is {{ $value }}% - consider cleanup"
 
-  - alert: CaxtonAgentsFailing
-    expr: caxton_agents_failed_total > 0
-    for: 2m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Caxton agents are failing"
-      description: "{{ $value }} agents are in failed state"
+      - alert: CaxtonAgentsFailing
+        expr: caxton_agents_failed_total > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Caxton agents are failing"
+          description: "{{ $value }} agents are in failed state"
 ```
 
 ### Key Operational Metrics

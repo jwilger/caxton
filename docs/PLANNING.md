@@ -45,7 +45,7 @@ Stories are organized in **4 priority tiers**:
 
 **Status**: COMPLETED ✅
 **Implementation**: Complete CLI binary with clap v4.5
-**Files**: `src/bin/caxton-cli.rs`, `tests/cli_integration.rs`
+**Files**: `src/main.rs`, `tests/cli_integration.rs`
 **Acceptance**: All criteria verified and accepted by product-manager
 
 **Epic**: Developer Onboarding Experience
@@ -55,9 +55,9 @@ Stories are organized in **4 priority tiers**:
 
 **Acceptance Criteria** ✅:
 
-- ✅ `caxton-cli --version` returns version information and exits successfully
-- ✅ `caxton-cli --help` displays usage information and exits successfully
-- ✅ `caxton-cli serve` subcommand is recognized and executes
+- ✅ `caxton --version` returns version information and exits successfully
+- ✅ `caxton --help` displays usage information and exits successfully
+- ✅ `caxton serve` subcommand is recognized and executes
 - ✅ Invalid subcommands produce helpful error messages with suggestions
 - ✅ CLI response time under 100ms for all commands
 - ✅ Error handling includes actionable recovery steps

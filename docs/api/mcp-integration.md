@@ -79,40 +79,40 @@ pub trait McpStateTool: Send + Sync {
  * MCP StateTool interface for JavaScript/TypeScript agents
  */
 export interface McpStateTool {
-    /**
-     * Store a value with the given key
-     */
-    store(key: string, value: any): Promise<void>;
+  /**
+   * Store a value with the given key
+   */
+  store(key: string, value: any): Promise<void>;
 
-    /**
-     * Retrieve a value by key
-     */
-    retrieve(key: string): Promise<any | null>;
+  /**
+   * Retrieve a value by key
+   */
+  retrieve(key: string): Promise<any | null>;
 
-    /**
-     * Delete a value by key
-     */
-    delete(key: string): Promise<void>;
+  /**
+   * Delete a value by key
+   */
+  delete(key: string): Promise<void>;
 
-    /**
-     * List all keys matching a prefix
-     */
-    list(prefix: string): Promise<string[]>;
+  /**
+   * List all keys matching a prefix
+   */
+  list(prefix: string): Promise<string[]>;
 
-    /**
-     * Check if a key exists
-     */
-    exists?(key: string): Promise<boolean>;
+  /**
+   * Check if a key exists
+   */
+  exists?(key: string): Promise<boolean>;
 
-    /**
-     * Store multiple key-value pairs atomically
-     */
-    batchStore?(items: Array<[string, any]>): Promise<void>;
+  /**
+   * Store multiple key-value pairs atomically
+   */
+  batchStore?(items: Array<[string, any]>): Promise<void>;
 
-    /**
-     * Retrieve multiple values by keys
-     */
-    batchRetrieve?(keys: string[]): Promise<Array<any | null>>;
+  /**
+   * Retrieve multiple values by keys
+   */
+  batchRetrieve?(keys: string[]): Promise<Array<any | null>>;
 }
 ```
 

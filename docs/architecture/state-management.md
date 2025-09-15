@@ -167,13 +167,13 @@ impl ConfigAgent {
 
 ## Comparison with Alternatives
 
-| Approach | Complexity | Dependencies | Consistency | Performance |
-|----------|------------|--------------|-------------|-------------|
-| **Embedded SQLite + Gossip** | Low | Zero | Eventual | High |
-| Shared PostgreSQL | Medium | PostgreSQL | Strong | Medium |
-| Redis Cluster | High | Redis | Strong | High |
-| Kubernetes State | High | K8s + etcd | Strong | Medium |
-| Consul/etcd | High | Consul/etcd | Strong | Medium |
+| Approach                     | Complexity | Dependencies | Consistency | Performance |
+| ---------------------------- | ---------- | ------------ | ----------- | ----------- |
+| **Embedded SQLite + Gossip** | Low        | Zero         | Eventual    | High        |
+| Shared PostgreSQL            | Medium     | PostgreSQL   | Strong      | Medium      |
+| Redis Cluster                | High       | Redis        | Strong      | High        |
+| Kubernetes State             | High       | K8s + etcd   | Strong      | Medium      |
+| Consul/etcd                  | High       | Consul/etcd  | Strong      | Medium      |
 
 ## Implementation Details
 
@@ -293,7 +293,7 @@ kind: Service
 metadata:
   name: caxton-gossip
 spec:
-  clusterIP: None  # Headless service
+  clusterIP: None # Headless service
   selector:
     app: caxton
   ports:

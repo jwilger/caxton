@@ -7,7 +7,7 @@ use std::process::Command;
 #[test]
 fn test_cli_version_flag_returns_success() {
     let output = Command::new("cargo")
-        .args(["run", "--bin", "caxton-cli", "--", "--version"])
+        .args(["run", "--bin", "caxton", "--", "--version"])
         .output()
         .expect("Failed to execute CLI command");
 
@@ -20,7 +20,7 @@ fn test_cli_version_flag_returns_success() {
 #[test]
 fn test_cli_help_flag_returns_success() {
     let output = Command::new("cargo")
-        .args(["run", "--bin", "caxton-cli", "--", "--help"])
+        .args(["run", "--bin", "caxton", "--", "--help"])
         .output()
         .expect("Failed to execute CLI command");
 
@@ -33,7 +33,7 @@ fn test_cli_help_flag_returns_success() {
 #[test]
 fn test_cli_recognizes_serve_subcommand() {
     let output = Command::new("cargo")
-        .args(["run", "--bin", "caxton-cli", "--", "serve"])
+        .args(["run", "--bin", "caxton", "--", "serve"])
         .output()
         .expect("Failed to execute CLI command");
 
@@ -46,7 +46,7 @@ fn test_cli_recognizes_serve_subcommand() {
 #[test]
 fn test_cli_invalid_subcommand_produces_helpful_error_message() {
     let output = Command::new("cargo")
-        .args(["run", "--bin", "caxton-cli", "--", "invalid-subcommand"])
+        .args(["run", "--bin", "caxton", "--", "invalid-subcommand"])
         .output()
         .expect("Failed to execute CLI command");
 

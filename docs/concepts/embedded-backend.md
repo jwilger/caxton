@@ -804,7 +804,7 @@ context_requirements:
     max_results: 10
     min_similarity: 0.7
     include_relationships: true
-  temporal_boost: "recent"  # Boost entities from last 24h
+  temporal_boost: "recent" # Boost entities from last 24h
   provider_optimization:
     openai:
       token_budget: 4000
@@ -995,7 +995,7 @@ memory:
     temp_store: "memory"
 
     # Vector search settings
-    vector_index_type: "flat"  # flat, ivf, hnsw (future)
+    vector_index_type: "flat" # flat, ivf, hnsw (future)
     similarity_threshold: 0.6
 ```
 

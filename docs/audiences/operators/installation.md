@@ -185,7 +185,7 @@ docker ps | grep caxton
 Create `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
   caxton:
     image: caxton/caxton:latest
@@ -210,10 +210,10 @@ services:
       resources:
         limits:
           memory: 4G
-          cpus: '2.0'
+          cpus: "2.0"
         reservations:
           memory: 1G
-          cpus: '0.5'
+          cpus: "0.5"
 
 volumes:
   caxton-data:
@@ -248,61 +248,61 @@ spec:
         app: caxton
     spec:
       containers:
-      - name: caxton
-        image: caxton/caxton:latest
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 9090
-          name: metrics
-        volumeMounts:
-        - name: caxton-data
-          mountPath: /data
-        - name: config
-          mountPath: /etc/caxton/config.yaml
-          subPath: config.yaml
-        - name: logs
-          mountPath: /var/log/caxton
-        env:
-        - name: CAXTON_CONFIG
-          value: /etc/caxton/config.yaml
-        - name: CAXTON_LOG_LEVEL
-          value: info
-        resources:
-          limits:
-            memory: "4Gi"
-            cpu: "2000m"
-          requests:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          timeoutSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-          timeoutSeconds: 5
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
+        - name: caxton
+          image: caxton/caxton:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: metrics
+          volumeMounts:
+            - name: caxton-data
+              mountPath: /data
+            - name: config
+              mountPath: /etc/caxton/config.yaml
+              subPath: config.yaml
+            - name: logs
+              mountPath: /var/log/caxton
+          env:
+            - name: CAXTON_CONFIG
+              value: /etc/caxton/config.yaml
+            - name: CAXTON_LOG_LEVEL
+              value: info
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
       volumes:
-      - name: caxton-data
-        persistentVolumeClaim:
-          claimName: caxton-pvc
-      - name: config
-        configMap:
-          name: caxton-config
-      - name: logs
-        emptyDir: {}
+        - name: caxton-data
+          persistentVolumeClaim:
+            claimName: caxton-pvc
+        - name: config
+          configMap:
+            name: caxton-config
+        - name: logs
+          emptyDir: {}
       securityContext:
         fsGroup: 1000
 ---
@@ -314,12 +314,12 @@ spec:
   selector:
     app: caxton
   ports:
-  - name: http
-    port: 80
-    targetPort: 8080
-  - name: metrics
-    port: 9090
-    targetPort: 9090
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
   type: LoadBalancer
 ---
 apiVersion: v1
@@ -412,14 +412,14 @@ server:
   host: 0.0.0.0
   port: 8080
   metrics_port: 9090
-  dashboard_enabled: false  # Disable in production
+  dashboard_enabled: false # Disable in production
 
 memory:
   backend: embedded
   embedded:
     database_path: "/var/lib/caxton/memory.db"
     embedding_model: "all-MiniLM-L6-v2"
-    max_entities: 500000  # Higher production limit
+    max_entities: 500000 # Higher production limit
     cleanup_interval: 1h
 
 observability:
@@ -623,12 +623,12 @@ No external dependencies required:
 memory:
   backend: embedded
   embedded:
-    database_path: "/var/lib/caxton/caxton.db"  # SQLite database location
-    embedding_model: "all-MiniLM-L6-v2"        # Local embedding model (~23MB)
-    max_entities: 500000                        # Production scaling limit
-    cleanup_interval: 1h                       # Automatic cleanup
-    semantic_threshold: 0.6                    # Similarity threshold
-    backup_interval: 24h                       # Database backup frequency
+    database_path: "/var/lib/caxton/caxton.db" # SQLite database location
+    embedding_model: "all-MiniLM-L6-v2" # Local embedding model (~23MB)
+    max_entities: 500000 # Production scaling limit
+    cleanup_interval: 1h # Automatic cleanup
+    semantic_threshold: 0.6 # Similarity threshold
+    backup_interval: 24h # Database backup frequency
 ```
 
 ### Performance Characteristics
@@ -640,7 +640,7 @@ memory:
 
 - 10-50ms for semantic search up to 100K entities
 - 50-200ms for semantic search up to 500K entities
-**Throughput**: 1000+ entities per second insertion rate
+  **Throughput**: 1000+ entities per second insertion rate
 
 ### Backup and Recovery
 

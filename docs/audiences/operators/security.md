@@ -16,14 +16,14 @@ monitoring, and incident response procedures for production environments.
 
 ### Security Priority Matrix
 
-| Area | Priority | Implementation Time |
-|------|----------|-------------------|
-| Configuration Validation | P0 | Day 0 |
-| Memory Scope Isolation | P0 | Day 0 |
-| Tool Access Control | P0 | Day 0 |
-| TLS/API Security | P1 | Week 1 |
-| Security Monitoring | P1 | Week 1 |
-| Incident Response | P2 | Month 1 |
+| Area                     | Priority | Implementation Time |
+| ------------------------ | -------- | ------------------- |
+| Configuration Validation | P0       | Day 0               |
+| Memory Scope Isolation   | P0       | Day 0               |
+| Tool Access Control      | P0       | Day 0               |
+| TLS/API Security         | P1       | Week 1              |
+| Security Monitoring      | P1       | Week 1              |
+| Incident Response        | P2       | Month 1             |
 
 ## Production Deployment Security
 
@@ -191,13 +191,13 @@ Monitor these critical security indicators:
 
 ```yaml
 # Prometheus scrape configuration
-- job_name: 'caxton-security'
+- job_name: "caxton-security"
   static_configs:
-  - targets: ['localhost:9090']
+    - targets: ["localhost:9090"]
   scrape_interval: 30s
-  metrics_path: '/metrics'
+  metrics_path: "/metrics"
   params:
-    security: ['true']
+    security: ["true"]
 ```
 
 **Key Security Metrics:**
@@ -217,60 +217,60 @@ Configure Prometheus alerting for security events:
 ```yaml
 # /etc/prometheus/rules/caxton-security.yml
 groups:
-- name: caxton_production_security
-  rules:
-  - alert: CaxtonConfigValidationCritical
-    expr: rate(caxton_config_validation_failures_total[5m]) > 10
-    for: 1m
-    labels:
-      severity: critical
-      component: config
-    annotations:
-      summary: "Critical configuration validation failure rate"
-      description: "{{ $value }} config validation failures per second"
-      runbook_url: "https://ops.company.com/caxton/security/config-validation"
+  - name: caxton_production_security
+    rules:
+      - alert: CaxtonConfigValidationCritical
+        expr: rate(caxton_config_validation_failures_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+          component: config
+        annotations:
+          summary: "Critical configuration validation failure rate"
+          description: "{{ $value }} config validation failures per second"
+          runbook_url: "https://ops.company.com/caxton/security/config-validation"
 
-  - alert: CaxtonMemorySecurityBreach
-    expr: caxton_memory_scope_violations_total > 0
-    for: 0m
-    labels:
-      severity: critical
-      component: memory
-    annotations:
-      summary: "Memory scope security violation detected"
-      description: "{{ $value }} memory scope violations detected"
-      runbook_url: "https://ops.company.com/caxton/security/memory-violation"
+      - alert: CaxtonMemorySecurityBreach
+        expr: caxton_memory_scope_violations_total > 0
+        for: 0m
+        labels:
+          severity: critical
+          component: memory
+        annotations:
+          summary: "Memory scope security violation detected"
+          description: "{{ $value }} memory scope violations detected"
+          runbook_url: "https://ops.company.com/caxton/security/memory-violation"
 
-  - alert: CaxtonToolAccessAttack
-    expr: rate(caxton_tool_access_denials_total[5m]) > 20
-    for: 2m
-    labels:
-      severity: warning
-      component: tools
-    annotations:
-      summary: "Possible tool access attack in progress"
-      description: "{{ $value }} tool access denials per second"
+      - alert: CaxtonToolAccessAttack
+        expr: rate(caxton_tool_access_denials_total[5m]) > 20
+        for: 2m
+        labels:
+          severity: warning
+          component: tools
+        annotations:
+          summary: "Possible tool access attack in progress"
+          description: "{{ $value }} tool access denials per second"
 
-  - alert: CaxtonPromptInjectionDetected
-    expr: increase(caxton_prompt_injection_attempts_total[1m]) > 0
-    for: 0m
-    labels:
-      severity: high
-      component: agents
-    annotations:
-      summary: "Prompt injection attack detected"
-      description: "{{ $value }} prompt injection attempts in last minute"
-      runbook_url: "https://ops.company.com/caxton/security/prompt-injection"
+      - alert: CaxtonPromptInjectionDetected
+        expr: increase(caxton_prompt_injection_attempts_total[1m]) > 0
+        for: 0m
+        labels:
+          severity: high
+          component: agents
+        annotations:
+          summary: "Prompt injection attack detected"
+          description: "{{ $value }} prompt injection attempts in last minute"
+          runbook_url: "https://ops.company.com/caxton/security/prompt-injection"
 
-  - alert: CaxtonAPISecurityIncident
-    expr: rate(caxton_api_auth_failures_total[5m]) > 5
-    for: 3m
-    labels:
-      severity: warning
-      component: api
-    annotations:
-      summary: "High API authentication failure rate"
-      description: "{{ $value }} API auth failures per second"
+      - alert: CaxtonAPISecurityIncident
+        expr: rate(caxton_api_auth_failures_total[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API authentication failure rate"
+          description: "{{ $value }} API auth failures per second"
 ```
 
 ### Security Log Analysis
@@ -490,9 +490,11 @@ caxton config unlock --enhanced-validation
 **Duration**: {{ detection_time }} to {{ resolution_time }}
 
 ## Summary
+
 Brief description of the security incident and its impact.
 
 ## Timeline
+
 - **{{ time }}**: Initial detection via {{ monitoring_system }}
 - **{{ time }}**: Containment actions initiated
 - **{{ time }}**: Root cause identified
@@ -500,26 +502,31 @@ Brief description of the security incident and its impact.
 - **{{ time }}**: Normal operations restored
 
 ## Root Cause Analysis
+
 Detailed technical analysis of how the incident occurred.
 
 ## Impact Assessment
+
 - **Affected agents**: {{ count }}
 - **Data exposure**: {{ none|minimal|significant }}
 - **Service availability**: {{ percentage }}%
 - **Security controls bypassed**: {{ list }}
 
 ## Response Actions
+
 1. **Immediate containment**: {{ actions }}
 2. **Evidence collection**: {{ files_collected }}
 3. **Recovery procedures**: {{ steps }}
 4. **Communications**: {{ stakeholders_notified }}
 
 ## Lessons Learned
+
 1. **What worked well**: {{ successes }}
 2. **Areas for improvement**: {{ gaps }}
 3. **Security enhancements needed**: {{ improvements }}
 
 ## Follow-up Actions
+
 - [ ] Security policy updates
 - [ ] Monitoring improvements
 - [ ] Staff training updates

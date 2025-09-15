@@ -154,7 +154,7 @@ ensures that **all possible generated configurations** are correct.
 parameter:
   name: "MAX_FILE_SIZE"
   type: "string"
-  validation: "^[0-9]+[KMGT]B$"  # e.g., "10MB", "1GB"
+  validation: "^[0-9]+[KMGT]B$" # e.g., "10MB", "1GB"
   options: ["1MB", "10MB", "50MB", "100MB"]
 ```
 

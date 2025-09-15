@@ -511,6 +511,7 @@ objectives
   - Core architectural patterns for configuration agents
 
   Foundation for configuration agent patterns
+
 - [Performance Specifications](performance-specifications.md) - Performance
   requirements for production patterns
 - [Configuration Validation](configuration-validation.md) - Technical

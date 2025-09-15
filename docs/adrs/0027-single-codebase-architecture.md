@@ -6,10 +6,11 @@ layout: adr
 categories: [Architecture, Organization]
 ---
 
-
 ## Status
 
-Accepted
+Accepted (Partially Superseded by ADR-0042)
+
+**Note**: The single codebase decision remains valid. However, the binary distribution approach has been refined by ADR-0042: Single Binary CLI Consolidation, which consolidates multiple binary targets into a single user-facing binary with subcommands for improved user experience.
 
 ## Context
 

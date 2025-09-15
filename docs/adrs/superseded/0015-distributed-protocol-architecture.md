@@ -7,7 +7,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-
 ## Status
 
 Superseded by ADR-0030 (Embedded Memory System)

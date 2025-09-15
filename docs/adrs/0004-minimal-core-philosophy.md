@@ -6,7 +6,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-
 ## Status
 
 Accepted

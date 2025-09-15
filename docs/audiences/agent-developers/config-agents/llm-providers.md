@@ -34,7 +34,7 @@ Full-featured integration with OpenAI's API:
 ```yaml
 llm:
   provider: openai
-  model: gpt-4                    # or gpt-4-turbo, gpt-3.5-turbo
+  model: gpt-4 # or gpt-4-turbo, gpt-3.5-turbo
   temperature: 0.7
   max_tokens: 2000
   top_p: 1.0
@@ -43,9 +43,9 @@ llm:
 
   # OpenAI-specific configuration
   openai:
-    api_key: ${OPENAI_API_KEY}    # Environment variable
-    organization: ${OPENAI_ORG}   # Optional
-    base_url: https://api.openai.com/v1  # Default
+    api_key: ${OPENAI_API_KEY} # Environment variable
+    organization: ${OPENAI_ORG} # Optional
+    base_url: https://api.openai.com/v1 # Default
     timeout: 30s
     max_retries: 3
 ```
@@ -63,7 +63,7 @@ Integration with Claude models:
 ```yaml
 llm:
   provider: anthropic
-  model: claude-3-sonnet          # or claude-3-opus, claude-3-haiku
+  model: claude-3-sonnet # or claude-3-opus, claude-3-haiku
   temperature: 0.5
   max_tokens: 1500
 
@@ -73,7 +73,7 @@ llm:
     base_url: https://api.anthropic.com
     timeout: 45s
     max_retries: 3
-    version: "2023-06-01"         # API version
+    version: "2023-06-01" # API version
 ```
 
 **Available Models**:
@@ -89,20 +89,20 @@ Integration with locally hosted models via Ollama, vLLM, or similar:
 ```yaml
 llm:
   provider: local
-  model: llama2                   # or mistral, codellama, etc.
+  model: llama2 # or mistral, codellama, etc.
   temperature: 0.8
   max_tokens: 1000
 
   # Local provider configuration
   local:
-    base_url: http://localhost:11434  # Ollama default
+    base_url: http://localhost:11434 # Ollama default
     timeout: 60s
     max_retries: 1
 
     # Model-specific parameters
     model_params:
-      num_ctx: 4096               # Context window
-      num_predict: 512            # Max prediction tokens
+      num_ctx: 4096 # Context window
+      num_predict: 512 # Max prediction tokens
       repeat_penalty: 1.1
       top_k: 40
       top_p: 0.9
@@ -146,7 +146,6 @@ llm:
   model: gpt-4
   temperature: 0.1
 ---
-
 # Cost-effective agent using local model
 ---
 name: simple-responder
@@ -155,7 +154,6 @@ llm:
   model: llama2
   temperature: 0.7
 ---
-
 # Balanced agent using Claude
 ---
 name: content-writer
@@ -201,8 +199,8 @@ llm:
 ```yaml
 llm:
   provider: openai
-  model: gpt-3.5-turbo    # Fastest commercial option
-  max_tokens: 500         # Limit response length
+  model: gpt-3.5-turbo # Fastest commercial option
+  max_tokens: 500 # Limit response length
 ```
 
 **Quality-Critical Applications**:
@@ -210,8 +208,8 @@ llm:
 ```yaml
 llm:
   provider: openai
-  model: gpt-4            # Highest quality
-  temperature: 0.1        # More deterministic
+  model: gpt-4 # Highest quality
+  temperature: 0.1 # More deterministic
 ```
 
 **Cost-Optimized Applications**:
@@ -219,8 +217,8 @@ llm:
 ```yaml
 llm:
   provider: local
-  model: llama2           # No per-token costs
-  max_tokens: 1000        # Reasonable limits
+  model: llama2 # No per-token costs
+  max_tokens: 1000 # Reasonable limits
 ```
 
 ## Advanced Configuration - **Advanced**
@@ -243,7 +241,7 @@ llm:
       X-Model-Version: "2.1"
       X-Customer-ID: ${CUSTOMER_ID}
 
-    request_format: openai_compatible  # or anthropic_compatible, custom
+    request_format: openai_compatible # or anthropic_compatible, custom
     response_format: openai_compatible
 
     # Custom parameters
@@ -292,12 +290,12 @@ llm:
   providers:
     - provider: openai
       model: gpt-4
-      weight: 60              # 60% of requests
+      weight: 60 # 60% of requests
       max_requests_per_minute: 100
 
     - provider: anthropic
       model: claude-3-sonnet
-      weight: 40              # 40% of requests
+      weight: 40 # 40% of requests
       max_requests_per_minute: 80
 
   load_balance:
@@ -319,14 +317,14 @@ llm:
 
   caching:
     enabled: true
-    ttl: 3600                     # 1 hour cache
-    key_strategy: semantic        # or exact, fuzzy
-    max_cache_size: 1000         # Number of cached responses
+    ttl: 3600 # 1 hour cache
+    key_strategy: semantic # or exact, fuzzy
+    max_cache_size: 1000 # Number of cached responses
 
     # Cache conditions
     cache_when:
-      - temperature: "< 0.3"     # Only cache deterministic responses
-      - max_tokens: "< 1000"     # Don't cache very long responses
+      - temperature: "< 0.3" # Only cache deterministic responses
+      - max_tokens: "< 1000" # Don't cache very long responses
 ```
 
 ### Request Optimization
@@ -339,20 +337,20 @@ llm:
   model: gpt-4-turbo
 
   optimization:
-    batch_requests: true          # Batch multiple requests
-    compress_context: true        # Compress large contexts
-    async_processing: true        # Use async where possible
+    batch_requests: true # Batch multiple requests
+    compress_context: true # Compress large contexts
+    async_processing: true # Use async where possible
 
     # OpenAI-specific optimizations
     openai:
-      use_streaming: true         # Stream responses
-      parallel_requests: 3        # Max concurrent requests
-      adaptive_timeout:           # Adjust timeout based on request size
+      use_streaming: true # Stream responses
+      parallel_requests: 3 # Max concurrent requests
+      adaptive_timeout: # Adjust timeout based on request size
         enabled: true
         # Example formula
         formula: "timeout = base_timeout + 0.5s * (request_tokens / 1000)"
-        min_timeout: 10s           # Minimum timeout
-        max_timeout: 120s          # Maximum timeout
+        min_timeout: 10s # Minimum timeout
+        max_timeout: 120s # Maximum timeout
 ```
 
 ## Monitoring and Debugging - **Intermediate**
@@ -394,15 +392,15 @@ llm:
   model: gpt-4
 
   debug:
-    log_requests: true           # Log all requests (careful with PII)
-    log_responses: false         # Usually too verbose
-    log_errors: true            # Always log errors
-    log_performance: true       # Track timing metrics
+    log_requests: true # Log all requests (careful with PII)
+    log_responses: false # Usually too verbose
+    log_errors: true # Always log errors
+    log_performance: true # Track timing metrics
 
     # Debug levels
     request_logging:
-      include_headers: false     # Security concern
-      include_full_context: false  # Can be very large
+      include_headers: false # Security concern
+      include_full_context: false # Can be very large
       include_parameters: true
 ```
 
@@ -439,14 +437,14 @@ llm:
     data_filtering:
       enabled: true
       remove_patterns:
-        - "\\b\\d{3}-\\d{2}-\\d{4}\\b"  # SSN pattern
-        - "\\b\\d{16}\\b"               # Credit card pattern
-        - "password|secret|key"         # Sensitive keywords
+        - "\\b\\d{3}-\\d{2}-\\d{4}\\b" # SSN pattern
+        - "\\b\\d{16}\\b" # Credit card pattern
+        - "password|secret|key" # Sensitive keywords
 
     compliance:
-      gdpr_mode: true              # EU compliance
-      hipaa_mode: false           # Healthcare compliance
-      pci_mode: false             # Payment compliance
+      gdpr_mode: true # EU compliance
+      hipaa_mode: false # Healthcare compliance
+      pci_mode: false # Payment compliance
 ```
 
 ## Migration Guide - **Advanced**
@@ -533,7 +531,7 @@ llm:
 
 memory:
   context_preparation:
-    max_context_length: 6000    # Leave room for response
+    max_context_length: 6000 # Leave room for response
 ```
 
 ### Provider Health Checks
@@ -561,8 +559,8 @@ curl http://localhost:3000/api/providers/openai/capabilities
 
 ## Provider Comparison Table
 
-| Provider | Strengths | Best For | Cost | Setup Difficulty |
-|----------|-----------|----------|------|------------------|
-| OpenAI | Most capable, fast | Complex analysis, coding | High | Easy |
-| Anthropic | Excellent writing, safe | Content creation | Medium | Easy |
-| Local | Privacy, no per-token cost | High-volume | Hardware | Advanced |
+| Provider  | Strengths                  | Best For                 | Cost     | Setup Difficulty |
+| --------- | -------------------------- | ------------------------ | -------- | ---------------- |
+| OpenAI    | Most capable, fast         | Complex analysis, coding | High     | Easy             |
+| Anthropic | Excellent writing, safe    | Content creation         | Medium   | Easy             |
+| Local     | Privacy, no per-token cost | High-volume              | Hardware | Advanced         |

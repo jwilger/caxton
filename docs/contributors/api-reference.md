@@ -345,21 +345,23 @@ Subscribe to message streams via WebSocket.
 
 ```javascript
 // Connect to WebSocket
-const ws = new WebSocket('ws://localhost:8080/ws');
+const ws = new WebSocket("ws://localhost:8080/ws");
 
 // Subscribe to agent messages
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  filter: {
-    agents: ['agent_123', 'agent_456'],
-    performatives: ['inform', 'request']
-  }
-}));
+ws.send(
+  JSON.stringify({
+    type: "subscribe",
+    filter: {
+      agents: ["agent_123", "agent_456"],
+      performatives: ["inform", "request"],
+    },
+  }),
+);
 
 // Receive messages
 ws.onmessage = (event) => {
   const message = JSON.parse(event.data);
-  console.log('Received:', message);
+  console.log("Received:", message);
 };
 ```
 
@@ -697,19 +699,23 @@ Real-time event streaming via WebSocket.
 
 ```javascript
 // Subscribe to specific event types
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  events: ['agent.*', 'task.completed'],
-  filters: {
-    agent_ids: ['agent_123']
-  }
-}));
+ws.send(
+  JSON.stringify({
+    type: "subscribe",
+    events: ["agent.*", "task.completed"],
+    filters: {
+      agent_ids: ["agent_123"],
+    },
+  }),
+);
 
 // Unsubscribe
-ws.send(JSON.stringify({
-  type: 'unsubscribe',
-  subscription_id: 'sub_123'
-}));
+ws.send(
+  JSON.stringify({
+    type: "unsubscribe",
+    subscription_id: "sub_123",
+  }),
+);
 ```
 
 ## Error Responses
@@ -730,11 +736,11 @@ All APIs use consistent error responses:
 
 ### Implemented Error Codes
 
-| Error Type | HTTP Status | Description | Example |
-|------------|-------------|-------------|---------|
-| Validation Error | 400 | Invalid input data | Empty name, zero limits |
-| Invalid JSON | 400 | Malformed JSON request | Syntax errors |
-| Agent Not Found | 404 | Agent ID doesn't exist | Non-existent UUID |
+| Error Type       | HTTP Status | Description            | Example                 |
+| ---------------- | ----------- | ---------------------- | ----------------------- |
+| Validation Error | 400         | Invalid input data     | Empty name, zero limits |
+| Invalid JSON     | 400         | Malformed JSON request | Syntax errors           |
+| Agent Not Found  | 404         | Agent ID doesn't exist | Non-existent UUID       |
 
 ### Future Error Format ⏳ **PLANNED**
 
@@ -754,46 +760,46 @@ All APIs use consistent error responses:
 
 ### Planned Error Codes ⏳
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AGENT_ALREADY_EXISTS` | 409 | Agent name already in use |
-| `RESOURCE_LIMIT_EXCEEDED` | 429 | Resource limits exceeded |
-| `DEPLOYMENT_FAILED` | 500 | Deployment operation failed |
-| `MESSAGE_DELIVERY_FAILED` | 500 | Message could not be delivered |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Operation not permitted |
-| `RATE_LIMITED` | 429 | Rate limit exceeded |
-| `INTERNAL_ERROR` | 500 | Internal server error |
+| Code                      | HTTP Status | Description                    |
+| ------------------------- | ----------- | ------------------------------ |
+| `AGENT_ALREADY_EXISTS`    | 409         | Agent name already in use      |
+| `RESOURCE_LIMIT_EXCEEDED` | 429         | Resource limits exceeded       |
+| `DEPLOYMENT_FAILED`       | 500         | Deployment operation failed    |
+| `MESSAGE_DELIVERY_FAILED` | 500         | Message could not be delivered |
+| `UNAUTHORIZED`            | 401         | Authentication required        |
+| `FORBIDDEN`               | 403         | Operation not permitted        |
+| `RATE_LIMITED`            | 429         | Rate limit exceeded            |
+| `INTERNAL_ERROR`          | 500         | Internal server error          |
 
 ## SDK Examples
 
 ### JavaScript/TypeScript
 
 ```typescript
-import { CaxtonClient } from '@caxton/sdk';
+import { CaxtonClient } from "@caxton/sdk";
 
 const client = new CaxtonClient({
-  endpoint: 'http://localhost:8080',
-  apiKey: 'your-api-key'
+  endpoint: "http://localhost:8080",
+  apiKey: "your-api-key",
 });
 
 // Deploy a configuration agent
 const agent = await client.deployConfigAgent({
-  config: fs.readFileSync('agent.toml', 'utf8'),
+  config: fs.readFileSync("agent.toml", "utf8"),
   memoryEnabled: true,
-  memoryScope: 'workspace'
+  memoryScope: "workspace",
 });
 
 // Send a message
 const response = await client.sendMessage({
-  performative: 'request',
+  performative: "request",
   receiver: agent.id,
-  content: { action: 'process' }
+  content: { action: "process" },
 });
 
 // Subscribe to events
-client.on('agent.failed', (event) => {
-  console.log('Agent failed:', event);
+client.on("agent.failed", (event) => {
+  console.log("Agent failed:", event);
 });
 ```
 
@@ -867,12 +873,12 @@ func main() {
 
 API rate limits per endpoint:
 
-| Endpoint | Rate Limit | Burst |
-|----------|------------|-------|
-| Agent deployment | 10/min | 20 |
-| Message sending | 1000/sec | 2000 |
-| Metrics queries | 100/min | 200 |
-| System operations | 50/min | 100 |
+| Endpoint          | Rate Limit | Burst |
+| ----------------- | ---------- | ----- |
+| Agent deployment  | 10/min     | 20    |
+| Message sending   | 1000/sec   | 2000  |
+| Metrics queries   | 100/min    | 200   |
+| System operations | 50/min     | 100   |
 
 Rate limit headers:
 

@@ -70,17 +70,17 @@ the need for manual prompt engineering:
 ```yaml
 # Example: Data Analysis Tool Context Specification
 context_requirements:
-  conversation_depth: 10        # Include last 10 conversation turns
+  conversation_depth: 10 # Include last 10 conversation turns
   memory_search:
     query_template: "data analysis {{request_type}} similar to {{user_request}}"
-    max_results: 15             # Up to 15 relevant memory entries
-    min_similarity: 0.7         # Only highly relevant memories
-  capability_context: true      # Include related capability information
-  tool_data:                    # Specific tool data to include
+    max_results: 15 # Up to 15 relevant memory entries
+    min_similarity: 0.7 # Only highly relevant memories
+  capability_context: true # Include related capability information
+  tool_data: # Specific tool data to include
     - "user_preferences"
     - "recent_analysis_results"
     - "data_schema_cache"
-  provider_optimization:        # LLM-specific settings
+  provider_optimization: # LLM-specific settings
     openai:
       max_context_tokens: 8000
       function_calling_format: true
@@ -143,7 +143,7 @@ llm:
   provider: "openai"
   model: "gpt-4o"
   api_key: "${OPENAI_API_KEY}"
-  base_url: "https://api.openai.com/v1"  # Optional: for proxies
+  base_url: "https://api.openai.com/v1" # Optional: for proxies
   max_tokens: 4096
   temperature: 0.7
   timeout_seconds: 30
@@ -176,7 +176,7 @@ llm:
   max_tokens: 4096
   temperature: 0.7
   timeout_seconds: 45
-  system_context_limit: 200000  # Claude's large context window
+  system_context_limit: 200000 # Claude's large context window
 ```
 
 **Features**:
@@ -250,7 +250,7 @@ llm:
   api_key: "optional-auth-token"
   max_tokens: 4096
   temperature: 0.7
-  tensor_parallel_size: 2  # Multi-GPU support
+  tensor_parallel_size: 2 # Multi-GPU support
 ```
 
 **Features**:
@@ -269,7 +269,7 @@ llm:
   provider: "custom"
   provider_config:
     base_url: "https://api.yourcompany.com/llm"
-    auth_type: "bearer"  # bearer, api_key, oauth2
+    auth_type: "bearer" # bearer, api_key, oauth2
     auth_token: "${CUSTOM_LLM_TOKEN}"
     model_field: "model_name"
     prompt_field: "input_text"
@@ -303,7 +303,7 @@ llm:
       model: "llama3.1:8b"
       base_url: "http://localhost:11434"
       priority: 10
-  fallback_strategy: "priority"  # priority, round_robin, load_balance
+  fallback_strategy: "priority" # priority, round_robin, load_balance
 ```
 
 ### Capability-Specific Providers
@@ -316,17 +316,17 @@ agents:
     capabilities: ["code-analysis"]
     llm:
       provider: "openai"
-      model: "gpt-4o"  # Strong reasoning for code
+      model: "gpt-4o" # Strong reasoning for code
   - name: DataAnalyzer
     capabilities: ["data-processing"]
     llm:
       provider: "anthropic"
-      model: "claude-3-5-sonnet-20241022"  # Large context for data
+      model: "claude-3-5-sonnet-20241022" # Large context for data
   - name: ContentGenerator
     capabilities: ["content-generation"]
     llm:
       provider: "ollama"
-      model: "llama3.1:8b"  # Cost-effective for content
+      model: "llama3.1:8b" # Cost-effective for content
 ```
 
 ## Context Management Strategies
@@ -353,10 +353,16 @@ context specifications to determine exactly what information to include:
     }
   },
   "conversation_history": [
-    {"role": "user", "content": "Analyze Q3 sales data"},
-    {"role": "assistant", "content": "I'll process the sales data and generate the quarterly summary..."},
-    {"role": "user", "content": "Include YoY comparison charts"},
-    {"role": "assistant", "content": "I'll add year-over-year comparison visualizations to the report..."}
+    { "role": "user", "content": "Analyze Q3 sales data" },
+    {
+      "role": "assistant",
+      "content": "I'll process the sales data and generate the quarterly summary..."
+    },
+    { "role": "user", "content": "Include YoY comparison charts" },
+    {
+      "role": "assistant",
+      "content": "I'll add year-over-year comparison visualizations to the report..."
+    }
   ],
   "memory_context": {
     "search_query": "report generation quarterly summary similar to pdf template",
@@ -364,19 +370,27 @@ context specifications to determine exactly what information to include:
       {
         "name": "Q3 Sales Analysis Pattern",
         "similarity": 0.89,
-        "observations": ["Standard quarterly reports include revenue trends, regional breakdowns, YoY comparisons"]
+        "observations": [
+          "Standard quarterly reports include revenue trends, regional breakdowns, YoY comparisons"
+        ]
       },
       {
         "name": "PDF Report Template Preferences",
         "similarity": 0.85,
-        "observations": ["Users prefer executive summary on page 1, detailed charts on page 2-3"]
+        "observations": [
+          "Users prefer executive summary on page 1, detailed charts on page 2-3"
+        ]
       }
     ],
     "total_memory_entries_searched": 150,
     "entries_above_threshold": 12
   },
   "capability_context": {
-    "related_capabilities": ["data-visualization", "chart-generation", "pdf-creation"],
+    "related_capabilities": [
+      "data-visualization",
+      "chart-generation",
+      "pdf-creation"
+    ],
     "capability_requirements": {
       "input_formats": ["json", "csv"],
       "output_formats": ["pdf"],
@@ -388,7 +402,11 @@ context specifications to determine exactly what information to include:
       "name": "pdf_generator",
       "description": "Generate PDF reports with templating support",
       "context_data": {
-        "available_templates": ["quarterly-summary", "executive-brief", "detailed-analysis"],
+        "available_templates": [
+          "quarterly-summary",
+          "executive-brief",
+          "detailed-analysis"
+        ],
         "supported_chart_types": ["bar", "line", "pie", "trend"]
       }
     },
@@ -396,7 +414,10 @@ context specifications to determine exactly what information to include:
       "name": "chart_creator",
       "description": "Create charts and visualizations",
       "context_data": {
-        "recent_chart_preferences": ["YoY comparison bars", "regional pie charts"],
+        "recent_chart_preferences": [
+          "YoY comparison bars",
+          "regional pie charts"
+        ],
         "performance_data": "average generation time: 2.3s"
       }
     }
@@ -420,21 +441,22 @@ runtime to gather exactly the right information:
 name: "pdf_generator"
 description: "Advanced PDF report generation with templating"
 context_requirements:
-  conversation_depth: 3  # Focus on recent report requirements
+  conversation_depth: 3 # Focus on recent report requirements
   memory_search:
     query_template: "PDF report {{report_type}} {{business_context}}"
     max_results: 8
-    focus_areas: ["report_templates", "user_preferences", "formatting_standards"]
+    focus_areas:
+      ["report_templates", "user_preferences", "formatting_standards"]
   tool_data:
-    - "template_library"      # Available report templates
+    - "template_library" # Available report templates
     - "user_style_preferences" # Preferred fonts, colors, layouts
     - "recent_generation_stats" # Performance and usage data
   provider_optimization:
     openai:
-      structured_output: true   # Use structured function calling
+      structured_output: true # Use structured function calling
       max_context_tokens: 6000
     anthropic:
-      tool_use_format: true     # Use Anthropic's tool format
+      tool_use_format: true # Use Anthropic's tool format
       max_context_tokens: 8000
 ```
 
@@ -475,13 +497,17 @@ and capabilities.
         "properties": {
           "template": {
             "type": "string",
-            "enum": ["quarterly-summary", "executive-brief", "detailed-analysis"],
+            "enum": [
+              "quarterly-summary",
+              "executive-brief",
+              "detailed-analysis"
+            ],
             "description": "Report template to use"
           },
-          "data": {"type": "object"},
+          "data": { "type": "object" },
           "chart_preferences": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": { "type": "string" },
             "description": "Preferred chart types based on user history"
           }
         }
@@ -521,13 +547,17 @@ and capabilities.
         "properties": {
           "template": {
             "type": "string",
-            "enum": ["quarterly-summary", "executive-brief", "detailed-analysis"],
+            "enum": [
+              "quarterly-summary",
+              "executive-brief",
+              "detailed-analysis"
+            ],
             "description": "Report template - quarterly-summary recommended based on context"
           },
-          "data": {"type": "object"},
+          "data": { "type": "object" },
           "chart_preferences": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": { "type": "string" },
             "description": "Chart types - YoY comparison bars recommended"
           }
         }
@@ -613,7 +643,7 @@ export AZURE_OPENAI_API_KEY="..."
 llm:
   provider: "openai"
   api_key:
-    source: "vault"  # vault, aws_secrets, azure_keyvault
+    source: "vault" # vault, aws_secrets, azure_keyvault
     path: "caxton/llm/openai"
     key: "api_key"
 ```
@@ -651,7 +681,7 @@ llm:
 llm:
   provider: "openai"
   timeout_seconds: 30
-  read_timeout_seconds: 60  # For streaming responses
+  read_timeout_seconds: 60 # For streaming responses
   connect_timeout_seconds: 10
 ```
 
@@ -709,7 +739,7 @@ llm:
     enabled: true
     ttl_seconds: 3600
     similarity_threshold: 0.95
-    cache_backend: "redis"  # redis, memory, disk
+    cache_backend: "redis" # redis, memory, disk
 ```
 
 **Cache Invalidation**:
@@ -886,8 +916,8 @@ llm:
 llm:
   provider: "openai"
   model: "gpt-4o"
-  model_version: "gpt-4o-2024-05-13"  # Pin to specific version
-  auto_upgrade: false  # Prevent automatic updates
+  model_version: "gpt-4o-2024-05-13" # Pin to specific version
+  auto_upgrade: false # Prevent automatic updates
 ```
 
 **Provider API Versioning**:
@@ -900,8 +930,7 @@ llm:
 ## Related Documentation
 
 - [Configuration Agent Overview](overview.md) - Core configuration agent concepts
-- [ADR-0028: Configuration-Driven Agents](
-  ../adrs/0028-configuration-driven-agent-architecture.md) -
+- [ADR-0028: Configuration-Driven Agents](../adrs/0028-configuration-driven-agent-architecture.md) -
   Architectural rationale
 - [Memory System Overview](../memory-system/overview.md) - Memory-augmented context
 - [API Reference](../api/config-agents.md) - Configuration agent API

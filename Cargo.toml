@@ -25,9 +25,6 @@ pedantic = { level = "deny", priority = -1 }
 name = "caxton"
 path = "src/main.rs"
 
-[[bin]]
-name = "caxton-cli"
-path = "src/bin/caxton-cli.rs"
 
 [lib]
 name = "caxton"

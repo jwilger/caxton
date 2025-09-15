@@ -43,7 +43,6 @@ tools:
   - chart_generator
 memory_enabled: true
 ---
-
 You are a sales analysis expert who helps teams understand their
 performance data. You can analyze CSV files, create visualizations,
 and provide actionable insights.
@@ -80,9 +79,9 @@ do it
 
 ```yaml
 capabilities:
-  - data-analysis    # "I can analyze data"
+  - data-analysis # "I can analyze data"
   - report-generation # "I can create reports"
-  - customer-support  # "I can help customers"
+  - customer-support # "I can help customers"
 ```
 
 **System Benefits**: Other agents can find and use these capabilities
@@ -95,10 +94,10 @@ rather than custom code
 
 ```yaml
 tools:
-  - http_client      # Can fetch data from web APIs
-  - csv_parser       # Can read and analyze spreadsheets
-  - chart_generator  # Can create visualizations
-  - email_sender     # Can send notifications
+  - http_client # Can fetch data from web APIs
+  - csv_parser # Can read and analyze spreadsheets
+  - chart_generator # Can create visualizations
+  - email_sender # Can send notifications
 ```
 
 **No Programming Required**: Tools provide pre-built functionality that
@@ -111,7 +110,7 @@ experience
 
 ```yaml
 memory_enabled: true
-memory_scope: "workspace"  # Share knowledge with team
+memory_scope: "workspace" # Share knowledge with team
 ```
 
 **Progressive Intelligence**: Agents become more effective over time through
@@ -170,7 +169,6 @@ tools:
   - knowledge_base
   - ticket_system
 ---
-
 You help customers resolve issues by searching our knowledge base
 and creating support tickets when necessary.
 ```
@@ -228,10 +226,10 @@ behavior
 
 ```yaml
 capabilities:
-  - data-analysis        # Can process data
-  - web-search          # Can research information
-  - report-generation   # Can create summaries
-  - email-notification  # Can send results
+  - data-analysis # Can process data
+  - web-search # Can research information
+  - report-generation # Can create summaries
+  - email-notification # Can send results
 ```
 
 **Workflow Integration**: Single agent handles multi-step processes
@@ -342,7 +340,7 @@ interaction
 
 ```yaml
 memory_enabled: true
-memory_scope: "workspace"  # Team knowledge sharing
+memory_scope: "workspace" # Team knowledge sharing
 ```
 
 ### Configuration Templates and Reusability
