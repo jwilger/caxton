@@ -29,3 +29,16 @@ fn test_cli_help_flag_returns_success() {
         "CLI --help command should exit successfully"
     );
 }
+
+#[test]
+fn test_cli_recognizes_serve_subcommand() {
+    let output = Command::new("cargo")
+        .args(["run", "--bin", "caxton-cli", "--", "serve"])
+        .output()
+        .expect("Failed to execute CLI command");
+
+    assert!(
+        output.status.success(),
+        "CLI should recognize 'serve' as a valid subcommand"
+    );
+}
