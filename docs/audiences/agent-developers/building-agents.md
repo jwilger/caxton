@@ -85,27 +85,27 @@ The YAML frontmatter defines agent metadata and capabilities:
 
 ```yaml
 ---
-name: AgentName                    # Required: Unique identifier
-version: "1.0.0"                   # Required: Semantic version
-description: "Agent description"   # Required: Brief description
+name: AgentName # Required: Unique identifier
+version: "1.0.0" # Required: Semantic version
+description: "Agent description" # Required: Brief description
 
-capabilities:                      # Required: List of capabilities
+capabilities: # Required: List of capabilities
   - capability_name
 
-tools:                            # Optional: Available tools
+tools: # Optional: Available tools
   - tool_name
 
-llm:                              # Required: LLM configuration
+llm: # Required: LLM configuration
   provider: openai|anthropic|local
   model: model_name
   temperature: 0.1
   max_tokens: 2000
 
-permissions:                      # Optional: Resource permissions
+permissions: # Optional: Resource permissions
   file_access: readonly|readwrite|none
   network_access: restricted|full|none
 
-schedule:                         # Optional: Automated execution
+schedule: # Optional: Automated execution
   cron: "0 9 * * MON-FRI"
   timezone: "UTC"
 ---
@@ -267,13 +267,13 @@ name: OptimizedAgent
 
 llm:
   provider: openai
-  model: gpt-4-turbo  # Faster than gpt-4
-  temperature: 0      # Deterministic responses
-  max_tokens: 1000    # Limit response length
+  model: gpt-4-turbo # Faster than gpt-4
+  temperature: 0 # Deterministic responses
+  max_tokens: 1000 # Limit response length
 
 cache:
   enabled: true
-  ttl: 3600           # 1 hour cache
+  ttl: 3600 # 1 hour cache
 ---
 ```
 

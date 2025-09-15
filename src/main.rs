@@ -1,8 +1,23 @@
-//! Caxton CLI binary
+//! Caxton CLI Binary
 //!
-//! Placeholder CLI binary for Caxton development.
+//! Command-line interface for interacting with the Caxton application server
 
-/// Caxton CLI entry point
+use clap::{Parser, Subcommand};
+
+/// Caxton CLI - Command-line interface for the Caxton application server
+#[derive(Parser)]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+struct Args {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Start the Caxton server
+    Serve,
+}
+
 fn main() {
-    println!("Hello, world!");
+    Args::parse();
 }

@@ -6,7 +6,6 @@ layout: adr
 categories: [Architecture, Technology]
 ---
 
-
 ## Status
 
 Accepted
@@ -21,7 +20,7 @@ network boundaries.
 
 Recent analysis of actual requirements reveals a significantly simpler scenario:
 
-- Single client type: caxton-cli command-line tool
+- Single client type: caxton command-line tool
 - Pure Rust environment: both server and client implemented in Rust
 - Local deployment pattern: CLI typically runs on same machine as server
 - No browser compatibility requirement: no web dashboard planned

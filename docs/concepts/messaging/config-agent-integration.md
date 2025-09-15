@@ -1,6 +1,7 @@
 ---
 title: "Configuration Agent Integration Concepts"
-description: "Understanding how configuration agents participate in agent messaging
+description:
+  "Understanding how configuration agents participate in agent messaging
   through intelligent runtime integration and natural language processing"
 date: 2025-01-13
 categories: [Concepts, Messaging, Configuration, Integration]
@@ -304,7 +305,7 @@ back to sales)
 ```yaml
 # Customer returns to previous conversation
 performative: QUERY
-conversation_id: support_session_001  # Same conversation
+conversation_id: support_session_001 # Same conversation
 content: |
   Hi, I wanted to check on my replacement order. You mentioned it
   would arrive today with overnight shipping.
@@ -351,8 +352,8 @@ architecture (ADR-0031) to provide intelligent context preparation:
 ```yaml
 context_sources:
   conversation_history:
-    depth: 5                    # Last 5 messages in thread
-    format: natural_language    # Formatted for agent understanding
+    depth: 5 # Last 5 messages in thread
+    format: natural_language # Formatted for agent understanding
 
   semantic_memory:
     query: "customer_support delivery_issues premium_customers"
@@ -369,9 +370,9 @@ context_sources:
     carrier_apis: tracking_capabilities
 
 context_performance:
-  preparation_time_ms: 67       # Within <100ms target
-  token_utilization: 0.89       # 89% context window efficiency
-  sources_used: 4               # All requested sources available
+  preparation_time_ms: 67 # Within <100ms target
+  token_utilization: 0.89 # 89% context window efficiency
+  sources_used: 4 # All requested sources available
 ```
 
 ### Error Handling and Recovery
@@ -411,9 +412,9 @@ routing_request:
   content: "Advanced ML analysis needed for customer behavior prediction..."
 
 coordination_plan:
-  primary_agent: current_agent      # Handles data prep
-  specialist_agent: ml-specialist   # Handles advanced modeling
-  coordination_pattern: handoff     # Sequential processing
+  primary_agent: current_agent # Handles data prep
+  specialist_agent: ml-specialist # Handles advanced modeling
+  coordination_pattern: handoff # Sequential processing
 ```
 
 ### Performance Optimization
@@ -425,15 +426,15 @@ performance:
 ```yaml
 # Agent YAML configuration
 context_optimization:
-  max_context_tokens: 6000          # Limit context size for speed
-  conversation_summarization: true   # Summarize long threads
-  memory_search_limit: 5            # Fewer memory results for speed
+  max_context_tokens: 6000 # Limit context size for speed
+  conversation_summarization: true # Summarize long threads
+  memory_search_limit: 5 # Fewer memory results for speed
   priority_context: ["current_request", "recent_messages", "user_profile"]
 
 performance_targets:
-  context_preparation_ms: 75        # Tighter than 100ms default
-  response_generation_ms: 2000      # 2-second response target
-  total_request_latency_ms: 3000    # End-to-end target
+  context_preparation_ms: 75 # Tighter than 100ms default
+  response_generation_ms: 2000 # 2-second response target
+  total_request_latency_ms: 3000 # End-to-end target
 ```
 
 **Batch Processing Support**:
@@ -442,10 +443,10 @@ Handle multiple related messages efficiently:
 ```yaml
 batch_processing:
   enabled: true
-  max_batch_size: 5               # Process up to 5 related messages
-  batch_timeout_ms: 500           # Wait 500ms to form batches
-  batch_similar_requests: true    # Group similar request types
-  parallel_processing: false      # Process batch sequentially
+  max_batch_size: 5 # Process up to 5 related messages
+  batch_timeout_ms: 500 # Wait 500ms to form batches
+  batch_similar_requests: true # Group similar request types
+  parallel_processing: false # Process batch sequentially
 ```
 
 ## Best Practices for Integration

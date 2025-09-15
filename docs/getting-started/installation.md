@@ -184,11 +184,11 @@ No external dependencies required:
 memory:
   backend: embedded
   embedded:
-    database_path: "./caxton.db"          # SQLite database location
-    embedding_model: "all-MiniLM-L6-v2"  # Local embedding model (~23MB)
-    max_entities: 100000                  # Scaling limit
-    cleanup_interval: 1h                  # Automatic cleanup
-    semantic_threshold: 0.6               # Similarity threshold
+    database_path: "./caxton.db" # SQLite database location
+    embedding_model: "all-MiniLM-L6-v2" # Local embedding model (~23MB)
+    max_entities: 100000 # Scaling limit
+    cleanup_interval: 1h # Automatic cleanup
+    semantic_threshold: 0.6 # Similarity threshold
 ```
 
 **Performance characteristics**:

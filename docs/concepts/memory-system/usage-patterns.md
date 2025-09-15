@@ -174,16 +174,16 @@ memory:
   settings:
     temporal_policies:
       facts:
-        decay_rate: "slow"     # Facts remain relevant longer
+        decay_rate: "slow" # Facts remain relevant longer
         boost_recent: false
       preferences:
-        decay_rate: "medium"   # Preferences evolve over time
+        decay_rate: "medium" # Preferences evolve over time
         boost_recent: true
       solutions:
-        decay_rate: "fast"     # Technical solutions become outdated
+        decay_rate: "fast" # Technical solutions become outdated
         boost_recent: true
       patterns:
-        decay_rate: "minimal"  # Patterns are timeless
+        decay_rate: "minimal" # Patterns are timeless
         boost_recent: false
 ```
 
@@ -464,12 +464,12 @@ memory:
   backend: "embedded"
   settings:
     auto_store: true
-    search_threshold: 0.5    # Lower threshold for discovery
-    max_results: 20          # More results for exploration
-    temporal_boost: false    # Equal weight to all knowledge
+    search_threshold: 0.5 # Lower threshold for discovery
+    max_results: 20 # More results for exploration
+    temporal_boost: false # Equal weight to all knowledge
     cache_enabled: true
     cleanup_frequency: "daily"
-    retention_days: 30       # Shorter retention in development
+    retention_days: 30 # Shorter retention in development
 
   debugging:
     log_queries: true
@@ -484,16 +484,16 @@ memory:
 ```yaml
 # prod-memory-config.yaml - Optimized for reliability and performance
 memory:
-  backend: "embedded"  # or external for scale
+  backend: "embedded" # or external for scale
   settings:
     auto_store: true
-    search_threshold: 0.75   # Higher threshold for precision
-    max_results: 10          # Focused results
-    temporal_boost: true     # Prefer recent knowledge
+    search_threshold: 0.75 # Higher threshold for precision
+    max_results: 10 # Focused results
+    temporal_boost: true # Prefer recent knowledge
     cache_enabled: true
     cache_size_mb: 256
     cleanup_frequency: "weekly"
-    retention_days: 365      # Longer retention in production
+    retention_days: 365 # Longer retention in production
 
   security:
     content_filtering: true
@@ -514,18 +514,18 @@ memory:
 # Multi-environment memory strategy
 environments:
   development:
-    memory_scope: "agent-only"    # Isolated experimentation
+    memory_scope: "agent-only" # Isolated experimentation
     sharing: false
     retention: "short"
 
   staging:
-    memory_scope: "workspace"     # Team collaboration testing
+    memory_scope: "workspace" # Team collaboration testing
     sharing: true
     retention: "medium"
     data_sync: "from_dev"
 
   production:
-    memory_scope: "global"        # Organization-wide learning
+    memory_scope: "global" # Organization-wide learning
     sharing: true
     retention: "long"
     backup: "daily"

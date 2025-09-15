@@ -7,7 +7,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-
 ## Status
 
 **Superseded** by [ADR-0028: Configuration-Driven Agent Architecture](0028-configuration-driven-agent-architecture.md)
@@ -107,9 +106,9 @@ deployment:
   strategy: canary
   stages:
     - validate: 30s
-    - canary: 5%    # 5 minutes
-    - canary: 25%   # 10 minutes
-    - canary: 50%   # 10 minutes
+    - canary: 5% # 5 minutes
+    - canary: 25% # 10 minutes
+    - canary: 50% # 10 minutes
     - full: 100%
   rollback_on:
     - error_rate > 1%

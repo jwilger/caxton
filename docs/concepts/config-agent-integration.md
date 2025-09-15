@@ -438,9 +438,9 @@ user_prompt: |
   Please help with this follow-up inquiry using the context above.
 
 context_metadata:
-  conversation_depth: 3                    # 3 previous messages included
+  conversation_depth: 3 # 3 previous messages included
   memory_patterns: ["delivery_issues", "premium_customer_service"]
-  context_preparation_ms: 67               # Sub-100ms target met
+  context_preparation_ms: 67 # Sub-100ms target met
   context_sources: ["conversation", "customer_profile", "order_history"]
 ```
 
@@ -515,10 +515,10 @@ degraded context with clear indicators:
 
 ```yaml
 context_status:
-  preparation_time_ms: 120                 # Exceeded 100ms target
+  preparation_time_ms: 120 # Exceeded 100ms target
   available_sources: ["conversation_history"]
   unavailable_sources: ["memory_patterns", "tool_state"]
-  quality_indicator: "reduced_context"     # Agent knows context is limited
+  quality_indicator: "reduced_context" # Agent knows context is limited
 ```
 
 ## Advanced Integration Patterns

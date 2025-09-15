@@ -25,7 +25,7 @@ location is `/etc/caxton/config.yaml` for production or
 Configuration is loaded in order of precedence:
 
 1. **Command line flags** (highest priority)
-2. **Environment variables** (CAXTON_*)
+2. **Environment variables** (CAXTON\_\*)
 3. **Configuration file** (YAML)
 4. **Default values** (lowest priority)
 
@@ -38,7 +38,7 @@ Configuration is loaded in order of precedence:
 server:
   host: 0.0.0.0
   port: 8080
-  dashboard_enabled: false  # Disable dashboard in production
+  dashboard_enabled: false # Disable dashboard in production
 
 # Embedded memory system (production-ready)
 memory:
@@ -60,12 +60,12 @@ observability:
 ```yaml
 # Server configuration
 server:
-  host: 0.0.0.0              # Bind to all interfaces
-  port: 8080                  # REST API port
-  metrics_port: 9090          # Prometheus metrics port
-  dashboard_enabled: false    # Disable dashboard in production
-  request_timeout: 30s        # Global request timeout
-  shutdown_timeout: 30s       # Graceful shutdown timeout
+  host: 0.0.0.0 # Bind to all interfaces
+  port: 8080 # REST API port
+  metrics_port: 9090 # Prometheus metrics port
+  dashboard_enabled: false # Disable dashboard in production
+  request_timeout: 30s # Global request timeout
+  shutdown_timeout: 30s # Graceful shutdown timeout
 
   # TLS configuration (production requirement)
   tls:
@@ -90,20 +90,20 @@ server:
 
 # Configuration agent runtime
 runtime:
-  max_agents: 5000            # Maximum concurrent config agents
-  agent_timeout: 30s          # Default message handling timeout
-  enable_hot_reload: true     # Allow agent config hot-reloading
-  conversation_cleanup: 24h   # Clean up old conversations
-  max_memory_per_agent: 1GB   # Memory limit per agent
-  cpu_limit_per_agent: 100m   # CPU limit per agent
+  max_agents: 5000 # Maximum concurrent config agents
+  agent_timeout: 30s # Default message handling timeout
+  enable_hot_reload: true # Allow agent config hot-reloading
+  conversation_cleanup: 24h # Clean up old conversations
+  max_memory_per_agent: 1GB # Memory limit per agent
+  cpu_limit_per_agent: 100m # CPU limit per agent
 
 # LLM Provider Configuration
 llm:
-  provider: "anthropic"       # openai|anthropic|azure|local|custom
-  default_model: "claude-3-sonnet-20240229"  # Production model
-  fallback_model: "claude-3-haiku-20240307"  # Backup model
-  timeout: 30s                # LLM request timeout
-  retry_attempts: 3           # Retry failed requests
+  provider: "anthropic" # openai|anthropic|azure|local|custom
+  default_model: "claude-3-sonnet-20240229" # Production model
+  fallback_model: "claude-3-haiku-20240307" # Backup model
+  timeout: 30s # LLM request timeout
+  retry_attempts: 3 # Retry failed requests
 
   # Anthropic Configuration (Production)
   anthropic:
@@ -123,48 +123,48 @@ llm:
 
 # Memory system configuration
 memory:
-  backend: embedded           # embedded|neo4j|qdrant
+  backend: embedded # embedded|neo4j|qdrant
 
   # Embedded backend settings (Production)
   embedded:
     database_path: "/var/lib/caxton/memory.db"
     embedding_model: "all-MiniLM-L6-v2"
-    max_entities: 500000      # Production scaling limit
-    cleanup_interval: 1h      # Memory cleanup frequency
-    semantic_threshold: 0.6   # Minimum similarity for semantic search
-    backup_interval: 24h      # Automatic backup frequency
-    vacuum_interval: 7d       # SQLite optimization frequency
-    page_size: 4096          # SQLite page size optimization
-    cache_size: -2000000     # SQLite cache size (2GB)
+    max_entities: 500000 # Production scaling limit
+    cleanup_interval: 1h # Memory cleanup frequency
+    semantic_threshold: 0.6 # Minimum similarity for semantic search
+    backup_interval: 24h # Automatic backup frequency
+    vacuum_interval: 7d # SQLite optimization frequency
+    page_size: 4096 # SQLite page size optimization
+    cache_size: -2000000 # SQLite cache size (2GB)
 
 # Agent messaging configuration
 messaging:
-  max_message_size: 10MB      # Maximum message size
-  queue_size: 50000           # Message queue size
-  delivery_timeout: 10s       # Message delivery timeout
-  conversation_ttl: 7d        # Conversation lifetime
-  enable_message_persistence: true  # Store message history
-  message_retention: 30d      # How long to keep messages
+  max_message_size: 10MB # Maximum message size
+  queue_size: 50000 # Message queue size
+  delivery_timeout: 10s # Message delivery timeout
+  conversation_ttl: 7d # Conversation lifetime
+  enable_message_persistence: true # Store message history
+  message_retention: 30d # How long to keep messages
 
   capability_routing:
-    strategy: "best_match"    # best_match|load_balance|broadcast
-    timeout: 10s              # Capability resolution timeout
+    strategy: "best_match" # best_match|load_balance|broadcast
+    timeout: 10s # Capability resolution timeout
     health_check_interval: 30s # Agent health check frequency
-    load_balancing_algorithm: "round_robin"  # round_robin|least_connections|weighted
+    load_balancing_algorithm: "round_robin" # round_robin|least_connections|weighted
 
 # Capability registry
 capabilities:
-  discovery_interval: 30s     # How often to refresh capability registry
+  discovery_interval: 30s # How often to refresh capability registry
   health_check_interval: 60s # How often to check agent health
-  auto_cleanup: true          # Remove unhealthy agents from registry
-  max_capabilities_per_agent: 20  # Limit capabilities per agent
+  auto_cleanup: true # Remove unhealthy agents from registry
+  max_capabilities_per_agent: 20 # Limit capabilities per agent
 
 # Security configuration
 security:
   # Authentication
   authentication:
     enabled: true
-    method: "jwt"             # jwt|api_key|oauth2
+    method: "jwt" # jwt|api_key|oauth2
     jwt_secret: "${JWT_SECRET}"
     jwt_expiry: 24h
     refresh_token_expiry: 7d
@@ -192,9 +192,9 @@ security:
 # Tool integration (MCP servers in WASM sandbox)
 tools:
   sandbox_memory_limit: 100MB # Memory limit for tool execution
-  sandbox_cpu_limit: 100m     # CPU limit for tool execution
-  sandbox_timeout: 30s        # Tool execution timeout
-  max_concurrent_tools: 50    # Maximum concurrent tool executions
+  sandbox_cpu_limit: 100m # CPU limit for tool execution
+  sandbox_timeout: 30s # Tool execution timeout
+  max_concurrent_tools: 50 # Maximum concurrent tool executions
 
   # Whitelist of allowed tools (security)
   allowed_tools:
@@ -220,12 +220,12 @@ tools:
 observability:
   # Logging
   logging:
-    level: info               # trace|debug|info|warn|error
-    format: json              # json|text (use json for production)
+    level: info # trace|debug|info|warn|error
+    format: json # json|text (use json for production)
     file: "/var/log/caxton/caxton.log"
-    max_size: 100MB           # Log file rotation
-    max_files: 10             # Keep 10 rotated files
-    compress: true            # Compress rotated files
+    max_size: 100MB # Log file rotation
+    max_files: 10 # Keep 10 rotated files
+    compress: true # Compress rotated files
 
     # Structured logging fields
     structured_fields:
@@ -237,7 +237,7 @@ observability:
   metrics:
     enabled: true
     prometheus_endpoint: "/metrics"
-    custom_metrics: true      # Track agent-specific metrics
+    custom_metrics: true # Track agent-specific metrics
     histogram_buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10]
 
     # Metric labels
@@ -249,7 +249,7 @@ observability:
   tracing:
     enabled: true
     service_name: "caxton"
-    sample_rate: 0.1          # Sample 10% of traces
+    sample_rate: 0.1 # Sample 10% of traces
 
     # Jaeger configuration
     jaeger:
@@ -265,9 +265,9 @@ observability:
 
 # Clustering (coordination-first architecture)
 cluster:
-  enabled: true               # Enable clustering
-  node_name: "caxton-1"       # Unique node identifier
-  bind_port: 7946             # SWIM protocol port
+  enabled: true # Enable clustering
+  node_name: "caxton-1" # Unique node identifier
+  bind_port: 7946 # SWIM protocol port
   advertise_addr: "10.0.1.10" # Address other nodes use to reach this node
 
   # Seed nodes for cluster formation
@@ -277,16 +277,16 @@ cluster:
     - "caxton-3:7946"
 
   # SWIM protocol configuration
-  gossip_interval: 1s         # Gossip protocol interval
-  probe_interval: 5s          # Node health probe interval
-  probe_timeout: 3s           # Probe timeout
-  suspect_timeout: 10s        # Time before marking node as suspect
+  gossip_interval: 1s # Gossip protocol interval
+  probe_interval: 5s # Node health probe interval
+  probe_timeout: 3s # Probe timeout
+  suspect_timeout: 10s # Time before marking node as suspect
 
   # Coordination settings
   coordination:
-    leader_election: false    # No leader needed (coordination-first)
-    state_sync_interval: 30s  # Sync agent state between nodes
-    conflict_resolution: "timestamp"  # timestamp|node_priority
+    leader_election: false # No leader needed (coordination-first)
+    state_sync_interval: 30s # Sync agent state between nodes
+    conflict_resolution: "timestamp" # timestamp|node_priority
 
 # Performance tuning
 performance:
@@ -299,28 +299,28 @@ performance:
 
   # Memory management
   memory:
-    gc_target_percentage: 100  # Go GC target
-    max_heap_size: 4GB        # Maximum heap size
+    gc_target_percentage: 100 # Go GC target
+    max_heap_size: 4GB # Maximum heap size
 
   # Concurrency
   concurrency:
-    max_workers: 100          # Maximum worker goroutines
-    queue_size: 10000         # Work queue size
-    batch_size: 50            # Batch processing size
+    max_workers: 100 # Maximum worker goroutines
+    queue_size: 10000 # Work queue size
+    batch_size: 50 # Batch processing size
 
 # Data retention
 retention:
-  conversations: 30d          # Keep conversations for 30 days
-  messages: 30d               # Keep messages for 30 days
-  metrics: 15d                # Keep metrics for 15 days
-  logs: 7d                    # Keep logs for 7 days
-  memory_entities: 1y         # Keep memory entities for 1 year
+  conversations: 30d # Keep conversations for 30 days
+  messages: 30d # Keep messages for 30 days
+  metrics: 15d # Keep metrics for 15 days
+  logs: 7d # Keep logs for 7 days
+  memory_entities: 1y # Keep memory entities for 1 year
 
   # Cleanup schedules
   cleanup_schedule:
-    conversations: "0 2 * * *"  # Daily at 2 AM
-    metrics: "0 3 * * 0"        # Weekly on Sunday at 3 AM
-    logs: "0 4 * * *"           # Daily at 4 AM
+    conversations: "0 2 * * *" # Daily at 2 AM
+    metrics: "0 3 * * 0" # Weekly on Sunday at 3 AM
+    logs: "0 4 * * *" # Daily at 4 AM
 ```
 
 ## Environment-Specific Configurations
@@ -332,32 +332,32 @@ retention:
 server:
   host: localhost
   port: 8080
-  dashboard_enabled: true     # Enable dashboard for development
+  dashboard_enabled: true # Enable dashboard for development
 
 runtime:
   llm_provider: "anthropic"
-  llm_model: "claude-3-haiku"  # Faster, cheaper model for dev
+  llm_model: "claude-3-haiku" # Faster, cheaper model for dev
   enable_hot_reload: true
 
 memory:
   backend: embedded
   embedded:
     database_path: "./dev.db"
-    max_entities: 10000       # Smaller limit for development
+    max_entities: 10000 # Smaller limit for development
 
 observability:
   logging:
-    level: debug              # Verbose logging for development
-    format: text              # Human-readable logs
+    level: debug # Verbose logging for development
+    format: text # Human-readable logs
     file: "./caxton.log"
   tracing:
-    enabled: false            # Disable tracing in dev
+    enabled: false # Disable tracing in dev
 
 security:
   authentication:
-    enabled: false            # Disable auth in development
+    enabled: false # Disable auth in development
   rate_limiting:
-    enabled: false            # Disable rate limiting in dev
+    enabled: false # Disable rate limiting in dev
 ```
 
 ### Staging Environment
@@ -367,17 +367,17 @@ security:
 server:
   host: 0.0.0.0
   port: 8080
-  dashboard_enabled: true     # Enable dashboard for testing
+  dashboard_enabled: true # Enable dashboard for testing
 
 runtime:
   llm_provider: "anthropic"
-  llm_model: "claude-3-sonnet"  # Production model for realistic testing
+  llm_model: "claude-3-sonnet" # Production model for realistic testing
 
 memory:
   backend: embedded
   embedded:
     database_path: "/var/lib/caxton-staging/memory.db"
-    max_entities: 100000      # Realistic dataset size
+    max_entities: 100000 # Realistic dataset size
 
 observability:
   logging:
@@ -385,14 +385,14 @@ observability:
     format: json
     file: "/var/log/caxton-staging/caxton.log"
   tracing:
-    enabled: true             # Test tracing in staging
+    enabled: true # Test tracing in staging
 
 security:
   authentication:
-    enabled: true             # Test auth in staging
+    enabled: true # Test auth in staging
   rate_limiting:
     enabled: true
-    requests_per_minute: 500  # More permissive than production
+    requests_per_minute: 500 # More permissive than production
 ```
 
 ### Production Environment
@@ -402,7 +402,7 @@ security:
 server:
   host: 0.0.0.0
   port: 8080
-  dashboard_enabled: false    # Disable dashboard in production
+  dashboard_enabled: false # Disable dashboard in production
   tls:
     enabled: true
     cert_path: /etc/caxton/tls/cert.pem
@@ -414,7 +414,7 @@ runtime:
   llm_model: "claude-3-sonnet"
 
 memory:
-  backend: embedded           # or external backend for clustering
+  backend: embedded # or external backend for clustering
   embedded:
     database_path: "/var/lib/caxton/memory.db"
     max_entities: 500000
@@ -757,9 +757,9 @@ CAXTON_NODE_NAME=caxton-1
 memory:
   embedded:
     # SQLite optimizations
-    page_size: 4096           # Optimal page size
-    cache_size: -2000000      # 2GB cache
-    vacuum_interval: 7d       # Regular optimization
+    page_size: 4096 # Optimal page size
+    cache_size: -2000000 # 2GB cache
+    vacuum_interval: 7d # Regular optimization
 
     # Embedding optimizations
     embedding_batch_size: 100
@@ -775,9 +775,9 @@ memory:
 ```yaml
 performance:
   concurrency:
-    max_workers: 200          # Based on CPU cores
-    queue_size: 20000         # Based on memory
-    batch_size: 100           # Optimize for throughput
+    max_workers: 200 # Based on CPU cores
+    queue_size: 20000 # Based on memory
+    batch_size: 100 # Optimize for throughput
 
   connection_pool:
     max_idle_connections: 200
@@ -792,7 +792,7 @@ messaging:
   capability_routing:
     load_balancing_algorithm: "least_connections"
     health_check_interval: 15s
-    load_threshold: 0.8       # Route to agent when under 80% load
+    load_threshold: 0.8 # Route to agent when under 80% load
 
   # Circuit breaker
   circuit_breaker:
@@ -852,14 +852,14 @@ observability:
 ```yaml
 memory:
   embedded:
-    backup_interval: 24h      # Daily automated backups
-    backup_retention: 30d     # Keep 30 days of backups
+    backup_interval: 24h # Daily automated backups
+    backup_retention: 30d # Keep 30 days of backups
     backup_path: "/backup/caxton"
     backup_compression: true
 
     # Point-in-time recovery
-    wal_mode: true            # Enable WAL mode
-    checkpoint_interval: 1h   # Frequent checkpoints
+    wal_mode: true # Enable WAL mode
+    checkpoint_interval: 1h # Frequent checkpoints
 ```
 
 ### Backup Script Integration

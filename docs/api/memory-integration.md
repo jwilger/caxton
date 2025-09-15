@@ -320,17 +320,13 @@ Traverse the memory graph starting from a specific entity.
         "entity_name": "Sales_Report_Q3_2024",
         "entity_type": "report",
         "depth": 0,
-        "observations": [
-          "Q3 2024 sales increased 15% compared to Q3 2023"
-        ]
+        "observations": ["Q3 2024 sales increased 15% compared to Q3 2023"]
       },
       {
         "entity_name": "Electronics_Category_Analysis",
         "entity_type": "analysis",
         "depth": 1,
-        "observations": [
-          "Electronics category drove 40% of Q3 growth"
-        ]
+        "observations": ["Electronics category drove 40% of Q3 growth"]
       },
       {
         "entity_name": "Customer_Feedback_Q3",
@@ -754,19 +750,19 @@ Real-time memory events:
 
 ```typescript
 interface MemoryEntity {
-  entity_id: string;            // Unique entity identifier
-  entity_name: string;          // Entity name within scope
-  entity_type: string;          // Entity classification
-  observations: string[];       // Text observations about entity
+  entity_id: string; // Unique entity identifier
+  entity_name: string; // Entity name within scope
+  entity_type: string; // Entity classification
+  observations: string[]; // Text observations about entity
   metadata?: Record<string, any>; // Structured metadata
-  memory_scope: MemoryScope;    // Memory sharing scope
-  agent_id: string;            // Agent that created entity
-  created_at: string;          // ISO 8601 creation timestamp
-  updated_at: string;          // ISO 8601 last update timestamp
-  valid_from?: string;         // ISO 8601 validity start
-  valid_to?: string;           // ISO 8601 validity end
-  version: number;             // Entity version number
-  embedding?: number[];        // Vector embedding (if requested)
+  memory_scope: MemoryScope; // Memory sharing scope
+  agent_id: string; // Agent that created entity
+  created_at: string; // ISO 8601 creation timestamp
+  updated_at: string; // ISO 8601 last update timestamp
+  valid_from?: string; // ISO 8601 validity start
+  valid_to?: string; // ISO 8601 validity end
+  version: number; // Entity version number
+  embedding?: number[]; // Vector embedding (if requested)
 }
 ```
 
@@ -774,18 +770,18 @@ interface MemoryEntity {
 
 ```typescript
 interface MemoryRelation {
-  relation_id: string;         // Unique relation identifier
-  from_entity: string;         // Source entity name
-  to_entity: string;           // Target entity name
-  relation_type: string;       // Relationship classification
-  strength: number;            // Relationship strength (0.0-1.0)
-  confidence: number;          // Confidence in relationship (0.0-1.0)
+  relation_id: string; // Unique relation identifier
+  from_entity: string; // Source entity name
+  to_entity: string; // Target entity name
+  relation_type: string; // Relationship classification
+  strength: number; // Relationship strength (0.0-1.0)
+  confidence: number; // Confidence in relationship (0.0-1.0)
   metadata?: Record<string, any>; // Additional relation metadata
-  memory_scope: MemoryScope;   // Memory sharing scope
-  created_by: string;          // Agent that created relation
-  created_at: string;          // ISO 8601 creation timestamp
-  updated_at: string;          // ISO 8601 last update timestamp
-  bidirectional: boolean;      // Whether relation works both ways
+  memory_scope: MemoryScope; // Memory sharing scope
+  created_by: string; // Agent that created relation
+  created_at: string; // ISO 8601 creation timestamp
+  updated_at: string; // ISO 8601 last update timestamp
+  bidirectional: boolean; // Whether relation works both ways
 }
 ```
 
@@ -793,15 +789,15 @@ interface MemoryRelation {
 
 ```typescript
 interface SearchResult {
-  entity_id: string;           // Entity identifier
-  entity_name: string;         // Entity name
-  entity_type: string;         // Entity classification
-  similarity_score: number;    // Semantic similarity (0.0-1.0)
-  observations: string[];      // Matching observations
+  entity_id: string; // Entity identifier
+  entity_name: string; // Entity name
+  entity_type: string; // Entity classification
+  similarity_score: number; // Semantic similarity (0.0-1.0)
+  observations: string[]; // Matching observations
   metadata?: Record<string, any>; // Entity metadata
-  relations?: RelationInfo[];  // Related entities (if requested)
-  created_at: string;          // Entity creation timestamp
-  agent_id: string;           // Entity creator
+  relations?: RelationInfo[]; // Related entities (if requested)
+  created_at: string; // Entity creation timestamp
+  agent_id: string; // Entity creator
 }
 ```
 
@@ -853,7 +849,6 @@ capabilities:
   - customer-analysis
   - insight-generation
 ---
-
 # Customer Insight Analyzer
 
 I analyze customer data and maintain insights over time.
@@ -866,26 +861,27 @@ retrieves relevant historical insights for context.
 
 ```javascript
 // Store analysis results in memory
-const response = await fetch('/api/v1/memory/entities', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/v1/memory/entities", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    agent_id: 'config-customer-analyzer',
-    entity_name: 'Customer_Segment_Analysis_Q3',
-    entity_type: 'analysis',
+    agent_id: "config-customer-analyzer",
+    entity_name: "Customer_Segment_Analysis_Q3",
+    entity_type: "analysis",
     observations: [
-      'Premium customers show 23% higher retention than standard tier',
-      'Mobile app usage correlates strongly with customer satisfaction',
-      'Support ticket volume decreased 15% after onboarding improvements'
+      "Premium customers show 23% higher retention than standard tier",
+      "Mobile app usage correlates strongly with customer satisfaction",
+      "Support ticket volume decreased 15% after onboarding improvements",
     ],
-    memory_scope: 'workspace'
-  })
+    memory_scope: "workspace",
+  }),
 });
 
 // Search for relevant context before responding
 const searchResponse = await fetch(
-  `/api/v1/memory/search?agent_id=config-customer-analyzer&query=${
-  encodeURIComponent('customer retention mobile app')}&limit=5`
+  `/api/v1/memory/search?agent_id=config-customer-analyzer&query=${encodeURIComponent(
+    "customer retention mobile app",
+  )}&limit=5`,
 );
 const { results } = await searchResponse.json();
 ```
@@ -894,18 +890,18 @@ const { results } = await searchResponse.json();
 
 ```javascript
 // Create relationship between analysis and supporting data
-await fetch('/api/v1/memory/relations', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+await fetch("/api/v1/memory/relations", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    agent_id: 'config-customer-analyzer',
-    from_entity: 'Customer_Segment_Analysis_Q3',
-    to_entity: 'Mobile_App_Usage_Data',
-    relation_type: 'supported_by',
+    agent_id: "config-customer-analyzer",
+    from_entity: "Customer_Segment_Analysis_Q3",
+    to_entity: "Mobile_App_Usage_Data",
+    relation_type: "supported_by",
     strength: 0.9,
     confidence: 0.95,
-    memory_scope: 'workspace'
-  })
+    memory_scope: "workspace",
+  }),
 });
 ```
 

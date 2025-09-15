@@ -26,9 +26,8 @@ in 5-10 minutes, eliminating compilation complexity.
 name: DataAnalyzer
 capabilities: [data-analysis, report-generation]
 tools: [http_client, csv_parser, chart_generator]
-memory: {enabled: true, scope: workspace}
+memory: { enabled: true, scope: workspace }
 ---
-
 # DataAnalyzer Agent
 
 This agent specializes in data analysis and can fetch data from HTTP
@@ -460,22 +459,22 @@ caxton server start
 
 ```yaml
 # docker-compose.yml - Single service needed
-version: '3.8'
+version: "3.8"
 services:
   caxton-server:
     image: caxton/caxton:latest
     ports:
-      - "8080:8080"    # REST API
-      - "9090:9090"    # Metrics
+      - "8080:8080" # REST API
+      - "9090:9090" # Metrics
     volumes:
       - ./agents:/var/lib/caxton/agents:ro
-      - caxton-data:/var/lib/caxton  # Only volume needed
+      - caxton-data:/var/lib/caxton # Only volume needed
     healthcheck:
       test: ["CMD", "caxton", "health"]
       interval: 30s
 
 volumes:
-  caxton-data:  # Contains SQLite DB and embeddings
+  caxton-data: # Contains SQLite DB and embeddings
 ```
 
 ### Enterprise Scaling
@@ -484,7 +483,7 @@ For deployments requiring > 100K entities:
 
 ```yaml
 environment:
-  - CAXTON_MEMORY_BACKEND=neo4j  # or qdrant
+  - CAXTON_MEMORY_BACKEND=neo4j # or qdrant
   - NEO4J_URI=bolt://neo4j:7687
   # Migration preserves data through JSON export/import
 ```

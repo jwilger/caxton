@@ -320,15 +320,15 @@ Conversations automatically timeout to prevent memory leaks:
 ```yaml
 # System configuration for conversation timeouts
 conversation_timeouts:
-  inactive_timeout: "24h"     # No messages for 24 hours
-  max_lifetime: "7d"          # Maximum conversation duration
-  cleanup_interval: "1h"      # How often to check for expired conversations
+  inactive_timeout: "24h" # No messages for 24 hours
+  max_lifetime: "7d" # Maximum conversation duration
+  cleanup_interval: "1h" # How often to check for expired conversations
 
   # Custom timeouts by capability
   capability_timeouts:
-    urgent-support: "2h"      # Customer support conversations
-    data-analysis: "12h"      # Data processing workflows
-    project-planning: "7d"    # Long-term planning discussions
+    urgent-support: "2h" # Customer support conversations
+    data-analysis: "12h" # Data processing workflows
+    project-planning: "7d" # Long-term planning discussions
 ```
 
 Agents can extend conversation timeouts when needed:

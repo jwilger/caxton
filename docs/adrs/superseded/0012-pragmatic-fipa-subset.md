@@ -7,7 +7,6 @@ layout: adr
 categories: [Architecture]
 ---
 
-
 ## Status
 
 **Superseded** by

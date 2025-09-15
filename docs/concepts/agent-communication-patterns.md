@@ -5,7 +5,6 @@ layout: page
 categories: [Patterns]
 ---
 
-
 ## Introduction
 
 This catalog documents common agent interaction patterns in Caxton, providing
@@ -20,7 +19,7 @@ Each pattern includes implementation examples, use cases, and best practices.
 4. **Workflow Patterns** - Complex task orchestration
 5. **Resilience Patterns** - Error handling and recovery
 
-______________________________________________________________________
+---
 
 ## 1. Basic Patterns
 
@@ -140,7 +139,7 @@ ______________________________________________________________________
 - Knowledge base lookups
 - Status inquiries
 
-______________________________________________________________________
+---
 
 ## 2. Coordination Patterns
 
@@ -285,7 +284,7 @@ impl Blackboard {
 - Shared state management
 - Knowledge accumulation
 
-______________________________________________________________________
+---
 
 ## 3. Negotiation Patterns
 
@@ -372,7 +371,7 @@ pub fn negotiate(initial_offer: Offer) -> Result<Agreement> {
 }
 ```
 
-______________________________________________________________________
+---
 
 ## 4. Workflow Patterns
 
@@ -485,7 +484,7 @@ impl Saga {
 }
 ```
 
-______________________________________________________________________
+---
 
 ## 5. Resilience Patterns
 
@@ -596,7 +595,7 @@ impl Bulkhead {
 }
 ```
 
-______________________________________________________________________
+---
 
 ## Pattern Composition
 

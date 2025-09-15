@@ -21,28 +21,25 @@ authentication and resource protection.
 6. **Operational Security**
 7. **Compliance & Governance**
 
-______________________________________________________________________
+---
 
 ## 1. WebAssembly Sandbox Security
 
 ### Isolation Verification
 
 - [ ] **Memory Isolation**
-
   - [ ] Verify linear memory bounds checking
   - [ ] Confirm no shared memory between agents
   - [ ] Test memory growth limits enforcement
   - [ ] Validate stack overflow protection
 
 - [ ] **Capability Restrictions**
-
   - [ ] No filesystem access outside sandbox
   - [ ] No network access without explicit permission
   - [ ] No system call access
   - [ ] No process spawning capability
 
 - [ ] **Resource Limits**
-
   - [ ] CPU time limits enforced
   - [ ] Memory limits enforced (default: 100MB)
   - [ ] Stack size limits enforced
@@ -86,19 +83,16 @@ pub fn verify_wasm_module(module: &[u8]) -> SecurityAuditResult {
 ### Sandbox Escape Testing
 
 - [ ] **Known CVE Testing**
-
   - [ ] Test against known WebAssembly CVEs
   - [ ] Verify patches for Spectre/Meltdown
   - [ ] Test bounds checking bypass attempts
 
 - [ ] **Fuzzing**
-
   - [ ] Fuzz WASM module loader
   - [ ] Fuzz host function interfaces
   - [ ] Fuzz memory operations
 
 - [ ] **Resource Exhaustion**
-
   - [ ] Test infinite loop handling
   - [ ] Test memory bomb prevention
   - [ ] Test stack overflow handling
@@ -108,21 +102,18 @@ pub fn verify_wasm_module(module: &[u8]) -> SecurityAuditResult {
 ### Authentication Mechanisms
 
 - [ ] **API Key Management**
-
   - [ ] Keys stored securely (never in code)
   - [ ] Key rotation implemented
   - [ ] Key revocation functional
   - [ ] Rate limiting per key
 
 - [ ] **JWT/Token Validation**
-
   - [ ] Signature verification
   - [ ] Expiration checking
   - [ ] Audience validation
   - [ ] Issuer verification
 
 - [ ] **mTLS Implementation**
-
   - [ ] Certificate validation
   - [ ] Certificate revocation checking
   - [ ] Proper cipher suite selection
@@ -150,14 +141,12 @@ authorization_matrix:
 ```
 
 - [ ] **RBAC Implementation**
-
   - [ ] Role definitions documented
   - [ ] Least privilege principle enforced
   - [ ] Role assignment audited
   - [ ] Permission inheritance correct
 
 - [ ] **API Endpoint Security**
-
   - [ ] All endpoints require authentication
   - [ ] Sensitive operations require additional auth
   - [ ] CORS properly configured
@@ -182,14 +171,12 @@ pub const SECURITY_HEADERS: &[(&str, &str)] = &[
 ### Rate Limiting
 
 - [ ] **Request Rate Limiting**
-
   - [ ] Per-IP rate limiting
   - [ ] Per-user rate limiting
   - [ ] Per-endpoint rate limiting
   - [ ] Distributed rate limiting (Redis)
 
 - [ ] **Resource Quotas**
-
   - [ ] Max agents per user
   - [ ] Max messages per second
   - [ ] Max storage per user
@@ -210,14 +197,12 @@ pub struct DosProtection {
 ```
 
 - [ ] **Connection Limits**
-
   - [ ] Max concurrent connections enforced
   - [ ] Connection timeout configured
   - [ ] Slow loris protection
   - [ ] SYN flood protection
 
 - [ ] **Request Validation**
-
   - [ ] Max request size enforced
   - [ ] Max header size enforced
   - [ ] Request timeout enforced
@@ -228,14 +213,12 @@ pub struct DosProtection {
 ### Encryption
 
 - [ ] **Data at Rest**
-
   - [ ] Database encryption enabled
   - [ ] File system encryption
   - [ ] Backup encryption
   - [ ] Key management system (KMS) integrated
 
 - [ ] **Data in Transit**
-
   - [ ] TLS for all external communication
   - [ ] TLS for internal services
   - [ ] Certificate pinning where appropriate
@@ -262,14 +245,12 @@ pub fn audit_sensitive_data(data: &str) -> Vec<SensitiveDataMatch> {
 ```
 
 - [ ] **PII Protection**
-
   - [ ] PII identification automated
   - [ ] PII encryption enforced
   - [ ] PII access logged
   - [ ] PII retention policies enforced
 
 - [ ] **Secrets Management**
-
   - [ ] No hardcoded secrets
   - [ ] Environment variables used properly
   - [ ] Secrets rotation implemented
@@ -278,14 +259,12 @@ pub fn audit_sensitive_data(data: &str) -> Vec<SensitiveDataMatch> {
 ### GDPR Compliance
 
 - [ ] **Data Subject Rights**
-
   - [ ] Right to access implemented
   - [ ] Right to deletion implemented
   - [ ] Right to portability implemented
   - [ ] Consent management system
 
 - [ ] **Data Processing**
-
   - [ ] Lawful basis documented
   - [ ] Data minimization enforced
   - [ ] Purpose limitation enforced
@@ -316,14 +295,12 @@ network_zones:
 ```
 
 - [ ] **Zone Isolation**
-
   - [ ] Firewall rules configured
   - [ ] Network ACLs in place
   - [ ] Security groups properly configured
   - [ ] Private subnets for internal services
 
 - [ ] **Traffic Control**
-
   - [ ] Ingress rules minimized
   - [ ] Egress filtering enabled
   - [ ] Inter-zone communication restricted
@@ -332,14 +309,12 @@ network_zones:
 ### Communication Security
 
 - [ ] **Service Mesh Security**
-
   - [ ] mTLS between services
   - [ ] Service authentication
   - [ ] Traffic encryption
   - [ ] Circuit breakers configured
 
 - [ ] **Message Queue Security**
-
   - [ ] Queue authentication required
   - [ ] Message encryption
   - [ ] Access control lists
@@ -372,14 +347,12 @@ impl SecurityEvent {
 ```
 
 - [ ] **Security Logging**
-
   - [ ] Authentication events logged
   - [ ] Authorization failures logged
   - [ ] Configuration changes logged
   - [ ] Data access logged
 
 - [ ] **Log Security**
-
   - [ ] Logs encrypted in transit
   - [ ] Logs encrypted at rest
   - [ ] Log tampering detection
@@ -388,14 +361,12 @@ impl SecurityEvent {
 ### Incident Response
 
 - [ ] **Incident Response Plan**
-
   - [ ] Response team identified
   - [ ] Escalation procedures documented
   - [ ] Communication plan established
   - [ ] Recovery procedures tested
 
 - [ ] **Security Monitoring**
-
   - [ ] Real-time threat detection
   - [ ] Anomaly detection configured
   - [ ] Alert fatigue minimized
@@ -404,14 +375,12 @@ impl SecurityEvent {
 ### Patch Management
 
 - [ ] **Vulnerability Management**
-
   - [ ] Regular vulnerability scanning
   - [ ] Dependency scanning automated
   - [ ] CVE monitoring active
   - [ ] Patch testing procedures
 
 - [ ] **Update Procedures**
-
   - [ ] Security update SLA defined
   - [ ] Emergency patch process
   - [ ] Rollback procedures tested
@@ -422,14 +391,12 @@ impl SecurityEvent {
 ### Security Policies
 
 - [ ] **Documentation**
-
   - [ ] Security policy documented
   - [ ] Acceptable use policy
   - [ ] Data classification policy
   - [ ] Incident response policy
 
 - [ ] **Training & Awareness**
-
   - [ ] Security training program
   - [ ] Phishing awareness training
   - [ ] Secure coding training
@@ -460,14 +427,12 @@ compliance_requirements:
 ```
 
 - [ ] **Regulatory Compliance**
-
   - [ ] GDPR requirements met
   - [ ] CCPA requirements met
   - [ ] Industry-specific regulations
   - [ ] Data residency requirements
 
 - [ ] **Audit Trail**
-
   - [ ] Complete audit logging
   - [ ] Audit log integrity
   - [ ] Regular audit reviews
@@ -500,14 +465,12 @@ nikto -h https://caxton.example.com
 ### Security Scanning
 
 - [ ] **Static Analysis (SAST)**
-
   - [ ] Code scanning enabled
   - [ ] Secret scanning enabled
   - [ ] Dependency scanning enabled
   - [ ] License compliance scanning
 
 - [ ] **Dynamic Analysis (DAST)**
-
   - [ ] API security testing
   - [ ] Web application scanning
   - [ ] Container scanning

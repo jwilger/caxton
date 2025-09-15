@@ -4,7 +4,8 @@ date: 2025-01-15
 layout: page
 categories: [Audiences, Agent Developers]
 audience: agent-developers
-description: "Build intelligent agents and MCP tools for the Caxton platform with
+description:
+  "Build intelligent agents and MCP tools for the Caxton platform with
   best practices, testing strategies, and production deployment patterns."
 ---
 
@@ -94,35 +95,35 @@ MCP tools and complex integrations.
 #### MCP Tool Development
 
 1. **[MCP Tool Sandboxing](../../developer-guide/security-guide.md)** (30 min)
-    - WebAssembly security boundaries
-    - Tool capability allowlists
-    - Safe host function integration
+   - WebAssembly security boundaries
+   - Tool capability allowlists
+   - Safe host function integration
 
 2. **[Custom Tool Development](../../api/capability-registration.md)** (30 min)
-    - MCP protocol implementation
-    - Tool registration and lifecycle
-    - Testing sandboxed tools
+   - MCP protocol implementation
+   - Tool registration and lifecycle
+   - Testing sandboxed tools
 
 ### 🚀 Production Deployment (1 hour)
 
 Professional deployment, testing, and monitoring.
 
 1. **[Testing Strategies](../../developer-guide/testing.md)** (20 min)
-    - Unit testing configuration agents
-    - Integration testing with MCP tools
-    - Performance and load testing
+   - Unit testing configuration agents
+   - Integration testing with MCP tools
+   - Performance and load testing
 
 2. **[Deployment Patterns](../../operations/agent-lifecycle-management.md)**
    (20 min)
-    - Blue-green deployments for agents
-    - Canary releases and rollback strategies
-    - Hot-reload vs full deployment
+   - Blue-green deployments for agents
+   - Canary releases and rollback strategies
+   - Hot-reload vs full deployment
 
 3. **[Performance Optimization](../../operations/performance-tuning.md)**
    (20 min)
-    - Memory usage patterns and optimization
-    - Message routing performance
-    - Tool execution efficiency
+   - Memory usage patterns and optimization
+   - Message routing performance
+   - Tool execution efficiency
 
 ## Development Tracks by Focus Area
 
@@ -660,7 +661,7 @@ name: Deploy Caxton Agents
 
 on:
   push:
-    paths: ['agents/**']
+    paths: ["agents/**"]
 
 jobs:
   test-and-deploy:
@@ -701,7 +702,7 @@ jobs:
 
 ### Development Tools and SDKs
 
-- **caxton-cli**: Command-line development and deployment tool
+- **caxton**: Command-line development and deployment tool
 - **caxton-mcp-sdk**: Rust SDK for MCP tool development
 - **caxton-js-sdk**: JavaScript/TypeScript SDK for web integration
 - **caxton-validation**: TOML schema validation for configuration agents

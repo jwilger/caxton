@@ -380,8 +380,8 @@ security_monitoring:
   failed_auth_threshold: 5
   unusual_access_patterns: true
   resource_exhaustion_alerts: true
-  certificate_expiry_warnings: 30  # days
-  vulnerability_scan_schedule: "0 2 * * 1"  # Weekly on Monday
+  certificate_expiry_warnings: 30 # days
+  vulnerability_scan_schedule: "0 2 * * 1" # Weekly on Monday
 ```
 
 ## 8. Compliance & Governance

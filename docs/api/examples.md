@@ -10,7 +10,7 @@ categories: [Configuration, Agents, Examples]
 Complete example of a data analysis agent with CSV processing, statistical
 analysis, and chart generation capabilities.
 
-```toml
+````toml
 name = "data-analyzer"
 version = "1.2.0"
 description = "Analyzes CSV/JSON data and generates insights with visualizations"
@@ -117,7 +117,7 @@ and visualizations for CSV, JSON, and Excel datasets.
 ```text
 Please analyze this sales data: sales_2024.csv
 I want to understand monthly trends and identify top-performing products.
-```
+````
 
 **Detailed Statistical Analysis**:
 
@@ -143,9 +143,9 @@ The agent provides structured analysis with:
 4. **Visualizations**: Charts saved to file storage with descriptions
 5. **Insights**: Key findings in business-friendly language
 6. **Recommendations**: Suggested next steps or follow-up analyses
-'''
+   '''
 
-```toml
+````toml
 
 ## API Integration Agent
 
@@ -229,7 +229,7 @@ transformation capabilities.
 Get customer data from https://api.example.com/customers
 Authentication: Bearer token from environment variable API_TOKEN
 Transform the response to CSV format
-```
+````
 
 **POST Request with Data**:
 
@@ -241,7 +241,7 @@ Data: {"customer_id": 12345, "items": [{"sku": "ABC123", "quantity": 2}]}
 
 '''
 
-```toml
+````toml
 
 ## Content Generator Agent
 
@@ -330,7 +330,7 @@ Audience: Software developers
 Tone: Technical but approachable
 Length: 2000-3000 words
 Include code examples and troubleshooting section.
-```
+````
 
 **Business Report**:
 
@@ -344,7 +344,7 @@ Length: 500-750 words
 
 '''
 
-```toml
+````toml
 
 ## Workflow Coordinator Agent
 
@@ -439,7 +439,7 @@ Create a workflow to process customer feedback data:
 3. Generate executive summary report
 4. Send notifications to relevant stakeholders
 Error handling: Retry failed steps up to 3 times, send alerts on final failure
-```
+````
 
 **Content Publishing Workflow**:
 
@@ -455,7 +455,7 @@ Orchestrate blog post publication process:
 
 '''
 
-```toml
+````toml
 
 ## Monitoring Agent
 
@@ -542,7 +542,7 @@ Monitor web server cluster health:
 - Response time > 5 seconds: WARNING
 - Any 5xx errors: ERROR
 Send alerts to ops-team@company.com with 15-minute escalation to on-call
-```
+````
 
 **Application Performance Monitoring**:
 
@@ -591,3 +591,4 @@ than technical features for better reusability.
 - **Tool Integration**: Understand available tools and their configurations
 - **Template Library**: Explore additional templates for specialized use cases
 - **Migration Guide**: Convert existing WASM agents to configuration format
+```

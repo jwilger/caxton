@@ -68,10 +68,10 @@ preferences without micromanaging the system.
 memory:
   context_preparation:
     enabled: true
-    max_context_length: 6000      # Reasonable context window
-    relevance_threshold: 0.7      # Good relevance balance
-    conversation_focus: "recent"   # Prioritize recent exchanges
-    memory_relevance: "high"      # Only highly relevant memories
+    max_context_length: 6000 # Reasonable context window
+    relevance_threshold: 0.7 # Good relevance balance
+    conversation_focus: "recent" # Prioritize recent exchanges
+    memory_relevance: "high" # Only highly relevant memories
 ```
 
 ## Configuration Design Patterns - **Intermediate**
@@ -92,7 +92,6 @@ tools:
   - statistical_analyzer
   - chart_generator
 ---
-
 # ❌ Bad: Multiple responsibilities
 ---
 name: everything-agent
@@ -117,7 +116,6 @@ version: "1.0.0"
 capabilities: ["data_analysis"]
 tools: ["csv_reader"]
 ---
-
 # Version 1.1: Add visualization
 ---
 name: data-analyzer
@@ -125,7 +123,6 @@ version: "1.1.0"
 capabilities: ["data_analysis", "visualization"]
 tools: ["csv_reader", "chart_generator"]
 ---
-
 # Version 2.0: Add automation
 ---
 name: data-analyzer
@@ -147,24 +144,23 @@ Use different configurations for different environments:
 name: data-analyzer-dev
 llm:
   provider: openai
-  model: gpt-3.5-turbo  # Cheaper for development
+  model: gpt-3.5-turbo # Cheaper for development
   temperature: 0.3
 permissions:
-  file_access: readwrite  # More permissive for testing
+  file_access: readwrite # More permissive for testing
 development:
   hot_reload: true
   debug_mode: true
 ---
-
 # production.yaml
 ---
 name: data-analyzer
 llm:
   provider: openai
-  model: gpt-4  # More capable for production
+  model: gpt-4 # More capable for production
   temperature: 0.1
 permissions:
-  file_access: readonly  # More secure
+  file_access: readonly # More secure
 monitoring:
   health_check_interval: "5m"
   performance_tracking: true
@@ -181,6 +177,7 @@ Define the agent's role and expertise clearly:
 
 ```markdown
 # ✅ Good: Specific expertise
+
 # Senior Financial Analyst
 
 You are a senior financial analyst with 10+ years of experience in
@@ -192,6 +189,7 @@ corporate finance and data analysis. You specialize in:
 - Performance metrics calculation
 
 # ❌ Bad: Vague role
+
 # Helpful Assistant
 
 You are a helpful assistant who can analyze data and answer questions.
@@ -203,6 +201,7 @@ Use clear, numbered instructions:
 
 ```markdown
 # ✅ Good: Clear structure
+
 ## Analysis Process
 
 1. **Data Validation**
@@ -221,6 +220,7 @@ Use clear, numbered instructions:
    - Provide actionable recommendations
 
 # ❌ Bad: Unclear instructions
+
 Analyze the data and provide insights. Look for trends and patterns.
 Tell me what's important.
 ```
@@ -234,6 +234,7 @@ Provide clear examples of expected interactions:
 
 **Input**: CSV file with columns: date, revenue, customers, region
 **Process**:
+
 1. Load and validate CSV structure
 2. Calculate monthly growth rates
 3. Analyze regional performance
@@ -257,6 +258,7 @@ Recommendations:
 3. Focus customer acquisition efforts
 
 ```text
+
 ```
 
 ## Tool Usage Best Practices - **Intermediate**
@@ -291,16 +293,16 @@ Configure tools appropriately for your use case:
 tools:
   - name: csv_reader
     config:
-      max_file_size: 10MB     # Appropriate limit
-      encoding: utf-8         # Standard encoding
-      delimiter: ","          # Standard delimiter
+      max_file_size: 10MB # Appropriate limit
+      encoding: utf-8 # Standard encoding
+      delimiter: "," # Standard delimiter
 
   - name: chart_generator
     config:
-      default_format: png     # Good for web
-      max_width: 800         # Reasonable size
+      default_format: png # Good for web
+      max_width: 800 # Reasonable size
       max_height: 600
-      dpi: 150               # Good quality/size balance
+      dpi: 150 # Good quality/size balance
 ```
 
 ### 3. Error Handling
@@ -371,7 +373,7 @@ Be explicit about sensitive data:
 ```yaml
 audit:
   log_operations: true
-  log_sensitive_data: false    # Don't log PII
+  log_sensitive_data: false # Don't log PII
 
 # In instructions:
 ```
@@ -417,13 +419,13 @@ Configure memory for optimal performance:
 ```yaml
 memory:
   enabled: true
-  retention_period: "30d"     # Keep relevant context
-  max_entries: 1000          # Reasonable limit
+  retention_period: "30d" # Keep relevant context
+  max_entries: 1000 # Reasonable limit
 
   context_preparation:
     enabled: true
-    max_context_length: 6000  # Efficient context window
-    relevance_threshold: 0.8  # High relevance only
+    max_context_length: 6000 # Efficient context window
+    relevance_threshold: 0.8 # High relevance only
 ```
 
 ### 3. Caching Strategies
@@ -608,6 +610,7 @@ Iterate based on usage data:
 
 ```markdown
 # Don't micromanage every detail
+
 You are a data analyst. First, you need to check if the file exists,
 then validate the format, then read line by line, then check each
 column, then calculate statistics, then generate a chart, then...
@@ -617,9 +620,21 @@ column, then calculate statistics, then generate a chart, then...
 
 ```yaml
 # Don't include tools you don't need
-tools: [csv_reader, excel_reader, json_processor, xml_parser,
-        pdf_generator, email_sender, slack_notifier, twitter_api,
-        database_connector, file_uploader, image_processor, ...]
+tools:
+  [
+    csv_reader,
+    excel_reader,
+    json_processor,
+    xml_parser,
+    pdf_generator,
+    email_sender,
+    slack_notifier,
+    twitter_api,
+    database_connector,
+    file_uploader,
+    image_processor,
+    ...,
+  ]
 ```
 
 ### 3. Hardcoded Values
@@ -629,15 +644,17 @@ tools: [csv_reader, excel_reader, json_processor, xml_parser,
 tools:
   - name: database_connector
     config:
-      host: "prod-db-01.company.com"  # Should be environment variable
-      username: "admin"               # Should be secure
+      host: "prod-db-01.company.com" # Should be environment variable
+      username: "admin" # Should be secure
 ```
 
 ### 4. Poor Error Handling
 
 ```markdown
 # Don't ignore error scenarios
+
 Analyze the CSV file and generate a report.
+
 # What if file is corrupted? Network is down? Wrong format?
 ```
 

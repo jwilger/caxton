@@ -93,7 +93,6 @@ memory:
   enabled: true
   scope: workspace
 ---
-
 # DataHelper Agent
 
 I help analyze data from various sources!
@@ -131,21 +130,21 @@ Agents remember successful interactions:
 
 ### vs. Traditional Agent Frameworks
 
-| Traditional | Caxton |
-|-------------|---------|
-| Hours of toolchain setup | 5-10 minute onboarding |
-| Agent-to-agent coupling | Capability-based routing |
-| External databases required | Zero-dependency embedded memory |
-| Complex compilation required | Markdown + YAML configuration |
+| Traditional                  | Caxton                          |
+| ---------------------------- | ------------------------------- |
+| Hours of toolchain setup     | 5-10 minute onboarding          |
+| Agent-to-agent coupling      | Capability-based routing        |
+| External databases required  | Zero-dependency embedded memory |
+| Complex compilation required | Markdown + YAML configuration   |
 
 ### vs. LangChain/CrewAI
 
-| Framework Approach | Caxton Approach |
-|-------------------|-----------------|
-| Python orchestration scripts | Server process with REST API |
-| No built-in persistence | Embedded memory with semantic search |
-| Manual agent coordination | Structured agent message protocols |
-| Development-only tools | Production-ready with observability |
+| Framework Approach           | Caxton Approach                      |
+| ---------------------------- | ------------------------------------ |
+| Python orchestration scripts | Server process with REST API         |
+| No built-in persistence      | Embedded memory with semantic search |
+| Manual agent coordination    | Structured agent message protocols   |
+| Development-only tools       | Production-ready with observability  |
 
 ## Common Experiment Patterns
 

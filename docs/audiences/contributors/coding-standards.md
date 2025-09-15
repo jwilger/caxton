@@ -94,7 +94,7 @@ cargo fmt --check
 
 ### Documentation Formatting
 
-```rust
+````rust
 /// Brief description of the function.
 ///
 /// Longer description explaining the purpose, behavior, and any important
@@ -131,7 +131,7 @@ pub async fn route_message(
 ) -> Result<(), RoutingError> {
     // Implementation
 }
-```
+````
 
 ## Linting Standards with Clippy
 
@@ -535,7 +535,7 @@ pub async fn deploy_agent(
 
 **Public APIs require comprehensive documentation:**
 
-```rust
+````rust
 /// Routes an agent message to the appropriate agent based on capability.
 ///
 /// This function implements capability-based routing where messages target
@@ -578,7 +578,7 @@ pub async fn route_message(
 ) -> Result<(), RoutingError> {
     // Implementation...
 }
-```
+````
 
 ### Architecture Documentation
 

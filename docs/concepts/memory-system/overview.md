@@ -45,10 +45,10 @@ The memory system models knowledge using two fundamental building blocks:
 
 **Relationships**: Typed connections between entities
 
-- "Solution A *implements* Pattern B"
-- "Concept X *relates_to* Problem Y"
-- "User *prefers* Approach Z"
-- "Error *caused_by* Configuration Issue"
+- "Solution A _implements_ Pattern B"
+- "Concept X _relates_to_ Problem Y"
+- "User _prefers_ Approach Z"
+- "Error _caused_by_ Configuration Issue"
 
 This graph-like structure enables agents to follow conceptual connections and
 build contextual understanding from interconnected knowledge.
@@ -215,9 +215,9 @@ memory:
   enabled: true
   scope: workspace
   settings:
-    auto_store: true          # Automatically save successful patterns
-    search_threshold: 0.7     # Minimum semantic similarity
-    max_results: 10          # Context window management
+    auto_store: true # Automatically save successful patterns
+    search_threshold: 0.7 # Minimum semantic similarity
+    max_results: 10 # Context window management
 ```
 
 ### Context Management Integration

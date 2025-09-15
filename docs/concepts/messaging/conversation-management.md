@@ -41,10 +41,10 @@ that show the flow of request and response:
 
 ```yaml
 # Initial request
-reply_with: "req_analysis_001"         # "Reply to this message"
+reply_with: "req_analysis_001" # "Reply to this message"
 
 # Response message
-in_reply_to: "req_analysis_001"        # "This responds to your request"
+in_reply_to: "req_analysis_001" # "This responds to your request"
 ```
 
 **Thread Benefits**:
@@ -297,10 +297,10 @@ content: |
 
 ```yaml
 conversation_timeouts:
-  customer_support: "2 hours"      # Quick resolution expected
-  data_analysis: "8 hours"         # Complex analysis takes time
-  project_planning: "7 days"       # Long-term collaboration
-  system_incidents: "1 hour"       # Urgent response needed
+  customer_support: "2 hours" # Quick resolution expected
+  data_analysis: "8 hours" # Complex analysis takes time
+  project_planning: "7 days" # Long-term collaboration
+  system_incidents: "1 hour" # Urgent response needed
 ```
 
 **Grace Period Handling**:

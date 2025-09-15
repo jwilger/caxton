@@ -10,15 +10,15 @@ production with the embedded, zero-dependency architecture (ADRs 28-30).
 
 ## Quick Reference
 
-| Situation | Command | Page |
-|-----------|---------|------|
-| Server not responding | `curl http://localhost:8080/api/v1/health` | [Health Checks](#health-checks) |
-| Deploy config agent | Create TOML file in agents/ | [Config Agent Deployment](#config-agent-deployment) |
-| List agents | `curl /api/v1/agents` | [Agent Management](#agent-management) |
-| Memory performance | `caxton memory stats` | [Memory Optimization](#memory-performance) |
-| Backup embedded data | `caxton backup --embedded` | [Backup Procedures](#backup-procedures) |
-| Hot-reload config | `caxton reload --agent <name>` | [Config Agent Operations](#config-agent-operations) |
-| Emergency stop | `caxton shutdown` | [Emergency Procedures](#emergency-procedures) |
+| Situation             | Command                                    | Page                                                |
+| --------------------- | ------------------------------------------ | --------------------------------------------------- |
+| Server not responding | `curl http://localhost:8080/api/v1/health` | [Health Checks](#health-checks)                     |
+| Deploy config agent   | Create TOML file in agents/                | [Config Agent Deployment](#config-agent-deployment) |
+| List agents           | `curl /api/v1/agents`                      | [Agent Management](#agent-management)               |
+| Memory performance    | `caxton memory stats`                      | [Memory Optimization](#memory-performance)          |
+| Backup embedded data  | `caxton backup --embedded`                 | [Backup Procedures](#backup-procedures)             |
+| Hot-reload config     | `caxton reload --agent <name>`             | [Config Agent Operations](#config-agent-operations) |
+| Emergency stop        | `caxton shutdown`                          | [Emergency Procedures](#emergency-procedures)       |
 
 ## Core Operations
 
@@ -157,13 +157,13 @@ deploy_config_agent "data-analyzer" "agents/data-analyzer.md"
 
 #### Common Config Agent Deployment Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| TOML Parse Error | Invalid TOML syntax | Validate TOML structure |
-| Missing Required Field | name, capabilities missing | Add required TOML fields |
-| Invalid Tool Reference | Unknown tool in tools list | Check available tools with `caxton tools list` |
-| Capability Conflict | Agent name conflicts with existing | Choose unique agent name |
-| File Not Found | Agent file path incorrect | Verify file exists in agents/ directory |
+| Error                  | Cause                              | Solution                                       |
+| ---------------------- | ---------------------------------- | ---------------------------------------------- |
+| TOML Parse Error       | Invalid TOML syntax                | Validate TOML structure                        |
+| Missing Required Field | name, capabilities missing         | Add required TOML fields                       |
+| Invalid Tool Reference | Unknown tool in tools list         | Check available tools with `caxton tools list` |
+| Capability Conflict    | Agent name conflicts with existing | Choose unique agent name                       |
+| File Not Found         | Agent file path incorrect          | Verify file exists in agents/ directory        |
 
 ### Agent Management
 
@@ -815,14 +815,14 @@ caxton storage analyze --show-indexes --show-fragmentation
 
 ### Common Issues (Embedded Architecture)
 
-| Symptom | Likely Cause | Solution |
-|---------|--------------|----------|
-| Config agents not loading | TOML syntax error | Run `caxton agents validate-all` |
-| Slow memory searches | SQLite fragmentation | Run `caxton memory optimize --vacuum` |
-| High memory usage | Embedding cache full | Run `caxton memory cache-clear` |
-| Server won't start | Data corruption | Run `caxton storage verify --repair` |
-| Agent hot-reload fails | File permissions | Check write access to agents/ directory |
-| Performance degraded | Approaching capacity limits | Check `caxton memory capacity-check` |
+| Symptom                   | Likely Cause                | Solution                                |
+| ------------------------- | --------------------------- | --------------------------------------- |
+| Config agents not loading | TOML syntax error           | Run `caxton agents validate-all`        |
+| Slow memory searches      | SQLite fragmentation        | Run `caxton memory optimize --vacuum`   |
+| High memory usage         | Embedding cache full        | Run `caxton memory cache-clear`         |
+| Server won't start        | Data corruption             | Run `caxton storage verify --repair`    |
+| Agent hot-reload fails    | File permissions            | Check write access to agents/ directory |
+| Performance degraded      | Approaching capacity limits | Check `caxton memory capacity-check`    |
 
 ## Best Practices (Embedded Architecture)
 

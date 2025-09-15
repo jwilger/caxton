@@ -368,7 +368,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 2 * * *'  # Nightly performance tests
+    - cron: "0 2 * * *" # Nightly performance tests
 
 jobs:
   benchmark:
@@ -382,7 +382,7 @@ jobs:
       - name: Performance Report
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          tool: 'caxton-benchmark'
+          tool: "caxton-benchmark"
           output-file-path: benchmark-results.json
 ```
 
@@ -436,7 +436,7 @@ slos:
     deployment_p95: 2.5s
     retrieval_p99: 250ms
     success_rate: 99.5%
-    alert_threshold: 5m  # Alert if SLO breached for 5+ minutes
+    alert_threshold: 5m # Alert if SLO breached for 5+ minutes
 
   memory_system:
     search_p95: 50ms

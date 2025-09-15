@@ -516,11 +516,13 @@ pub fn process_message_zero_copy(data: &[u8]) -> Result<()> {
 
 ```markdown
 # Performance Benchmark Report
+
 Date: 2025-01-15
 Commit: abc123def
 Environment: Production-like
 
 ## Summary
+
 - ✅ All performance targets met
 - ⚠️ 2 minor regressions detected
 - 📈 15% improvement in throughput
@@ -528,22 +530,25 @@ Environment: Production-like
 ## Detailed Results
 
 ### Throughput
-| Metric | Baseline | Current | Change |
-|--------|----------|---------|--------|
-| Messages/sec | 85,000 | 97,750 | +15% |
-| Tasks/sec | 12,000 | 11,800 | -1.7% |
+
+| Metric       | Baseline | Current | Change |
+| ------------ | -------- | ------- | ------ |
+| Messages/sec | 85,000   | 97,750  | +15%   |
+| Tasks/sec    | 12,000   | 11,800  | -1.7%  |
 
 ### Latency
+
 | Percentile | Baseline | Current | Change |
-|------------|----------|---------|--------|
-| p50 | 0.8ms | 0.7ms | -12.5% |
-| p99 | 9.2ms | 10.1ms | +9.8% |
+| ---------- | -------- | ------- | ------ |
+| p50        | 0.8ms    | 0.7ms   | -12.5% |
+| p99        | 9.2ms    | 10.1ms  | +9.8%  |
 
 ### Resource Usage
-| Resource | Baseline | Current | Change |
-|----------|----------|---------|--------|
-| Memory/agent | 8.5MB | 8.2MB | -3.5% |
-| CPU/agent | 4.2% | 4.0% | -4.8% |
+
+| Resource     | Baseline | Current | Change |
+| ------------ | -------- | ------- | ------ |
+| Memory/agent | 8.5MB    | 8.2MB   | -3.5%  |
+| CPU/agent    | 4.2%     | 4.0%    | -4.8%  |
 ```
 
 ## Monitoring Production Performance
@@ -579,31 +584,26 @@ impl ProductionMonitor {
 ## Best Practices
 
 1. **Benchmark Early and Often**
-
    - Run benchmarks on every commit
    - Track performance over time
    - Set up alerts for regressions
 
 2. **Use Representative Workloads**
-
    - Model real production patterns
    - Include edge cases
    - Test failure scenarios
 
 3. **Isolate Variables**
-
    - Control environment
    - Minimize noise
    - Run multiple iterations
 
 4. **Profile Before Optimizing**
-
    - Identify actual bottlenecks
    - Measure impact of changes
    - Avoid premature optimization
 
 5. **Document Performance Characteristics**
-
    - Known limitations
    - Scaling boundaries
    - Optimization opportunities

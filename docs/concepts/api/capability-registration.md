@@ -267,7 +267,6 @@ capability_metadata:
     supported_formats: ["csv", "json", "xlsx"]
     max_file_size: "10MB"
 ---
-
 Process data files and generate insights.
 ```
 
@@ -306,8 +305,8 @@ await updateCapability({
   metadata: {
     ...existingMetadata,
     current_load: systemLoad,
-    available_memory: getAvailableMemory()
-  }
+    available_memory: getAvailableMemory(),
+  },
 });
 ```
 
@@ -395,9 +394,9 @@ const message = {
   capability: "data-analysis", // Instead of receiver: "agent-id"
   content: {
     action: "analyze_sales_data",
-    data: salesDataset
+    data: salesDataset,
   },
-  conversation_id: "sales-analysis-001"
+  conversation_id: "sales-analysis-001",
 };
 ```
 
@@ -412,7 +411,7 @@ await storeMemory({
   capability: "data-analysis",
   provider: "DataAnalyzer-v2",
   performance: "excellent",
-  context: "sales_reporting_workflow"
+  context: "sales_reporting_workflow",
 });
 ```
 
@@ -433,7 +432,6 @@ capability_metadata:
     template_support: true
     charts: true
 ---
-
 Generate comprehensive reports with charts and visualizations.
 ```
 
@@ -479,6 +477,6 @@ observability tools
 
 - [ADR-0011: Capability Registration in Code](../../adrs/0011-capability-registration-in-code.md)
   - Core capability registration patterns
-  Original capability registration approach
+    Original capability registration approach
 - [Performance Specifications](performance-specifications.md) - Performance
   requirements for capability routing

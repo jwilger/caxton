@@ -544,17 +544,17 @@ The system tracks performance metrics for capability providers:
 
 ```typescript
 interface CapabilityRegistration {
-  registration_id: string;       // Unique registration identifier
-  agent_id: string;             // Agent providing the capability
-  capability: string;           // Capability name
-  version: string;              // Capability version
-  priority: number;             // Routing priority (0-1000)
-  status: RegistrationStatus;   // Current status
+  registration_id: string; // Unique registration identifier
+  agent_id: string; // Agent providing the capability
+  capability: string; // Capability name
+  version: string; // Capability version
+  priority: number; // Routing priority (0-1000)
+  status: RegistrationStatus; // Current status
   metadata: Record<string, any>; // Capability-specific metadata
-  health_check_url?: string;    // Health check endpoint
-  registered_at: string;        // ISO 8601 registration timestamp
-  last_updated: string;         // ISO 8601 last update timestamp
-  last_health_check: string;    // ISO 8601 last health check
+  health_check_url?: string; // Health check endpoint
+  registered_at: string; // ISO 8601 registration timestamp
+  last_updated: string; // ISO 8601 last update timestamp
+  last_health_check: string; // ISO 8601 last health check
 }
 ```
 
@@ -575,7 +575,7 @@ interface CapabilityProvider {
   version: string;
   priority: number;
   status: RegistrationStatus;
-  routing_score: number;        // Calculated routing preference score
+  routing_score: number; // Calculated routing preference score
   metadata?: Record<string, any>;
   performance_metrics: PerformanceMetrics;
   health: HealthStatus;
@@ -611,20 +611,20 @@ External systems can register capabilities via API:
 
 ```javascript
 // Register capability for external agent
-const response = await fetch('/api/v1/capabilities', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/v1/capabilities", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    agent_id: 'external-python-analyzer',
-    capability: 'data-analysis',
+    agent_id: "external-python-analyzer",
+    capability: "data-analysis",
     priority: 90,
     metadata: {
-      supported_formats: ['csv', 'parquet', 'arrow'],
-      max_file_size: '1GB',
-      processing_time: 'medium'
+      supported_formats: ["csv", "parquet", "arrow"],
+      max_file_size: "1GB",
+      processing_time: "medium",
     },
-    health_check_url: 'https://analyzer.example.com/health'
-  })
+    health_check_url: "https://analyzer.example.com/health",
+  }),
 });
 ```
 
@@ -633,15 +633,15 @@ const response = await fetch('/api/v1/capabilities', {
 ```javascript
 // Find agents that can handle image processing
 const response = await fetch(
-  '/api/v1/capabilities/image-processing?routing_strategy=fastest_response'
+  "/api/v1/capabilities/image-processing?routing_strategy=fastest_response",
 );
 const { providers } = await response.json();
 
 // Route request to best provider
 const bestProvider = providers[0];
 const result = await sendAgentMessage(bestProvider.agent_id, {
-  performative: 'REQUEST',
-  content: { action: 'resize_image', params: { width: 800, height: 600 } }
+  performative: "REQUEST",
+  content: { action: "resize_image", params: { width: 800, height: 600 } },
 });
 ```
 

@@ -57,7 +57,6 @@ user_prompt_template: |
   Analyze: {{request}}
   Context: {{context}}
 ---
-
 # DataAnalyzer Agent
 
 Documentation content here...

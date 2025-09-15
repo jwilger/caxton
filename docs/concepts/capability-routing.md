@@ -120,7 +120,6 @@ capabilities:
 tools:
   - message_client
 ---
-
 # Outgoing message structure
 performative: REQUEST
 capability: data-analysis
@@ -218,9 +217,9 @@ Capabilities can evolve over time with backward compatibility:
 ---
 name: ModernAnalyzer
 capabilities:
-  - data-analysis:v1.0    # Legacy support
-  - data-analysis:v2.0    # Current version
-  - advanced-analytics:v1.0  # New capability
+  - data-analysis:v1.0 # Legacy support
+  - data-analysis:v2.0 # Current version
+  - advanced-analytics:v1.0 # New capability
 ---
 ```
 
@@ -281,7 +280,7 @@ capabilities:
   - data-extraction
   - data-analysis
   - report-generation
-coordination_mode: pipeline  # sequential execution
+coordination_mode: pipeline # sequential execution
 conversation_id: conv_composite_001
 content: "Generate comprehensive sales report from CRM data"
 ```
@@ -346,9 +345,9 @@ agent_registration:
     - sales-reporting:v2.0
     - trend-forecasting:v1.0
   context_capabilities:
-    conversation_continuity: excellent     # Maintains thread context well
-    memory_integration: good               # Uses historical patterns
-    context_window_size: large             # 32k tokens
+    conversation_continuity: excellent # Maintains thread context well
+    memory_integration: good # Uses historical patterns
+    context_window_size: large # 32k tokens
     domain_specializations:
       - "sales_trends"
       - "customer_segmentation"
@@ -377,9 +376,9 @@ content: |
 
 routing_preferences:
   strategy: context_continuity
-  context_weight: 0.8                     # High preference for context continuity
-  performance_weight: 0.2                 # Lower weight for pure performance
-  same_agent_preference: true             # Prefer agent from earlier messages
+  context_weight: 0.8 # High preference for context continuity
+  performance_weight: 0.2 # Lower weight for pure performance
+  same_agent_preference: true # Prefer agent from earlier messages
 ```
 
 **Specialization-Context Matching:**
@@ -426,10 +425,10 @@ content: |
 routing_preferences:
   strategy: context_optimized
   context_requirements:
-    conversation_depth: 15               # Deep conversation history
-    memory_search_results: 20            # Extensive historical patterns
-    cross_conversation_refs: 3           # Reference other conversations
-  minimum_context_window: 24000          # Require large context window
+    conversation_depth: 15 # Deep conversation history
+    memory_search_results: 20 # Extensive historical patterns
+    cross_conversation_refs: 3 # Reference other conversations
+  minimum_context_window: 24000 # Require large context window
 ```
 
 ### Context Router Integration Flow
@@ -506,10 +505,10 @@ capabilities:
   - sales-reporting
   - chart-generation
 context_configuration:
-  conversation_memory: 10                 # Remember 10 previous messages
-  domain_memory_search: true              # Use semantic search for patterns
-  cross_conversation_refs: true           # Can reference other conversations
-  context_window_preference: large        # Prefer detailed context
+  conversation_memory: 10 # Remember 10 previous messages
+  domain_memory_search: true # Use semantic search for patterns
+  cross_conversation_refs: true # Can reference other conversations
+  context_window_preference: large # Prefer detailed context
   specialization_keywords:
     - "sales trends"
     - "revenue analysis"

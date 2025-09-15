@@ -582,11 +582,13 @@ documentation.
 ## Changelog
 
 ### v1.2.0 (2025-09-10)
+
 - Added support for Excel file processing
 - Improved error handling for malformed CSV files
 - Updated statistical analysis to include confidence intervals
 
 ### v1.1.0 (2025-09-01)
+
 - Added chart generation capabilities
 - Enhanced data quality validation
 - Optimized memory usage for large datasets

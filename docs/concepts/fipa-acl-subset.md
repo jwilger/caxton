@@ -70,7 +70,6 @@ capability: data-analysis
 conversation_id: conv_analysis_001
 reply_with: req_forecast_001
 content: "Generate Q4 sales forecast based on current trends"
-
 # 2. Context Router Analysis
 # - Identifies target capability: data-analysis
 # - Extracts conversation thread: conv_analysis_001
@@ -120,7 +119,7 @@ content: |
 
 # Context Router Processing:
 context_requirements:
-  conversation_depth: 3    # Last 3 messages in thread
+  conversation_depth: 3 # Last 3 messages in thread
   memory_search:
     query_template: "budget analysis variance {{department}}"
     max_results: 5
@@ -182,24 +181,24 @@ Standard agent messages are enhanced with context metadata:
 ```yaml
 # Core Agent Message Fields
 performative: REQUEST | INFORM | QUERY | PROPOSE | ACCEPT_PROPOSAL |
-              REJECT_PROPOSAL | FAILURE | NOT_UNDERSTOOD
+  REJECT_PROPOSAL | FAILURE | NOT_UNDERSTOOD
 capability: target-capability-name
 conversation_id: unique-conversation-identifier
-reply_with: unique-message-identifier      # Optional
-in_reply_to: previous-message-identifier   # Optional
+reply_with: unique-message-identifier # Optional
+in_reply_to: previous-message-identifier # Optional
 content: "Natural language message content"
 
 # Context Integration Fields
 context_hints:
-  conversation_depth: number               # Messages to include in context
-  memory_relevance: high | medium | low    # Semantic search priority
-  tool_context_required: boolean           # Whether tool data needed
-  capability_metadata: boolean             # Include capability information
+  conversation_depth: number # Messages to include in context
+  memory_relevance: high | medium | low # Semantic search priority
+  tool_context_required: boolean # Whether tool data needed
+  capability_metadata: boolean # Include capability information
 
 # Standard Agent Message Metadata
 protocol: agent-request | agent-inform | agent-query
-language: english                          # Content language
-ontology: caxton-1.0                      # Domain ontology
+language: english # Content language
+ontology: caxton-1.0 # Domain ontology
 ```
 
 ### Context-Aware Message Examples
@@ -222,10 +221,10 @@ content: |
   - Updated forecast based on seasonal adjustments we discussed
 
 context_hints:
-  conversation_depth: 5                    # Include 5 previous messages
-  memory_relevance: high                   # Search for related patterns
-  tool_context_required: true              # Include tool state/preferences
-  capability_metadata: true                # Agent specializations
+  conversation_depth: 5 # Include 5 previous messages
+  memory_relevance: high # Search for related patterns
+  tool_context_required: true # Include tool state/preferences
+  capability_metadata: true # Agent specializations
 
 parameters:
   data_source: "sales_2024_q4_partial.csv"
@@ -273,9 +272,9 @@ agent_registration:
     - budget-planning:v1.0
     - variance-analysis:v1.0
   context_capabilities:
-    conversation_continuity: preferred      # Better with same agent
-    memory_integration: excellent           # Uses historical patterns well
-    context_window_size: large              # Handles more context
+    conversation_continuity: preferred # Better with same agent
+    memory_integration: excellent # Uses historical patterns well
+    context_window_size: large # Handles more context
     specialization_domains:
       - "budget_variance"
       - "financial_forecasting"
@@ -351,7 +350,7 @@ context_status:
   target_time_ms: 100
   available_sources: ["conversation_history"]
   unavailable_sources: ["memory_patterns", "capability_metadata"]
-  quality_score: 0.7                       # Reduced from target 0.9+
+  quality_score: 0.7 # Reduced from target 0.9+
 ```
 
 ## Integration Testing and Validation

@@ -25,6 +25,7 @@ pedantic = { level = "deny", priority = -1 }
 name = "caxton"
 path = "src/main.rs"
 
+
 [lib]
 name = "caxton"
 path = "src/lib.rs"
@@ -34,6 +35,9 @@ path = "src/lib.rs"
 opt-level = 3
 lto = true
 codegen-units = 1
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
 
 [profile.bench]
 inherits = "release"

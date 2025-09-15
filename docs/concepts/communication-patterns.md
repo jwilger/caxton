@@ -185,55 +185,57 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 
    ```json
 
+   ```
+
 {
-  "performative": "cfp",
-  "sender": "manager",
-  "receiver": "broadcast",
-  "content": {
-    "task": "image_processing",
-    "requirements": {
-      "format": "jpeg",
-      "operations": ["resize", "compress"],
-      "deadline": "2024-01-01T10:00:00Z"
-    }
-  },
-  "reply_by": "2024-01-01T09:00:00Z"
+"performative": "cfp",
+"sender": "manager",
+"receiver": "broadcast",
+"content": {
+"task": "image_processing",
+"requirements": {
+"format": "jpeg",
+"operations": ["resize", "compress"],
+"deadline": "2024-01-01T10:00:00Z"
+}
+},
+"reply_by": "2024-01-01T09:00:00Z"
 }
 
-   ```json
+````json
 
 2. **Proposals from Agents**
 
-   ```json
+```json
 {
-  "performative": "propose",
-  "sender": "worker-1",
-  "receiver": "manager",
-  "content": {
-    "bid": {
-      "cost": 10,
-      "estimated_time": 300,
-      "quality_score": 0.95
-    }
-  }
+"performative": "propose",
+"sender": "worker-1",
+"receiver": "manager",
+"content": {
+ "bid": {
+   "cost": 10,
+   "estimated_time": 300,
+   "quality_score": 0.95
+ }
 }
-   ```json
+}
+```json
 
 1. **Accept/Reject Proposals**
 
-   ```json
+```json
 
 {
-  "performative": "accept_proposal",
-  "sender": "manager",
-  "receiver": "worker-1",
-  "content": {
-    "task_id": "task-123",
-    "start_time": "2024-01-01T09:05:00Z"
-  }
+"performative": "accept_proposal",
+"sender": "manager",
+"receiver": "worker-1",
+"content": {
+ "task_id": "task-123",
+ "start_time": "2024-01-01T09:05:00Z"
+}
 }
 
-   ```json
+```json
 
 **Use Cases**:
 
@@ -249,33 +251,33 @@ pub fn subscribe_to_topic(topic: &str, agent_id: AgentId) {
 
 ```rust
 pub struct Blackboard {
-    entries: HashMap<String, BlackboardEntry>,
-    subscriptions: HashMap<String, Vec<AgentId>>,
+ entries: HashMap<String, BlackboardEntry>,
+ subscriptions: HashMap<String, Vec<AgentId>>,
 }
 
 pub struct BlackboardEntry {
-    key: String,
-    value: serde_json::Value,
-    author: AgentId,
-    timestamp: Instant,
-    version: u64,
+ key: String,
+ value: serde_json::Value,
+ author: AgentId,
+ timestamp: Instant,
+ version: u64,
 }
 
 impl Blackboard {
-    pub fn write(&mut self, key: String, value: Value, author: AgentId) {
-        let entry = BlackboardEntry {
-            key: key.clone(),
-            value,
-            author,
-            timestamp: Instant::now(),
-            version: self.next_version(&key),
-        };
+ pub fn write(&mut self, key: String, value: Value, author: AgentId) {
+     let entry = BlackboardEntry {
+         key: key.clone(),
+         value,
+         author,
+         timestamp: Instant::now(),
+         version: self.next_version(&key),
+     };
 
-        self.entries.insert(key.clone(), entry);
-        self.notify_subscribers(&key);
-    }
+     self.entries.insert(key.clone(), entry);
+     self.notify_subscribers(&key);
+ }
 }
-```
+````
 
 **Use Cases**:
 

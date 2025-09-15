@@ -110,7 +110,7 @@ date: YYYY-MM-DD
 status: accepted|proposed|superseded|deprecated
 layout: adr
 categories: [Architecture]
-superseded_by: ADR-NNNN  # Only for superseded ADRs
+superseded_by: ADR-NNNN # Only for superseded ADRs
 ---
 ```
 
@@ -132,6 +132,6 @@ The current accepted ADRs cover these major architectural areas:
 
 ---
 
-*This organization improves the developer experience by keeping current
+_This organization improves the developer experience by keeping current
 architectural decisions prominently visible while preserving historical
-context for understanding the system's evolution.*
+context for understanding the system's evolution._

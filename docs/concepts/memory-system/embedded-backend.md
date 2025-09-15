@@ -332,14 +332,14 @@ Different LLM providers have different context requirements:
 - Complex relationship queries requiring Cypher
 - Need for graph analytics and advanced algorithms
 - Multi-node deployment requirements
-- >1M entities with heavy relationship traversal
+- > 1M entities with heavy relationship traversal
 
 **Qdrant Migration Indicators**:
 
 - High-volume semantic search requirements
 - Need for distributed vector search
 - Advanced filtering and hybrid search needs
-- >500K entities with search-heavy workloads
+- > 500K entities with search-heavy workloads
 
 ### Migration Process
 

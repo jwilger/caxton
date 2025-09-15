@@ -1,6 +1,7 @@
 ---
 title: "Agent Messaging Protocol Concepts"
-description: "Understanding Caxton's lightweight agent messaging implementation for
+description:
+  "Understanding Caxton's lightweight agent messaging implementation for
   standardized agent communication with context-aware routing"
 date: 2025-01-13
 categories: [Concepts, Messaging, Communication]
@@ -166,13 +167,13 @@ content: |
 
 # Context Enhancement Fields
 context_hints:
-  conversation_depth: 3        # Include last 3 messages for context
-  memory_relevance: high       # Search memory for related patterns
-  tool_context_required: true  # Include relevant tool configurations
+  conversation_depth: 3 # Include last 3 messages for context
+  memory_relevance: high # Search memory for related patterns
+  tool_context_required: true # Include relevant tool configurations
 
 # Performance Fields
-priority: normal              # Message processing priority
-timeout_ms: 30000            # Maximum processing time
+priority: normal # Message processing priority
+timeout_ms: 30000 # Maximum processing time
 expected_response_size: medium # Help with resource allocation
 ```
 
@@ -347,11 +348,11 @@ clarification_needed:
 ```yaml
 # Message performance metrics
 message_metrics:
-  context_preparation_ms: 75      # Within 100ms target
-  routing_decision_ms: 3          # Within 5ms target
-  total_processing_ms: 1250       # End-to-end timing
-  context_utilization: 0.87       # 87% of context window used
-  response_quality_score: 0.92    # User satisfaction metric
+  context_preparation_ms: 75 # Within 100ms target
+  routing_decision_ms: 3 # Within 5ms target
+  total_processing_ms: 1250 # End-to-end timing
+  context_utilization: 0.87 # 87% of context window used
+  response_quality_score: 0.92 # User satisfaction metric
 ```
 
 ### Optimized Message Routing

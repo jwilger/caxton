@@ -760,78 +760,78 @@ spec:
         runAsUser: 65534
         fsGroup: 65534
       containers:
-      - name: message-router
-        image: caxton/message-router:v0.1.3
-        imagePullPolicy: IfNotPresent
-        ports:
-        - name: http
-          containerPort: 8080
-          protocol: TCP
-        - name: metrics
-          containerPort: 8081
-          protocol: TCP
-        - name: gossip
-          containerPort: 7946
-          protocol: TCP
-        env:
-        - name: CAXTON_NODE_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: CAXTON_CLUSTER_SEEDS
-          value: "caxton-message-router-0.caxton-message-router:7946,\
-                  caxton-message-router-1.caxton-message-router:7946"
-        - name: RUST_LOG
-          value: "caxton=info,caxton::message_router=debug"
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://jaeger-collector:14268"
-        resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
-            cpu: 2000m
-            memory: 4Gi
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: metrics
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: metrics
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
-        volumeMounts:
-        - name: config
-          mountPath: /etc/caxton
-          readOnly: true
-        - name: data
-          mountPath: /var/lib/caxton
-        - name: logs
-          mountPath: /var/log/caxton
+        - name: message-router
+          image: caxton/message-router:v0.1.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
+            - name: gossip
+              containerPort: 7946
+              protocol: TCP
+          env:
+            - name: CAXTON_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CAXTON_CLUSTER_SEEDS
+              value: "caxton-message-router-0.caxton-message-router:7946,\
+                caxton-message-router-1.caxton-message-router:7946"
+            - name: RUST_LOG
+              value: "caxton=info,caxton::message_router=debug"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger-collector:14268"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caxton
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/caxton
+            - name: logs
+              mountPath: /var/log/caxton
       volumes:
-      - name: config
-        configMap:
-          name: caxton-config
-      - name: data
-        persistentVolumeClaim:
-          claimName: caxton-data
-      - name: logs
-        emptyDir: {}
+        - name: config
+          configMap:
+            name: caxton-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: caxton-data
+        - name: logs
+          emptyDir: {}
       nodeSelector:
         kubernetes.io/arch: amd64
       tolerations:
-      - key: "caxton.ai/message-router"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+        - key: "caxton.ai/message-router"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
 
 ---
 apiVersion: v1
@@ -844,15 +844,15 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
-  - name: metrics
-    port: 8081
-    targetPort: 8081
-  - name: gossip
-    port: 7946
-    targetPort: 7946
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+    - name: gossip
+      port: 7946
+      targetPort: 7946
   selector:
     app: caxton-message-router
 
@@ -911,59 +911,61 @@ metadata:
   namespace: caxton-system
 spec:
   groups:
-  - name: caxton.message-router
-    rules:
-    - alert: CaxtonMessageRouterDown
-      expr: up{job="caxton-message-router"} == 0
-      for: 1m
-      labels:
-        severity: critical
-      annotations:
-        summary: "Caxton Message Router is down"
-        description: "Message Router instance {{ $labels.instance }} has been \
-                      down for more than 1 minute."
+    - name: caxton.message-router
+      rules:
+        - alert: CaxtonMessageRouterDown
+          expr: up{job="caxton-message-router"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Caxton Message Router is down"
+            description:
+              "Message Router instance {{ $labels.instance }} has been \
+              down for more than 1 minute."
 
-    - alert: CaxtonHighMessageLatency
-      expr: caxton_message_routing_duration_p99 > 0.005  # 5ms
-      for: 2m
-      labels:
-        severity: warning
-      annotations:
-        summary: "High message routing latency"
-        description: "P99 message routing latency is {{ $value }}s on \
-                      {{ $labels.instance }}"
+        - alert: CaxtonHighMessageLatency
+          expr: caxton_message_routing_duration_p99 > 0.005 # 5ms
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High message routing latency"
+            description: "P99 message routing latency is {{ $value }}s on \
+              {{ $labels.instance }}"
 
-    - alert: CaxtonHighErrorRate
-      expr: rate(caxton_message_routing_errors_total[5m]) > 0.01  \
+        - alert: CaxtonHighErrorRate
+          expr:
+            rate(caxton_message_routing_errors_total[5m]) > 0.01  \
             # 1% error rate
-      for: 2m
-      labels:
-        severity: critical
-      annotations:
-        summary: "High message routing error rate"
-        description: "Message routing error rate is \
-                      {{ $value | humanizePercentage }} on \
-                      {{ $labels.instance }}"
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High message routing error rate"
+            description: "Message routing error rate is \
+              {{ $value | humanizePercentage }} on \
+              {{ $labels.instance }}"
 
-    - alert: CaxtonQueueDepthHigh
-      expr: caxton_message_queue_depth > 10000
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "High message queue depth"
-        description: "Message queue depth is {{ $value }} on \
-                      {{ $labels.instance }}"
+        - alert: CaxtonQueueDepthHigh
+          expr: caxton_message_queue_depth > 10000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High message queue depth"
+            description: "Message queue depth is {{ $value }} on \
+              {{ $labels.instance }}"
 
-    - alert: CaxtonMemoryUsageHigh
-      expr: caxton_memory_usage_bytes / caxton_memory_limit_bytes > 0.9
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "High memory usage"
-        description: "Memory usage is {{ $value | humanizePercentage }} of \
-                      limit on {{ $labels.instance }}"
+        - alert: CaxtonMemoryUsageHigh
+          expr: caxton_memory_usage_bytes / caxton_memory_limit_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage"
+            description: "Memory usage is {{ $value | humanizePercentage }} of \
+              limit on {{ $labels.instance }}"
 ```
 
 ## Operational Runbooks

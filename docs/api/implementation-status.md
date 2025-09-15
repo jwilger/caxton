@@ -21,15 +21,15 @@ onboarding versus the previous 2-4 hour WASM compilation workflow.
 
 ## Implementation Summary
 
-| Category | Implemented | Planned | Coverage | Priority |
-|----------|------------|---------|----------|----------|
-| Config Agent Management | 0 | 8 | 0% | **HIGH** |
-| Capability Registration | 0 | 4 | 0% | **HIGH** |
-| Memory System Integration | 0 | 5 | 0% | **HIGH** |
-| Configuration Validation | 0 | 3 | 0% | **MEDIUM** |
-| Legacy WASM Management | 4 | 8 | 50% | **LOW** |
-| Agent Messaging API | 0 | 6 | 0% | **MEDIUM** |
-| **Total** | **4** | **34** | **12%** |
+| Category                  | Implemented | Planned | Coverage | Priority   |
+| ------------------------- | ----------- | ------- | -------- | ---------- |
+| Config Agent Management   | 0           | 8       | 0%       | **HIGH**   |
+| Capability Registration   | 0           | 4       | 0%       | **HIGH**   |
+| Memory System Integration | 0           | 5       | 0%       | **HIGH**   |
+| Configuration Validation  | 0           | 3       | 0%       | **MEDIUM** |
+| Legacy WASM Management    | 4           | 8       | 50%      | **LOW**    |
+| Agent Messaging API       | 0           | 6       | 0%       | **MEDIUM** |
+| **Total**                 | **4**       | **34**  | **12%**  |
 
 **Note**: Legacy WASM agent endpoints remain functional but are now secondary.
 Priority focuses on configuration-driven agent capabilities.
@@ -235,19 +235,16 @@ Created (POST requests) | | 400 | Validation errors, malformed requests | | 404
 For teams adopting the current implementation:
 
 1. **Phase 1** (Current): Use for development and testing
-
    - Deploy simple agents via REST API
    - Monitor health via `/api/v1/health`
    - List and inspect deployed agents
 
 2. **Phase 2** (Next): Add authentication layer
-
    - Implement reverse proxy with auth
    - Add API key validation
    - Enable TLS termination
 
 3. **Phase 3** (Future): Full lifecycle management
-
    - Agent updates and removal
    - Hot reload capabilities
    - Message routing APIs

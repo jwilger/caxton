@@ -53,7 +53,7 @@ Recover from single server process failure with embedded data integrity.
 
 #### Implementation
 
-```bash
+````bash
 #!/bin/bash
 # Server process recovery for embedded architecture
 
@@ -533,9 +533,9 @@ EOF
 
     echo "Created minimal configuration for $agent_name"
 }
-```
+````
 
-```text
+````text
 
 ### Pattern 4: Hot-Reload Failure Recovery
 
@@ -682,9 +682,9 @@ recover_from_tool_failure() {
         return 1
     fi
 }
-```
+````
 
-```text
+````text
 
 ### Pattern 5: Embedding Model Recovery
 
@@ -840,9 +840,9 @@ EOF
         return 1
     fi
 }
-```
+````
 
-```text
+````text
 
 ## Recovery Strategies by Scenario (Embedded Architecture)
 
@@ -953,9 +953,9 @@ verify_full_system_recovery() {
     echo "All systems verified healthy after recovery"
     return 0
 }
-```
+````
 
-```text
+````text
 
 ### Scenario 2: Configuration Agent Corruption
 
@@ -1047,9 +1047,9 @@ wait_for_agents_to_load() {
 
     return 1
 }
-```
+````
 
-```text
+````text
 
 ### Scenario 3: Memory System Corruption
 
@@ -1243,9 +1243,9 @@ verify_memory_system_health() {
 
     return 1
 }
-```
+````
 
-```text
+````text
 
 ## Recovery Testing
 
@@ -1294,7 +1294,7 @@ mod recovery_tests {
         assert!(cluster.is_consistent());
     }
 }
-```
+````
 
 ### Recovery Benchmarks
 

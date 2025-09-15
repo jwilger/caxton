@@ -6,7 +6,6 @@ layout: adr
 categories: [Technology]
 ---
 
-
 ## Status
 
 Accepted

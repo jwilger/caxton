@@ -17,16 +17,16 @@ and production deployment tuning.
 
 ### Production SLAs (Embedded Architecture)
 
-| Metric | Target P50 | Target P99 | Critical Threshold |
-|--------|------------|------------|-------------------|
-| Config agent hot reload | 50ms | 200ms | 1s |
-| Memory semantic search | 10ms | 50ms | 200ms |
-| Agent message processing | 100ms | 500ms | 2s |
-| Embedding generation | 5ms | 20ms | 100ms |
-| SQLite query latency | 1ms | 10ms | 50ms |
-| Server startup time | 2s | 5s | 30s |
-| API response time | 50ms | 200ms | 1s |
-| Memory usage baseline | 256MB | 400MB | 1GB |
+| Metric                   | Target P50 | Target P99 | Critical Threshold |
+| ------------------------ | ---------- | ---------- | ------------------ |
+| Config agent hot reload  | 50ms       | 200ms      | 1s                 |
+| Memory semantic search   | 10ms       | 50ms       | 200ms              |
+| Agent message processing | 100ms      | 500ms      | 2s                 |
+| Embedding generation     | 5ms        | 20ms       | 100ms              |
+| SQLite query latency     | 1ms        | 10ms       | 50ms               |
+| Server startup time      | 2s         | 5s         | 30s                |
+| API response time        | 50ms       | 200ms      | 1s                 |
+| Memory usage baseline    | 256MB      | 400MB      | 1GB                |
 
 ### Operational Monitoring Commands
 
@@ -95,42 +95,42 @@ server:
   port: 8080
   max_concurrent_conversations: 2000
   request_timeout: "30s"
-  worker_threads: 8                    # Match CPU cores
-  max_blocking_threads: 32             # For I/O operations
+  worker_threads: 8 # Match CPU cores
+  max_blocking_threads: 32 # For I/O operations
 
 # Embedded memory system optimization for throughput
 memory:
   backend: "embedded"
   sqlite_config:
-    wal_mode: true                     # Write-ahead logging (critical)
-    cache_size_mb: 256                 # Large cache for throughput
-    mmap_size_mb: 1024                 # Memory-mapped I/O
-    page_size: 4096                    # Optimal page size
-    synchronous: "normal"              # Balance safety/speed
-    journal_size_limit_mb: 100         # WAL size limit
-    temp_store: "memory"               # Temp data in memory
-    optimize_interval: "1h"            # Auto-optimize every hour
+    wal_mode: true # Write-ahead logging (critical)
+    cache_size_mb: 256 # Large cache for throughput
+    mmap_size_mb: 1024 # Memory-mapped I/O
+    page_size: 4096 # Optimal page size
+    synchronous: "normal" # Balance safety/speed
+    journal_size_limit_mb: 100 # WAL size limit
+    temp_store: "memory" # Temp data in memory
+    optimize_interval: "1h" # Auto-optimize every hour
 
   embedding_config:
-    model: "all-MiniLM-L6-v2"          # Optimized model choice
-    cache_size: 20000                  # Cache 20K embeddings
-    batch_size: 64                     # Larger batches for throughput
-    thread_count: 4                    # Parallel embedding generation
-    precompute_frequent: true          # Pre-compute common queries
+    model: "all-MiniLM-L6-v2" # Optimized model choice
+    cache_size: 20000 # Cache 20K embeddings
+    batch_size: 64 # Larger batches for throughput
+    thread_count: 4 # Parallel embedding generation
+    precompute_frequent: true # Pre-compute common queries
 
   cleanup:
-    interval: "5m"                     # Frequent cleanup
-    entity_limit: 80000                # Higher limit for throughput
-    batch_size: 1000                   # Larger cleanup batches
+    interval: "5m" # Frequent cleanup
+    entity_limit: 80000 # Higher limit for throughput
+    batch_size: 1000 # Larger cleanup batches
 
 # Agent runtime optimization for throughput
 agents:
   hot_reload_timeout: "5s"
-  validation_cache_size: 500           # Cache more validations
+  validation_cache_size: 500 # Cache more validations
   tool_call_timeout: "10s"
   max_memory_entities_per_agent: 10000
-  conversation_batch_size: 50          # Process conversations in batches
-  response_cache_ttl: "5m"             # Cache responses
+  conversation_batch_size: 50 # Process conversations in batches
+  response_cache_ttl: "5m" # Cache responses
 ```
 
 ### Production Low-Latency Configuration
@@ -139,40 +139,40 @@ agents:
 # Optimized for minimum response latency (< 50ms P50)
 server:
   port: 8080
-  max_concurrent_conversations: 1000   # Fewer for less contention
-  request_timeout: "15s"               # Shorter timeout
-  worker_threads: 4                    # Dedicated workers
-  request_buffer_size: 32768           # Larger buffers
+  max_concurrent_conversations: 1000 # Fewer for less contention
+  request_timeout: "15s" # Shorter timeout
+  worker_threads: 4 # Dedicated workers
+  request_buffer_size: 32768 # Larger buffers
 
 memory:
   backend: "embedded"
   sqlite_config:
     wal_mode: true
-    cache_size_mb: 512                 # Very large cache
-    mmap_size_mb: 2048                 # Aggressive memory mapping
+    cache_size_mb: 512 # Very large cache
+    mmap_size_mb: 2048 # Aggressive memory mapping
     synchronous: "normal"
     temp_store: "memory"
-    wal_checkpoint_interval: 5000      # Less frequent checkpoints
+    wal_checkpoint_interval: 5000 # Less frequent checkpoints
 
   embedding_config:
     model: "all-MiniLM-L6-v2"
-    cache_size: 50000                  # Massive embedding cache
+    cache_size: 50000 # Massive embedding cache
     precompute_frequent: true
-    cache_hit_target: 0.98             # Aim for 98% cache hits
-    prefetch_batches: 4                # Prefetch embeddings
+    cache_hit_target: 0.98 # Aim for 98% cache hits
+    prefetch_batches: 4 # Prefetch embeddings
 
   cleanup:
-    interval: "10m"                    # Less frequent cleanup
-    batch_size: 100                    # Smaller batches
-    low_priority: true                 # Background cleanup
+    interval: "10m" # Less frequent cleanup
+    batch_size: 100 # Smaller batches
+    low_priority: true # Background cleanup
 
 agents:
-  hot_reload_timeout: "2s"             # Fast validation
-  validation_cache_size: 1000          # Cache many validations
-  tool_call_timeout: "5s"              # Quick tool calls
-  response_cache_ttl: "2m"             # Cache responses longer
-  memory_search_timeout: "50ms"        # Strict search timeout
-  conversation_priority_queue: true    # Priority-based processing
+  hot_reload_timeout: "2s" # Fast validation
+  validation_cache_size: 1000 # Cache many validations
+  tool_call_timeout: "5s" # Quick tool calls
+  response_cache_ttl: "2m" # Cache responses longer
+  memory_search_timeout: "50ms" # Strict search timeout
+  conversation_priority_queue: true # Priority-based processing
 ```
 
 ### Resource-Constrained Configuration
@@ -181,41 +181,41 @@ agents:
 # Optimized for environments with limited resources (< 512MB RAM)
 server:
   port: 8080
-  max_concurrent_conversations: 200    # Limited concurrency
-  worker_threads: 2                    # Minimal workers
-  max_blocking_threads: 8              # Limited I/O threads
+  max_concurrent_conversations: 200 # Limited concurrency
+  worker_threads: 2 # Minimal workers
+  max_blocking_threads: 8 # Limited I/O threads
 
 memory:
   backend: "embedded"
   sqlite_config:
-    cache_size_mb: 64                  # Small cache
-    mmap_size_mb: 128                  # Limited memory mapping
-    page_size: 1024                    # Smaller pages
-    auto_vacuum: "incremental"         # Incremental vacuuming
-    wal_size_limit_mb: 20              # Small WAL
-    temp_store: "file"                 # Use disk for temp data
+    cache_size_mb: 64 # Small cache
+    mmap_size_mb: 128 # Limited memory mapping
+    page_size: 1024 # Smaller pages
+    auto_vacuum: "incremental" # Incremental vacuuming
+    wal_size_limit_mb: 20 # Small WAL
+    temp_store: "file" # Use disk for temp data
 
   embedding_config:
-    model: "all-MiniLM-L6-v2"          # Still use optimized model
-    cache_size: 2000                   # Small cache
-    aggressive_cleanup: true           # Aggressive memory cleanup
-    memory_map_model: false            # Don't memory-map model
-    batch_size: 16                     # Smaller batches
+    model: "all-MiniLM-L6-v2" # Still use optimized model
+    cache_size: 2000 # Small cache
+    aggressive_cleanup: true # Aggressive memory cleanup
+    memory_map_model: false # Don't memory-map model
+    batch_size: 16 # Smaller batches
 
   cleanup:
-    interval: "2m"                     # Frequent cleanup
-    entity_limit: 10000                # Low entity limit
-    relation_limit: 25000              # Low relation limit
-    orphan_cleanup: true               # Remove orphaned data
-    compress_old_data: true            # Compress old entities
+    interval: "2m" # Frequent cleanup
+    entity_limit: 10000 # Low entity limit
+    relation_limit: 25000 # Low relation limit
+    orphan_cleanup: true # Remove orphaned data
+    compress_old_data: true # Compress old entities
 
 agents:
-  max_agents: 50                       # Limit total agents
-  max_memory_entities_per_agent: 1000  # Low per-agent limit
-  validation_cache_size: 50            # Small validation cache
-  conversation_limit: 20               # Limit conversations
-  memory_scope: "agent"                # Isolate memory per agent
-  tool_call_timeout: "20s"             # Allow longer for limited resources
+  max_agents: 50 # Limit total agents
+  max_memory_entities_per_agent: 1000 # Low per-agent limit
+  validation_cache_size: 50 # Small validation cache
+  conversation_limit: 20 # Limit conversations
+  memory_scope: "agent" # Isolate memory per agent
+  tool_call_timeout: "20s" # Allow longer for limited resources
 ```
 
 ## Embedded Memory System Optimization
@@ -275,29 +275,29 @@ embedding_config:
   # Model configuration
   model: "all-MiniLM-L6-v2"
   model_path: "/var/lib/caxton/models/"
-  model_format: "safetensors"          # Safer, faster format
+  model_format: "safetensors" # Safer, faster format
 
   # Performance tuning
-  batch_size: 64                       # Optimal batch size
-  max_sequence_length: 384             # Model's native length
-  thread_count: 4                      # Match available cores
-  device: "cpu"                        # CPU optimized
+  batch_size: 64 # Optimal batch size
+  max_sequence_length: 384 # Model's native length
+  thread_count: 4 # Match available cores
+  device: "cpu" # CPU optimized
 
   # Advanced caching
-  cache_size: 25000                    # Cache 25K embeddings
-  cache_hit_target: 0.92               # 92% cache hit target
-  precompute_common: true              # Pre-compute frequent queries
-  smart_caching: true                  # Cache based on usage patterns
+  cache_size: 25000 # Cache 25K embeddings
+  cache_hit_target: 0.92 # 92% cache hit target
+  precompute_common: true # Pre-compute frequent queries
+  smart_caching: true # Cache based on usage patterns
 
   # Memory management
-  embedding_ttl: "2h"                  # TTL for cached embeddings
-  cleanup_threshold: 0.85              # Clean when 85% full
-  memory_pool_size: "128MB"            # Dedicated memory pool
+  embedding_ttl: "2h" # TTL for cached embeddings
+  cleanup_threshold: 0.85 # Clean when 85% full
+  memory_pool_size: "128MB" # Dedicated memory pool
 
   # Optimization features
-  quantization: "int8"                 # 8-bit quantization for speed
-  model_optimization: true             # Use optimized model variants
-  prefetch_enabled: true               # Prefetch next batches
+  quantization: "int8" # 8-bit quantization for speed
+  model_optimization: true # Use optimized model variants
+  prefetch_enabled: true # Prefetch next batches
 ```
 
 **Embedding performance monitoring:**
@@ -323,23 +323,23 @@ caxton memory embedding-stats --detailed
 memory_scaling:
   # Embedded backend limits (production)
   limits:
-    max_entities: 100000               # Hard limit for embedded
-    max_relations: 500000              # Relationship limit
-    max_storage_mb: 2048               # 2GB storage limit
-    max_memory_mb: 512                 # 512MB memory limit
+    max_entities: 100000 # Hard limit for embedded
+    max_relations: 500000 # Relationship limit
+    max_storage_mb: 2048 # 2GB storage limit
+    max_memory_mb: 512 # 512MB memory limit
 
   # Performance thresholds for migration planning
   migration_triggers:
-    search_latency_p99: 100            # Migrate if search > 100ms
-    cache_hit_rate_min: 0.80           # Migrate if cache < 80%
-    storage_growth_rate: 100           # MB per day growth limit
+    search_latency_p99: 100 # Migrate if search > 100ms
+    cache_hit_rate_min: 0.80 # Migrate if cache < 80%
+    storage_growth_rate: 100 # MB per day growth limit
 
   # Migration configuration
   migration_planning:
-    auto_migrate_enabled: false        # Manual control recommended
-    target_backend: "qdrant"           # Primary migration target
-    backup_before_migrate: true        # Always backup first
-    rollback_enabled: true             # Enable rollback capability
+    auto_migrate_enabled: false # Manual control recommended
+    target_backend: "qdrant" # Primary migration target
+    backup_before_migrate: true # Always backup first
+    rollback_enabled: true # Enable rollback capability
 ```
 
 **Migration readiness check:**
@@ -447,8 +447,8 @@ agents:
         response_timeout: "5s"
         tool_call_timeout: "3s"
         memory_search_timeout: "25ms"
-        memory_scope: "agent"          # Isolated memory
-        preload_memory: true           # Preload for speed
+        memory_scope: "agent" # Isolated memory
+        preload_memory: true # Preload for speed
 
     # Heavy processing agents
     - profile: "heavy_processor"
@@ -459,8 +459,8 @@ agents:
         response_timeout: "120s"
         tool_call_timeout: "60s"
         memory_search_timeout: "500ms"
-        memory_scope: "global"         # Full memory access
-        batch_processing: true         # Enable batching
+        memory_scope: "global" # Full memory access
+        batch_processing: true # Enable batching
 
     # Real-time agents
     - profile: "realtime"
@@ -471,8 +471,8 @@ agents:
         response_timeout: "10s"
         tool_call_timeout: "5s"
         memory_search_timeout: "50ms"
-        priority: "high"               # High priority processing
-        dedicated_resources: true      # Dedicated resources
+        priority: "high" # High priority processing
+        dedicated_resources: true # Dedicated resources
 ```
 
 ### WASM Agent Performance Optimization
@@ -482,59 +482,59 @@ agents:
 ```yaml
 wasm_runtime:
   # Compilation optimization
-  jit_enabled: true                    # Enable JIT compilation
-  optimization_level: "speed"          # Optimize for speed vs size
-  compiler: "cranelift"                # Fast compilation
+  jit_enabled: true # Enable JIT compilation
+  optimization_level: "speed" # Optimize for speed vs size
+  compiler: "cranelift" # Fast compilation
 
   # Instance management
-  cache_compiled_modules: true         # Cache compiled WASM
-  module_cache_size: 100               # Cache 100 modules
-  module_cache_ttl: "2h"               # Cache TTL
+  cache_compiled_modules: true # Cache compiled WASM
+  module_cache_size: 100 # Cache 100 modules
+  module_cache_ttl: "2h" # Cache TTL
 
   # Resource pooling
-  memory_pooling: true                 # Pool WASM memory pages
-  stack_pooling: true                  # Pool execution stacks
-  instance_pooling: true               # Pool WASM instances
-  pool_size: 50                        # Pool size per type
+  memory_pooling: true # Pool WASM memory pages
+  stack_pooling: true # Pool execution stacks
+  instance_pooling: true # Pool WASM instances
+  pool_size: 50 # Pool size per type
 
   # Performance vs Security balance
-  fuel_enabled: true                   # CPU metering (slight overhead)
-  fuel_per_instruction: 1              # Fuel consumption rate
-  bounds_checks: "optimized"           # Optimized bounds checking
+  fuel_enabled: true # CPU metering (slight overhead)
+  fuel_per_instruction: 1 # Fuel consumption rate
+  bounds_checks: "optimized" # Optimized bounds checking
 
   # Memory configuration
-  memory_page_size: 65536              # 64KB pages (WASM standard)
-  max_memory_pages: 1024               # 64MB max memory per instance
-  memory_growth_enabled: true          # Dynamic memory growth
-  memory_initialization: "lazy"        # Lazy memory initialization
+  memory_page_size: 65536 # 64KB pages (WASM standard)
+  max_memory_pages: 1024 # 64MB max memory per instance
+  memory_growth_enabled: true # Dynamic memory growth
+  memory_initialization: "lazy" # Lazy memory initialization
 
 # WASM agent performance profiles
 wasm_agents:
   default_limits:
-    memory_mb: 32                      # 32MB WASM memory
-    fuel_limit: 2000000                # CPU fuel limit
-    execution_timeout: "10s"           # Max execution time
-    stack_size_kb: 512                 # 512KB stack
+    memory_mb: 32 # 32MB WASM memory
+    fuel_limit: 2000000 # CPU fuel limit
+    execution_timeout: "10s" # Max execution time
+    stack_size_kb: 512 # 512KB stack
 
   # Performance-critical WASM agents
   performance_profiles:
     - profile: "cpu_intensive"
-      memory_mb: 128                   # More memory for CPU tasks
-      fuel_limit: 10000000             # Higher CPU limit
-      execution_timeout: "60s"         # Longer execution time
+      memory_mb: 128 # More memory for CPU tasks
+      fuel_limit: 10000000 # Higher CPU limit
+      execution_timeout: "60s" # Longer execution time
       optimization_level: "aggressive" # Aggressive optimization
 
     - profile: "memory_intensive"
-      memory_mb: 256                   # High memory limit
-      fuel_limit: 2000000              # Standard CPU limit
-      execution_timeout: "30s"         # Moderate execution time
-      garbage_collection: "frequent"   # Frequent GC
+      memory_mb: 256 # High memory limit
+      fuel_limit: 2000000 # Standard CPU limit
+      execution_timeout: "30s" # Moderate execution time
+      garbage_collection: "frequent" # Frequent GC
 
     - profile: "realtime"
-      memory_mb: 64                    # Moderate memory
-      fuel_limit: 1000000              # Limited CPU for fairness
-      execution_timeout: "1s"          # Very fast execution
-      priority: "high"                 # High scheduling priority
+      memory_mb: 64 # Moderate memory
+      fuel_limit: 1000000 # Limited CPU for fairness
+      execution_timeout: "1s" # Very fast execution
+      priority: "high" # High scheduling priority
 ```
 
 ## Advanced Performance Optimizations
@@ -548,48 +548,48 @@ message_processing:
   # Batch configuration for throughput
   batch_processing:
     enabled: true
-    batch_size: 100                    # Messages per batch
-    batch_timeout: "50ms"              # Max wait for batch
-    max_batches_queued: 10             # Limit queued batches
+    batch_size: 100 # Messages per batch
+    batch_timeout: "50ms" # Max wait for batch
+    max_batches_queued: 10 # Limit queued batches
 
   # Parallel processing
   parallel_processing:
     enabled: true
-    worker_threads: 8                  # Processing threads
-    work_stealing: true                # Work-stealing scheduler
-    thread_affinity: false             # Usually not needed
+    worker_threads: 8 # Processing threads
+    work_stealing: true # Work-stealing scheduler
+    thread_affinity: false # Usually not needed
 
   # Message prioritization
   priority_queues:
     enabled: true
-    queue_count: 4                     # Number of priority queues
+    queue_count: 4 # Number of priority queues
     priorities:
       - name: "critical"
-        max_latency_ms: 100            # Critical < 100ms
+        max_latency_ms: 100 # Critical < 100ms
         queue_size: 100
-        dedicated_threads: 2           # Dedicated processing
+        dedicated_threads: 2 # Dedicated processing
 
       - name: "high"
-        max_latency_ms: 500            # High priority < 500ms
+        max_latency_ms: 500 # High priority < 500ms
         queue_size: 1000
         dedicated_threads: 4
 
       - name: "normal"
-        max_latency_ms: 2000           # Normal < 2s
+        max_latency_ms: 2000 # Normal < 2s
         queue_size: 5000
         dedicated_threads: 2
 
       - name: "background"
-        max_latency_ms: 10000          # Background < 10s
+        max_latency_ms: 10000 # Background < 10s
         queue_size: 10000
         dedicated_threads: 1
 
   # Performance optimizations
   optimizations:
-    zero_copy_enabled: true            # Zero-copy message handling
-    message_pooling: true              # Pool message objects
-    compression_enabled: true          # Compress large messages
-    compression_threshold: 4096        # Compress if > 4KB
+    zero_copy_enabled: true # Zero-copy message handling
+    message_pooling: true # Pool message objects
+    compression_enabled: true # Compress large messages
+    compression_threshold: 4096 # Compress if > 4KB
 ```
 
 ### HTTP/REST API Performance Tuning
@@ -600,43 +600,43 @@ message_processing:
 http_server:
   # Core server configuration
   bind_address: "0.0.0.0:8080"
-  worker_threads: 8                    # HTTP worker threads
-  max_blocking_threads: 32             # Blocking I/O thread pool
-  thread_stack_size: "2MB"             # Thread stack size
+  worker_threads: 8 # HTTP worker threads
+  max_blocking_threads: 32 # Blocking I/O thread pool
+  thread_stack_size: "2MB" # Thread stack size
 
   # Connection management
-  max_connections: 2000                # Maximum concurrent connections
-  connection_timeout: "30s"            # Connection establishment timeout
-  keep_alive_timeout: "120s"           # HTTP keep-alive timeout
-  request_timeout: "60s"               # Request processing timeout
-  max_request_size: "16MB"             # Maximum request size
+  max_connections: 2000 # Maximum concurrent connections
+  connection_timeout: "30s" # Connection establishment timeout
+  keep_alive_timeout: "120s" # HTTP keep-alive timeout
+  request_timeout: "60s" # Request processing timeout
+  max_request_size: "16MB" # Maximum request size
 
   # Buffer optimization
-  request_buffer_size: 32768           # 32KB request buffer
-  response_buffer_size: 32768          # 32KB response buffer
-  header_buffer_size: 16384            # 16KB header buffer
-  body_buffer_size: 131072             # 128KB body buffer
+  request_buffer_size: 32768 # 32KB request buffer
+  response_buffer_size: 32768 # 32KB response buffer
+  header_buffer_size: 16384 # 16KB header buffer
+  body_buffer_size: 131072 # 128KB body buffer
 
   # Performance features
   compression:
-    enabled: true                      # Enable gzip compression
-    level: 6                           # Compression level (1-9)
-    threshold: 2048                    # Compress responses > 2KB
+    enabled: true # Enable gzip compression
+    level: 6 # Compression level (1-9)
+    threshold: 2048 # Compress responses > 2KB
     types: ["application/json", "text/plain"]
 
   # Caching
   response_caching:
-    enabled: true                      # Cache static responses
-    cache_size: "64MB"                 # Response cache size
-    default_ttl: "300s"                # Default cache TTL
-    vary_headers: ["Accept-Encoding"]  # Vary by these headers
+    enabled: true # Cache static responses
+    cache_size: "64MB" # Response cache size
+    default_ttl: "300s" # Default cache TTL
+    vary_headers: ["Accept-Encoding"] # Vary by these headers
 
   # Rate limiting
   rate_limiting:
     enabled: true
-    global_rate: 10000                 # Requests per second globally
-    per_ip_rate: 100                   # Requests per second per IP
-    burst_size: 200                    # Burst allowance
+    global_rate: 10000 # Requests per second globally
+    per_ip_rate: 100 # Requests per second per IP
+    burst_size: 200 # Burst allowance
 
   # Health and monitoring
   health_check:
@@ -647,7 +647,7 @@ http_server:
   metrics:
     path: "/metrics"
     enabled: true
-    detailed: true                     # Include detailed metrics
+    detailed: true # Include detailed metrics
 ```
 
 **API response optimization:**
@@ -656,15 +656,15 @@ http_server:
 api_optimization:
   # Response formatting
   response_format:
-    default: "json"                    # Default response format
-    compression_enabled: true          # Compress responses
-    pretty_print: false                # Disable pretty printing
+    default: "json" # Default response format
+    compression_enabled: true # Compress responses
+    pretty_print: false # Disable pretty printing
 
   # Pagination for large datasets
   pagination:
-    default_page_size: 100             # Default items per page
-    max_page_size: 1000                # Maximum page size
-    page_size_header: "X-Page-Size"    # Page size header
+    default_page_size: 100 # Default items per page
+    max_page_size: 1000 # Maximum page size
+    page_size_header: "X-Page-Size" # Page size header
     total_count_header: "X-Total-Count" # Total count header
 
   # Response caching strategy
@@ -672,19 +672,19 @@ api_optimization:
     # Cache agent list responses (frequently requested)
     agent_list:
       enabled: true
-      ttl: "30s"                       # Short TTL for agent lists
-      vary_by: ["type", "status"]      # Cache variations
+      ttl: "30s" # Short TTL for agent lists
+      vary_by: ["type", "status"] # Cache variations
 
     # Cache agent details (less frequent changes)
     agent_details:
       enabled: true
-      ttl: "300s"                      # Longer TTL for details
+      ttl: "300s" # Longer TTL for details
       vary_by: ["id"]
 
     # Cache memory statistics
     memory_stats:
       enabled: true
-      ttl: "60s"                       # 1 minute cache
+      ttl: "60s" # 1 minute cache
 
     # Don't cache real-time data
     real_time_endpoints:
@@ -694,10 +694,10 @@ api_optimization:
 
   # Error handling
   error_responses:
-    detailed_errors: true              # Include detailed error info
-    include_request_id: true           # Include request ID for tracing
-    include_suggestions: true          # Include fix suggestions
-    stack_traces: false                # Never include stack traces
+    detailed_errors: true # Include detailed error info
+    include_request_id: true # Include request ID for tracing
+    include_suggestions: true # Include fix suggestions
+    stack_traces: false # Never include stack traces
 
   # Content negotiation
   content_negotiation:
@@ -705,7 +705,7 @@ api_optimization:
     supported_types:
       - "application/json"
       - "text/plain"
-      - "application/msgpack"          # For high-performance clients
+      - "application/msgpack" # For high-performance clients
 ```
 
 ## Performance Monitoring and Alerting
@@ -758,92 +758,92 @@ curl -s localhost:9090/metrics | grep -E "caxton_server_" | head -10
 ```yaml
 # caxton-performance-alerts.yml
 groups:
-- name: caxton.performance
-  rules:
-  # Memory system performance alerts
-  - alert: CaxtonMemorySearchSlow
-    expr: caxton_memory_search_latency_seconds{quantile="0.99"} > 0.1
-    for: 2m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Caxton memory searches are slow"
-      description: "Memory search P99 latency is {{ $value }}s (threshold: 100ms)"
+  - name: caxton.performance
+    rules:
+      # Memory system performance alerts
+      - alert: CaxtonMemorySearchSlow
+        expr: caxton_memory_search_latency_seconds{quantile="0.99"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Caxton memory searches are slow"
+          description: "Memory search P99 latency is {{ $value }}s (threshold: 100ms)"
 
-  - alert: CaxtonMemorySearchCritical
-    expr: caxton_memory_search_latency_seconds{quantile="0.99"} > 0.5
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "Caxton memory searches critically slow"
-      description: "Memory search P99 latency is {{ $value }}s (critical: 500ms)"
+      - alert: CaxtonMemorySearchCritical
+        expr: caxton_memory_search_latency_seconds{quantile="0.99"} > 0.5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Caxton memory searches critically slow"
+          description: "Memory search P99 latency is {{ $value }}s (critical: 500ms)"
 
-  - alert: CaxtonMemoryCacheHitLow
-    expr: caxton_memory_cache_hit_rate{type="embedding"} < 0.80
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Low embedding cache hit rate"
-      description: "Embedding cache hit rate is {{ $value }} (target: >85%)"
+      - alert: CaxtonMemoryCacheHitLow
+        expr: caxton_memory_cache_hit_rate{type="embedding"} < 0.80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low embedding cache hit rate"
+          description: "Embedding cache hit rate is {{ $value }} (target: >85%)"
 
-  # Agent performance alerts
-  - alert: CaxtonAgentResponseSlow
-    expr: caxton_agent_response_time_seconds{quantile="0.99"} > 2.0
-    for: 3m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Agent responses are slow"
-      description: "Agent response P99 time is {{ $value }}s (threshold: 2s)"
+      # Agent performance alerts
+      - alert: CaxtonAgentResponseSlow
+        expr: caxton_agent_response_time_seconds{quantile="0.99"} > 2.0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent responses are slow"
+          description: "Agent response P99 time is {{ $value }}s (threshold: 2s)"
 
-  - alert: CaxtonAgentReloadSlow
-    expr: caxton_agent_reload_duration_seconds{quantile="0.99"} > 1.0
-    for: 2m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Agent hot-reload is slow"
-      description: "Agent reload P99 time is {{ $value }}s (threshold: 1s)"
+      - alert: CaxtonAgentReloadSlow
+        expr: caxton_agent_reload_duration_seconds{quantile="0.99"} > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent hot-reload is slow"
+          description: "Agent reload P99 time is {{ $value }}s (threshold: 1s)"
 
-  # System resource alerts
-  - alert: CaxtonHighMemoryUsage
-    expr: caxton_server_memory_used_bytes > 1073741824  # 1GB
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High memory usage"
-      description: "Memory usage is {{ $value | humanize1024 }}B (warning: >1GB)"
+      # System resource alerts
+      - alert: CaxtonHighMemoryUsage
+        expr: caxton_server_memory_used_bytes > 1073741824 # 1GB
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanize1024 }}B (warning: >1GB)"
 
-  - alert: CaxtonHighCPUUsage
-    expr: caxton_server_cpu_usage_percent > 80
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High CPU usage"
-      description: "CPU usage is {{ $value }}% (warning: >80%)"
+      - alert: CaxtonHighCPUUsage
+        expr: caxton_server_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (warning: >80%)"
 
-  # Database performance alerts
-  - alert: CaxtonSQLiteGrowthFast
-    expr: increase(caxton_memory_sqlite_size_bytes[24h]) > 104857600  # 100MB/day
-    for: 1h
-    labels:
-      severity: warning
-    annotations:
-      summary: "Fast SQLite database growth"
-      description: "Database grew {{ $value | humanize1024 }}B in 24h (warning: >100MB/day)"
+      # Database performance alerts
+      - alert: CaxtonSQLiteGrowthFast
+        expr: increase(caxton_memory_sqlite_size_bytes[24h]) > 104857600 # 100MB/day
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fast SQLite database growth"
+          description: "Database grew {{ $value | humanize1024 }}B in 24h (warning: >100MB/day)"
 
-  - alert: CaxtonSQLiteSizeLarge
-    expr: caxton_memory_sqlite_size_bytes > 2147483648  # 2GB
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "SQLite database is very large"
-      description: "Database size is {{ $value | humanize1024 }}B (migration recommended: >2GB)"
+      - alert: CaxtonSQLiteSizeLarge
+        expr: caxton_memory_sqlite_size_bytes > 2147483648 # 2GB
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SQLite database is very large"
+          description: "Database size is {{ $value | humanize1024 }}B (migration recommended: >2GB)"
 ```
 
 ### Performance Dashboards
@@ -1011,7 +1011,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM
+    - cron: "0 2 * * *" # Daily at 2 AM
 
 jobs:
   performance-test:
@@ -1019,67 +1019,67 @@ jobs:
     timeout-minutes: 60
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build Caxton
-      run: cargo build --release
+      - name: Build Caxton
+        run: cargo build --release
 
-    - name: Setup Performance Environment
-      run: |
-        # Prepare isolated environment for testing
-        sudo sysctl -w vm.swappiness=1
-        sudo sysctl -w vm.dirty_ratio=5
-        echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+      - name: Setup Performance Environment
+        run: |
+          # Prepare isolated environment for testing
+          sudo sysctl -w vm.swappiness=1
+          sudo sysctl -w vm.dirty_ratio=5
+          echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 
-    - name: Run Performance Benchmarks
-      run: |
-        # Start Caxton server
-        cargo run --release &
-        SERVER_PID=$!
-        sleep 10
+      - name: Run Performance Benchmarks
+        run: |
+          # Start Caxton server
+          cargo run --release &
+          SERVER_PID=$!
+          sleep 10
 
-        # Run benchmark suite
-        cargo run --bin benchmark -- \
-          --suite production \
-          --duration 300s \
-          --output results.json
+          # Run benchmark suite
+          cargo run --bin benchmark -- \
+            --suite production \
+            --duration 300s \
+            --output results.json
 
-        # Stop server
-        kill $SERVER_PID
+          # Stop server
+          kill $SERVER_PID
 
-    - name: Performance Regression Analysis
-      run: |
-        # Compare with baseline
-        cargo run --bin benchmark-compare -- \
-          --current results.json \
-          --baseline .github/baselines/performance-baseline.json \
-          --threshold 0.05 \
-          --output regression-report.md
+      - name: Performance Regression Analysis
+        run: |
+          # Compare with baseline
+          cargo run --bin benchmark-compare -- \
+            --current results.json \
+            --baseline .github/baselines/performance-baseline.json \
+            --threshold 0.05 \
+            --output regression-report.md
 
-    - name: Upload Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: performance-results
-        path: |
-          results.json
-          regression-report.md
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            results.json
+            regression-report.md
 
-    - name: Comment PR with Results
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const report = fs.readFileSync('regression-report.md', 'utf8');
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `## Performance Test Results\n\n${report}`
-          });
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('regression-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Performance Test Results\n\n${report}`
+            });
 ```
 
 ## Troubleshooting Performance Issues
@@ -1223,23 +1223,23 @@ cache_optimization:
 resource_optimization:
   # CPU allocation
   cpu:
-    http_workers: 4                    # 50% of cores for HTTP
-    agent_workers: 4                   # 50% of cores for agents
-    memory_workers: 2                  # Dedicated memory workers
-    background_workers: 1              # Background tasks
+    http_workers: 4 # 50% of cores for HTTP
+    agent_workers: 4 # 50% of cores for agents
+    memory_workers: 2 # Dedicated memory workers
+    background_workers: 1 # Background tasks
 
   # Memory allocation
   memory:
-    sqlite_cache: "256MB"              # 40% for SQLite
-    embedding_model: "200MB"           # 30% for model
-    agent_runtime: "128MB"             # 20% for agents
-    system_overhead: "64MB"            # 10% system overhead
+    sqlite_cache: "256MB" # 40% for SQLite
+    embedding_model: "200MB" # 30% for model
+    agent_runtime: "128MB" # 20% for agents
+    system_overhead: "64MB" # 10% system overhead
 
   # I/O optimization
   io:
-    async_io_threads: 8                # Async I/O threads
-    disk_read_ahead: "1MB"             # Read-ahead buffer
-    write_buffer: "4MB"                # Write buffer
+    async_io_threads: 8 # Async I/O threads
+    disk_read_ahead: "1MB" # Read-ahead buffer
+    write_buffer: "4MB" # Write buffer
 ```
 
 ## Best Practices Summary

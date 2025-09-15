@@ -770,7 +770,7 @@ retry_request() {
 ### JavaScript/Node.js
 
 ```javascript
-const CaxtonClient = require('@caxton/client');
+const CaxtonClient = require("@caxton/client");
 
 class CaxtonIntegration {
   constructor(baseUrl, apiKey) {
@@ -780,10 +780,10 @@ class CaxtonIntegration {
   async deployAgent(config) {
     try {
       const result = await this.client.agents.deploy(config);
-      console.log('Agent deployed:', result.agent_id);
+      console.log("Agent deployed:", result.agent_id);
       return result;
     } catch (error) {
-      console.error('Deployment failed:', error.message);
+      console.error("Deployment failed:", error.message);
       throw error;
     }
   }
@@ -791,9 +791,9 @@ class CaxtonIntegration {
   async sendMessage(capability, content, conversationId = null) {
     const message = {
       capability,
-      performative: 'request',
+      performative: "request",
       content,
-      conversation_id: conversationId || this.generateConversationId()
+      conversation_id: conversationId || this.generateConversationId(),
     };
 
     const response = await this.client.messages.send(message);
@@ -806,20 +806,18 @@ class CaxtonIntegration {
 
       const checkResponse = async () => {
         try {
-          const conversation = await this.client.conversations.get(
-            conversationId
-          );
-          const lastMessage = conversation.messages[
-            conversation.messages.length - 1
-          ];
+          const conversation =
+            await this.client.conversations.get(conversationId);
+          const lastMessage =
+            conversation.messages[conversation.messages.length - 1];
 
-          if (lastMessage.sender !== 'api_client') {
+          if (lastMessage.sender !== "api_client") {
             resolve(lastMessage);
             return;
           }
 
           if (Date.now() - startTime > timeout) {
-            reject(new Error('Response timeout'));
+            reject(new Error("Response timeout"));
             return;
           }
 
@@ -839,22 +837,22 @@ class CaxtonIntegration {
 }
 
 // Usage example
-const caxton = new CaxtonIntegration('http://localhost:8080', 'your-api-key');
+const caxton = new CaxtonIntegration("http://localhost:8080", "your-api-key");
 
 // Deploy an agent
 await caxton.deployAgent({
-  name: 'DocumentAnalyzer',
-  capabilities: ['document-analysis'],
-  system_prompt: 'Analyze documents and extract key information...'
+  name: "DocumentAnalyzer",
+  capabilities: ["document-analysis"],
+  system_prompt: "Analyze documents and extract key information...",
 });
 
 // Send a message and wait for response
-const response = await caxton.sendMessage('document-analysis', {
-  document_url: 'https://example.com/document.pdf',
-  analysis_type: 'summary'
+const response = await caxton.sendMessage("document-analysis", {
+  document_url: "https://example.com/document.pdf",
+  analysis_type: "summary",
 });
 
-console.log('Analysis result:', response.content);
+console.log("Analysis result:", response.content);
 ```
 
 ### Python

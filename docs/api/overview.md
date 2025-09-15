@@ -150,16 +150,16 @@ Configuration agents support common patterns through templates:
 
 ## Comparison with Traditional Development
 
-| Aspect | Config Agents | WASM Agents |
-|--------|---------------|-------------|
-| Setup Time | 5-10 minutes | 2-4 hours |
-| Toolchain | Text editor | Rust/Go/C++ compiler |
-| Context Management | Automatic runtime intelligence | Manual programmatic |
-|                    |                                | control             |
-| Debugging | Readable logs | WASM debugging tools |
-| Sharing | Copy text file | Binary distribution |
-| Iteration | Edit and reload | Compile and redeploy |
-| Security | Tool-level sandboxing | Module-level isolation |
+| Aspect             | Config Agents                  | WASM Agents            |
+| ------------------ | ------------------------------ | ---------------------- |
+| Setup Time         | 5-10 minutes                   | 2-4 hours              |
+| Toolchain          | Text editor                    | Rust/Go/C++ compiler   |
+| Context Management | Automatic runtime intelligence | Manual programmatic    |
+|                    |                                | control                |
+| Debugging          | Readable logs                  | WASM debugging tools   |
+| Sharing            | Copy text file                 | Binary distribution    |
+| Iteration          | Edit and reload                | Compile and redeploy   |
+| Security           | Tool-level sandboxing          | Module-level isolation |
 
 ### Context Management Benefits
 

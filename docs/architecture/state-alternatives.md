@@ -5,7 +5,6 @@ layout: page
 categories: [Research]
 ---
 
-
 ## Executive Summary
 
 Based on extensive research, Caxton should adopt a **coordination-only
@@ -234,16 +233,16 @@ pub struct PostgresStateTool { /* ... */ }
 ```yaml
 # What Caxton manages (coordination)
 coordination:
-  - agent_registry    # Via gossip
-  - health_status    # Via SWIM
-  - routing_info     # Via gossip
+  - agent_registry # Via gossip
+  - health_status # Via SWIM
+  - routing_info # Via gossip
 
 # What businesses manage (state)
 business_state:
-  - agent_checkpoints  # Via MCP tools
-  - conversation_history  # Via MCP tools
-  - task_state  # Via MCP tools
-  - audit_logs  # Via MCP tools
+  - agent_checkpoints # Via MCP tools
+  - conversation_history # Via MCP tools
+  - task_state # Via MCP tools
+  - audit_logs # Via MCP tools
 ```
 
 ### Step 2: Update ADR-0013

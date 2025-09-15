@@ -33,19 +33,19 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'caxton-orchestrator'
+  - job_name: "caxton-orchestrator"
     static_configs:
-      - targets: ['localhost:9090']
-    metrics_path: '/metrics'
+      - targets: ["localhost:9090"]
+    metrics_path: "/metrics"
 
-  - job_name: 'caxton-agents'
+  - job_name: "caxton-agents"
     static_configs:
-      - targets: ['localhost:9091-9099']
-    metrics_path: '/metrics'
+      - targets: ["localhost:9091-9099"]
+    metrics_path: "/metrics"
 
-  - job_name: 'opentelemetry-collector'
+  - job_name: "opentelemetry-collector"
     static_configs:
-      - targets: ['localhost:8888']
+      - targets: ["localhost:8888"]
 ```
 
 ### Key Metrics
@@ -132,10 +132,10 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'caxton-metrics'
+        - job_name: "caxton-metrics"
           scrape_interval: 10s
           static_configs:
-            - targets: ['localhost:9090']
+            - targets: ["localhost:9090"]
 
 processors:
   batch:
@@ -290,7 +290,7 @@ groups:
           summary: "Orchestrator is down"
 
       - alert: HighMemoryUsage
-        expr: caxton_agent_memory_bytes > 1073741824  # 1GB
+        expr: caxton_agent_memory_bytes > 1073741824 # 1GB
         for: 10m
         labels:
           severity: warning

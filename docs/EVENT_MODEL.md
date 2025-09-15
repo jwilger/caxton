@@ -5,11 +5,16 @@
 **Status**: Collaborative Revision incorporating Product and UX feedback
 **Technical Architect**: technical-architect
 **Contributors**: product-manager, ux-ui-design-expert
-**Methodology**: [Event Modeling](https://eventmodeling.org/posts/event-modeling-cheatsheet/)
+**Methodology**: [Event Modeling Cheatsheet](https://eventmodeling.org/posts/event-modeling-cheatsheet/)
 
 ## Executive Summary
 
-This Event Model captures the complete system behavior of Caxton as an agent orchestration application server, with particular emphasis on the **5-10 minute onboarding experience**. It defines the events that occur in the system, the commands that trigger them, the views that users observe, and the workflows that connect everything together. The model ensures technical feasibility while centering the user experience and business value.
+This Event Model captures the complete system behavior of Caxton as an agent
+orchestration application server, with particular emphasis on the **5-10 minute
+onboarding experience**. It defines the events that occur in the system, the
+commands that trigger them, the views that users observe, and the workflows
+that connect everything together. The model ensures technical feasibility while
+centering the user experience and business value.
 
 ## Event Modeling Principles
 
@@ -23,24 +28,185 @@ Following the Event Modeling methodology:
 
 ## System Timeline Overview
 
-```
-Time ─────────────────────────────────────────────────────────────────────────>
+The following diagram shows the vertical slices of functionality using proper event modeling swimlanes:
 
-[User Onboarding]──>[System Bootstrap]──>[Agent Creation]──>[Capability Discovery]──>[Message Routing]──>[Tool Execution]──>[Memory Storage]
-        │                    │                    │                    │                     │                   │                │
-    Install &            Server              Template            Register             Route            Execute          Store
-    Quickstart          Ready               Applied           Skills Available    Requests Handled        Tools          Memories
-    (0-5 min)          (< 2s)              (< 2s)              (< 100ms)           (< 5ms)              (< 50ms)        (< 100ms)
+```mermaid
+graph TB
+    subgraph "User Onboarding (0-5 min)"
+        UI1["`**UI/External**
+        Download & Install
+        Run quickstart
+        Select template`"]
 
-ONBOARDING MILESTONES:
-├─ Minute 0-1: Download and install Caxton
-├─ Minute 1-2: Run `caxton init` with template selection
-├─ Minute 2-3: Review generated configuration
-├─ Minute 3-5: Customize for specific use case
-├─ Minute 5-6: Start agent with `caxton agent start`
-├─ Minute 6-7: Test with first request
-└─ Minute 7-10: Iterate and see results
+        AUTO1["`**Automation**
+        Package manager
+        Template engine
+        File generator`"]
+
+        PROJ1["`**Projection**
+        Installation status
+        Available templates
+        Generated files`"]
+
+        CMD1["`**Commands**
+        InstallCaxton
+        RunQuickstart
+        InitializeAgent`"]
+
+        EVT1["`**Events**
+        CaxtonInstalled
+        QuickstartInitiated
+        AgentInitialized`"]
+    end
+
+    subgraph "System Bootstrap (< 2s)"
+        UI2["`**UI/External**
+        Server startup
+        Health check
+        Ready indicator`"]
+
+        AUTO2["`**Automation**
+        Process manager
+        Port binding
+        Signal handling`"]
+
+        PROJ2["`**Projection**
+        Server status
+        System metrics
+        Error logs`"]
+
+        CMD2["`**Commands**
+        StartServer
+        HealthCheck
+        GracefulShutdown`"]
+
+        EVT2["`**Events**
+        ServerStarted
+        PortBound
+        HealthCheckPassed`"]
+    end
+
+    subgraph "Agent Creation (< 2s)"
+        UI3["`**UI/External**
+        Config validation
+        Agent registration
+        Status feedback`"]
+
+        AUTO3["`**Automation**
+        Config parser
+        Agent registry
+        Hot reload`"]
+
+        PROJ3["`**Projection**
+        Active agents
+        Config errors
+        Agent capabilities`"]
+
+        CMD3["`**Commands**
+        RegisterAgent
+        ValidateConfig
+        ReloadConfiguration`"]
+
+        EVT3["`**Events**
+        AgentRegistered
+        ConfigurationLoaded
+        CapabilityDeclared`"]
+    end
+
+    subgraph "Message Routing (< 5ms)"
+        UI4["`**UI/External**
+        Message sending
+        Response handling
+        Error reporting`"]
+
+        AUTO4["`**Automation**
+        Routing engine
+        Load balancer
+        Circuit breaker`"]
+
+        PROJ4["`**Projection**
+        Route tables
+        Agent availability
+        Performance metrics`"]
+
+        CMD4["`**Commands**
+        RouteMessage
+        UpdateRoutes
+        HandleFailure`"]
+
+        EVT4["`**Events**
+        MessageRouted
+        RoutingFailed
+        AgentSelected`"]
+    end
+
+    %% Flow arrows between phases
+    EVT1 --> CMD2
+    EVT2 --> CMD3
+    EVT3 --> CMD4
+
+    %% Swimlane connections within each phase
+    UI1 --> CMD1
+    CMD1 --> AUTO1
+    AUTO1 --> EVT1
+    EVT1 --> PROJ1
+
+    UI2 --> CMD2
+    CMD2 --> AUTO2
+    AUTO2 --> EVT2
+    EVT2 --> PROJ2
+
+    UI3 --> CMD3
+    CMD3 --> AUTO3
+    AUTO3 --> EVT3
+    EVT3 --> PROJ3
+
+    UI4 --> CMD4
+    CMD4 --> AUTO4
+    AUTO4 --> EVT4
+    EVT4 --> PROJ4
+
+    classDef uiClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef autoClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef projClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef cmdClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef evtClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class UI1,UI2,UI3,UI4 uiClass
+    class AUTO1,AUTO2,AUTO3,AUTO4 autoClass
+    class PROJ1,PROJ2,PROJ3,PROJ4 projClass
+    class CMD1,CMD2,CMD3,CMD4 cmdClass
+    class EVT1,EVT2,EVT3,EVT4 evtClass
 ```
+
+### Vertical Slice Descriptions
+
+**User Onboarding (0-5 min)**: Complete developer onboarding from installation to first working agent, emphasizing the 5-10 minute promise from ADR-0041.
+
+**System Bootstrap (< 2s)**: Server initialization and readiness verification, ensuring rapid startup for development iterations.
+
+**Agent Creation (< 2s)**: Configuration-driven agent registration and capability declaration following ADR-0028 patterns.
+
+**Message Routing (< 5ms)**: High-performance capability-based message routing with automatic load balancing and fault tolerance.
+
+### Performance Targets
+
+| Vertical Slice   | Time Budget | Success Criteria                             |
+| ---------------- | ----------- | -------------------------------------------- |
+| User Onboarding  | 0-5 minutes | First working agent deployed and tested      |
+| System Bootstrap | < 2 seconds | Server responding to health checks           |
+| Agent Creation   | < 2 seconds | Configuration validated and agent registered |
+| Message Routing  | < 5ms       | Message routed to appropriate agent          |
+
+### Key Milestones
+
+- **Minute 0-1**: Download and install Caxton
+- **Minute 1-2**: Run `caxton init` with template selection
+- **Minute 2-3**: Review generated configuration
+- **Minute 3-5**: Customize for specific use case
+- **Minute 5-6**: Start agent with `caxton serve`
+- **Minute 6-7**: Test with first request
+- **Minute 7-10**: Iterate and see results
 
 ## Phase 0: User Onboarding Journey (Critical for 5-10 Minute Promise)
 
@@ -55,7 +221,8 @@ InstallCaxton:
     - CaxtonInstalled (success)
     - InstallationFailed (failure)
   user_experience:
-    feedback: "Installing Caxton..." → Progress bar → "✓ Caxton installed successfully!"
+    feedback: |
+      "Installing Caxton..." → Progress bar → "✓ Caxton installed successfully!"
     time_budget: 30-60 seconds
 
 RunQuickstart:
@@ -141,7 +308,9 @@ AgentInitialized:
   template_used: TemplateId?
   files_created: [FilePath]
   next_steps_shown: Boolean
-  success_message: String # e.g., "✓ Agent 'my-analyzer' created! Run: caxton agent start my-analyzer"
+  success_message:
+    String
+    # e.g., "✓ Agent 'my-analyzer' created! Run: caxton agent start my-analyzer"
 
 InitializationFailed:
   timestamp: DateTime
@@ -229,7 +398,9 @@ SuccessCelebration:
   condition: is_first_time_user
   action: ShowSuccessMessage
   produces: OnboardingComplete
-  message: "🎉 Congratulations! You've created your first Caxton agent in {time_elapsed}!"
+  message: |
+    "🎉 Congratulations! You've created your first Caxton agent in
+    {time_elapsed}!"
 ```
 
 ## Phase 1: System Bootstrap
@@ -1481,7 +1652,8 @@ MonitorDeveloperVelocity:
 
 ## 5-10 Minute Demo Flow
 
-This sequence demonstrates the complete MVP functionality with emphasis on the 5-10 minute experience:
+This sequence demonstrates the complete MVP functionality with emphasis on the
+5-10 minute experience:
 
 ```yaml
 DemoFlow:
@@ -1588,25 +1760,31 @@ This comprehensive Event Model revision addresses all critical feedback:
 
 1. **Phase 0 Onboarding**: Complete journey from installation to first success
 2. **Template System**: Embedded throughout as primary creation mechanism
-3. **User-Centric Naming**: CaxtonReady, AgentActive, SkillsAvailable, RequestHandled
+3. **User-Centric Naming**: CaxtonReady, AgentActive, SkillsAvailable,
+   RequestHandled
 4. **Error Recovery**: Actionable guidance, auto-fix offers, recovery workflows
-5. **Business Metrics**: Comprehensive views for measuring the 5-10 minute promise
-6. **CLI Feedback**: Sub-100ms acknowledgments, progress updates, success celebrations
+5. **Business Metrics**: Comprehensive views for measuring the 5-10 minute
+   promise
+6. **CLI Feedback**: Sub-100ms acknowledgments, progress updates, success
+   celebrations
 
 ## Next Steps
 
-1. **Final Review**: product-manager and ux-ui-design-expert validate completeness
-2. **Consensus Check**: Confirm model is complete, cohesive, accurate, and sufficient
+1. **Final Review**: product-manager and ux-ui-design-expert validate
+   completeness
+2. **Consensus Check**: Confirm model is complete, cohesive, accurate, and
+   sufficient
 3. **Approval**: All three agents agree model is ready
 4. **Handoff**: Proceed to Phase 3 (Architectural Decision Records)
 
 ## Revision History
 
-| Version   | Date       | Author              | Changes                                                                                                                                                                                      |
-| --------- | ---------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1.0-draft | 2025-09-14 | technical-architect | Initial Event Model draft from requirements                                                                                                                                                  |
-| 2.0       | 2025-09-14 | technical-architect | Comprehensive revision incorporating product-manager and ux-ui-design-expert feedback: Added Phase 0 onboarding, template system, user-centric terminology, error recovery, business metrics |
+| Version   | Date       | Author              | Changes                               |
+| --------- | ---------- | ------------------- | ------------------------------------- |
+| 1.0-draft | 2025-09-14 | technical-architect | Initial Event Model from requirements |
+| 2.0       | 2025-09-14 | technical-architect | Added onboarding, templates, metrics  |
 
 ---
 
-**Status**: Ready for final collaborative review. Model now captures technical behavior, business workflows, and user experience comprehensively.
+**Status**: Ready for final collaborative review. Model now captures technical
+behavior, business workflows, and user experience comprehensively.

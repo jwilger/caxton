@@ -55,16 +55,16 @@ Agents communicate using "speech acts" - messages with specific intentions:
 
 #### What Caxton Uses
 
-| Performative | Purpose | Example Use Case |
-|--------------|---------|------------------|
-| **REQUEST** | Ask agent to perform action | "Process this data" |
-| **INFORM** | Share information | "Task completed" |
-| **QUERY** | Ask for information | "What's the status?" |
-| **PROPOSE** | Offer to do something | "I can handle this for $10" |
-| **ACCEPT_PROPOSAL** | Accept an offer | "Yes, proceed" |
-| **REJECT_PROPOSAL** | Decline an offer | "No, too expensive" |
-| **FAILURE** | Report inability | "Cannot complete: disk full" |
-| **NOT_UNDERSTOOD** | Message unclear | "Unknown action requested" |
+| Performative        | Purpose                     | Example Use Case             |
+| ------------------- | --------------------------- | ---------------------------- |
+| **REQUEST**         | Ask agent to perform action | "Process this data"          |
+| **INFORM**          | Share information           | "Task completed"             |
+| **QUERY**           | Ask for information         | "What's the status?"         |
+| **PROPOSE**         | Offer to do something       | "I can handle this for $10"  |
+| **ACCEPT_PROPOSAL** | Accept an offer             | "Yes, proceed"               |
+| **REJECT_PROPOSAL** | Decline an offer            | "No, too expensive"          |
+| **FAILURE**         | Report inability            | "Cannot complete: disk full" |
+| **NOT_UNDERSTOOD**  | Message unclear             | "Unknown action requested"   |
 
 #### Real-World Analogy
 
@@ -323,13 +323,13 @@ async fn distributed_analysis(data: Data) -> Result<Report> {
 
 ### What We Simplified
 
-| Traditional Approach | Caxton Approach | Why |
-|---------------------|-----------------|-----|
-| Complex ontologies (OWL/RDF) | JSON Schema | Better tooling, developer friendly |
-| Semantic languages | Plain JSON | Universal support |
-| Many performatives (~22) | Essential 8 | Simpler mental model |
-| Agent platforms | Container orchestration | Cloud-native |
-| Service discovery systems | Kubernetes/Consul | Modern infrastructure |
+| Traditional Approach         | Caxton Approach         | Why                                |
+| ---------------------------- | ----------------------- | ---------------------------------- |
+| Complex ontologies (OWL/RDF) | JSON Schema             | Better tooling, developer friendly |
+| Semantic languages           | Plain JSON              | Universal support                  |
+| Many performatives (~22)     | Essential 8             | Simpler mental model               |
+| Agent platforms              | Container orchestration | Cloud-native                       |
+| Service discovery systems    | Kubernetes/Consul       | Modern infrastructure              |
 
 ## Debugging Agent Messages
 

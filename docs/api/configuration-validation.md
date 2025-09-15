@@ -439,7 +439,12 @@ Retrieve available configuration agent templates.
       "category": "research",
       "complexity": "advanced",
       "capabilities": ["web-search", "content-analysis", "fact-checking"],
-      "required_tools": ["web_search", "html_parser", "pdf_generator", "fact_checker"],
+      "required_tools": [
+        "web_search",
+        "html_parser",
+        "pdf_generator",
+        "fact_checker"
+      ],
       "memory": { "enabled": true },
       "use_cases": [
         "Academic research",
@@ -450,7 +455,12 @@ Retrieve available configuration agent templates.
     }
   ],
   "total": 2,
-  "categories": ["data-processing", "research", "content-generation", "automation"],
+  "categories": [
+    "data-processing",
+    "research",
+    "content-generation",
+    "automation"
+  ],
   "complexity_levels": ["simple", "intermediate", "advanced"]
 }
 ```
@@ -508,7 +518,12 @@ Retrieve detailed template information including full configuration content.
       "type": "string",
       "required": false,
       "default": "general analysis",
-      "options": ["sales analysis", "financial reporting", "survey analysis", "general analysis"]
+      "options": [
+        "sales analysis",
+        "financial reporting",
+        "survey analysis",
+        "general analysis"
+      ]
     },
     {
       "name": "OPTIONAL_CHART_TOOL",
@@ -620,11 +635,7 @@ Update a running configuration agent with new configuration (development only).
   "hot_reload_id": "reload_efg678hij901",
   "previous_version": "1.0.0",
   "new_version": "1.1.0",
-  "changes_detected": [
-    "version",
-    "system_prompt",
-    "parameters.max_file_size"
-  ],
+  "changes_detected": ["version", "system_prompt", "parameters.max_file_size"],
   "reload_time_ms": 1250,
   "backup_created": "backup_klm234nop567",
   "status": "success"
@@ -751,20 +762,20 @@ Compare two configuration versions to identify differences.
 
 ```javascript
 // Validate configuration before deployment
-const validation = await fetch('/api/v1/validate/config', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const validation = await fetch("/api/v1/validate/config", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     content: configContent,
-    workspace: 'production',
+    workspace: "production",
     strict_mode: true,
-    check_tool_availability: true
-  })
+    check_tool_availability: true,
+  }),
 });
 
 const result = await validation.json();
 if (!result.valid) {
-  console.error('Configuration validation failed:', result.errors);
+  console.error("Configuration validation failed:", result.errors);
   return;
 }
 
@@ -776,19 +787,22 @@ await deployAgent(configContent);
 
 ```javascript
 // Generate configuration from template
-const generated = await fetch('/api/v1/templates/data-analyzer-basic/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    parameters: {
-      AGENT_NAME: 'SalesAnalyzer',
-      SPECIALIZATION: 'sales analysis',
-      MEMORY_ENABLED: true
-    },
-    workspace: 'sales-team',
-    validate: true
-  })
-});
+const generated = await fetch(
+  "/api/v1/templates/data-analyzer-basic/generate",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      parameters: {
+        AGENT_NAME: "SalesAnalyzer",
+        SPECIALIZATION: "sales analysis",
+        MEMORY_ENABLED: true,
+      },
+      workspace: "sales-team",
+      validate: true,
+    }),
+  },
+);
 
 const config = await generated.json();
 if (config.ready_to_deploy) {
@@ -800,15 +814,18 @@ if (config.ready_to_deploy) {
 
 ```javascript
 // Hot-reload during development
-const hotReload = await fetch(`/api/v1/dev/config-agents/${agentId}/hot-reload`, {
-  method: 'PUT',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    content: updatedConfig,
-    validate_first: true,
-    backup_current: true
-  })
-});
+const hotReload = await fetch(
+  `/api/v1/dev/config-agents/${agentId}/hot-reload`,
+  {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: updatedConfig,
+      validate_first: true,
+      backup_current: true,
+    }),
+  },
+);
 
 const reloadResult = await hotReload.json();
 console.log(`Reloaded in
