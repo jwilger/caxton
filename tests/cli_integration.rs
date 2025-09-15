@@ -42,3 +42,18 @@ fn test_cli_recognizes_serve_subcommand() {
         "CLI should recognize 'serve' as a valid subcommand"
     );
 }
+
+#[test]
+fn test_cli_invalid_subcommand_produces_helpful_error_message() {
+    let output = Command::new("cargo")
+        .args(["run", "--bin", "caxton-cli", "--", "invalid-subcommand"])
+        .output()
+        .expect("Failed to execute CLI command");
+
+    let stderr_text = String::from_utf8_lossy(&output.stderr);
+
+    assert!(
+        stderr_text.contains("error: unrecognized subcommand 'invalid-subcommand'"),
+        "Error message should clearly identify the unrecognized subcommand. Actual stderr: {stderr_text}"
+    );
+}
