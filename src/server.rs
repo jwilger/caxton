@@ -37,26 +37,6 @@ pub async fn start_server(
     Ok((listener, actual_addr))
 }
 
-/// Start server on any available port
-///
-/// This function allows the OS to choose an available port automatically.
-/// Commonly used for testing scenarios or when the specific port doesn't matter.
-///
-/// # Errors
-///
-/// Returns an error if the server cannot bind to any available port.
-#[instrument]
-pub async fn start_server_on_available_port()
--> Result<(TcpListener, SocketAddr), Box<dyn std::error::Error>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 0)); // Port 0 = OS chooses available port
-    let listener = TcpListener::bind(addr).await?;
-    let actual_addr = listener.local_addr()?;
-
-    info!(address = %actual_addr, port = actual_addr.port(), "Server started on available port");
-
-    Ok((listener, actual_addr))
-}
-
 /// Serve the application on the given listener
 ///
 /// # Errors
@@ -115,9 +95,34 @@ pub async fn serve_with_graceful_shutdown(
     Ok(())
 }
 
+/// Testing utilities for server functionality
+pub mod testing {
+    use super::{SocketAddr, TcpListener, info, instrument};
+
+    /// Start server on any available port
+    ///
+    /// This function allows the OS to choose an available port automatically.
+    /// Primarily used for testing scenarios where the specific port doesn't matter.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the server cannot bind to any available port.
+    #[instrument]
+    pub async fn start_server_on_available_port()
+    -> Result<(TcpListener, SocketAddr), Box<dyn std::error::Error>> {
+        let addr = SocketAddr::from(([127, 0, 0, 1], 0)); // Port 0 = OS chooses available port
+        let listener = TcpListener::bind(addr).await?;
+        let actual_addr = listener.local_addr()?;
+
+        info!(address = %actual_addr, port = actual_addr.port(), "Server started on available port");
+
+        Ok((listener, actual_addr))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{create_router, serve, testing};
     use tokio::time::{Duration, timeout};
 
     #[tokio::test]
@@ -130,7 +135,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_on_available_port() {
-        let result = start_server_on_available_port().await;
+        let result = testing::start_server_on_available_port().await;
         assert!(
             result.is_ok(),
             "Should be able to start server on available port"
@@ -150,7 +155,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_responds_to_http_requests() {
-        let (listener, addr) = start_server_on_available_port().await.unwrap();
+        let (listener, addr) = testing::start_server_on_available_port().await.unwrap();
         let router = create_router();
 
         // Start server in background task
@@ -179,7 +184,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_health_endpoint_responds() {
-        let (listener, addr) = start_server_on_available_port().await.unwrap();
+        let (listener, addr) = testing::start_server_on_available_port().await.unwrap();
         let router = create_router();
 
         // Start server in background task

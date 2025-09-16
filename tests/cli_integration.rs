@@ -74,7 +74,7 @@ fn test_cli_invalid_subcommand_produces_helpful_error_message() {
 #[tokio::test]
 async fn test_serve_command_starts_http_server_on_port_8080() {
     // Start server in-process on available port to avoid conflicts
-    let (listener, addr) = server::start_server_on_available_port()
+    let (listener, addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();
@@ -112,7 +112,7 @@ async fn test_serve_command_starts_http_server_on_port_8080() {
 #[tokio::test]
 async fn test_health_endpoint_responds_within_2_seconds() {
     // Start server in-process on available port to avoid conflicts
-    let (listener, addr) = server::start_server_on_available_port()
+    let (listener, addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();
@@ -171,7 +171,7 @@ port = 9090
     );
 
     // Test that server starts with the configured port (using available port for testing)
-    let (listener, addr) = server::start_server_on_available_port()
+    let (listener, addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();
@@ -211,7 +211,7 @@ async fn test_server_shuts_down_gracefully_on_cancellation() {
     use tokio_util::sync::CancellationToken;
 
     // Start server in-process to test graceful shutdown
-    let (listener, addr) = server::start_server_on_available_port()
+    let (listener, addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();
@@ -263,7 +263,7 @@ async fn test_idle_server_memory_usage_under_100mb() {
     use memory_stats::memory_stats;
 
     // Start server in-process on available port to establish baseline
-    let (listener, _addr) = server::start_server_on_available_port()
+    let (listener, _addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();
@@ -298,7 +298,7 @@ async fn test_server_emits_structured_lifecycle_events() {
     let _ = tracing_subscriber::fmt().with_test_writer().try_init();
 
     // Start server (should emit startup structured logging)
-    let (listener, addr) = server::start_server_on_available_port()
+    let (listener, addr) = server::testing::start_server_on_available_port()
         .await
         .expect("Failed to start server on available port");
     let router = server::create_router();

@@ -3,8 +3,6 @@
 //! This module defines the core domain types following Domain-Driven Design principles
 //! and the "Parse, Don't Validate" philosophy. All types make illegal states unrepresentable.
 
-#![allow(dead_code)]
-
 use serde::Deserialize;
 use std::path::PathBuf;
 
