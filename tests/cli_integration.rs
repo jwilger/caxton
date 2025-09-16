@@ -327,3 +327,50 @@ async fn test_server_emits_structured_lifecycle_events() {
         "Server should complete lifecycle with structured logging enabled"
     );
 }
+
+#[test]
+fn test_agent_configuration_loads_from_toml_file() {
+    // Agent configuration TOML content following ADR-0032 and STORY-003 schema
+    let agent_toml_content = r#"
+name = "code-reviewer"
+version = "1.0.0"
+capabilities = ["code_analysis", "documentation_review"]
+
+system_prompt = '''
+You are a code reviewer agent that analyzes code for quality, style, and best practices.
+Focus on actionable feedback and constructive suggestions.
+'''
+
+user_prompt_template = '''
+Please review the following code changes:
+
+{code_diff}
+
+Provide feedback on:
+1. Code quality and style
+2. Potential bugs or issues
+3. Best practice recommendations
+'''
+
+[tools]
+available = ["mcp__git__git_diff", "mcp__git__git_log", "read_file"]
+
+[memory]
+enabled = true
+context_window = 4000
+
+[conversation]
+max_turns = 50
+timeout_seconds = 300
+"#;
+
+    // Test that agent configuration loads successfully from TOML
+    let agent_config = caxton::domain::agent::load_agent_config_from_toml(agent_toml_content)
+        .expect("Agent configuration should load successfully from valid TOML");
+
+    assert_eq!(
+        agent_config.name.as_str(),
+        "code-reviewer",
+        "Agent name should be parsed correctly from TOML configuration"
+    );
+}

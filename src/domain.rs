@@ -308,6 +308,522 @@ pub mod server {
     }
 }
 
+/// Agent configuration and management domain types
+pub mod agent {
+    use serde::Deserialize;
+    use std::collections::HashMap;
+
+    /// A validated agent name following kebab-case pattern
+    /// Must match: ^[a-z][a-z0-9-]*[a-z0-9]$
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+    #[serde(try_from = "String")]
+    pub struct AgentName(String);
+
+    impl AgentName {
+        /// Create a new `AgentName` with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the name doesn't match the required pattern.
+        pub fn new(value: String) -> Result<Self, String> {
+            // Validate kebab-case pattern
+            if value.is_empty() {
+                return Err("Agent name cannot be empty".to_string());
+            }
+
+            let chars: Vec<char> = value.chars().collect();
+
+            // Must start with lowercase letter
+            if !chars[0].is_ascii_lowercase() {
+                return Err("Agent name must start with a lowercase letter".to_string());
+            }
+
+            // Must end with lowercase letter or digit
+            let last = chars[chars.len() - 1];
+            if !last.is_ascii_lowercase() && !last.is_ascii_digit() {
+                return Err("Agent name must end with a lowercase letter or digit".to_string());
+            }
+
+            // Middle characters must be lowercase, digit, or hyphen
+            for c in &chars {
+                if !c.is_ascii_lowercase() && !c.is_ascii_digit() && *c != '-' {
+                    return Err(format!("Agent name contains invalid character '{c}'"));
+                }
+            }
+
+            // No consecutive hyphens
+            if value.contains("--") {
+                return Err("Agent name cannot contain consecutive hyphens".to_string());
+            }
+
+            Ok(AgentName(value))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl TryFrom<String> for AgentName {
+        type Error = String;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            AgentName::new(value)
+        }
+    }
+
+    impl std::fmt::Display for AgentName {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    /// Semantic version for agent versioning
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    #[serde(try_from = "String")]
+    pub struct Version(String);
+
+    impl Version {
+        /// Create a new Version with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the version doesn't follow semver format.
+        pub fn new(value: String) -> Result<Self, String> {
+            // Basic semver validation (MAJOR.MINOR.PATCH)
+            let parts: Vec<&str> = value.split('.').collect();
+            if parts.len() != 3 {
+                return Err("Version must be in MAJOR.MINOR.PATCH format".to_string());
+            }
+
+            for (i, part) in parts.iter().enumerate() {
+                if part.is_empty() {
+                    return Err(format!("Version part {} cannot be empty", i + 1));
+                }
+                if part.parse::<u32>().is_err() {
+                    return Err(format!("Version part '{part}' must be a number"));
+                }
+            }
+
+            Ok(Version(value))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl TryFrom<String> for Version {
+        type Error = String;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            Version::new(value)
+        }
+    }
+
+    impl std::fmt::Display for Version {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    /// A validated capability identifier
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+    #[serde(try_from = "String")]
+    pub struct Capability(String);
+
+    impl Capability {
+        /// Create a new Capability with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the capability name is invalid.
+        pub fn new(value: String) -> Result<Self, String> {
+            if value.is_empty() {
+                return Err("Capability cannot be empty".to_string());
+            }
+
+            // Capability must be snake_case or contain valid characters
+            for c in value.chars() {
+                if !c.is_ascii_alphanumeric() && c != '_' {
+                    return Err(format!("Capability contains invalid character '{c}'"));
+                }
+            }
+
+            Ok(Capability(value))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl TryFrom<String> for Capability {
+        type Error = String;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            Capability::new(value)
+        }
+    }
+
+    /// A validated tool identifier (MCP tool reference)
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+    #[serde(try_from = "String")]
+    pub struct ToolName(String);
+
+    impl ToolName {
+        /// Create a new `ToolName` with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the tool name is invalid.
+        pub fn new(value: String) -> Result<Self, String> {
+            if value.is_empty() {
+                return Err("Tool name cannot be empty".to_string());
+            }
+
+            // Tool names can contain alphanumeric, underscore, double underscore (for MCP)
+            // Example: mcp__git__git_diff
+            for c in value.chars() {
+                if !c.is_ascii_alphanumeric() && c != '_' {
+                    return Err(format!("Tool name contains invalid character '{c}'"));
+                }
+            }
+
+            Ok(ToolName(value))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl TryFrom<String> for ToolName {
+        type Error = String;
+
+        fn try_from(value: String) -> Result<Self, Self::Error> {
+            ToolName::new(value)
+        }
+    }
+
+    /// LLM provider type
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    pub enum LlmProvider {
+        /// `OpenAI` provider (GPT models)
+        OpenAI,
+        /// Anthropic provider (Claude models)
+        Anthropic,
+        /// Local provider (self-hosted models)
+        Local,
+    }
+
+    /// LLM configuration for agent
+    #[derive(Debug, Clone, PartialEq, Deserialize)]
+    pub struct LlmConfig {
+        /// LLM provider
+        pub provider: LlmProvider,
+        /// Model identifier
+        pub model: String,
+        /// Temperature (0.0-2.0)
+        #[serde(default = "default_temperature")]
+        pub temperature: f32,
+        /// Max tokens for response
+        #[serde(default)]
+        pub max_tokens: Option<u32>,
+        /// Top-p nucleus sampling
+        #[serde(default)]
+        pub top_p: Option<f32>,
+        /// Frequency penalty
+        #[serde(default)]
+        pub frequency_penalty: Option<f32>,
+        /// Presence penalty
+        #[serde(default)]
+        pub presence_penalty: Option<f32>,
+    }
+
+    fn default_temperature() -> f32 {
+        0.7
+    }
+
+    /// Memory configuration for agent
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct MemoryConfig {
+        /// Whether memory is enabled
+        #[serde(default = "default_true")]
+        pub enabled: bool,
+        /// Context window size
+        #[serde(default = "default_context_window")]
+        pub context_window: u32,
+        /// Memory scope
+        #[serde(default)]
+        pub scope: MemoryScope,
+        /// Retention period
+        #[serde(default)]
+        pub retention_period: Option<String>,
+        /// Max entries to store
+        #[serde(default)]
+        pub max_entries: Option<u32>,
+    }
+
+    fn default_true() -> bool {
+        true
+    }
+
+    fn default_context_window() -> u32 {
+        4000
+    }
+
+    /// Memory scope for agent
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
+    #[serde(rename_all = "lowercase")]
+    pub enum MemoryScope {
+        /// Agent-specific memory
+        #[default]
+        Agent,
+        /// Conversation-specific memory
+        Conversation,
+        /// Global memory shared across agents
+        Global,
+    }
+
+    /// Conversation configuration
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct ConversationConfig {
+        /// Maximum conversation turns
+        #[serde(default = "default_max_turns")]
+        pub max_turns: u32,
+        /// Timeout in seconds
+        #[serde(default = "default_timeout")]
+        pub timeout_seconds: u32,
+    }
+
+    fn default_max_turns() -> u32 {
+        50
+    }
+
+    fn default_timeout() -> u32 {
+        300
+    }
+
+    /// Tools configuration section
+    #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+    pub struct ToolsConfig {
+        /// List of available tools
+        pub available: Vec<ToolName>,
+    }
+
+    /// Complete agent configuration
+    #[derive(Debug, Clone, PartialEq, Deserialize)]
+    pub struct AgentConfig {
+        /// Agent name
+        pub name: AgentName,
+        /// Agent version
+        pub version: Version,
+        /// Agent description
+        #[serde(default)]
+        pub description: Option<String>,
+        /// Agent capabilities
+        pub capabilities: Vec<Capability>,
+        /// Tool configuration
+        pub tools: ToolsConfig,
+        /// LLM configuration
+        #[serde(default)]
+        pub llm: Option<LlmConfig>,
+        /// Memory configuration
+        #[serde(default)]
+        pub memory: Option<MemoryConfig>,
+        /// Conversation configuration
+        #[serde(default)]
+        pub conversation: Option<ConversationConfig>,
+        /// System prompt
+        pub system_prompt: String,
+        /// User prompt template
+        pub user_prompt_template: String,
+        /// Agent documentation
+        #[serde(default)]
+        pub documentation: Option<String>,
+        /// Additional parameters
+        #[serde(default)]
+        pub parameters: HashMap<String, toml::Value>,
+    }
+
+    impl AgentConfig {
+        /// Get the agent name
+        #[must_use]
+        pub fn name(&self) -> &AgentName {
+            &self.name
+        }
+
+        /// Get the agent version
+        #[must_use]
+        pub fn version(&self) -> &Version {
+            &self.version
+        }
+
+        /// Check if agent has a specific capability
+        #[must_use]
+        pub fn has_capability(&self, capability: &str) -> bool {
+            self.capabilities.iter().any(|c| c.as_str() == capability)
+        }
+
+        /// Check if agent has access to a specific tool
+        #[must_use]
+        pub fn has_tool(&self, tool: &str) -> bool {
+            self.tools.available.iter().any(|t| t.as_str() == tool)
+        }
+    }
+
+    /// Agent configuration errors
+    #[derive(Debug)]
+    pub enum AgentConfigError {
+        /// TOML parsing failed
+        ParseError {
+            /// Error message
+            message: String,
+        },
+        /// Invalid agent name
+        InvalidName {
+            /// The invalid name
+            name: String,
+            /// Reason for invalidity
+            reason: String,
+        },
+        /// Invalid version
+        InvalidVersion {
+            /// The invalid version
+            version: String,
+            /// Reason for invalidity
+            reason: String,
+        },
+        /// Missing required field
+        MissingField {
+            /// Name of the missing field
+            field: String,
+        },
+        /// Invalid capability
+        InvalidCapability {
+            /// The invalid capability
+            capability: String,
+            /// Reason for invalidity
+            reason: String,
+        },
+        /// Invalid tool reference
+        InvalidTool {
+            /// The invalid tool
+            tool: String,
+            /// Reason for invalidity
+            reason: String,
+        },
+    }
+
+    impl std::fmt::Display for AgentConfigError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                AgentConfigError::ParseError { message } => {
+                    write!(f, "Failed to parse agent configuration: {message}")
+                }
+                AgentConfigError::InvalidName { name, reason } => {
+                    write!(f, "Invalid agent name '{name}': {reason}")
+                }
+                AgentConfigError::InvalidVersion { version, reason } => {
+                    write!(f, "Invalid version '{version}': {reason}")
+                }
+                AgentConfigError::MissingField { field } => {
+                    write!(f, "Missing required field: {field}")
+                }
+                AgentConfigError::InvalidCapability { capability, reason } => {
+                    write!(f, "Invalid capability '{capability}': {reason}")
+                }
+                AgentConfigError::InvalidTool { tool, reason } => {
+                    write!(f, "Invalid tool '{tool}': {reason}")
+                }
+            }
+        }
+    }
+
+    impl std::error::Error for AgentConfigError {}
+
+    /// Result type for agent operations
+    pub type AgentResult<T> = Result<T, AgentConfigError>;
+
+    /// Load agent configuration from TOML string
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the TOML cannot be parsed or validated.
+    pub fn load_agent_config_from_toml(content: &str) -> AgentResult<AgentConfig> {
+        // Trim leading/trailing whitespace from TOML content
+        let trimmed_content = content.trim();
+        toml::from_str(trimmed_content).map_err(|e| AgentConfigError::ParseError {
+            message: e.to_string(),
+        })
+    }
+
+    /// Validate agent configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the configuration is invalid.
+    pub fn validate_agent_config(_config: &AgentConfig) -> AgentResult<()> {
+        unimplemented!("Agent configuration validation will be implemented by green-implementer")
+    }
+
+    /// Deploy agent with configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if deployment fails.
+    pub fn deploy_agent(_config: AgentConfig) -> AgentResult<AgentId> {
+        unimplemented!("Agent deployment will be implemented by green-implementer")
+    }
+
+    /// Agent identifier (generated UUID)
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct AgentId(String);
+
+    impl AgentId {
+        /// Generate a new agent ID
+        #[must_use]
+        pub fn generate() -> Self {
+            unimplemented!("Agent ID generation will be implemented by green-implementer")
+        }
+
+        /// Create from existing ID string
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the ID is invalid.
+        pub fn from_string(id: String) -> Result<Self, String> {
+            // Validate UUID format
+            if id.len() != 36 {
+                return Err("Agent ID must be a valid UUID".to_string());
+            }
+            Ok(AgentId(id))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    impl std::fmt::Display for AgentId {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+}
+
 /// Application initialization workflow
 pub mod init {
     use crate::domain::config::ConfigResult;

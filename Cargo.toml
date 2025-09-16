@@ -42,6 +42,7 @@ clap = { version = "4.5", features = ["derive"] }
 config = "0.15.16"
 serde = { version = "1.0.224", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
+toml = "0.8"
 tokio-util = "0.7.16"
 tower = "0.5.2"
 tower-http = { version = "0.6.6", features = ["trace"] }
