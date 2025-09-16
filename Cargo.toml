@@ -50,6 +50,7 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 
 [dev-dependencies]
 libc = "0.2.175"
+memory-stats = "1.2.0"
 reqwest = "0.11"
 
 [profile.bench]
