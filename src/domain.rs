@@ -682,13 +682,94 @@ pub mod agent {
         }
     }
 
+    /// Common TOML error types that can provide helpful suggestions
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum TomlErrorKind {
+        /// Unclosed string literal
+        UnclosedString,
+        /// Invalid key format
+        InvalidKey,
+        /// Missing value for key
+        MissingValue,
+        /// Invalid table syntax
+        InvalidTable,
+        /// Type mismatch
+        TypeMismatch {
+            /// The expected type
+            expected: String,
+            /// The type that was found
+            found: String,
+        },
+        /// General syntax error
+        SyntaxError,
+    }
+
+    impl TomlErrorKind {
+        /// Get a helpful suggestion for fixing this error
+        #[must_use]
+        pub fn suggestion(&self) -> String {
+            match self {
+                TomlErrorKind::UnclosedString => {
+                    "Suggestion: Ensure all string literals are properly closed with matching quotes. Use triple quotes (''') for multi-line strings.".to_string()
+                }
+                TomlErrorKind::InvalidKey => {
+                    "Suggestion: Keys must be bare (alphanumeric+underscore), quoted strings, or dotted. Check for special characters or spaces.".to_string()
+                }
+                TomlErrorKind::MissingValue => {
+                    "Suggestion: Every key must have a value. Add = followed by a valid TOML value (string, number, boolean, array, or table).".to_string()
+                }
+                TomlErrorKind::InvalidTable => {
+                    "Suggestion: Table headers must be in [brackets] or [[double brackets]] for arrays. Ensure no syntax errors in table definition.".to_string()
+                }
+                TomlErrorKind::TypeMismatch { expected, found } => {
+                    format!("Suggestion: Expected {expected} but found {found}. Check the value type matches the field requirements.")
+                }
+                TomlErrorKind::SyntaxError => {
+                    "Suggestion: Check for common syntax issues: unclosed quotes, missing commas in arrays, or invalid escape sequences.".to_string()
+                }
+            }
+        }
+
+        /// Detect error kind from TOML parse error message
+        #[must_use]
+        pub fn from_parse_error(error_msg: &str) -> Self {
+            let lower = error_msg.to_lowercase();
+            if lower.contains("unterminated")
+                || lower.contains("unclosed")
+                || lower.contains("eof while parsing")
+            {
+                TomlErrorKind::UnclosedString
+            } else if lower.contains("invalid key") || lower.contains("bare key") {
+                TomlErrorKind::InvalidKey
+            } else if lower.contains("missing value") || lower.contains("expected value") {
+                TomlErrorKind::MissingValue
+            } else if lower.contains("table") || lower.contains("header") {
+                TomlErrorKind::InvalidTable
+            } else if lower.contains("expected") && lower.contains("found") {
+                // Try to extract types from error message
+                TomlErrorKind::TypeMismatch {
+                    expected: "the correct type".to_string(),
+                    found: "an incorrect type".to_string(),
+                }
+            } else {
+                TomlErrorKind::SyntaxError
+            }
+        }
+    }
+
     /// Agent configuration errors
     #[derive(Debug)]
     pub enum AgentConfigError {
-        /// TOML parsing failed
+        /// TOML parsing failed with structured information
         ParseError {
             /// Error message
             message: String,
+            /// Line number where error occurred (if available)
+            line: Option<usize>,
+            /// Column number where error occurred (if available)
+            column: Option<usize>,
+            /// Type of TOML error for generating suggestions
+            kind: TomlErrorKind,
         },
         /// Invalid agent name
         InvalidName {
@@ -728,8 +809,22 @@ pub mod agent {
     impl std::fmt::Display for AgentConfigError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                AgentConfigError::ParseError { message } => {
-                    write!(f, "Failed to parse agent configuration: {message}")
+                AgentConfigError::ParseError {
+                    message,
+                    line,
+                    column,
+                    kind,
+                } => {
+                    let location = match (line, column) {
+                        (Some(l), Some(c)) => format!(" at line {l}, column {c}"),
+                        (Some(l), None) => format!(" at line {l}"),
+                        _ => String::new(),
+                    };
+                    write!(
+                        f,
+                        "Failed to parse agent configuration{location}: {message}. {}",
+                        kind.suggestion()
+                    )
                 }
                 AgentConfigError::InvalidName { name, reason } => {
                     write!(f, "Invalid agent name '{name}': {reason}")
@@ -763,8 +858,49 @@ pub mod agent {
     pub fn load_agent_config_from_toml(content: &str) -> AgentResult<AgentConfig> {
         // Trim leading/trailing whitespace from TOML content
         let trimmed_content = content.trim();
-        toml::from_str(trimmed_content).map_err(|e| AgentConfigError::ParseError {
-            message: e.to_string(),
+        toml::from_str(trimmed_content).map_err(|e| {
+            let error_str = e.to_string();
+
+            // Extract line and column from error message if available
+            // TOML errors typically include "at line X, column Y" in the message
+            let mut line = None;
+            let mut column = None;
+
+            if let Some(pos) = error_str.find(" at line ") {
+                let substr = &error_str[pos + 9..];
+                if let Some(comma_pos) = substr.find(", column ") {
+                    // Parse line number
+                    if let Ok(l) = substr[..comma_pos].parse::<usize>() {
+                        line = Some(l);
+                    }
+                    // Parse column number
+                    let col_substr = &substr[comma_pos + 9..];
+                    if let Some(end_pos) = col_substr.find(|c: char| !c.is_ascii_digit()) {
+                        if let Ok(c) = col_substr[..end_pos].parse::<usize>() {
+                            column = Some(c);
+                        }
+                    } else if let Ok(c) = col_substr.parse::<usize>() {
+                        column = Some(c);
+                    }
+                } else {
+                    // Only line number, no column
+                    if let Some(end_pos) = substr.find(|c: char| !c.is_ascii_digit())
+                        && let Ok(l) = substr[..end_pos].parse::<usize>()
+                    {
+                        line = Some(l);
+                    }
+                }
+            }
+
+            // Detect the kind of error for appropriate suggestion
+            let kind = TomlErrorKind::from_parse_error(&error_str);
+
+            AgentConfigError::ParseError {
+                message: error_str,
+                line,
+                column,
+                kind,
+            }
         })
     }
 

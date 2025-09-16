@@ -374,3 +374,55 @@ timeout_seconds = 300
         "Agent name should be parsed correctly from TOML configuration"
     );
 }
+
+#[test]
+fn test_agent_configuration_validation_errors_show_line_numbers_and_fixes() {
+    // TOML content with intentional syntax error on line 5 (missing closing quote)
+    let invalid_agent_toml_content = r#"name = "code-reviewer"
+version = "1.0.0"
+capabilities = ["code_review", "static_analysis"]
+
+system_prompt = "You are a code reviewer. # Missing closing quote causes parse error
+user_prompt_template = '''Please review this code for:
+1. Code quality and style
+2. Potential bugs or issues
+3. Best practice recommendations
+'''
+
+[tools]
+available = ["mcp__git__git_diff", "mcp__git__git_log", "read_file"]
+
+[memory]
+enabled = true
+context_window = 4000
+
+[conversation]
+max_turns = 50
+timeout_seconds = 300
+"#;
+
+    // Test that validation error includes line number and helpful suggestion
+    let result = caxton::domain::agent::load_agent_config_from_toml(invalid_agent_toml_content);
+
+    assert!(
+        result.is_err(),
+        "Loading invalid TOML should fail with validation error"
+    );
+
+    let error = result.unwrap_err();
+    let error_message = error.to_string();
+
+    // Test that error includes line number (basic requirement)
+    assert!(
+        error_message.contains("line 5"),
+        "Error message should include line number where error occurred. Got: {error_message}"
+    );
+
+    // Test that error includes helpful suggestion for fixing the issue
+    assert!(
+        error_message.contains("Suggestion:")
+            || error_message.contains("Try:")
+            || error_message.contains("Fix:"),
+        "Error message should include suggested fix for the validation error. Got: {error_message}"
+    );
+}
