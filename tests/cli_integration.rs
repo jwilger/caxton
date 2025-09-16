@@ -259,6 +259,7 @@ async fn test_server_shuts_down_gracefully_on_cancellation() {
 }
 
 #[tokio::test]
+#[cfg(target_os = "linux")]
 async fn test_idle_server_memory_usage_under_100mb() {
     use std::fs;
 
