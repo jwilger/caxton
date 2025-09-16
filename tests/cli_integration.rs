@@ -259,9 +259,8 @@ async fn test_server_shuts_down_gracefully_on_cancellation() {
 }
 
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn test_idle_server_memory_usage_under_100mb() {
-    use std::fs;
+    use memory_stats::memory_stats;
 
     // Start server in-process on available port to establish baseline
     let (listener, _addr) = server::start_server_on_available_port()
@@ -275,31 +274,18 @@ async fn test_idle_server_memory_usage_under_100mb() {
     // Let server stabilize for idle state measurement
     tokio::time::sleep(Duration::from_secs(3)).await;
 
-    // Read memory usage from /proc/self/status (Resident Set Size)
-    let status_content = fs::read_to_string("/proc/self/status")
-        .expect("Failed to read /proc/self/status for memory measurement");
+    // Get cross-platform memory usage (RSS - Resident Set Size)
+    let memory_usage = memory_stats().expect("Failed to get memory statistics for current process");
 
-    let mut memory_kb = None;
-    for line in status_content.lines() {
-        if line.starts_with("VmRSS:") {
-            // Parse line like "VmRSS:	   12345 kB"
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 2 {
-                memory_kb = parts[1].parse::<u64>().ok();
-                break;
-            }
-        }
-    }
+    let memory_bytes = memory_usage.physical_mem;
+    let memory_megabytes = memory_bytes / (1024 * 1024);
 
     // Clean up
     server_handle.abort();
 
-    let memory_kb = memory_kb.expect("Failed to parse VmRSS from /proc/self/status");
-    let memory_megabytes = memory_kb / 1024;
-
     assert!(
         memory_megabytes < 100,
-        "Idle server memory usage should be under 100MB baseline. Current usage: {memory_megabytes}MB ({memory_kb} KB)"
+        "Idle server memory usage should be under 100MB baseline. Current usage: {memory_megabytes}MB ({memory_bytes} bytes)"
     );
 }
 
