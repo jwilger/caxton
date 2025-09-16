@@ -205,3 +205,55 @@ port = 9090
         "HTTP server should be reachable when using TOML configuration"
     );
 }
+
+#[tokio::test]
+async fn test_server_shuts_down_gracefully_on_cancellation() {
+    use tokio_util::sync::CancellationToken;
+
+    // Start server in-process to test graceful shutdown
+    let (listener, addr) = server::start_server_on_available_port()
+        .await
+        .expect("Failed to start server on available port");
+    let router = server::create_router();
+
+    // Create cancellation token for graceful shutdown
+    let cancellation_token = CancellationToken::new();
+    let shutdown_token = cancellation_token.clone();
+
+    // Start server with cancellation support
+    let server_handle = tokio::spawn(async move {
+        server::serve_with_graceful_shutdown(listener, router, shutdown_token).await
+    });
+
+    // Give server a moment to start
+    tokio::time::sleep(Duration::from_millis(10)).await;
+
+    // Verify server is running by making a request
+    let client = reqwest::Client::new();
+    let response = tokio::time::timeout(
+        Duration::from_secs(1),
+        client.get(format!("http://{addr}/health")).send(),
+    )
+    .await;
+
+    assert!(
+        response.is_ok() && response.unwrap().is_ok(),
+        "Server should be running and responding before shutdown test"
+    );
+
+    // Trigger graceful shutdown via cancellation (safe alternative to SIGTERM)
+    cancellation_token.cancel();
+
+    // Wait for graceful shutdown to complete
+    let shutdown_result = tokio::time::timeout(
+        Duration::from_secs(5), // Allow time for graceful shutdown
+        server_handle,
+    )
+    .await;
+
+    // Server should shut down gracefully within timeout period
+    assert!(
+        shutdown_result.is_ok(),
+        "Server should shut down gracefully within 5 seconds of receiving SIGTERM"
+    );
+}
