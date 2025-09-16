@@ -58,6 +58,31 @@ pub async fn serve(listener: TcpListener, router: Router) -> Result<(), std::io:
     Ok(())
 }
 
+/// Serve the application with graceful shutdown handling
+///
+/// # Errors
+///
+/// Returns an error if the server cannot be started or fails during operation.
+#[allow(dead_code)]
+pub async fn serve_with_graceful_shutdown(
+    listener: TcpListener,
+    router: Router,
+    shutdown_token: tokio_util::sync::CancellationToken,
+) -> Result<(), std::io::Error> {
+    // Create shutdown signal handler using cancellation token
+    let shutdown_signal = async move {
+        shutdown_token.cancelled().await;
+    };
+
+    // Start server with graceful shutdown
+    axum::serve(listener, router)
+        .with_graceful_shutdown(shutdown_signal)
+        .await
+        .map_err(std::io::Error::other)?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
