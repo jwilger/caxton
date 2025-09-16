@@ -6,12 +6,15 @@ use crate::domain::config::AppConfig;
 use axum::{Router, response::Html, routing::get};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
+use tower_http::trace::TraceLayer;
+use tracing::{info, instrument};
 
 /// Create the Axum router with all routes
 pub fn create_router() -> Router {
     Router::new()
         .route("/", get(|| async { Html("Caxton Server") }))
         .route("/health", get(|| async { "OK" }))
+        .layer(TraceLayer::new_for_http())
 }
 
 /// Start server with the given configuration
@@ -20,6 +23,7 @@ pub fn create_router() -> Router {
 /// # Errors
 ///
 /// Returns an error if the server cannot bind to the specified port.
+#[instrument(skip(config))]
 pub async fn start_server(
     config: AppConfig,
 ) -> Result<(TcpListener, SocketAddr), Box<dyn std::error::Error>> {
@@ -27,6 +31,8 @@ pub async fn start_server(
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = TcpListener::bind(addr).await?;
     let actual_addr = listener.local_addr()?;
+
+    info!(address = %actual_addr, port = port, "Server started successfully");
 
     Ok((listener, actual_addr))
 }
@@ -37,11 +43,14 @@ pub async fn start_server(
 ///
 /// Returns an error if the server cannot bind to any available port.
 #[allow(dead_code)]
+#[instrument]
 pub async fn start_server_on_available_port()
 -> Result<(TcpListener, SocketAddr), Box<dyn std::error::Error>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], 0)); // Port 0 = OS chooses available port
     let listener = TcpListener::bind(addr).await?;
     let actual_addr = listener.local_addr()?;
+
+    info!(address = %actual_addr, port = actual_addr.port(), "Server started on available port");
 
     Ok((listener, actual_addr))
 }
@@ -51,10 +60,19 @@ pub async fn start_server_on_available_port()
 /// # Errors
 ///
 /// Returns an error if the server cannot be started or fails during operation.
+#[instrument(skip(listener, router))]
 pub async fn serve(listener: TcpListener, router: Router) -> Result<(), std::io::Error> {
-    axum::serve(listener, router)
+    let addr = listener
+        .local_addr()
+        .unwrap_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)));
+    info!(address = %addr, "Starting HTTP server");
+
+    let result = axum::serve(listener, router)
         .await
-        .map_err(std::io::Error::other)?;
+        .map_err(std::io::Error::other);
+
+    info!(address = %addr, "Server stopped");
+    result?;
     Ok(())
 }
 
@@ -64,22 +82,31 @@ pub async fn serve(listener: TcpListener, router: Router) -> Result<(), std::io:
 ///
 /// Returns an error if the server cannot be started or fails during operation.
 #[allow(dead_code)]
+#[instrument(skip(listener, router, shutdown_token))]
 pub async fn serve_with_graceful_shutdown(
     listener: TcpListener,
     router: Router,
     shutdown_token: tokio_util::sync::CancellationToken,
 ) -> Result<(), std::io::Error> {
+    let addr = listener
+        .local_addr()
+        .unwrap_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)));
+    info!(address = %addr, "Starting HTTP server with graceful shutdown");
+
     // Create shutdown signal handler using cancellation token
     let shutdown_signal = async move {
         shutdown_token.cancelled().await;
+        info!("Graceful shutdown signal received");
     };
 
     // Start server with graceful shutdown
-    axum::serve(listener, router)
+    let result = axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal)
         .await
-        .map_err(std::io::Error::other)?;
+        .map_err(std::io::Error::other);
 
+    info!(address = %addr, "Server gracefully shut down");
+    result?;
     Ok(())
 }
 
