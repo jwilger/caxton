@@ -241,7 +241,6 @@ pub mod server {
         /// # Errors
         ///
         /// Returns an error if the server fails to start or bind to the port.
-        #[allow(clippy::unused_self)]
         pub fn start(self) -> Result<Server<Running>, ServerError> {
             unimplemented!("Server starting will be implemented by green-implementer")
         }
@@ -256,7 +255,6 @@ pub mod server {
 
         /// Stop the server (state transition: `Running` -> `Stopped`)
         #[must_use]
-        #[allow(clippy::unused_self)]
         pub fn stop(self) -> Server<Stopped> {
             unimplemented!("Server stopping will be implemented by green-implementer")
         }

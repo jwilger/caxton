@@ -2,10 +2,8 @@
 //!
 //! Command-line interface for interacting with the Caxton application server
 
+use caxton::{domain, server};
 use clap::{Parser, Subcommand};
-
-mod domain;
-mod server;
 
 /// Caxton CLI - Command-line interface for the Caxton application server
 #[derive(Parser)]

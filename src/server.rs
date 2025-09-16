@@ -37,12 +37,14 @@ pub async fn start_server(
     Ok((listener, actual_addr))
 }
 
-/// Start server on any available port (for testing)
+/// Start server on any available port
+///
+/// This function allows the OS to choose an available port automatically.
+/// Commonly used for testing scenarios or when the specific port doesn't matter.
 ///
 /// # Errors
 ///
 /// Returns an error if the server cannot bind to any available port.
-#[allow(dead_code)]
 #[instrument]
 pub async fn start_server_on_available_port()
 -> Result<(TcpListener, SocketAddr), Box<dyn std::error::Error>> {
@@ -78,10 +80,13 @@ pub async fn serve(listener: TcpListener, router: Router) -> Result<(), std::io:
 
 /// Serve the application with graceful shutdown handling
 ///
+/// This function provides graceful shutdown capabilities using a cancellation token.
+/// When the token is cancelled, the server will stop accepting new connections
+/// and complete existing requests before shutting down.
+///
 /// # Errors
 ///
 /// Returns an error if the server cannot be started or fails during operation.
-#[allow(dead_code)]
 #[instrument(skip(listener, router, shutdown_token))]
 pub async fn serve_with_graceful_shutdown(
     listener: TcpListener,
