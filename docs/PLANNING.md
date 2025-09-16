@@ -78,21 +78,26 @@ Stories are organized in **4 priority tiers**:
 
 ---
 
-### STORY-002: Basic Server Runtime
+### STORY-002: Basic Server Runtime ✅ **COMPLETED**
+
+**Status**: COMPLETED ✅
+**Implementation**: Complete HTTP server with configuration, health endpoints, graceful shutdown, and structured logging
+**Files**: `src/server.rs`, `src/domain.rs`, `tests/cli_integration.rs`, `Cargo.toml`
+**Acceptance**: All criteria verified and accepted through comprehensive test suite
 
 **Epic**: System Bootstrap
 **As a** developer
 **I want** to start a Caxton server with basic configuration
 **So that** I have a foundation for deploying agents
 
-**Acceptance Criteria**:
+**Acceptance Criteria** ✅:
 
-- [ ] `caxton serve` starts HTTP server on default port 8080
-- [ ] Server responds to health check endpoint within 2 seconds
-- [ ] Configuration loaded from default caxton.toml or command line
-- [ ] Graceful shutdown on SIGTERM with proper cleanup
-- [ ] Structured logging shows server lifecycle events
-- [ ] Memory usage stable under 100MB for idle server
+- ✅ `caxton serve` starts HTTP server on default port 8080
+- ✅ Server responds to health check endpoint within 2 seconds
+- ✅ Configuration loaded from default caxton.toml or command line
+- ✅ Graceful shutdown on SIGTERM with proper cleanup
+- ✅ Structured logging shows server lifecycle events
+- ✅ Memory usage stable under 100MB for idle server
 
 **Technical Scope**:
 
@@ -575,7 +580,7 @@ Stories are organized in **4 priority tiers**:
 ### Phase 1: Foundation (Weeks 1-6)
 
 - STORY-001: CLI Foundation ✅ **COMPLETED**
-- STORY-002: Basic Server Runtime
+- STORY-002: Basic Server Runtime ✅ **COMPLETED**
 - STORY-003: Agent Configuration System
 - STORY-004: Message Routing Engine
 
@@ -695,8 +700,8 @@ The completed STORY-001 provides a solid foundation for rapid development of
 the remaining stories, with each building incrementally toward the vision of
 5-10 minute developer onboarding and a thriving agent ecosystem.
 
-**Current Status**: STORY-001 completed successfully ✅
-**Next Priority**: Begin STORY-002 implementation with basic server runtime
+**Current Status**: STORY-001 and STORY-002 completed successfully ✅
+**Next Priority**: Begin STORY-003 implementation with agent configuration system
 
 ---
 

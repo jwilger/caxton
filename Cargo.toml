@@ -37,7 +37,21 @@ lto = true
 codegen-units = 1
 
 [dependencies]
+axum = "0.8.4"
 clap = { version = "4.5", features = ["derive"] }
+config = "0.15.16"
+serde = { version = "1.0.224", features = ["derive"] }
+tokio = { version = "1.47.1", features = ["full"] }
+tokio-util = "0.7.16"
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["trace"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+
+[dev-dependencies]
+libc = "0.2.175"
+memory-stats = "1.2.0"
+reqwest = "0.11"
 
 [profile.bench]
 inherits = "release"
