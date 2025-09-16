@@ -2,9 +2,10 @@
 //!
 //! Command-line interface for interacting with the Caxton application server
 
-use axum::{Router, response::Html, routing::get};
 use clap::{Parser, Subcommand};
-use std::net::SocketAddr;
+
+mod domain;
+mod server;
 
 /// Caxton CLI - Command-line interface for the Caxton application server
 #[derive(Parser)]
@@ -26,15 +27,18 @@ async fn main() {
 
     match args.command {
         Some(Commands::Serve) => {
-            // Start HTTP server on port 8080
-            let app = Router::new()
-                .route("/", get(|| async { Html("Caxton Server") }))
-                .route("/health", get(|| async { "OK" }));
+            // Load configuration from caxton.toml file
+            let config = domain::config::load_config(None).expect("Failed to load configuration");
 
-            let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
-            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+            // Start HTTP server on configured port
+            let (listener, _addr) = server::start_server(config)
+                .await
+                .expect("Failed to start server");
+            let router = server::create_router();
 
-            axum::serve(listener, app).await.unwrap();
+            server::serve(listener, router)
+                .await
+                .expect("Server failed");
         }
         None => {
             // No command provided, just exit (preserves existing behavior)
