@@ -5,90 +5,98 @@
  */
 
 class RoadmapProgress {
-    constructor() {
-        this.phases = [
-            {
-                id: 'v1-isolation-core',
-                name: 'V1.0 Isolation Core',
-                version: '1.0',
-                progress: 75,
-                status: 'in-progress',
-                quarter: 'Q1 2025',
-                estimatedCompletion: '2025-03-31',
-                milestones: [
-                    { name: 'Container Isolation Foundation', completed: true },
-                    { name: 'Process Sandboxing', completed: true },
-                    { name: 'Resource Constraints', completed: true },
-                    { name: 'Security Framework', completed: false },
-                    { name: 'Basic Monitoring', completed: false }
-                ],
-                description: 'Core isolation mechanisms and foundational security features'
-            },
-            {
-                id: 'v2-heterogeneous-agents',
-                name: 'V2.0 Heterogeneous Agents',
-                version: '2.0',
-                progress: 25,
-                status: 'in-progress',
-                quarter: 'Q3 2025',
-                estimatedCompletion: '2025-09-30',
-                milestones: [
-                    { name: 'Multi-Language Support', completed: false },
-                    { name: 'Agent Communication Protocol', completed: false },
-                    { name: 'Dynamic Scaling', completed: false },
-                    { name: 'Cross-Platform Compatibility', completed: false },
-                    { name: 'Performance Optimization', completed: false }
-                ],
-                description: 'Support for diverse agent types and advanced orchestration'
-            },
-            {
-                id: 'v3-production-scale',
-                name: 'V3.0 Production Scale',
-                version: '3.0',
-                progress: 5,
-                status: 'planning',
-                quarter: 'Q1 2026',
-                estimatedCompletion: '2026-03-31',
-                milestones: [
-                    { name: 'Enterprise Features', completed: false },
-                    { name: 'Advanced Analytics', completed: false },
-                    { name: 'High Availability', completed: false },
-                    { name: 'Auto-scaling Infrastructure', completed: false },
-                    { name: 'Production Hardening', completed: false }
-                ],
-                description: 'Enterprise-ready features and production-scale capabilities'
-            }
-        ];
+  constructor() {
+    this.phases = [
+      {
+        id: "v1-isolation-core",
+        name: "V1.0 Isolation Core",
+        version: "1.0",
+        progress: 75,
+        status: "in-progress",
+        quarter: "Q1 2025",
+        estimatedCompletion: "2025-03-31",
+        milestones: [
+          { name: "Container Isolation Foundation", completed: true },
+          { name: "Process Sandboxing", completed: true },
+          { name: "Resource Constraints", completed: true },
+          { name: "Security Framework", completed: false },
+          { name: "Basic Monitoring", completed: false },
+        ],
+        description:
+          "Core isolation mechanisms and foundational security features",
+      },
+      {
+        id: "v2-heterogeneous-agents",
+        name: "V2.0 Heterogeneous Agents",
+        version: "2.0",
+        progress: 25,
+        status: "in-progress",
+        quarter: "Q3 2025",
+        estimatedCompletion: "2025-09-30",
+        milestones: [
+          { name: "Multi-Language Support", completed: false },
+          { name: "Agent Communication Protocol", completed: false },
+          { name: "Dynamic Scaling", completed: false },
+          { name: "Cross-Platform Compatibility", completed: false },
+          { name: "Performance Optimization", completed: false },
+        ],
+        description:
+          "Support for diverse agent types and advanced orchestration",
+      },
+      {
+        id: "v3-production-scale",
+        name: "V3.0 Production Scale",
+        version: "3.0",
+        progress: 5,
+        status: "planning",
+        quarter: "Q1 2026",
+        estimatedCompletion: "2026-03-31",
+        milestones: [
+          { name: "Enterprise Features", completed: false },
+          { name: "Advanced Analytics", completed: false },
+          { name: "High Availability", completed: false },
+          { name: "Auto-scaling Infrastructure", completed: false },
+          { name: "Production Hardening", completed: false },
+        ],
+        description:
+          "Enterprise-ready features and production-scale capabilities",
+      },
+    ];
 
-        this.init();
-    }
+    this.init();
+  }
 
-    init() {
-        this.createProgressBars();
-        this.updateProgressBars();
-        this.addEventListeners();
-        this.startAnimations();
-    }
+  init() {
+    this.createProgressBars();
+    this.updateProgressBars();
+    this.addEventListeners();
+    this.startAnimations();
+  }
 
-    createProgressBars() {
-        const container = document.querySelector('.roadmap-progress-container');
-        if (!container) return;
+  createProgressBars() {
+    const container = document.querySelector(".roadmap-progress-container");
+    if (!container) return;
 
-        const progressHTML = this.phases.map(phase => this.createPhaseHTML(phase)).join('');
-        container.innerHTML = progressHTML;
-    }
+    const progressHTML = this.phases
+      .map((phase) => this.createPhaseHTML(phase))
+      .join("");
+    container.innerHTML = progressHTML;
+  }
 
-    createPhaseHTML(phase) {
-        const statusClass = this.getStatusClass(phase.status);
-        const progressColor = this.getProgressColor(phase.status);
-        const milestonesList = phase.milestones.map(milestone =>
-            `<li class="milestone-item ${milestone.completed ? 'completed' : 'pending'}">
-                <span class="milestone-icon">${milestone.completed ? '✓' : '○'}</span>
+  createPhaseHTML(phase) {
+    const statusClass = this.getStatusClass(phase.status);
+    const progressColor = this.getProgressColor(phase.status);
+    const milestonesList = phase.milestones
+      .map(
+        (milestone) =>
+          `<li class="milestone-item ${milestone.completed ? "completed" : "pending"}">
+                <span class="milestone-icon">${milestone.completed ? "✓" : "○"}</span>
                 <span class="milestone-name">${milestone.name}</span>
-            </li>`
-        ).join('');
+            </li>`,
+      )
+      .join("");
 
-        return `
+    return `
             <div class="roadmap-phase ${statusClass}" data-phase-id="${phase.id}">
                 <div class="phase-header">
                     <div class="phase-info">
@@ -125,191 +133,202 @@ class RoadmapProgress {
                 </div>
             </div>
         `;
+  }
+
+  getStatusClass(status) {
+    const statusMap = {
+      completed: "phase-completed",
+      "in-progress": "phase-in-progress",
+      planning: "phase-planning",
+    };
+    return statusMap[status] || "phase-planning";
+  }
+
+  getProgressColor(status) {
+    const colorMap = {
+      completed: "progress-complete",
+      "in-progress": "progress-active",
+      planning: "progress-planning",
+    };
+    return colorMap[status] || "progress-planning";
+  }
+
+  getStatusLabel(status) {
+    const labelMap = {
+      completed: "Complete",
+      "in-progress": "In Progress",
+      planning: "Planning",
+    };
+    return labelMap[status] || "Planned";
+  }
+
+  formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  updateProgressBars() {
+    const progressBars = document.querySelectorAll(".progress-bar-fill");
+
+    progressBars.forEach((bar, index) => {
+      const progress = parseInt(bar.dataset.progress);
+
+      // Animate progress bar fill
+      setTimeout(() => {
+        bar.style.width = `${progress}%`;
+      }, index * 200); // Stagger animations
+    });
+  }
+
+  addEventListeners() {
+    // Add hover effects and interactions
+    document.querySelectorAll(".roadmap-phase").forEach((phase) => {
+      phase.addEventListener("mouseenter", (e) => {
+        this.highlightPhase(e.currentTarget);
+      });
+
+      phase.addEventListener("mouseleave", (e) => {
+        this.unhighlightPhase(e.currentTarget);
+      });
+    });
+
+    // Add milestone toggle functionality
+    document.querySelectorAll(".milestones-title").forEach((title) => {
+      title.addEventListener("click", (e) => {
+        this.toggleMilestones(e.currentTarget);
+      });
+    });
+  }
+
+  highlightPhase(phaseElement) {
+    phaseElement.classList.add("phase-highlighted");
+
+    // Add glow effect to progress bar
+    const progressBar = phaseElement.querySelector(".progress-bar-fill");
+    if (progressBar) {
+      progressBar.style.boxShadow = "0 0 20px rgba(137, 180, 250, 0.5)";
     }
+  }
 
-    getStatusClass(status) {
-        const statusMap = {
-            'completed': 'phase-completed',
-            'in-progress': 'phase-in-progress',
-            'planning': 'phase-planning'
-        };
-        return statusMap[status] || 'phase-planning';
+  unhighlightPhase(phaseElement) {
+    phaseElement.classList.remove("phase-highlighted");
+
+    // Remove glow effect
+    const progressBar = phaseElement.querySelector(".progress-bar-fill");
+    if (progressBar) {
+      progressBar.style.boxShadow = "";
     }
+  }
 
-    getProgressColor(status) {
-        const colorMap = {
-            'completed': 'progress-complete',
-            'in-progress': 'progress-active',
-            'planning': 'progress-planning'
-        };
-        return colorMap[status] || 'progress-planning';
+  toggleMilestones(titleElement) {
+    const milestonesList = titleElement.nextElementSibling;
+    const isExpanded = milestonesList.classList.contains("expanded");
+
+    if (isExpanded) {
+      milestonesList.classList.remove("expanded");
+      titleElement.textContent = titleElement.textContent.replace("▼", "▶");
+    } else {
+      milestonesList.classList.add("expanded");
+      titleElement.textContent = titleElement.textContent.replace("▶", "▼");
     }
+  }
 
-    getStatusLabel(status) {
-        const labelMap = {
-            'completed': 'Complete',
-            'in-progress': 'In Progress',
-            'planning': 'Planning'
-        };
-        return labelMap[status] || 'Planned';
-    }
-
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric'
-        });
-    }
-
-    updateProgressBars() {
-        const progressBars = document.querySelectorAll('.progress-bar-fill');
-
-        progressBars.forEach((bar, index) => {
-            const progress = parseInt(bar.dataset.progress);
-
-            // Animate progress bar fill
-            setTimeout(() => {
-                bar.style.width = `${progress}%`;
-            }, index * 200); // Stagger animations
-        });
-    }
-
-    addEventListeners() {
-        // Add hover effects and interactions
-        document.querySelectorAll('.roadmap-phase').forEach(phase => {
-            phase.addEventListener('mouseenter', (e) => {
-                this.highlightPhase(e.currentTarget);
-            });
-
-            phase.addEventListener('mouseleave', (e) => {
-                this.unhighlightPhase(e.currentTarget);
-            });
-        });
-
-        // Add milestone toggle functionality
-        document.querySelectorAll('.milestones-title').forEach(title => {
-            title.addEventListener('click', (e) => {
-                this.toggleMilestones(e.currentTarget);
-            });
-        });
-    }
-
-    highlightPhase(phaseElement) {
-        phaseElement.classList.add('phase-highlighted');
-
-        // Add glow effect to progress bar
-        const progressBar = phaseElement.querySelector('.progress-bar-fill');
-        if (progressBar) {
-            progressBar.style.boxShadow = '0 0 20px rgba(137, 180, 250, 0.5)';
-        }
-    }
-
-    unhighlightPhase(phaseElement) {
-        phaseElement.classList.remove('phase-highlighted');
-
-        // Remove glow effect
-        const progressBar = phaseElement.querySelector('.progress-bar-fill');
-        if (progressBar) {
-            progressBar.style.boxShadow = '';
-        }
-    }
-
-    toggleMilestones(titleElement) {
-        const milestonesList = titleElement.nextElementSibling;
-        const isExpanded = milestonesList.classList.contains('expanded');
-
-        if (isExpanded) {
-            milestonesList.classList.remove('expanded');
-            titleElement.textContent = titleElement.textContent.replace('▼', '▶');
-        } else {
-            milestonesList.classList.add('expanded');
-            titleElement.textContent = titleElement.textContent.replace('▶', '▼');
-        }
-    }
-
-    startAnimations() {
-        // Add intersection observer for scroll-triggered animations
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: '50px'
-            });
-
-            document.querySelectorAll('.roadmap-phase').forEach(phase => {
-                observer.observe(phase);
-            });
-        }
-    }
-
-    // Public API methods
-    updatePhaseProgress(phaseId, newProgress) {
-        const phase = this.phases.find(p => p.id === phaseId);
-        if (phase) {
-            phase.progress = Math.max(0, Math.min(100, newProgress));
-
-            const progressBar = document.querySelector(`[data-phase-id="${phaseId}"] .progress-bar-fill`);
-            const percentageDisplay = document.querySelector(`[data-phase-id="${phaseId}"] .progress-percentage`);
-
-            if (progressBar) {
-                progressBar.style.width = `${phase.progress}%`;
-                progressBar.dataset.progress = phase.progress;
+  startAnimations() {
+    // Add intersection observer for scroll-triggered animations
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("animate-in");
             }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: "50px",
+        },
+      );
 
-            if (percentageDisplay) {
-                percentageDisplay.textContent = `${phase.progress}%`;
-            }
-        }
+      document.querySelectorAll(".roadmap-phase").forEach((phase) => {
+        observer.observe(phase);
+      });
     }
+  }
 
-    completeMilestone(phaseId, milestoneName) {
-        const phase = this.phases.find(p => p.id === phaseId);
-        if (phase) {
-            const milestone = phase.milestones.find(m => m.name === milestoneName);
-            if (milestone) {
-                milestone.completed = true;
+  // Public API methods
+  updatePhaseProgress(phaseId, newProgress) {
+    const phase = this.phases.find((p) => p.id === phaseId);
+    if (phase) {
+      phase.progress = Math.max(0, Math.min(100, newProgress));
 
-                // Update DOM
-                const milestoneElement = document.querySelector(
-                    `[data-phase-id="${phaseId}"] .milestone-name:contains("${milestoneName}")`
-                );
+      const progressBar = document.querySelector(
+        `[data-phase-id="${phaseId}"] .progress-bar-fill`,
+      );
+      const percentageDisplay = document.querySelector(
+        `[data-phase-id="${phaseId}"] .progress-percentage`,
+      );
 
-                if (milestoneElement) {
-                    const listItem = milestoneElement.closest('.milestone-item');
-                    listItem.classList.add('completed');
-                    listItem.classList.remove('pending');
+      if (progressBar) {
+        progressBar.style.width = `${phase.progress}%`;
+        progressBar.dataset.progress = phase.progress;
+      }
 
-                    const icon = listItem.querySelector('.milestone-icon');
-                    if (icon) {
-                        icon.textContent = '✓';
-                    }
-                }
-
-                // Update phase progress based on completed milestones
-                this.recalculatePhaseProgress(phaseId);
-            }
-        }
+      if (percentageDisplay) {
+        percentageDisplay.textContent = `${phase.progress}%`;
+      }
     }
+  }
 
-    recalculatePhaseProgress(phaseId) {
-        const phase = this.phases.find(p => p.id === phaseId);
-        if (phase) {
-            const completedMilestones = phase.milestones.filter(m => m.completed).length;
-            const totalMilestones = phase.milestones.length;
-            const calculatedProgress = Math.round((completedMilestones / totalMilestones) * 100);
+  completeMilestone(phaseId, milestoneName) {
+    const phase = this.phases.find((p) => p.id === phaseId);
+    if (phase) {
+      const milestone = phase.milestones.find((m) => m.name === milestoneName);
+      if (milestone) {
+        milestone.completed = true;
 
-            // Update progress if it's significantly different
-            if (Math.abs(calculatedProgress - phase.progress) > 5) {
-                this.updatePhaseProgress(phaseId, calculatedProgress);
-            }
+        // Update DOM
+        const milestoneElement = document.querySelector(
+          `[data-phase-id="${phaseId}"] .milestone-name:contains("${milestoneName}")`,
+        );
+
+        if (milestoneElement) {
+          const listItem = milestoneElement.closest(".milestone-item");
+          listItem.classList.add("completed");
+          listItem.classList.remove("pending");
+
+          const icon = listItem.querySelector(".milestone-icon");
+          if (icon) {
+            icon.textContent = "✓";
+          }
         }
+
+        // Update phase progress based on completed milestones
+        this.recalculatePhaseProgress(phaseId);
+      }
     }
+  }
+
+  recalculatePhaseProgress(phaseId) {
+    const phase = this.phases.find((p) => p.id === phaseId);
+    if (phase) {
+      const completedMilestones = phase.milestones.filter(
+        (m) => m.completed,
+      ).length;
+      const totalMilestones = phase.milestones.length;
+      const calculatedProgress = Math.round(
+        (completedMilestones / totalMilestones) * 100,
+      );
+
+      // Update progress if it's significantly different
+      if (Math.abs(calculatedProgress - phase.progress) > 5) {
+        this.updatePhaseProgress(phaseId, calculatedProgress);
+      }
+    }
+  }
 }
 
 // CSS styles for the roadmap progress system
@@ -665,20 +684,20 @@ const roadmapProgressCSS = `
 `;
 
 // Inject CSS styles
-const styleSheet = document.createElement('style');
+const styleSheet = document.createElement("style");
 styleSheet.textContent = roadmapProgressCSS;
 document.head.appendChild(styleSheet);
 
 // Initialize the roadmap progress system when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.roadmapProgress = new RoadmapProgress();
-    });
-} else {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
     window.roadmapProgress = new RoadmapProgress();
+  });
+} else {
+  window.roadmapProgress = new RoadmapProgress();
 }
 
 // Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = RoadmapProgress;
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = RoadmapProgress;
 }

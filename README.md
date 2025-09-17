@@ -191,17 +191,17 @@ Rust knowledge required for most use cases.
 
 ## What Caxton Provides
 
-| Capability | Description |
-|------------|-------------|
-| **Simple Agents** | Create agents in 5-10 minutes using TOML config files |
-| **Embedded Memory System** | Built-in SQLite + vector search, no external DBs |
-| **Message Routing** | Simple agent communication patterns |
-| **MCP Server Deployment** | Deployable WebAssembly MCP servers provide tools |
-| **Fault Isolation** | Agent crashes don't affect other agents or the server |
-| **Resource Management** | CPU and memory limits per agent with monitoring |
-| **Observability** | Logs, metrics, and traces out of the box |
-| **Hot Deployment** | Deploy/update agents without server restart |
-| **API Access** | Full control via REST/HTTP API |
+| Capability                 | Description                                           |
+| -------------------------- | ----------------------------------------------------- |
+| **Simple Agents**          | Create agents in 5-10 minutes using TOML config files |
+| **Embedded Memory System** | Built-in SQLite + vector search, no external DBs      |
+| **Message Routing**        | Simple agent communication patterns                   |
+| **MCP Server Deployment**  | Deployable WebAssembly MCP servers provide tools      |
+| **Fault Isolation**        | Agent crashes don't affect other agents or the server |
+| **Resource Management**    | CPU and memory limits per agent with monitoring       |
+| **Observability**          | Logs, metrics, and traces out of the box              |
+| **Hot Deployment**         | Deploy/update agents without server restart           |
+| **API Access**             | Full control via REST/HTTP API                        |
 
 ## Building Agents
 
@@ -323,14 +323,14 @@ state persistence:
 // In your agent (JavaScript example)
 // Search the web
 const result = await mcp_call("web_search", {
-    query: "latest news on quantum computing"
+  query: "latest news on quantum computing",
 });
 
 // Persist state (business provides the backend)
 await mcp_call("state_tool", {
-    action: "store",
-    key: "agent_checkpoint",
-    value: currentState
+  action: "store",
+  key: "agent_checkpoint",
+  value: currentState,
 });
 ```
 

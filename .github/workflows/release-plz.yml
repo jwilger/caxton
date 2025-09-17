@@ -23,10 +23,10 @@ name: Release-plz
 # ============================================================================
 # Security-first permissions - minimize scope to essential operations
 permissions:
-  contents: write        # Required for creating releases and updating repository
-  pull-requests: write   # Required for creating and managing release PRs
-  actions: read         # Required for reading workflow status
-  checks: read          # Required for reading security check results
+  contents: write # Required for creating releases and updating repository
+  pull-requests: write # Required for creating and managing release PRs
+  actions: read # Required for reading workflow status
+  checks: read # Required for reading security check results
 
 # ============================================================================
 # TRIGGERS
@@ -37,9 +37,9 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Type of release to create'
+        description: "Type of release to create"
         required: true
-        default: 'auto'
+        default: "auto"
         type: choice
         options:
           - auto
@@ -47,7 +47,7 @@ on:
           - minor
           - major
       dry_run:
-        description: 'Perform dry run without actual release'
+        description: "Perform dry run without actual release"
         required: false
         default: false
         type: boolean
@@ -58,10 +58,10 @@ on:
       - main
     paths:
       # Only trigger on actual code changes, not documentation
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/release-plz.yml'
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/release-plz.yml"
 
   # Security workflow completion trigger
   workflow_run:
@@ -74,9 +74,9 @@ on:
 # ============================================================================
 # Global environment configuration for consistent behavior across all jobs
 env:
-  CARGO_TERM_COLOR: always    # Enable colored output for better readability
-  CARGO_INCREMENTAL: 0         # Disable incremental compilation for CI consistency
-  RUST_BACKTRACE: 1           # Enable backtraces for better debugging
+  CARGO_TERM_COLOR: always # Enable colored output for better readability
+  CARGO_INCREMENTAL: 0 # Disable incremental compilation for CI consistency
+  RUST_BACKTRACE: 1 # Enable backtraces for better debugging
 
 # ============================================================================
 # JOBS
@@ -189,8 +189,8 @@ jobs:
 
     # Job-level permissions (principle of least privilege)
     permissions:
-      contents: write    # Required for creating releases
-      actions: read     # Required for reading workflow status
+      contents: write # Required for creating releases
+      actions: read # Required for reading workflow status
 
     # Prevent concurrent releases to avoid conflicts
     concurrency:
@@ -299,9 +299,9 @@ jobs:
 
     # Job-level permissions for PR operations
     permissions:
-      contents: write       # Required for accessing repository content
-      pull-requests: write  # Required for creating and managing PRs
-      actions: read        # Required for reading workflow status
+      contents: write # Required for accessing repository content
+      pull-requests: write # Required for creating and managing PRs
+      actions: read # Required for reading workflow status
 
     # Prevent concurrent PR operations on the same branch
     concurrency:
@@ -392,8 +392,8 @@ jobs:
 
     # Read-only permissions for dry run validation
     permissions:
-      contents: read    # Required for accessing repository content
-      actions: read    # Required for reading workflow status
+      contents: read # Required for accessing repository content
+      actions: read # Required for reading workflow status
 
     # Short timeout for validation-only operations
     timeout-minutes: 10

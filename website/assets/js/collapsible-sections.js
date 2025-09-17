@@ -3,59 +3,68 @@
  * Makes h2 sections collapsible with expand/collapse functionality
  * Includes localStorage persistence and accessibility features
  */
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    const CONFIG = {
-        // Selectors
-        sectionSelector: '.docs-content h2, .docs-body h2',
-        contentSelector: '.docs-content, .docs-body',
-        storageKey: 'caxton-api-collapsed-sections',
+  const CONFIG = {
+    // Selectors
+    sectionSelector: ".docs-content h2, .docs-body h2",
+    contentSelector: ".docs-content, .docs-body",
+    storageKey: "caxton-api-collapsed-sections",
 
-        // CSS Classes
-        classes: {
-            collapsible: 'collapsible-section',
-            collapsed: 'collapsed',
-            toggleButton: 'section-toggle',
-            expandAllBtn: 'expand-all-btn',
-            collapseAllBtn: 'collapse-all-btn',
-            controlsWrapper: 'collapsible-controls'
-        },
+    // CSS Classes
+    classes: {
+      collapsible: "collapsible-section",
+      collapsed: "collapsed",
+      toggleButton: "section-toggle",
+      expandAllBtn: "expand-all-btn",
+      collapseAllBtn: "collapse-all-btn",
+      controlsWrapper: "collapsible-controls",
+    },
 
-        // Animation timing
-        animationDuration: 300
-    };
+    // Animation timing
+    animationDuration: 300,
+  };
 
-    class CollapsibleSections {
-        constructor() {
-            this.sections = [];
-            this.collapsedSections = this.loadCollapsedState();
-            this.init();
-        }
+  class CollapsibleSections {
+    constructor() {
+      this.sections = [];
+      this.collapsedSections = this.loadCollapsedState();
+      this.init();
+    }
 
-        init() {
-            // Only initialize on API reference page
-            if (!this.isApiReferencePage()) {
-                return;
-            }
+    init() {
+      // Only initialize on API reference page
+      if (!this.isApiReferencePage()) {
+        return;
+      }
 
-            this.addStyles();
-            this.createSections();
-            this.addControls();
-            this.bindEvents();
-            this.restoreCollapsedState();
+      this.addStyles();
+      this.createSections();
+      this.addControls();
+      this.bindEvents();
+      this.restoreCollapsedState();
 
-            console.log('Collapsible sections initialized with', this.sections.length, 'sections');
-        }
+      console.log(
+        "Collapsible sections initialized with",
+        this.sections.length,
+        "sections",
+      );
+    }
 
-        isApiReferencePage() {
-            return window.location.pathname.includes('api-reference') ||
-                   document.title.toLowerCase().includes('api reference') ||
-                   document.querySelector('h1')?.textContent?.toLowerCase().includes('api reference');
-        }
+    isApiReferencePage() {
+      return (
+        window.location.pathname.includes("api-reference") ||
+        document.title.toLowerCase().includes("api reference") ||
+        document
+          .querySelector("h1")
+          ?.textContent?.toLowerCase()
+          .includes("api reference")
+      );
+    }
 
-        addStyles() {
-            const styles = `
+    addStyles() {
+      const styles = `
                 .collapsible-controls {
                     display: flex;
                     gap: 12px;
@@ -231,107 +240,108 @@
                 }
             `;
 
-            const styleSheet = document.createElement('style');
-            styleSheet.textContent = styles;
-            document.head.appendChild(styleSheet);
+      const styleSheet = document.createElement("style");
+      styleSheet.textContent = styles;
+      document.head.appendChild(styleSheet);
+    }
+
+    createSections() {
+      const headers = document.querySelectorAll(CONFIG.sectionSelector);
+
+      headers.forEach((header, index) => {
+        const section = this.createSection(header, index);
+        if (section) {
+          this.sections.push(section);
         }
+      });
+    }
 
-        createSections() {
-            const headers = document.querySelectorAll(CONFIG.sectionSelector);
+    createSection(header, index) {
+      const sectionId = this.generateSectionId(header, index);
+      const content = this.collectSectionContent(header);
 
-            headers.forEach((header, index) => {
-                const section = this.createSection(header, index);
-                if (section) {
-                    this.sections.push(section);
-                }
-            });
-        }
+      if (!content.length) {
+        return null;
+      }
 
-        createSection(header, index) {
-            const sectionId = this.generateSectionId(header, index);
-            const content = this.collectSectionContent(header);
+      // Create wrapper for the section
+      const wrapper = document.createElement("div");
+      wrapper.className = CONFIG.classes.collapsible;
+      wrapper.setAttribute("data-section-id", sectionId);
 
-            if (!content.length) {
-                return null;
-            }
+      // Create toggle button
+      const toggleButton = this.createToggleButton(sectionId);
 
-            // Create wrapper for the section
-            const wrapper = document.createElement('div');
-            wrapper.className = CONFIG.classes.collapsible;
-            wrapper.setAttribute('data-section-id', sectionId);
+      // Create content wrapper
+      const contentWrapper = document.createElement("div");
+      contentWrapper.className = "collapsible-content";
 
-            // Create toggle button
-            const toggleButton = this.createToggleButton(sectionId);
+      // Wrap the header and content
+      header.parentNode.insertBefore(wrapper, header);
+      wrapper.appendChild(header);
+      header.appendChild(toggleButton);
 
-            // Create content wrapper
-            const contentWrapper = document.createElement('div');
-            contentWrapper.className = 'collapsible-content';
+      content.forEach((element) => {
+        contentWrapper.appendChild(element);
+      });
+      wrapper.appendChild(contentWrapper);
 
-            // Wrap the header and content
-            header.parentNode.insertBefore(wrapper, header);
-            wrapper.appendChild(header);
-            header.appendChild(toggleButton);
+      return {
+        id: sectionId,
+        element: wrapper,
+        header: header,
+        content: contentWrapper,
+        toggle: toggleButton,
+        isCollapsed: false,
+      };
+    }
 
-            content.forEach(element => {
-                contentWrapper.appendChild(element);
-            });
-            wrapper.appendChild(contentWrapper);
+    generateSectionId(header, index) {
+      const text = header.textContent
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .replace(/\s+/g, "-");
+      return `section-${index}-${text}`;
+    }
 
-            return {
-                id: sectionId,
-                element: wrapper,
-                header: header,
-                content: contentWrapper,
-                toggle: toggleButton,
-                isCollapsed: false
-            };
-        }
+    collectSectionContent(header) {
+      const content = [];
+      let nextElement = header.nextElementSibling;
 
-        generateSectionId(header, index) {
-            const text = header.textContent.trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '')
-                .replace(/\s+/g, '-');
-            return `section-${index}-${text}`;
-        }
+      while (nextElement && !this.isHeader(nextElement)) {
+        const elementToMove = nextElement;
+        nextElement = nextElement.nextElementSibling;
+        content.push(elementToMove);
+      }
 
-        collectSectionContent(header) {
-            const content = [];
-            let nextElement = header.nextElementSibling;
+      return content;
+    }
 
-            while (nextElement && !this.isHeader(nextElement)) {
-                const elementToMove = nextElement;
-                nextElement = nextElement.nextElementSibling;
-                content.push(elementToMove);
-            }
+    isHeader(element) {
+      return element.tagName && element.tagName.match(/^H[1-6]$/);
+    }
 
-            return content;
-        }
+    createToggleButton(sectionId) {
+      const button = document.createElement("button");
+      button.className = CONFIG.classes.toggleButton;
+      button.setAttribute("aria-expanded", "true");
+      button.setAttribute("aria-controls", sectionId + "-content");
+      button.title = "Toggle section";
+      button.type = "button";
 
-        isHeader(element) {
-            return element.tagName && element.tagName.match(/^H[1-6]$/);
-        }
+      return button;
+    }
 
-        createToggleButton(sectionId) {
-            const button = document.createElement('button');
-            button.className = CONFIG.classes.toggleButton;
-            button.setAttribute('aria-expanded', 'true');
-            button.setAttribute('aria-controls', sectionId + '-content');
-            button.title = 'Toggle section';
-            button.type = 'button';
+    addControls() {
+      const contentContainer = document.querySelector(CONFIG.contentSelector);
+      if (!contentContainer || this.sections.length === 0) {
+        return;
+      }
 
-            return button;
-        }
-
-        addControls() {
-            const contentContainer = document.querySelector(CONFIG.contentSelector);
-            if (!contentContainer || this.sections.length === 0) {
-                return;
-            }
-
-            const controlsWrapper = document.createElement('div');
-            controlsWrapper.className = CONFIG.classes.controlsWrapper;
-            controlsWrapper.innerHTML = `
+      const controlsWrapper = document.createElement("div");
+      controlsWrapper.className = CONFIG.classes.controlsWrapper;
+      controlsWrapper.innerHTML = `
                 <button class="${CONFIG.classes.expandAllBtn} collapsible-btn" type="button"
                         aria-label="Expand all sections">
                     <span>📖</span> Expand All
@@ -345,162 +355,168 @@
                 </span>
             `;
 
-            // Insert controls before the first section
-            const firstSection = this.sections[0].element;
-            firstSection.parentNode.insertBefore(controlsWrapper, firstSection);
-        }
-
-        bindEvents() {
-            // Individual section toggles
-            this.sections.forEach(section => {
-                section.toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.toggleSection(section);
-                });
-
-                // Also allow clicking on header to toggle
-                section.header.addEventListener('click', (e) => {
-                    if (section.isCollapsed) {
-                        this.toggleSection(section);
-                    }
-                });
-            });
-
-            // Expand/Collapse all buttons
-            const expandAllBtn = document.querySelector(`.${CONFIG.classes.expandAllBtn}`);
-            const collapseAllBtn = document.querySelector(`.${CONFIG.classes.collapseAllBtn}`);
-
-            if (expandAllBtn) {
-                expandAllBtn.addEventListener('click', () => this.expandAll());
-            }
-
-            if (collapseAllBtn) {
-                collapseAllBtn.addEventListener('click', () => this.collapseAll());
-            }
-
-            // Keyboard navigation
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    this.expandAll();
-                }
-            });
-
-            // Save state when page is unloaded
-            window.addEventListener('beforeunload', () => {
-                this.saveCollapsedState();
-            });
-        }
-
-        toggleSection(section) {
-            const isCurrentlyCollapsed = section.isCollapsed;
-
-            if (isCurrentlyCollapsed) {
-                this.expandSection(section);
-            } else {
-                this.collapseSection(section);
-            }
-
-            this.saveCollapsedState();
-        }
-
-        collapseSection(section) {
-            const content = section.content;
-            const currentHeight = content.scrollHeight;
-
-            // Set initial height
-            content.style.maxHeight = currentHeight + 'px';
-
-            // Trigger reflow
-            content.offsetHeight;
-
-            // Collapse
-            requestAnimationFrame(() => {
-                section.element.classList.add(CONFIG.classes.collapsed);
-                content.style.maxHeight = '0px';
-                section.toggle.setAttribute('aria-expanded', 'false');
-                section.isCollapsed = true;
-            });
-        }
-
-        expandSection(section) {
-            const content = section.content;
-
-            section.element.classList.remove(CONFIG.classes.collapsed);
-            content.style.maxHeight = content.scrollHeight + 'px';
-            section.toggle.setAttribute('aria-expanded', 'true');
-            section.isCollapsed = false;
-
-            // Reset max-height after animation
-            setTimeout(() => {
-                if (!section.isCollapsed) {
-                    content.style.maxHeight = 'none';
-                }
-            }, CONFIG.animationDuration);
-        }
-
-        expandAll() {
-            this.sections.forEach(section => {
-                if (section.isCollapsed) {
-                    this.expandSection(section);
-                }
-            });
-            this.saveCollapsedState();
-        }
-
-        collapseAll() {
-            this.sections.forEach(section => {
-                if (!section.isCollapsed) {
-                    this.collapseSection(section);
-                }
-            });
-            this.saveCollapsedState();
-        }
-
-        saveCollapsedState() {
-            const collapsedIds = this.sections
-                .filter(section => section.isCollapsed)
-                .map(section => section.id);
-
-            try {
-                localStorage.setItem(CONFIG.storageKey, JSON.stringify(collapsedIds));
-            } catch (error) {
-                console.warn('Could not save collapsed state to localStorage:', error);
-            }
-        }
-
-        loadCollapsedState() {
-            try {
-                const saved = localStorage.getItem(CONFIG.storageKey);
-                return saved ? JSON.parse(saved) : [];
-            } catch (error) {
-                console.warn('Could not load collapsed state from localStorage:', error);
-                return [];
-            }
-        }
-
-        restoreCollapsedState() {
-            this.collapsedSections.forEach(sectionId => {
-                const section = this.sections.find(s => s.id === sectionId);
-                if (section && !section.isCollapsed) {
-                    // Use a timeout to ensure DOM is ready
-                    setTimeout(() => {
-                        this.collapseSection(section);
-                    }, 50);
-                }
-            });
-        }
+      // Insert controls before the first section
+      const firstSection = this.sections[0].element;
+      firstSection.parentNode.insertBefore(controlsWrapper, firstSection);
     }
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            new CollapsibleSections();
+    bindEvents() {
+      // Individual section toggles
+      this.sections.forEach((section) => {
+        section.toggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.toggleSection(section);
         });
-    } else {
-        new CollapsibleSections();
+
+        // Also allow clicking on header to toggle
+        section.header.addEventListener("click", (e) => {
+          if (section.isCollapsed) {
+            this.toggleSection(section);
+          }
+        });
+      });
+
+      // Expand/Collapse all buttons
+      const expandAllBtn = document.querySelector(
+        `.${CONFIG.classes.expandAllBtn}`,
+      );
+      const collapseAllBtn = document.querySelector(
+        `.${CONFIG.classes.collapseAllBtn}`,
+      );
+
+      if (expandAllBtn) {
+        expandAllBtn.addEventListener("click", () => this.expandAll());
+      }
+
+      if (collapseAllBtn) {
+        collapseAllBtn.addEventListener("click", () => this.collapseAll());
+      }
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          this.expandAll();
+        }
+      });
+
+      // Save state when page is unloaded
+      window.addEventListener("beforeunload", () => {
+        this.saveCollapsedState();
+      });
     }
 
-    // Also make it available globally for debugging
-    window.CollapsibleSections = CollapsibleSections;
+    toggleSection(section) {
+      const isCurrentlyCollapsed = section.isCollapsed;
 
+      if (isCurrentlyCollapsed) {
+        this.expandSection(section);
+      } else {
+        this.collapseSection(section);
+      }
+
+      this.saveCollapsedState();
+    }
+
+    collapseSection(section) {
+      const content = section.content;
+      const currentHeight = content.scrollHeight;
+
+      // Set initial height
+      content.style.maxHeight = currentHeight + "px";
+
+      // Trigger reflow
+      content.offsetHeight;
+
+      // Collapse
+      requestAnimationFrame(() => {
+        section.element.classList.add(CONFIG.classes.collapsed);
+        content.style.maxHeight = "0px";
+        section.toggle.setAttribute("aria-expanded", "false");
+        section.isCollapsed = true;
+      });
+    }
+
+    expandSection(section) {
+      const content = section.content;
+
+      section.element.classList.remove(CONFIG.classes.collapsed);
+      content.style.maxHeight = content.scrollHeight + "px";
+      section.toggle.setAttribute("aria-expanded", "true");
+      section.isCollapsed = false;
+
+      // Reset max-height after animation
+      setTimeout(() => {
+        if (!section.isCollapsed) {
+          content.style.maxHeight = "none";
+        }
+      }, CONFIG.animationDuration);
+    }
+
+    expandAll() {
+      this.sections.forEach((section) => {
+        if (section.isCollapsed) {
+          this.expandSection(section);
+        }
+      });
+      this.saveCollapsedState();
+    }
+
+    collapseAll() {
+      this.sections.forEach((section) => {
+        if (!section.isCollapsed) {
+          this.collapseSection(section);
+        }
+      });
+      this.saveCollapsedState();
+    }
+
+    saveCollapsedState() {
+      const collapsedIds = this.sections
+        .filter((section) => section.isCollapsed)
+        .map((section) => section.id);
+
+      try {
+        localStorage.setItem(CONFIG.storageKey, JSON.stringify(collapsedIds));
+      } catch (error) {
+        console.warn("Could not save collapsed state to localStorage:", error);
+      }
+    }
+
+    loadCollapsedState() {
+      try {
+        const saved = localStorage.getItem(CONFIG.storageKey);
+        return saved ? JSON.parse(saved) : [];
+      } catch (error) {
+        console.warn(
+          "Could not load collapsed state from localStorage:",
+          error,
+        );
+        return [];
+      }
+    }
+
+    restoreCollapsedState() {
+      this.collapsedSections.forEach((sectionId) => {
+        const section = this.sections.find((s) => s.id === sectionId);
+        if (section && !section.isCollapsed) {
+          // Use a timeout to ensure DOM is ready
+          setTimeout(() => {
+            this.collapseSection(section);
+          }, 50);
+        }
+      });
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      new CollapsibleSections();
+    });
+  } else {
+    new CollapsibleSections();
+  }
+
+  // Also make it available globally for debugging
+  window.CollapsibleSections = CollapsibleSections;
 })();

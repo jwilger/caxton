@@ -49,7 +49,7 @@ and this project adheres to
 - correct Jekyll workflow to properly publish ADRs
 - add Jekyll front matter to ADRs for proper site publication
 - rename \_adr to_adrs to match Jekyll collection config
-- add Jekyll front matter to SOURCE ADRs in docs/_adrs/
+- add Jekyll front matter to SOURCE ADRs in docs/\_adrs/
 - use consistent ADR title format in front matter
 - add logo to documentation pages and fix README logo path
 - replace README logo path with Jekyll relative URL during build

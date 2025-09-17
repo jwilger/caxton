@@ -2,9 +2,9 @@ name: "Code Quality Gate"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,37 +20,36 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
-    - name: Install cargo-nextest
-      uses: taiki-e/install-action@v2
-      with:
-        tool: nextest
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
 
-    - name: Install cargo-audit
-      uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-audit
+      - name: Check code formatting
+        run: cargo fmt --all -- --check
 
-    - name: Check code formatting
-      run: cargo fmt --all -- --check
+      - name: Run Clippy (treat warnings as errors)
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-    - name: Run Clippy (treat warnings as errors)
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Build project
+        run: cargo build --verbose
 
-    - name: Build project
-      run: cargo build --verbose
+      - name: Run all tests
+        run: cargo nextest run --nocapture --no-tests=pass
 
-    - name: Run all tests
-      run: cargo nextest run --nocapture --no-tests=pass
+      - name: Security audit
+        run: cargo audit
 
-    - name: Security audit
-      run: cargo audit
-
-    - name: Validate documentation
-      run: cargo doc --no-deps --document-private-items
+      - name: Validate documentation
+        run: cargo doc --no-deps --document-private-items

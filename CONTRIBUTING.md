@@ -114,7 +114,6 @@ Releases are automated using [release-plz](https://release-plz.ieni.dev/):
 
 1. **Automatic PR Creation**: When commits land on `main`, release-plz
    creates/updates a PR with:
-
    - Version bumps based on conventional commits
    - Updated CHANGELOG.md
    - Updated Cargo.toml versions
@@ -122,7 +121,6 @@ Releases are automated using [release-plz](https://release-plz.ieni.dev/):
 2. **Review and Merge**: Maintainers review and merge the release PR
 
 3. **Automatic Release**: Upon merge, the system automatically:
-
    - Creates git tags
    - Publishes to crates.io
    - Creates GitHub releases with binaries
