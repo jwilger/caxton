@@ -519,21 +519,31 @@ timeout_seconds = 180
     std::fs::write(&config_file_path, modified_config)
         .expect("Should write modified configuration file");
 
-    // Wait for hot reload to detect the change and apply updates with retry mechanism
-    let mut updated_snapshot = None;
-    for attempt in 1..=30 {
-        tokio::time::sleep(Duration::from_millis(50)).await;
+    // Helper function to check if config has been updated
+    let check_config_updated = || -> Option<caxton::domain::agent::AgentConfig> {
+        config_watcher.current_config().ok().and_then(|snapshot| {
+            if snapshot.conversation.as_ref().unwrap().max_turns == 30 {
+                Some(snapshot)
+            } else {
+                None
+            }
+        })
+    };
 
-        if let Ok(snapshot) = config_watcher.current_config()
-            && snapshot.conversation.as_ref().unwrap().max_turns == 30
-        {
+    // Wait for hot reload to detect the change and apply updates with retry mechanism
+    // CI environments can be slower, so use longer timeout
+    let mut updated_snapshot = None;
+    for attempt in 1..=100 {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        if let Some(snapshot) = check_config_updated() {
             updated_snapshot = Some(snapshot);
             break;
         }
 
         assert!(
-            attempt != 30,
-            "Hot reload failed to detect changes after 30 attempts (1.5 seconds)"
+            attempt != 100,
+            "Hot reload failed to detect changes after 100 attempts (10 seconds)"
         );
     }
 

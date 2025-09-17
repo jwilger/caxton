@@ -1162,6 +1162,14 @@ pub mod agent {
         let current = Arc::new(Mutex::new(config));
         let last_modified_shared = Arc::new(Mutex::new(last_modified));
 
+        // Check if a Tokio runtime is available before spawning the background task
+        if tokio::runtime::Handle::try_current().is_err() {
+            return Err(HotReloadError::WatcherStartError {
+                path: path.clone(),
+                message: "No Tokio runtime available for hot reload watcher. Consider making the calling function async or ensure a Tokio runtime is running.".to_string(),
+            });
+        }
+
         // Start background task for periodic checking (minimal polling approach)
         let path_clone = path.clone();
         let current_clone = current.clone();
