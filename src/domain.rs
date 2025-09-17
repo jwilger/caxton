@@ -1114,6 +1114,23 @@ pub mod agent {
     pub fn start_hot_reload_watcher(
         path: impl AsRef<std::path::Path>,
     ) -> Result<ConfigWatcher, HotReloadError> {
+        start_hot_reload_watcher_with_interval(path, std::time::Duration::from_millis(50))
+    }
+
+    /// Start a hot reload watcher with a configurable polling interval.
+    /// For testing purposes, allows faster polling intervals.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the configuration file cannot be read or parsed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal mutex is poisoned (rare programming error).
+    pub fn start_hot_reload_watcher_with_interval(
+        path: impl AsRef<std::path::Path>,
+        polling_interval: std::time::Duration,
+    ) -> Result<ConfigWatcher, HotReloadError> {
         let path = path.as_ref().to_path_buf();
 
         // Load initial configuration
@@ -1151,7 +1168,7 @@ pub mod agent {
         let last_modified_clone = last_modified_shared.clone();
 
         let task_handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(50));
+            let mut interval = tokio::time::interval(polling_interval);
             loop {
                 interval.tick().await;
 
