@@ -429,10 +429,11 @@ timeout_seconds = 300
 
 #[test]
 fn test_workspace_directory_discovers_multiple_agent_configurations() {
+    use tempfile::TempDir;
+
     // Create a temporary workspace directory with multiple agent configurations
-    let temp_dir = std::env::temp_dir();
-    let workspace_dir = temp_dir.join("test-workspace-discovery");
-    std::fs::create_dir_all(&workspace_dir).expect("Should create workspace directory for testing");
+    let temp_dir = TempDir::new().expect("Should create temporary directory");
+    let workspace_dir = temp_dir.path();
 
     // Agent 1: Code reviewer
     let code_reviewer_config = r#"name = "code-reviewer"
@@ -521,11 +522,8 @@ timeout_seconds = 240
         .expect("Should write test-generator.toml");
 
     // Test workspace discovery loads all agent configurations
-    let agent_configs = caxton::domain::agent::discover_agents_in_workspace(&workspace_dir)
+    let agent_configs = caxton::domain::agent::discover_agents_in_workspace(workspace_dir)
         .expect("Should discover all agent configurations in workspace directory");
-
-    // Cleanup
-    let _ = std::fs::remove_dir_all(&workspace_dir);
 
     // Verify all three agents were discovered and loaded correctly
     assert_eq!(
