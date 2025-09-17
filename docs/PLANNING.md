@@ -81,9 +81,12 @@ Stories are organized in **4 priority tiers**:
 ### STORY-002: Basic Server Runtime ✅ **COMPLETED**
 
 **Status**: COMPLETED ✅
-**Implementation**: Complete HTTP server with configuration, health endpoints, graceful shutdown, and structured logging
-**Files**: `src/server.rs`, `src/domain.rs`, `tests/cli_integration.rs`, `Cargo.toml`
-**Acceptance**: All criteria verified and accepted through comprehensive test suite
+**Implementation**: Complete HTTP server with configuration, health endpoints,
+graceful shutdown, and structured logging
+**Files**: `src/server.rs`, `src/domain.rs`, `tests/cli_integration.rs`,
+`Cargo.toml`
+**Acceptance**: All criteria verified and accepted through comprehensive test
+suite
 
 **Epic**: System Bootstrap
 **As a** developer
@@ -121,30 +124,46 @@ Stories are organized in **4 priority tiers**:
 
 ---
 
-### STORY-003: Agent Configuration System
+### STORY-003: Agent Configuration System ✅ **COMPLETED**
+
+**Status**: COMPLETED ✅
+**Implementation**: Complete agent configuration system with TOML parsing,
+validation, hot reload, and template expansion
+**Files**: `src/domain.rs`, `tests/cli_integration.rs`
+**Acceptance**: All criteria verified and accepted by product-manager
 
 **Epic**: Agent Management
 **As a** developer
 **I want** to define agents using TOML configuration files
 **So that** I can create agents without writing code
 
-**Acceptance Criteria**:
+**Acceptance Criteria** ✅:
 
-- [ ] Agent configuration loads from TOML files with validation
-- [ ] Configuration schema includes name, capabilities, tools, prompts
-- [ ] Validation errors show line numbers and suggested fixes
-- [ ] Hot reload detects configuration changes and applies updates
-- [ ] Multiple agents can be configured in workspace directories
-- [ ] Template expansion for common agent patterns
+- ✅ Agent configuration loads from TOML files with validation
+- ✅ Configuration schema includes name, capabilities, tools, prompts
+- ✅ Validation errors show line numbers and suggested fixes
+- ✅ Hot reload detects configuration changes and applies updates
+- ✅ Multiple agents can be configured in workspace directories
+- ✅ Template expansion for common agent patterns
 
 **Technical Scope**:
 
-- TOML parsing with serde and validation with jsonschema
-- File system watching for hot reload functionality
-- Configuration schema definition with comprehensive validation
-- Agent registry for tracking configured agents
-- Template system for rapid agent creation
-- Error reporting with line-level precision
+- ✅ TOML parsing with serde and validation with jsonschema
+- ✅ File system watching for hot reload functionality
+- ✅ Configuration schema definition with comprehensive validation
+- ✅ Agent registry for tracking configured agents
+- ✅ Template system for rapid agent creation
+- ✅ Error reporting with line-level precision
+
+**Implementation Notes**:
+
+- Uses toml v0.8 crate for parsing agent configurations
+- Domain types implement Parse-Don't-Validate philosophy
+- AgentConfig struct with validated fields (name, version, capabilities, tools)
+- Enhanced error messages include line numbers and suggested fixes
+- Hot reload implementation with thread-safe configuration updates
+- Template expansion system with variable substitution support
+- Comprehensive test coverage for all acceptance criteria
 
 **Design Requirements**:
 
@@ -154,7 +173,7 @@ Stories are organized in **4 priority tiers**:
 - Documentation generation from configuration schema
 
 **Dependencies**: STORY-002
-**Estimated Effort**: 5-8 days
+**Estimated Effort**: 5-8 days (Actual: 2 days)
 **Priority**: P1 - Foundation
 
 ---
@@ -581,7 +600,7 @@ Stories are organized in **4 priority tiers**:
 
 - STORY-001: CLI Foundation ✅ **COMPLETED**
 - STORY-002: Basic Server Runtime ✅ **COMPLETED**
-- STORY-003: Agent Configuration System
+- STORY-003: Agent Configuration System ✅ **COMPLETED**
 - STORY-004: Message Routing Engine
 
 **Milestone**: Functional agent orchestration with basic CLI interface
@@ -668,7 +687,8 @@ Stories are organized in **4 priority tiers**:
 ### Story Implementation Protocol
 
 1. **Start with TDD**: Red test → Domain modeling → Green implementation
-2. **External Verification**: All acceptance criteria must be externally testable
+2. **External Verification**: All acceptance criteria must be externally
+   testable
 3. **Documentation Updates**: Update relevant docs with new capabilities
 4. **Performance Validation**: Verify story meets defined performance targets
 5. **User Feedback**: Gather feedback on user experience and iterate
@@ -700,13 +720,14 @@ The completed STORY-001 provides a solid foundation for rapid development of
 the remaining stories, with each building incrementally toward the vision of
 5-10 minute developer onboarding and a thriving agent ecosystem.
 
-**Current Status**: STORY-001 and STORY-002 completed successfully ✅
-**Next Priority**: Begin STORY-003 implementation with agent configuration system
+**Current Status**: STORY-001, STORY-002, and STORY-003 completed successfully ✅
+**Next Priority**: Begin STORY-004 implementation with message routing engine
 
 ---
 
 **Revision History**
 
-| Version | Date       | Author          | Changes                                                 |
-| ------- | ---------- | --------------- | ------------------------------------------------------- |
-| 1.0     | 2025-09-14 | project-manager | Initial planning with 14 stories and STORY-001 complete |
+| Version | Date       | Author           | Changes                          |
+| ------- | ---------- | ---------------- | -------------------------------- |
+| 1.0     | 2025-09-14 | project-manager  | Initial planning with 14 stories |
+| 1.1     | 2025-09-16 | documentation-qa | Updated STORY-003 to completed   |
