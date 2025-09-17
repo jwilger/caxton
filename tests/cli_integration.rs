@@ -426,3 +426,111 @@ timeout_seconds = 300
         "Error message should include suggested fix for the validation error. Got: {error_message}"
     );
 }
+
+#[tokio::test]
+async fn test_agent_configuration_hot_reload_detects_file_changes() {
+    use tokio::time::Duration;
+
+    // Create a temporary agent configuration file
+    let temp_dir = std::env::temp_dir();
+    let config_file_path = temp_dir.join("test-agent-hot-reload.toml");
+
+    // Initial agent configuration
+    let initial_config = r#"name = "file-analyzer"
+version = "1.0.0"
+capabilities = ["file_analysis"]
+
+system_prompt = '''
+You are a file analyzer agent that examines files and provides insights.
+'''
+
+user_prompt_template = '''
+Please analyze the following file:
+{file_content}
+'''
+
+[tools]
+available = ["read_file", "write_file"]
+
+[memory]
+enabled = true
+context_window = 2000
+
+[conversation]
+max_turns = 20
+timeout_seconds = 180
+"#;
+
+    // Write initial configuration
+    std::fs::write(&config_file_path, initial_config)
+        .expect("Should write initial configuration file");
+
+    // Start hot reload watcher for the configuration file
+    let config_watcher = caxton::domain::agent::start_hot_reload_watcher(&config_file_path)
+        .expect("Should start hot reload watcher for agent configuration");
+
+    // Get initial configuration snapshot
+    let initial_snapshot = config_watcher
+        .current_config()
+        .expect("Should get initial configuration snapshot");
+
+    // Verify initial configuration is loaded correctly
+    assert_eq!(
+        initial_snapshot.name.as_str(),
+        "file-analyzer",
+        "Initial configuration name should be loaded correctly"
+    );
+    assert_eq!(
+        initial_snapshot.conversation.as_ref().unwrap().max_turns,
+        20,
+        "Initial conversation config should have max_turns = 20"
+    );
+
+    // Modify the configuration file to trigger hot reload
+    let modified_config = r#"name = "file-analyzer"
+version = "1.0.0"
+capabilities = ["file_analysis", "content_extraction"]
+
+system_prompt = '''
+You are an enhanced file analyzer agent that examines files and extracts content.
+'''
+
+user_prompt_template = '''
+Please analyze and extract content from the following file:
+{file_content}
+'''
+
+[tools]
+available = ["read_file", "write_file", "extract_content"]
+
+[memory]
+enabled = true
+context_window = 2000
+
+[conversation]
+max_turns = 30
+timeout_seconds = 180
+"#;
+
+    // Write modified configuration (this should trigger hot reload)
+    std::fs::write(&config_file_path, modified_config)
+        .expect("Should write modified configuration file");
+
+    // Wait for hot reload to detect the change and apply updates
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // Get updated configuration snapshot after hot reload
+    let updated_snapshot = config_watcher
+        .current_config()
+        .expect("Should get updated configuration after hot reload");
+
+    // Cleanup
+    let _ = std::fs::remove_file(&config_file_path);
+
+    // Verify that hot reload detected changes and applied updates
+    assert_eq!(
+        updated_snapshot.conversation.as_ref().unwrap().max_turns,
+        30,
+        "Hot reload should detect file change and update max_turns from 20 to 30"
+    );
+}
