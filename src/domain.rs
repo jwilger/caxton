@@ -1267,6 +1267,322 @@ pub mod agent {
             write!(f, "{}", self.0)
         }
     }
+
+    /// Template variable for agent template expansion
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct TemplateVariable(String);
+
+    impl TemplateVariable {
+        /// Create a new template variable name with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the variable name is invalid.
+        pub fn new(name: String) -> Result<Self, String> {
+            if name.is_empty() {
+                return Err("Template variable name cannot be empty".to_string());
+            }
+
+            // Variable names must be alphanumeric with underscores
+            for c in name.chars() {
+                if !c.is_ascii_alphanumeric() && c != '_' {
+                    return Err(format!(
+                        "Template variable name contains invalid character '{c}'"
+                    ));
+                }
+            }
+
+            Ok(TemplateVariable(name))
+        }
+
+        /// Get the inner value
+        #[must_use]
+        pub fn as_str(&self) -> &str {
+            &self.0
+        }
+    }
+
+    /// Validated template variables collection
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct TemplateVariables {
+        /// The validated variables
+        inner: HashMap<String, String>,
+    }
+
+    impl TemplateVariables {
+        /// Create a new template variables collection
+        #[must_use]
+        pub fn new() -> Self {
+            TemplateVariables {
+                inner: HashMap::new(),
+            }
+        }
+
+        /// Insert a variable into the collection
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the variable name is invalid.
+        pub fn insert(&mut self, key: String, value: String) -> Result<(), String> {
+            // Validate variable name
+            let _var = TemplateVariable::new(key.clone())?;
+            self.inner.insert(key, value);
+            Ok(())
+        }
+
+        /// Get a variable value
+        #[must_use]
+        pub fn get(&self, key: &str) -> Option<&String> {
+            self.inner.get(key)
+        }
+
+        /// Create from a `HashMap` with validation
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if any variable name is invalid.
+        pub fn from_hashmap(map: HashMap<String, String>) -> Result<Self, String> {
+            let mut vars = TemplateVariables::new();
+            for (key, value) in map {
+                vars.insert(key, value)?;
+            }
+            Ok(vars)
+        }
+
+        /// Get the inner `HashMap` (for compatibility during transition)
+        #[must_use]
+        pub fn inner(&self) -> &HashMap<String, String> {
+            &self.inner
+        }
+    }
+
+    impl Default for TemplateVariables {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    /// Agent template with validated structure
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct AgentTemplate {
+        /// The raw template content
+        content: String,
+        /// Parsed placeholder locations for efficient substitution
+        placeholders: Vec<TemplatePlaceholder>,
+    }
+
+    /// A validated placeholder in a template
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct TemplatePlaceholder {
+        /// Start position in template
+        start: usize,
+        /// End position in template
+        end: usize,
+        /// Variable name
+        variable: TemplateVariable,
+    }
+
+    impl AgentTemplate {
+        /// Parse a template string into a validated template
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the template contains invalid placeholder syntax.
+        pub fn parse(content: String) -> Result<Self, String> {
+            let mut placeholders = Vec::new();
+            let chars: Vec<char> = content.chars().collect();
+            let mut i = 0;
+
+            while i < chars.len() {
+                if chars[i] == '{' && i + 1 < chars.len() {
+                    // Check for escaped braces
+                    if chars[i + 1] == '{' {
+                        // Skip escaped brace
+                        i += 2;
+                        continue;
+                    }
+
+                    // Find closing brace
+                    let start = i;
+                    let mut j = i + 1;
+                    let mut found_close = false;
+
+                    while j < chars.len() {
+                        if chars[j] == '}' {
+                            // Extract variable name
+                            let var_name: String = chars[i + 1..j].iter().collect();
+
+                            // Validate variable name
+                            match TemplateVariable::new(var_name.clone()) {
+                                Ok(var) => {
+                                    placeholders.push(TemplatePlaceholder {
+                                        start,
+                                        end: j + 1,
+                                        variable: var,
+                                    });
+                                    found_close = true;
+                                    i = j + 1;
+                                    break;
+                                }
+                                Err(e) => {
+                                    return Err(format!(
+                                        "Invalid template variable at position {start}: {e}"
+                                    ));
+                                }
+                            }
+                        }
+                        j += 1;
+                    }
+
+                    if !found_close {
+                        return Err(format!("Unclosed placeholder at position {start}"));
+                    }
+                } else {
+                    i += 1;
+                }
+            }
+
+            Ok(AgentTemplate {
+                content,
+                placeholders,
+            })
+        }
+
+        /// Load template from file path
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the file cannot be read or the template is invalid.
+        pub fn from_file(path: &std::path::Path) -> AgentResult<Self> {
+            let content =
+                std::fs::read_to_string(path).map_err(|e| AgentConfigError::ParseError {
+                    message: format!("Failed to read template file: {e}"),
+                    line: None,
+                    column: None,
+                    kind: TomlErrorKind::SyntaxError,
+                })?;
+
+            AgentTemplate::parse(content).map_err(|e| AgentConfigError::ParseError {
+                message: format!("Invalid template: {e}"),
+                line: None,
+                column: None,
+                kind: TomlErrorKind::SyntaxError,
+            })
+        }
+
+        /// Get the raw template content
+        #[must_use]
+        pub fn content(&self) -> &str {
+            &self.content
+        }
+
+        /// Get required variable names from the template
+        #[must_use]
+        pub fn required_variables(&self) -> Vec<&str> {
+            let mut vars: Vec<&str> = self
+                .placeholders
+                .iter()
+                .map(|p| p.variable.as_str())
+                .collect();
+            vars.sort_unstable();
+            vars.dedup();
+            vars
+        }
+
+        /// Validate that all required variables are present
+        ///
+        /// # Errors
+        ///
+        /// Returns an error listing missing variables.
+        pub fn validate_variables(&self, variables: &TemplateVariables) -> Result<(), Vec<String>> {
+            let mut missing = Vec::new();
+            for required in self.required_variables() {
+                if variables.get(required).is_none() {
+                    missing.push(required.to_string());
+                }
+            }
+
+            if missing.is_empty() {
+                Ok(())
+            } else {
+                Err(missing)
+            }
+        }
+
+        /// Expand the template with the provided variables
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if required variables are missing.
+        pub fn expand(&self, variables: &TemplateVariables) -> Result<String, String> {
+            // First validate all required variables are present
+            if let Err(missing) = self.validate_variables(variables) {
+                return Err(format!(
+                    "Missing required template variables: {}",
+                    missing.join(", ")
+                ));
+            }
+
+            // Perform substitution
+            let mut result = self.content.clone();
+            for (key, value) in variables.inner() {
+                let placeholder = format!("{{{key}}}");
+                result = result.replace(&placeholder, value);
+            }
+
+            Ok(result)
+        }
+    }
+
+    /// Expand an agent template with variables to create an `AgentConfig`
+    ///
+    /// This function takes a template file path and a set of variables, expands
+    /// the template by replacing placeholders, and then parses the result as
+    /// an agent configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The template file cannot be read
+    /// - The template contains invalid placeholder syntax
+    /// - Required variables are missing
+    /// - The expanded result is not valid TOML
+    /// - The TOML does not contain a valid agent configuration
+    pub fn expand_agent_template<S: ::std::hash::BuildHasher>(
+        template_path: &std::path::Path,
+        variables: &HashMap<String, String, S>,
+    ) -> AgentResult<AgentConfig> {
+        // Parse and validate the template
+        let template = AgentTemplate::from_file(template_path)?;
+
+        // Convert HashMap to TemplateVariables with validation
+        let template_vars = TemplateVariables::from_hashmap(
+            variables
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        )
+        .map_err(|e| AgentConfigError::ParseError {
+            message: format!("Invalid template variable: {e}"),
+            line: None,
+            column: None,
+            kind: TomlErrorKind::SyntaxError,
+        })?;
+
+        // Expand the template
+        let expanded_content =
+            template
+                .expand(&template_vars)
+                .map_err(|e| AgentConfigError::ParseError {
+                    message: format!("Template expansion failed: {e}"),
+                    line: None,
+                    column: None,
+                    kind: TomlErrorKind::SyntaxError,
+                })?;
+
+        // Parse the expanded content as agent configuration
+        load_agent_config_from_toml(&expanded_content)
+    }
 }
 
 /// Application initialization workflow

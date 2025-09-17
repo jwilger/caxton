@@ -661,3 +661,67 @@ timeout_seconds = 240
         "Should discover test-generator agent in workspace"
     );
 }
+
+#[test]
+fn test_agent_template_expansion_creates_configured_agent() {
+    use std::collections::HashMap;
+    use tempfile::TempDir;
+
+    // Create temporary directory for template testing
+    let temp_dir = TempDir::new().expect("Should create temporary directory");
+    let template_path = temp_dir.path().join("rust-reviewer.template.toml");
+
+    // Agent template with variables for expansion
+    let template_content = r#"
+name = "{agent_name}"
+version = "1.0.0"
+description = "A {language} code reviewer for {project_type} projects"
+capabilities = ["code_review", "{language}_analysis"]
+
+system_prompt = '''
+You are a {language} code reviewer specializing in {project_type} projects.
+Project name: {project_name}
+Focus on {language} best practices and {project_type} patterns.
+'''
+
+user_prompt_template = '''
+Please review this {language} code from {project_name}:
+{code_snippet}
+'''
+
+[tools]
+available = ["{language}_analyzer", "static_analysis"]
+
+[memory]
+enabled = true
+context_window = {context_size}
+
+[conversation]
+max_turns = {max_conversation_turns}
+timeout_seconds = 180
+"#;
+
+    // Write template file
+    std::fs::write(&template_path, template_content).expect("Should write template file");
+
+    // Template variables for expansion
+    let mut variables = HashMap::new();
+    variables.insert("agent_name".to_string(), "rust-reviewer".to_string());
+    variables.insert("language".to_string(), "Rust".to_string());
+    variables.insert("project_type".to_string(), "CLI".to_string());
+    variables.insert("project_name".to_string(), "caxton".to_string());
+    variables.insert("context_size".to_string(), "4000".to_string());
+    variables.insert("max_conversation_turns".to_string(), "50".to_string());
+    variables.insert("code_snippet".to_string(), "placeholder".to_string());
+
+    // Test template expansion creates valid agent configuration
+    let agent_config = caxton::domain::agent::expand_agent_template(&template_path, &variables)
+        .expect("Should expand agent template with variables");
+
+    // Verify template variable substitution worked correctly
+    assert_eq!(
+        agent_config.name.as_str(),
+        "rust-reviewer",
+        "Template expansion should substitute agent_name variable"
+    );
+}
