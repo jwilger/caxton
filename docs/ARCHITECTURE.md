@@ -13,7 +13,7 @@
 > patterns being established
 >
 > All features and components described represent planned functionality aligned
-with the hybrid agent architecture vision.
+> with the hybrid agent architecture vision.
 
 ## Executive Summary
 
@@ -27,15 +27,15 @@ implementation patterns following type-driven development principles.
 
 ## Table of Contents
 
-01. [System Overview](#system-overview)
-02. [Domain Model](#domain-model)
-03. [Component Architecture](#component-architecture)
-04. [Agent Lifecycle Management](#agent-lifecycle-management)
-05. [FIPA Message Flow](#fipa-message-flow)
-06. [Security Architecture](#security-architecture)
-07. [Observability Integration](#observability-integration)
-08. [Performance & Scalability](#performance--scalability)
-09. [Type Safety & Error Handling](#type-safety--error-handling)
+1.  [System Overview](#system-overview)
+2.  [Domain Model](#domain-model)
+3.  [Component Architecture](#component-architecture)
+4.  [Agent Lifecycle Management](#agent-lifecycle-management)
+5.  [FIPA Message Flow](#fipa-message-flow)
+6.  [Security Architecture](#security-architecture)
+7.  [Observability Integration](#observability-integration)
+8.  [Performance & Scalability](#performance--scalability)
+9.  [Type Safety & Error Handling](#type-safety--error-handling)
 10. [Deployment Architecture](#deployment-architecture)
 
 ## System Overview
@@ -1505,14 +1505,14 @@ docker run -p 8080:8080 -v ./agents:/var/lib/caxton/agents caxton/caxton:latest
 
 ```yaml
 # docker-compose.yml for configuration-driven agents
-version: '3.8'
+version: "3.8"
 
 services:
   caxton-server:
     image: caxton/caxton:latest
     ports:
-      - "8080:8080"    # REST Management API
-      - "9090:9090"    # Metrics endpoint
+      - "8080:8080" # REST Management API
+      - "9090:9090" # Metrics endpoint
     environment:
       - CAXTON_CONFIG_PATH=/etc/caxton/config.yaml
       - RUST_LOG=info
@@ -1520,8 +1520,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:14268
     volumes:
       - ./config/caxton.yaml:/etc/caxton/config.yaml:ro
-      - ./agents:/var/lib/caxton/agents:ro  # Configuration agents
-      - caxton-data:/var/lib/caxton        # Embedded SQLite + memory
+      - ./agents:/var/lib/caxton/agents:ro # Configuration agents
+      - caxton-data:/var/lib/caxton # Embedded SQLite + memory
     healthcheck:
       test: ["CMD", "caxton", "health"]
       interval: 30s
@@ -1533,14 +1533,14 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
-      - "16686:16686"  # UI
-      - "14268:14268"  # HTTP collector
+      - "16686:16686" # UI
+      - "14268:14268" # HTTP collector
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     profiles: ["observability"]
 
 volumes:
-  caxton-data:  # Only volume needed - contains SQLite DB and embeddings
+  caxton-data: # Only volume needed - contains SQLite DB and embeddings
 ```
 
 ### Enterprise Deployment with Pluggable External Backends
@@ -1549,7 +1549,7 @@ For larger deployments requiring scale beyond the embedded backend's 100K+
 entity capacity, external backends provide seamless migration paths:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   caxton-server:
@@ -1576,8 +1576,8 @@ services:
       - NEO4J_AUTH=neo4j/password
       - NEO4J_PLUGINS=["apoc"]
     ports:
-      - "7474:7474"  # Web interface
-      - "7687:7687"  # Bolt protocol
+      - "7474:7474" # Web interface
+      - "7687:7687" # Bolt protocol
     volumes:
       - neo4j-data:/data
 
@@ -1608,54 +1608,54 @@ spec:
         app: caxton
     spec:
       containers:
-      - name: caxton
-        image: caxton/caxton:latest
-        ports:
-        - containerPort: 8080
-          name: api
-        - containerPort: 9090
-          name: metrics
-        env:
-        - name: CAXTON_CONFIG_PATH
-          value: /etc/caxton/config.yaml
-        - name: RUST_LOG
-          value: info
-        volumeMounts:
+        - name: caxton
+          image: caxton/caxton:latest
+          ports:
+            - containerPort: 8080
+              name: api
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: CAXTON_CONFIG_PATH
+              value: /etc/caxton/config.yaml
+            - name: RUST_LOG
+              value: info
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caxton
+            - name: data
+              mountPath: /var/lib/caxton
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+      volumes:
         - name: config
-          mountPath: /etc/caxton
-        - name: data
-          mountPath: /var/lib/caxton
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          configMap:
+            name: caxton-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-      volumes:
-      - name: config
-        configMap:
-          name: caxton-config
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
+            storage: 10Gi
 ```
 
 ## Summary
