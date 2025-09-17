@@ -1187,6 +1187,50 @@ pub mod agent {
         })
     }
 
+    /// Discover all agent configurations in a workspace directory
+    ///
+    /// This function scans a directory for `.toml` files and attempts to load
+    /// each one as an agent configuration. It returns all successfully loaded
+    /// configurations, filtering out any files that don't contain valid agent configs.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the directory cannot be read or accessed.
+    /// Individual file parse errors are logged but don't fail the entire operation.
+    pub fn discover_agents_in_workspace(
+        workspace_path: &std::path::Path,
+    ) -> AgentResult<Vec<AgentConfig>> {
+        let mut agent_configs = Vec::new();
+
+        // Read the directory contents
+        let dir_entries =
+            std::fs::read_dir(workspace_path).map_err(|e| AgentConfigError::ParseError {
+                message: format!("Failed to read workspace directory: {e}"),
+                line: None,
+                column: None,
+                kind: TomlErrorKind::SyntaxError,
+            })?;
+
+        // Scan for .toml files and load each one
+        for entry in dir_entries.flatten() {
+            let path = entry.path();
+
+            // Only process .toml files
+            if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
+                // Read the TOML file content
+                if let Ok(content) = std::fs::read_to_string(&path) {
+                    // Try to load as agent configuration
+                    if let Ok(agent_config) = load_agent_config_from_toml(&content) {
+                        agent_configs.push(agent_config);
+                    }
+                    // Skip files that don't parse correctly as agent configs
+                }
+            }
+        }
+
+        Ok(agent_configs)
+    }
+
     /// Agent identifier (generated UUID)
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct AgentId(String);

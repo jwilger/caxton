@@ -534,3 +534,130 @@ timeout_seconds = 180
         "Hot reload should detect file change and update max_turns from 20 to 30"
     );
 }
+
+#[test]
+fn test_workspace_directory_discovers_multiple_agent_configurations() {
+    // Create a temporary workspace directory with multiple agent configurations
+    let temp_dir = std::env::temp_dir();
+    let workspace_dir = temp_dir.join("test-workspace-discovery");
+    std::fs::create_dir_all(&workspace_dir).expect("Should create workspace directory for testing");
+
+    // Agent 1: Code reviewer
+    let code_reviewer_config = r#"name = "code-reviewer"
+version = "1.0.0"
+capabilities = ["code_analysis", "documentation_review"]
+
+system_prompt = '''
+You are a code reviewer agent that analyzes code for quality, style, and best practices.
+'''
+
+user_prompt_template = '''
+Please review the following code changes: {code_diff}
+'''
+
+[tools]
+available = ["mcp__git__git_diff", "mcp__git__git_log"]
+
+[memory]
+enabled = true
+context_window = 4000
+
+[conversation]
+max_turns = 50
+timeout_seconds = 300
+"#;
+
+    // Agent 2: Documentation writer
+    let docs_writer_config = r#"name = "docs-writer"
+version = "1.2.0"
+capabilities = ["documentation", "technical_writing"]
+
+system_prompt = '''
+You are a documentation writer agent that creates clear, comprehensive documentation.
+'''
+
+user_prompt_template = '''
+Please write documentation for: {topic}
+'''
+
+[tools]
+available = ["read_file", "write_file"]
+
+[memory]
+enabled = false
+context_window = 2000
+
+[conversation]
+max_turns = 20
+timeout_seconds = 180
+"#;
+
+    // Agent 3: Test generator
+    let test_generator_config = r#"name = "test-generator"
+version = "2.0.0"
+capabilities = ["test_creation", "tdd_support"]
+
+system_prompt = '''
+You are a test generator agent that creates comprehensive test suites.
+'''
+
+user_prompt_template = '''
+Please generate tests for: {code_snippet}
+'''
+
+[tools]
+available = ["mcp__cargo__cargo_test", "read_file", "write_file"]
+
+[memory]
+enabled = true
+context_window = 3000
+
+[conversation]
+max_turns = 40
+timeout_seconds = 240
+"#;
+
+    // Write agent configuration files to workspace directory
+    let code_reviewer_path = workspace_dir.join("code-reviewer.toml");
+    let docs_writer_path = workspace_dir.join("docs-writer.toml");
+    let test_generator_path = workspace_dir.join("test-generator.toml");
+
+    std::fs::write(&code_reviewer_path, code_reviewer_config)
+        .expect("Should write code-reviewer.toml");
+    std::fs::write(&docs_writer_path, docs_writer_config).expect("Should write docs-writer.toml");
+    std::fs::write(&test_generator_path, test_generator_config)
+        .expect("Should write test-generator.toml");
+
+    // Test workspace discovery loads all agent configurations
+    let agent_configs = caxton::domain::agent::discover_agents_in_workspace(&workspace_dir)
+        .expect("Should discover all agent configurations in workspace directory");
+
+    // Cleanup
+    let _ = std::fs::remove_dir_all(&workspace_dir);
+
+    // Verify all three agents were discovered and loaded correctly
+    assert_eq!(
+        agent_configs.len(),
+        3,
+        "Workspace discovery should find exactly 3 agent configurations"
+    );
+
+    // Verify agent names are discovered correctly
+    let agent_names: Vec<&str> = agent_configs
+        .iter()
+        .map(|config| config.name.as_str())
+        .collect();
+
+    assert!(
+        agent_names.contains(&"code-reviewer"),
+        "Should discover code-reviewer agent in workspace"
+    );
+    assert!(
+        agent_names.contains(&"docs-writer"),
+        "Should discover docs-writer agent in workspace"
+    );
+    assert!(
+        agent_names.contains(&"test-generator"),
+        "Should discover test-generator agent in workspace"
+    );
+}
