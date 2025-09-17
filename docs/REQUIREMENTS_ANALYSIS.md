@@ -1,9 +1,24 @@
 # Caxton Requirements Analysis
 
-**Document Version**: 1.0
-**Date**: 2025-09-14
-**Status**: Complete - Ready for Event Modeling Phase
+**Document Version**: 1.1
+**Date**: 2025-09-16 (Updated from 2025-09-14)
+**Status**: Updated - Deployment Model Clarification
 **Product Manager**: product-manager
+
+## Important Clarification (2025-09-16)
+
+**Deployment Model Change**: The original "hot reload" requirement has been
+clarified to mean **manual deployment commands**, not automatic file watching.
+The intended developer workflow is:
+
+1. **Start Server**: `caxton serve` (runs continuously)
+2. **Edit Configurations**: Modify agent TOML files in workspace
+3. **Deploy Changes**: `caxton deploy` (explicit push to server)
+4. **Fast Iteration**: Incremental deployment of only changed configurations
+
+This aligns with container/Kubernetes deployment patterns where developers have
+explicit control over when changes go live, rather than automatic file watching
+behavior typical of development servers.
 
 ## Executive Summary
 
@@ -78,12 +93,22 @@ compilation.
 The system SHALL support deploying agents through CLI commands within 30
 seconds.
 
-#### FR1.3: Hot Reload
+#### FR1.3: Manual Deployment
 
-Configuration changes SHALL take effect without server restart or agent
-redeployment.
+Configuration changes SHALL be deployed to the running server via explicit CLI
+commands without requiring server restart.
 
-#### FR1.4: Agent Lifecycle
+#### FR1.4: Incremental Deployment
+
+The system SHALL support fast incremental deployment where only changed
+configurations are transmitted and applied.
+
+#### FR1.5: Deployment Status
+
+Developers SHALL be able to view pending changes before deployment and track
+deployment history.
+
+#### FR1.6: Agent Lifecycle
 
 The system SHALL manage agent startup, shutdown, and health monitoring
 automatically.
@@ -343,9 +368,55 @@ The system SHALL handle 1,000+ messages per second with <100ms p99 latency.
 - [ ] Safe memory editing with audit trail
 - [ ] Bulk operations supported
 
-### Epic 5: Production Operations
+### Epic 5: Agent Deployment and Management
 
-#### Story 5.1: Monitor System Health
+#### Story 5.1: Deploy Agent Configurations
+
+**As a** developer
+**I want to** deploy agent configurations to a running server using CLI commands
+**So that** I have control over when changes go live
+
+**Acceptance Criteria:**
+
+- [ ] `caxton deploy` command pushes workspace configs to server
+- [ ] Deployment completes within 2 seconds for 10 agents
+- [ ] Only changed configurations are transmitted
+- [ ] Deployment summary shows agents deployed/updated/removed
+- [ ] Server applies changes without restart
+- [ ] Failed deployments don't affect running agents (atomic)
+
+#### Story 5.2: View Deployment Status
+
+**As a** developer
+**I want to** see what changes are pending deployment
+**So that** I know what will be deployed before running the command
+
+**Acceptance Criteria:**
+
+- [ ] `caxton status` shows workspace vs deployed differences
+- [ ] Status indicates new, modified, and deleted agents
+- [ ] Shows last deployment timestamp per agent
+- [ ] Works offline (compares to cached state)
+- [ ] JSON output available with --json flag
+
+#### Story 5.3: Incremental Deployment Performance
+
+**As a** developer
+**I want** fast incremental deployments
+**So that** I can iterate quickly on agent configurations
+
+**Acceptance Criteria:**
+
+- [ ] Single agent deploys in < 500ms
+- [ ] 5-10 agents deploy in < 2 seconds
+- [ ] 50+ agents deploy in < 5 seconds
+- [ ] Only delta transmitted (checksums/timestamps)
+- [ ] No impact on unchanged running agents
+- [ ] Progress indication during deployment
+
+### Epic 6: Production Operations
+
+#### Story 6.1: Monitor System Health
 
 **As an** operations engineer
 **I want** comprehensive system monitoring
@@ -358,7 +429,7 @@ The system SHALL handle 1,000+ messages per second with <100ms p99 latency.
 - [ ] Health checks for all components
 - [ ] Alert thresholds configurable
 
-#### Story 5.2: Handle Agent Failures
+#### Story 6.2: Handle Agent Failures
 
 **As a** system operator
 **I want** the system to handle agent failures gracefully
@@ -371,7 +442,7 @@ The system SHALL handle 1,000+ messages per second with <100ms p99 latency.
 - [ ] Error messages routed appropriately
 - [ ] Failure metrics tracked
 
-#### Story 5.3: Scale Under Load
+#### Story 6.3: Scale Under Load
 
 **As a** DevOps engineer
 **I want** the system to scale with demand

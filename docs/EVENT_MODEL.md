@@ -1,8 +1,8 @@
 # Caxton Event Model
 
-**Document Version**: 2.0
-**Date**: 2025-09-14
-**Status**: Collaborative Revision incorporating Product and UX feedback
+**Document Version**: 2.1
+**Date**: 2025-09-16
+**Status**: Updated Deployment Model - Manual Deploy Command Pattern
 **Technical Architect**: technical-architect
 **Contributors**: product-manager, ux-ui-design-expert
 **Methodology**: [Event Modeling Cheatsheet](https://eventmodeling.org/posts/event-modeling-cheatsheet/)
@@ -11,9 +11,12 @@
 
 This Event Model captures the complete system behavior of Caxton as an agent
 orchestration application server, with particular emphasis on the **5-10 minute
-onboarding experience**. It defines the events that occur in the system, the
-commands that trigger them, the views that users observe, and the workflows
-that connect everything together. The model ensures technical feasibility while
+onboarding experience** and the **manual deployment command pattern**.
+
+**Critical Update (v2.1)**: The deployment model has been corrected from automatic
+hot reload to a manual `caxton deploy` command pattern. This gives developers
+explicit control over when configuration changes go live, similar to Docker or
+Kubernetes deployment workflows. The model ensures technical feasibility while
 centering the user experience and business value.
 
 ## Event Modeling Principles
@@ -403,6 +406,81 @@ SuccessCelebration:
     {time_elapsed}!"
 ```
 
+## Phase 1.5: Deployment Model (STORY-003 Update)
+
+This phase represents the corrected deployment model based on requirements clarification. The deployment workflow follows a manual command pattern similar to Docker/Kubernetes, giving developers explicit control over when changes go live.
+
+### Deployment Workflow Overview
+
+```yaml
+DeveloperWorkflow:
+  1. Start Server Once:
+    command: "caxton serve"
+    behavior: Long-running process
+    result: Server ready to receive deployments
+
+  2. Edit Configurations:
+    location: Workspace directory
+    files: agent.toml files
+    validation: Local syntax checking
+
+  3. Deploy Changes:
+    command: "caxton deploy"
+    behavior: Push changes to running server
+    performance: < 500ms single, < 2s for 5-10 agents
+    result: Agents updated without server restart
+
+  4. Check Status:
+    command: "caxton status"
+    behavior: Show pending changes
+    offline: Works with cached state
+```
+
+### Key Design Decisions
+
+```yaml
+IncrementalDeployment:
+  description: Only changed configurations are deployed
+  detection: SHA256 checksums of config files
+  optimization: Delta transmission, parallel updates
+  performance: Sub-second for typical changes
+
+AtomicUpdates:
+  description: All-or-nothing deployment semantics
+  behavior: Validate all → Deploy all → Rollback on failure
+  guarantee: No partial deployments
+  isolation: Other agents continue running
+
+OfflineCapability:
+  description: Status works without server connection
+  implementation: Local cache of deployed state
+  update: Cache refreshed after each deployment
+  benefit: Fast feedback during development
+```
+
+### Performance Requirements
+
+```yaml
+DeploymentPerformance:
+  single_agent:
+    target: < 500ms
+    includes: Validation, transmission, activation
+
+  small_workspace: # 5-10 agents
+    target: < 2 seconds
+    optimization: Parallel deployment
+
+  large_workspace: # 50+ agents
+    target: < 5 seconds
+    optimization: Batch processing, connection pooling
+
+ChangeDetection:
+  workspace_scan: < 200ms for 100 files
+  checksum_computation: < 5ms per file
+  diff_generation: < 50ms per changed file
+  cache_lookup: < 10ms
+```
+
 ## Phase 1: System Bootstrap
 
 ### Commands
@@ -508,33 +586,63 @@ CreateAgentFromTemplate: # Template-driven creation
     feedback: Real-time file generation progress
     time_budget: < 2 seconds
 
-DeployAgent:
+ScanWorkspace: # Discover all agent configurations
+  input:
+    workspace_path: Path
+    include_patterns: [Glob]?
+    exclude_patterns: [Glob]?
+  produces:
+    - WorkspaceScanned
+    - ScanFailed (failure)
+  user_experience:
+    feedback: "Scanning workspace for agent configurations..."
+    progress: Show discovered files
+    time_budget: < 500ms for typical workspace
+
+DetectChanges: # Compare workspace to deployed state
+  input:
+    workspace_state: WorkspaceState
+    deployed_state: DeployedState
+  produces:
+    - ChangesDetected
+    - NoChangesFound
+  user_experience:
+    feedback: "Checking for configuration changes..."
+    summary: "Found {new} new, {modified} modified, {deleted} removed agents"
+    time_budget: < 200ms
+
+DeployChanges: # Manual deployment command
+  input:
+    changes: ChangeSet
+    workspace: WorkspaceId?
+    force: Boolean? # Skip confirmation prompts
+    dry_run: Boolean? # Preview without applying
+  validation:
+    - all configurations are valid
+    - no naming conflicts
+    - resource limits not exceeded
+  produces:
+    - DeploymentInitiated
+    - DeploymentCompleted (success)
+    - DeploymentFailed (failure)
+  user_experience:
+    command: "caxton deploy"
+    acknowledgment: "Deploying {count} agent changes..."
+    progress: Show per-agent deployment status
+    success: "✓ Deployment complete: {deployed} agents updated"
+    time_budget: < 500ms single agent, < 2s for 5-10 agents
+
+ValidateConfiguration:
   input:
     config_file: Path
-    workspace: WorkspaceId?
-  validation:
-    - config_file is valid TOML
-    - agent name is unique in workspace
-    - capabilities are well-formed
+    strict_mode: Boolean?
   produces:
-    - AgentActive (success) # User-friendly vs "AgentDeployed"
-    - AgentDeploymentFailed (failure)
+    - ConfigurationValidated (success)
+    - ValidationFailed (failure)
   user_experience:
-    acknowledgment: "Deploying agent '{name}'..."
-    progress: Show capability registration
-    success: "✓ Agent '{name}' is active and ready!"
-
-UpdateAgentConfig:
-  input:
-    agent_id: AgentId
-    config_patch: ConfigPatch
-  validation:
-    - agent exists
-    - patch is valid
-    - no breaking changes
-  produces:
-    - AgentConfigUpdated (success)
-    - ConfigUpdateFailed (failure)
+    feedback: Real-time validation feedback
+    errors: Line-by-line error highlighting
+    suggestions: Actionable fix recommendations
 
 StopAgent:
   input:
@@ -548,6 +656,86 @@ StopAgent:
 ### Events
 
 ```yaml
+WorkspaceScanned:
+  timestamp: DateTime
+  workspace_path: Path
+  scan_id: ScanId
+  discovered_configs: [ConfigFile]
+  scan_duration_ms: Duration
+  total_agents_found: Count
+  user_message: "Found {count} agent configurations in workspace"
+
+ConfigFile:
+  path: Path
+  agent_name: String
+  last_modified: DateTime
+  checksum: Hash
+  size_bytes: Size
+  parse_status: Valid | Invalid | Warning
+
+ChangesDetected:
+  timestamp: DateTime
+  scan_id: ScanId
+  new_agents: [AgentName]
+  modified_agents: [AgentChange]
+  deleted_agents: [AgentName]
+  total_changes: Count
+  user_message: "Detected {count} configuration changes"
+
+AgentChange:
+  agent_name: String
+  change_type: Modified | ConfigChanged | CapabilitiesChanged
+  old_checksum: Hash
+  new_checksum: Hash
+  diff_preview: String? # First few lines of diff
+
+DeploymentInitiated:
+  timestamp: DateTime
+  deployment_id: DeploymentId
+  change_count: Count
+  deployment_mode: Full | Incremental
+  dry_run: Boolean
+  initiated_by: UserId?
+  user_message: "Starting deployment of {count} agent changes"
+
+AgentDeployed:  # Individual agent deployment success
+  timestamp: DateTime
+  deployment_id: DeploymentId
+  agent_id: AgentId
+  agent_name: String
+  action: Created | Updated | Removed
+  deployment_time_ms: Duration
+  config:
+    capabilities: [Capability]
+    tools: [ToolReference]
+  user_message: "Agent '{name}' deployed successfully"
+
+DeploymentCompleted:
+  timestamp: DateTime
+  deployment_id: DeploymentId
+  agents_deployed: Count
+  agents_failed: Count
+  total_duration_ms: Duration
+  deployment_mode: Full | Incremental
+  user_message: "Deployment complete: {success}/{total} agents updated"
+
+DeploymentFailed:
+  timestamp: DateTime
+  deployment_id: DeploymentId
+  reason: ValidationError | ResourceLimit | ConflictDetected
+  failed_agents: [AgentError]
+  partial_success: Boolean
+  rollback_performed: Boolean
+  user_message: "Deployment failed: {reason}"
+  suggested_actions: [String]
+
+AgentError:
+  agent_name: String
+  error_type: String
+  error_message: String
+  line_number: Number?
+  suggestion: String?
+
 AgentCreatedFromTemplate:  # Template system event
   timestamp: DateTime
   agent_id: AgentId
@@ -558,21 +746,13 @@ AgentCreatedFromTemplate:  # Template system event
   files_generated: [FilePath]
   creation_time_ms: Duration
 
-AgentActive:  # User-friendly vs "AgentDeployed"
+AgentStatusUpdated:
   timestamp: DateTime
   agent_id: AgentId
-  name: AgentName
-  workspace: WorkspaceId?
-  config:
-    capabilities: [Capability]
-    tools: [ToolReference]
-    system_prompt: String
-    template_params: Map<String, Value>
-  metadata:
-    deployed_by: UserId?
-    deployment_method: CLI | API | WebUI
-    from_template: TemplateId?
-  user_message: "Agent '{name}' is ready to handle requests"
+  previous_status: Running | Stopped | Updating
+  new_status: Running | Stopped | Updating
+  reason: DeploymentUpdate | ManualStop | HealthCheck
+  user_message: "Agent '{name}' status: {new_status}"
 
 SkillsAvailable:  # User-friendly vs "CapabilitiesIndexed"
   timestamp: DateTime
@@ -582,15 +762,11 @@ SkillsAvailable:  # User-friendly vs "CapabilitiesIndexed"
   total_system_skills: Count
   user_message: "Agent skills updated"
 
-AgentConfigUpdated:
+NoChangesFound:
   timestamp: DateTime
-  agent_id: AgentId
-  previous_version: Version
-  new_version: Version
-  changes: [ConfigChange]
-  hot_reloaded: Boolean
-  validation_result: ValidationResult
-  user_message: String
+  workspace_path: Path
+  last_deployment: DateTime?
+  user_message: "No configuration changes detected"
 
 ConfigValidationResult:  # Configuration management UX
   timestamp: DateTime
@@ -617,24 +793,102 @@ AgentStopped:
 ### Views
 
 ```yaml
+DeploymentStatus:  # Current deployment state
+  projection_of:
+    [WorkspaceScanned, ChangesDetected, DeploymentCompleted]
+  fields:
+    workspace_state: WorkspaceState
+    deployed_state: DeployedState
+    pending_changes: ChangeSet
+    last_scan: DateTime
+    last_deployment: DeploymentInfo?
+    change_detection_mode: Checksum | Timestamp | Both
+
+WorkspaceState:
+  scan_id: ScanId
+  workspace_path: Path
+  configurations: Map<AgentName, ConfigInfo>
+  total_agents: Count
+  last_modified: DateTime
+
+DeployedState:
+  deployment_id: DeploymentId?
+  agents: Map<AgentName, DeployedAgent>
+  deployment_timestamp: DateTime
+  deployment_mode: Full | Incremental
+
+ConfigInfo:
+  path: Path
+  checksum: Hash
+  last_modified: DateTime
+  parse_status: Valid | Invalid
+  validation_errors: [ValidationError]?
+
+DeployedAgent:
+  agent_id: AgentId
+  name: AgentName
+  checksum: Hash
+  deployed_at: DateTime
+  status: Running | Stopped | Updating
+  capabilities: [Capability]
+  version: Version
+
+ChangeSet:  # Pending changes to deploy
+  new_agents: [ConfigInfo]
+  modified_agents: [AgentDiff]
+  deleted_agents: [AgentName]
+  total_changes: Count
+  estimated_deployment_time: Duration
+
+AgentDiff:
+  agent_name: String
+  old_config: ConfigInfo
+  new_config: ConfigInfo
+  changes: [ChangeDetail]
+
+ChangeDetail:
+  field: String
+  old_value: Value?
+  new_value: Value?
+  impact: Breaking | Compatible | Cosmetic
+
+DeploymentHistory:  # Track deployment history
+  projection_of:
+    [DeploymentInitiated, DeploymentCompleted, DeploymentFailed]
+  fields:
+    deployments: [DeploymentRecord]
+    success_rate: Percentage
+    avg_deployment_time: Duration
+    common_failures: Map<FailureType, Count>
+
+DeploymentRecord:
+  deployment_id: DeploymentId
+  timestamp: DateTime
+  changes_deployed: Count
+  success: Boolean
+  duration_ms: Duration
+  deployment_mode: Full | Incremental
+  initiated_by: UserId?
+
 AgentRegistry:
   projection_of:
-    [AgentActive, AgentConfigUpdated, AgentStopped, AgentCreatedFromTemplate]
+    [AgentDeployed, AgentStatusUpdated, AgentCreatedFromTemplate]
   fields:
     agents: Map<AgentId, AgentInfo>
     by_capability: Map<Capability, Set<AgentId>>
     by_workspace: Map<WorkspaceId, Set<AgentId>>
-    by_template: Map<TemplateId, Set<AgentId>> # Track template usage
+    by_template: Map<TemplateId, Set<AgentId>>
     total_active: Count
 
 AgentInfo:
   agent_id: AgentId
   name: AgentName
-  status: Running | Stopped | Unhealthy
+  status: Running | Stopped | Updating
   capabilities: [Capability]
   tools: [ToolReference]
   version: Version
-  last_updated: DateTime
+  last_deployed: DateTime
+  deployment_checksum: Hash
   message_stats: MessageStatistics
   created_from_template: TemplateId?
   customizations: Map<String, Value>?
@@ -668,40 +922,101 @@ UsageStats:
 ### Workflows
 
 ```yaml
+ManualDeploymentFlow: # Primary deployment workflow
+  trigger: User executes "caxton deploy"
+  steps:
+    1. ScanWorkspace -> Discover all agent configs
+    2. LoadDeployedState -> Get current server state
+    3. DetectChanges -> Compare workspace vs deployed
+    4. ShowChangeSummary -> Display pending changes
+    5. ConfirmDeployment -> User confirmation (unless --force)
+    6. ValidateAll -> Validate all changed configs
+    7. DeployIncremental -> Deploy only changes
+    8. UpdateDeployedState -> Record new state
+    9. ShowResults -> Display success/failure summary
+  produces: DeploymentCompleted | DeploymentFailed
+  performance:
+    single_agent: < 500ms
+    5-10_agents: < 2s
+    50+_agents: < 5s
+
+IncrementalDeployment: # Optimize for speed
+  trigger: DeployChanges with ChangeSet
+  steps:
+    1. SortChangesByDependency -> Deploy order matters
+    2. ForEachChange:
+       a. ValidateAgentConfig
+       b. StopIfRunning -> Only if config changed
+       c. DeployNewConfig -> Atomic update
+       d. StartAgent -> Bring back online
+       e. VerifyHealth -> Ensure agent is responsive
+    3. RollbackOnFailure -> If any agent fails
+  produces: AgentDeployed events for each success
+  optimization:
+    - Only transmit deltas (checksums)
+    - Parallel deployment where possible
+    - Skip unchanged agents entirely
+
+ChangeDetection: # Efficient change discovery
+  trigger: ScanWorkspace completed
+  steps:
+    1. ComputeChecksums -> SHA256 of each config
+    2. CompareWithCache -> Local state cache
+    3. IdentifyChanges:
+       - New: Config exists in workspace, not in deployed
+       - Modified: Different checksum
+       - Deleted: In deployed, not in workspace
+    4. GenerateDiff -> For modified configs
+  produces: ChangesDetected | NoChangesFound
+  caching:
+    - Store checksums locally for offline operation
+    - Update cache after successful deployment
+
+DeploymentStatusCheck: # View current state
+  trigger: User executes "caxton status"
+  steps:
+    1. LoadWorkspaceState -> Current configs
+    2. LoadCachedDeployedState -> Last known server state
+    3. ComputeDifferences -> What's pending
+    4. DisplayStatus -> Show table of changes
+  produces: StatusDisplayed
+  offline_support: Works without server connection
+
+AtomicAgentUpdate: # Update single agent safely
+  trigger: DeployAgent for existing agent
+  steps:
+    1. AcquireAgentLock -> Prevent concurrent updates
+    2. SaveCurrentState -> For rollback
+    3. UpdateConfiguration -> Apply new config
+    4. ReloadAgent -> Without dropping connections
+    5. VerifyOperation -> Health check
+    6. ReleaseLock
+  on_failure:
+    action: RestorePreviousState
+    produces: AgentUpdateRolledBack
+  guarantee: No service interruption for other agents
+
 TemplateBasedCreation: # Template system workflow
   trigger: CreateAgentFromTemplate
-  steps: 1. LoadTemplate -> TemplateLibrary
+  steps:
+    1. LoadTemplate -> TemplateLibrary
     2. ApplyCustomizations -> TemplateEngine
     3. GenerateFiles -> FileSystem
     4. ValidateConfiguration -> ConfigValidator
-    5. RegisterAgent -> AgentRegistry
+    5. MarkForDeployment -> Add to pending changes
   produces: AgentCreatedFromTemplate
-  time_constraint: < 2 seconds
+  note: Agent not active until "caxton deploy" is run
 
-ConfigurationEditing: # Configuration management UX
-  trigger: OpenConfigInEditor
-  steps: 1. LoadConfigFile
-    2. OpenInPreferredEditor
-    3. WatchForChanges
-    4. ValidateOnSave -> IncrementalValidation
-    5. ShowValidationFeedback
-  produces: ConfigValidationResult
-  feedback: Real-time validation in terminal
-
-AgentHealthMonitoring:
-  trigger: AgentActive
-  schedule: Every(10 seconds)
-  action: CheckAgentHealth
-  produces: AgentHealthChecked
-  on_failure:
-    after_retries: 3
-    action: StopAgent
-
-SkillRegistration: # User-friendly vs "CapabilityRegistration"
-  trigger: AgentActive | AgentConfigUpdated
-  action: UpdateSkillIndex
-  produces: SkillsAvailable
-  user_feedback: "Agent skills registered and available for routing"
+ConfigurationValidation: # Pre-deployment validation
+  trigger: ValidateConfiguration command
+  steps:
+    1. ParseTOML -> Syntax check
+    2. ValidateSchema -> Required fields
+    3. CheckCapabilities -> Well-formed
+    4. VerifyTools -> MCP tools exist
+    5. CheckResourceLimits -> Within bounds
+  produces: ConfigurationValidated | ValidationFailed
+  feedback: Line-by-line errors with fix suggestions
 ```
 
 ## Phase 3: Capability Discovery and Routing
@@ -1650,6 +1965,75 @@ MonitorDeveloperVelocity:
     - Success rate improvements
 ```
 
+## Deployment-Specific Error Recovery
+
+### Deployment Failure Scenarios
+
+```yaml
+PartialDeploymentFailure:
+  trigger: Some agents deploy, others fail
+  recovery:
+    1. IdentifyFailedAgents -> Show which agents failed
+    2. OfferOptions:
+       a. Rollback all (restore previous state)
+       b. Keep partial (successful agents stay deployed)
+       c. Fix and retry (edit configs and redeploy)
+    3. ApplyUserChoice
+  user_message: "3 of 5 agents deployed. 2 failed validation."
+  suggestions:
+    - "Fix validation errors in failed agents"
+    - "Deploy successful agents only with --partial"
+    - "Rollback all with --rollback"
+
+ConfigurationConflict:
+  trigger: Agent name already exists in different workspace
+  recovery:
+    1. ShowConflict -> Display conflicting agents
+    2. OfferResolution:
+       a. Rename local agent
+       b. Replace deployed agent
+       c. Cancel deployment
+  user_message: "Agent 'analyzer' already deployed from workspace 'prod'"
+  suggestions:
+    - "Use --force to replace existing agent"
+    - "Rename agent in local configuration"
+    - "Deploy to different workspace with --workspace"
+
+ServerConnectionLost:
+  trigger: Connection fails during deployment
+  recovery:
+    1. RetryWithBackoff -> Automatic retry
+    2. OfferOfflineMode -> Show status from cache
+    3. QueueForLater -> Save changes for later deployment
+  user_message: "Cannot connect to server. Deployment queued."
+  offline_capability: "Run 'caxton status' to see pending changes"
+```
+
+### Incremental Deployment Optimization
+
+```yaml
+DeploymentOptimizationStrategy:
+  ChangeDetection:
+    primary: Checksum comparison (SHA256)
+    fallback: Timestamp comparison
+    cache: Local SQLite for offline operation
+
+  TransmissionOptimization:
+    small_changes: Send full config (< 10KB)
+    large_changes: Send compressed diff
+    bulk_deployment: Batch multiple agents
+
+  ParallelExecution:
+    independent_agents: Deploy simultaneously
+    dependent_agents: Deploy in dependency order
+    max_parallel: 10 agents
+
+  ProgressReporting:
+    per_agent: "Deploying 'agent-name'... [OK]"
+    summary: "5/5 agents deployed in 1.3s"
+    errors: Show inline with suggestions
+```
+
 ## 5-10 Minute Demo Flow
 
 This sequence demonstrates the complete MVP functionality with emphasis on the
@@ -1680,19 +2064,33 @@ DemoFlow:
      -> ConfigValidationResult(success)
      -> OnboardingMilestoneReached(ConfigurationCustomized)
 
-  3. Start Server and Agent (5-6 min):
+  3. Start Server (5-6 min):
      -> StartServer
      -> CommandAcknowledged(< 100ms)
      -> CaxtonReady(< 2s)
-     -> DeployAgent(my-analyzer)
-     -> AgentActive
+     -> OnboardingMilestoneReached(ServerStarted)
+
+  3.5. Deploy First Agent (6-6.5 min):
+     -> ScanWorkspace
+     -> WorkspaceScanned(found my-analyzer)
+     -> DetectChanges
+     -> ChangesDetected(1 new agent)
+     -> DeployChanges
+     -> DeploymentInitiated
+     -> AgentDeployed(my-analyzer)
+     -> DeploymentCompleted(< 500ms)
      -> SkillsAvailable(analyze-data)
      -> OnboardingMilestoneReached(AgentStarted)
 
-  4. Deploy Supporting Agent (6-7 min):
+  4. Deploy Supporting Agent (6.5-7 min):
      -> CreateAgentFromTemplate(data-fetcher)
      -> AgentCreatedFromTemplate(< 2s)
-     -> AgentActive(data-fetcher)
+     -> ScanWorkspace
+     -> ChangesDetected(1 new agent: data-fetcher)
+     -> DeployChanges
+     -> DeploymentInitiated
+     -> AgentDeployed(data-fetcher)
+     -> DeploymentCompleted(< 500ms)
      -> SkillsAvailable(fetch-data)
 
   5. Deploy MCP Tool (7-8 min):
@@ -1724,9 +2122,16 @@ DemoFlow:
 TimeBreakdown:
   install_and_setup: 0-2 min
   configuration: 2-5 min
-  agent_creation: 5-7 min
+  server_start: 5-6 min
+  agent_deployment: 6-7 min  # Manual deploy commands
   first_success: 7-10 min
   total_time: < 10 minutes
+
+DeploymentHighlights:
+  - Server starts once (long-running)
+  - Manual 'caxton deploy' for control
+  - Sub-second incremental deployments
+  - Atomic updates without disruption
 
 SuccessIndicators:
   - User created working agent from template
@@ -1779,12 +2184,13 @@ This comprehensive Event Model revision addresses all critical feedback:
 
 ## Revision History
 
-| Version   | Date       | Author              | Changes                               |
-| --------- | ---------- | ------------------- | ------------------------------------- |
-| 1.0-draft | 2025-09-14 | technical-architect | Initial Event Model from requirements |
-| 2.0       | 2025-09-14 | technical-architect | Added onboarding, templates, metrics  |
+| Version | Date       | Author              | Changes                                       |
+| ------- | ---------- | ------------------- | --------------------------------------------- |
+| 1.0     | 2025-09-14 | technical-architect | Initial Event Model from requirements         |
+| 2.0     | 2025-09-14 | technical-architect | Added onboarding, templates, metrics          |
+| 2.1     | 2025-09-16 | technical-architect | Corrected deployment model to manual commands |
 
 ---
 
-**Status**: Ready for final collaborative review. Model now captures technical
-behavior, business workflows, and user experience comprehensively.
+**Status**: Updated with manual deployment model per STORY-003 clarification.
+Ready for collaborative review by product-manager and ux-ui-design-expert.
