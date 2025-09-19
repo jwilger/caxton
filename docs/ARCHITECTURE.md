@@ -1,16 +1,17 @@
 # Caxton System Architecture
 
-**Version**: 2.0 **Date**: 2025-09-10 **Status**: Design Phase
+**Version**: 3.0 **Date**: 2025-09-17 **Status**: Design Phase
 
 > **🚧 Implementation Status**
 >
 > This architecture document serves as the technical specification and
-> acceptance criteria for development. The system design reflects ADRs 28-30
-> architectural decisions and represents the target implementation goals.
+> acceptance criteria for development. The system design reflects 44 active
+> ADRs (0001-0044) including major architectural evolution through September 2025
+> and represents the target implementation goals.
 >
-> **Current State**: Type system and domain modeling foundation
-> **Implementation Progress**: Core domain types and architectural
-> patterns being established
+> **Current State**: Complete architectural specification with 44 ADRs
+> **Implementation Progress**: Ready for Phase 5 (Design System) and
+> subsequent domain modeling and implementation phases
 >
 > All features and components described represent planned functionality aligned
 > with the hybrid agent architecture vision.
@@ -30,13 +31,13 @@ implementation patterns following type-driven development principles.
 1.  [System Overview](#system-overview)
 2.  [Domain Model](#domain-model)
 3.  [Component Architecture](#component-architecture)
-4.  [Agent Lifecycle Management](#agent-lifecycle-management)
+4.  [On-Demand Agent Execution](#on-demand-agent-execution)
 5.  [FIPA Message Flow](#fipa-message-flow)
 6.  [Security Architecture](#security-architecture)
 7.  [Observability Integration](#observability-integration)
 8.  [Performance & Scalability](#performance--scalability)
 9.  [Type Safety & Error Handling](#type-safety--error-handling)
-10. [Deployment Architecture](#deployment-architecture)
+10. [Single Binary Deployment](#single-binary-deployment)
 
 ## System Overview
 
@@ -44,52 +45,47 @@ implementation patterns following type-driven development principles.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                     Management Layer                        │
-├─────────────────┬───────────────────┬───────────────────────┤
-│   CLI Tool      │   Web Dashboard   │    REST/HTTP API     │
-│   (caxton)      │   (Future)        │   (Management)       │
-└─────────────────┴───────────────────┴───────────────────────┘
-                           │
-                           ▼
+│                  Single Binary Interface                    │
+├─────────────────────────────────────────────────────────────┤
+│  caxton serve   │  caxton deploy   │   caxton status       │
+│  caxton agent   │  caxton memory   │   caxton health       │
+└─────────────────┬───────────────────┬───────────────────────┘
+                  │                   │
+                  ▼                   ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  Caxton Server Process                      │
 │  ┌───────────────────────────────────────────────────────┐ │
 │  │              Management API Layer                     │ │
-│  │    • Authentication • Authorization                   │ │
-│  │    • Agent Deployment • Configuration                 │ │
+│  │    • Agent Configuration • Health Monitoring          │ │
+│  │    • Memory Management • Resource Control             │ │
 │  └─────────────────┬─────────────────────────────────────┘ │
 │                    │                                       │
 │  ┌─────────────────▼─────────────────────────────────────┐ │
-│  │            Agent Runtime Environment                 │ │
+│  │         On-Demand Agent Execution Engine            │ │
 │  │                                                       │ │
-│  │ Simple Agents (Primary UX - 5-10 min setup)          │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐     │ │
-│  │  │Agent A     │  │Agent B     │  │Agent C     │     │ │
-│  │  │(TOML)      │  │(TOML)      │  │(TOML)      │     │ │
-│  │  │Host Runtime│  │Host Runtime│  │Host Runtime│     │ │
-│  │  └──────┬─────┘  └──────┬─────┘  └──────┬─────┘     │ │
-│  │         └───────────────┼───────────────┘           │ │
-│  │                         │                           │ │
-│  │  ┌─────────────────────▼─────────────────────────┐  │ │
-│  │  │         Simple Message Router                 │  │ │
-│  │  │  • Message Routing • Conversation Mgmt        │  │ │
-│  │  │  • Protocol Handling  • Error Recovery        │  │ │
+│  │ Configuration Agents (Primary UX - 5-10 min setup)   │ │
+│  │  Request → Spawn → Load TOML → Execute → Exit        │ │
+│  │                                                       │ │
+│  │  ┌─────────────────────────────────────────────────┐  │ │
+│  │  │         Capability-Based Router                 │  │ │
+│  │  │  • Message Routing • Load Distribution           │  │ │
+│  │  │  • Service Discovery • Error Recovery            │  │ │
 │  │  └─────────────────────────────────────────────────┘  │ │
 │  │                                                       │ │
 │  │  ┌─────────────────────────────────────────────────┐  │ │
-│  │  │         Deployable MCP Servers (WASM)          │  │ │
+│  │  │         MCP Tool Servers (WASM Sandboxes)       │  │ │
 │  │  │  • HTTP Client    • CSV Parser                 │  │ │
 │  │  │  • Chart Gen      • File System                │  │ │
-│  │  │  • Database       • Custom Tools                │  │ │
+│  │  │  • Database       • LLM Providers              │  │ │
 │  │  └─────────────────────────────────────────────────┘  │ │
 │  └─────────────────────────────────────────────────────┘ │
 │                                                           │
 │  ┌─────────────────────────────────────────────────────┐ │
 │  │           Embedded Memory System                   │ │
-│  │  • SQLite + Candle (Default)                      │ │
+│  │  • SQLite + Candle (Zero Dependencies)            │ │
 │  │  • Entity-Relationship Storage                    │ │
 │  │  • Semantic Search (All-MiniLM-L6-v2)            │ │
-│  │  • Optional External Backends                     │ │
+│  │  • External Backends (Optional Scale-Up)          │ │
 │  └─────────────────────────────────────────────────────┘ │
 │                                                           │
 │  ┌─────────────────────────────────────────────────────┐ │
@@ -104,20 +100,21 @@ implementation patterns following type-driven development principles.
 ### Core Principles
 
 1. **Configuration First**: 5-10 minute agent creation through TOML
-   configuration files (ADR-0032)
-2. **Simple Agent Runtime**: Configuration agents provide simple orchestration
-   without complex sandboxing
-3. **Type-Driven Design**: All illegal states are unrepresentable through the
-   type system
-4. **Observability First**: Every operation is traced, logged, and measured
-5. **Zero Dependencies by Default**: Zero external dependencies by default, with
-   pluggable external backends available for scaling (ADR-0030)
-6. **Simple Messaging**: Lightweight agent communication patterns
-7. **MCP Server Deployment**: WebAssembly used for deployable MCP servers that
-   provide tools to agents
-8. **Pluggable LLM Integration**: Users can integrate any LLM/SLM API through
-   configurable provider system. OpenAI chat completion provided as default
-   reference implementation
+   configuration files (ADR-0028, ADR-0041)
+2. **On-Demand Execution**: Stateless agent processes spawned per request
+   for perfect fault isolation (ADR-0044)
+3. **Single Binary Deployment**: Unified CLI with subcommands following
+   industry patterns (ADR-0042)
+4. **Type-Driven Design**: All illegal states are unrepresentable through the
+   type system (ADR-0018, ADR-0020)
+5. **Observability First**: Every operation is traced, logged, and measured
+   (ADR-0001)
+6. **Zero Dependencies by Default**: Embedded SQLite + Candle memory system
+   with optional external backends (ADR-0030)
+7. **Hybrid Security Model**: Configuration agents in host runtime, MCP tools
+   in WebAssembly sandboxes (ADR-0002, ADR-0041)
+8. **Provider-Agnostic LLM**: LLM providers abstracted as MCP tools for
+   runtime flexibility (ADR-0040)
 
 ### Agent Types and User Journey
 
@@ -125,24 +122,24 @@ implementation patterns following type-driven development principles.
 > These agent types represent the target user experience designed in ADR-28.
 > Implementation is in progress following type-driven development principles.
 
-**Simple Agents (Primary use cases)**:
+**Configuration Agents (Primary UX)**:
 
 - **Definition**: TOML configuration files with embedded documentation
+- **Execution Model**: On-demand processes spawned per request (ADR-0044)
+- **Lifecycle**: Request → Spawn → Load TOML → Execute → Exit
 - **Capabilities**: Declare what they can do (e.g., "data-analysis")
 - **Tools**: Allowlist of MCP tools they can access
-- **Runtime**: Executed in host process with LLM orchestration
+- **Runtime**: Fresh process per request with external memory connection
 - **Setup Time**: 5-10 minutes from idea to working agent
-- **Security**: Simple agents focus on orchestration; complex operations
-  delegated to MCP servers
+- **Fault Isolation**: Perfect isolation through process boundaries
 
-**Deployable MCP Servers (Tool providers)**:
+**MCP Tool Servers (Infrastructure Components)**:
 
-- **Definition**: WebAssembly modules that provide tools to agents
-- **Use Cases**: File operations, HTTP requests, data processing, custom
-  algorithms
+- **Definition**: WebAssembly modules providing tools and capabilities
+- **Use Cases**: File operations, HTTP requests, LLM providers, custom algorithms
 - **Languages**: Rust, JavaScript, Python, Go, or any WASM-compatible language
-- **Runtime**: Executed in isolated WASM sandboxes with resource limits
-- **Setup Time**: Variable depending on complexity
+- **Runtime**: Persistent services in isolated WASM sandboxes
+- **Security**: Resource limits, capability allowlists, audit logging
 
 ## Domain Model
 
@@ -474,129 +471,157 @@ impl FipaMessageRouter {
 }
 ```
 
-## Agent Lifecycle Management
+## On-Demand Agent Execution
 
-### Lifecycle State Machine
+### On-Demand Execution Model (ADR-0044)
+
+Caxton adopts a pure on-demand execution model where agents are spawned as
+fresh processes per request and exit naturally after completion. This eliminates
+the complexity of persistent process lifecycle management while providing
+perfect fault isolation.
 
 ```rust
-pub struct AgentLifecycleManager {
-    state_store: Arc<dyn StateStore>,
-    deployment_manager: Arc<DeploymentManager>,
-    resource_manager: Arc<ResourceManager>,
+pub struct OnDemandExecutor {
+    config_store: Arc<ConfigStore>,
+    memory_system: Arc<MemorySystem>,
+    mcp_registry: Arc<McpToolRegistry>,
     observability: Arc<ObservabilityLayer>,
 }
 
-impl AgentLifecycleManager {
-    pub async fn deploy_agent(
+impl OnDemandExecutor {
+    /// Execute agent request using on-demand process model
+    pub async fn execute_agent(
         &self,
-        config: DeploymentConfig
-    ) -> Result<DeploymentId, DeploymentError> {
-        let deployment_id = DeploymentId::new();
+        agent_name: &str,
+        request: AgentRequest
+    ) -> Result<AgentResponse, ExecutionError> {
+        let execution_id = ExecutionId::new();
         let span = tracing::info_span!(
-            "agent_deploy",
-            %deployment_id,
-            agent_name = %config.agent_name,
-            strategy = ?config.strategy
+            "agent_execute",
+            %execution_id,
+            %agent_name,
+            request_id = %request.id
         );
         let _enter = span.enter();
 
-        // Create deployment record
-        let deployment = Deployment {
-            id: deployment_id,
-            agent_id: config.agent_id,
-            version: config.version,
-            strategy: config.strategy.clone(),
-            state: DeploymentState::Validating,
-            created_at: SystemTime::now(),
+        // 1. Load agent configuration
+        let config = self.config_store
+            .load_agent_config(agent_name)
+            .await
+            .map_err(|e| ExecutionError::ConfigLoadFailed {
+                agent_name: agent_name.to_string(),
+                error: e.to_string(),
+            })?;
+
+        // 2. Validate request against agent capabilities
+        self.validate_request(&config, &request)?;
+
+        // 3. Spawn fresh execution context
+        let execution_context = ExecutionContext {
+            execution_id,
+            agent_config: config,
+            memory_connection: self.memory_system.create_connection().await?,
+            available_tools: self.resolve_tool_access(&config).await?,
+            observability: self.observability.clone(),
         };
 
-        // Store deployment
-        self.state_store.store_deployment(&deployment).await?;
+        // 4. Execute agent logic in isolated process space
+        let result = self.execute_in_context(execution_context, request).await;
 
-        // Execute deployment strategy
-        match config.strategy {
-            DeploymentStrategy::Direct => {
-                self.execute_direct_deployment(deployment_id, config).await
-            },
-            DeploymentStrategy::BlueGreen { .. } => {
-                self.execute_blue_green_deployment(deployment_id, config).await
-            },
-            DeploymentStrategy::Canary { .. } => {
-                self.execute_canary_deployment(deployment_id, config).await
-            },
-            DeploymentStrategy::Shadow { .. } => {
-                self.execute_shadow_deployment(deployment_id, config).await
-            },
-        }
+        // 5. Record execution metrics
+        self.observability.record_agent_execution(
+            execution_id,
+            agent_name,
+            &result
+        );
+
+        // 6. Process exits naturally - no cleanup required
+        result
     }
 
-    #[instrument(skip(self, config))]
-    async fn execute_canary_deployment(
+    async fn execute_in_context(
         &self,
-        deployment_id: DeploymentId,
-        config: DeploymentConfig
-    ) -> Result<DeploymentId, DeploymentError> {
-        // 1. Validation phase
-        self.update_deployment_state(
-            deployment_id,
-            DeploymentState::Validating
-        ).await?;
-        let validation_result = self.validate_agent(&config).await?;
+        context: ExecutionContext,
+        request: AgentRequest
+    ) -> Result<AgentResponse, ExecutionError> {
+        let start_time = SystemTime::now();
 
-        if !validation_result.passed {
-            return Err(DeploymentError::ValidationFailed(
-                validation_result.errors
-            ));
+        // Generate LLM prompt from configuration and request
+        let prompt = self.generate_prompt(&context.agent_config, &request)?;
+
+        // Execute agent through LLM orchestration
+        let llm_provider = self.get_llm_provider(&context.agent_config).await?;
+        let response = llm_provider.complete(prompt).await?;
+
+        // Parse response for tool calls and follow-up actions
+        let parsed_response = self.parse_agent_response(response)?;
+
+        // Execute any requested tool calls
+        let tool_results = self.execute_tool_calls(
+            &context,
+            parsed_response.tool_calls
+        ).await?;
+
+        // Store successful interaction in memory if enabled
+        if context.agent_config.memory.enabled {
+            self.store_interaction_memory(
+                &context,
+                &request,
+                &parsed_response,
+                &tool_results
+            ).await?;
         }
 
-        // 2. Begin canary deployment
-        self.update_deployment_state(
-            deployment_id,
-            DeploymentState::Deploying
-        ).await?;
+        // Measure execution time
+        let execution_time = start_time.elapsed()
+            .map_err(|_| ExecutionError::TimeCalculation)?;
 
-        if let DeploymentStrategy::Canary {
-            stages,
-            rollback_conditions
-        } = &config.strategy {
-            for stage in stages {
-                // Deploy to percentage of traffic
-                self.deploy_canary_stage(deployment_id, stage).await?;
+        Ok(AgentResponse {
+            id: ResponseId::new(),
+            execution_id: context.execution_id,
+            content: parsed_response.content,
+            tool_results,
+            execution_time,
+            timestamp: SystemTime::now(),
+        })
+    }
 
-                // Monitor for rollback conditions
-                let monitoring_result = self.monitor_canary_stage(
-                    deployment_id,
-                    stage,
-                    rollback_conditions
-                ).await?;
+    async fn execute_tool_calls(
+        &self,
+        context: &ExecutionContext,
+        tool_calls: Vec<ToolCall>
+    ) -> Result<Vec<ToolResult>, ExecutionError> {
+        let mut results = Vec::new();
 
-                if monitoring_result.should_rollback {
-                    self.rollback_deployment(
-                        deployment_id,
-                        monitoring_result.reason
-                    ).await?;
-                    return Err(DeploymentError::RolledBack(
-                        monitoring_result.reason
-                    ));
-                }
-            }
+        for tool_call in tool_calls {
+            // Verify tool access permissions
+            self.verify_tool_access(context, &tool_call.tool_name)?;
+
+            // Execute tool call in MCP server sandbox
+            let mcp_server = self.mcp_registry
+                .get_server(&tool_call.tool_name)
+                .await?
+                .ok_or_else(|| ExecutionError::ToolNotFound {
+                    tool_name: tool_call.tool_name.clone(),
+                })?;
+
+            let result = mcp_server
+                .handle_tool_call(tool_call)
+                .await
+                .map_err(|e| ExecutionError::ToolCallFailed {
+                    tool_name: tool_call.tool_name.clone(),
+                    error: e.to_string(),
+                })?;
+
+            results.push(result);
         }
 
-        // 3. Complete deployment
-        self.update_deployment_state(
-            deployment_id,
-            DeploymentState::Running
-        ).await?;
-        self.observability.record_deployment_completed(deployment_id);
-
-        Ok(deployment_id)
+        Ok(results)
     }
 }
 ```
 
-## Agent Communication
-
-### Simple Message Routing
+## Capability-Based Communication
 
 The Caxton messaging system implements simple agent communication
 optimized for configuration-driven agents with straightforward routing.
@@ -1203,30 +1228,39 @@ pub struct PerformanceEvent {
 
 ## Performance & Scalability
 
-### Hybrid Performance Characteristics
+### On-Demand Performance Characteristics
 
-**Simple Agents (Primary UX)**:
+**Configuration Agents (On-Demand Model)**:
 
-- **Startup Time**: < 50ms (TOML parsing + prompt loading)
-- **Memory Efficiency**: < 100KB per idle agent
-- **Message Latency**: ~10-100ms (includes LLM orchestration)
-- **Throughput**: 100-1,000 messages/second per agent (LLM dependent)
-- **Concurrent Agents**: 10,000+ agents per instance
+- **Cold Start Time**: 10-20ms (process spawn + TOML loading)
+- **Memory Efficiency**: Zero idle consumption (processes exit after execution)
+- **Total Request Latency**: 50-500ms (cold start + LLM response time)
+- **Throughput**: 1,000+ requests/second (limited by LLM provider, not system)
+- **Concurrent Executions**: Limited by system resources, not agent count
+- **Fault Isolation**: Perfect (each request in separate process space)
 
-**MCP Servers (Tool Providers)**:
+**MCP Tool Servers (Persistent Services)**:
 
 - **Startup Time**: < 100ms (WASM instantiation)
-- **Memory Efficiency**: < 1MB per idle MCP server
+- **Memory Efficiency**: < 1MB per idle server
 - **Tool Call Latency**: < 1ms p99 for local processing
 - **Throughput**: 100,000+ tool calls/second (native-like performance)
-- **Concurrent Servers**: 1,000+ MCP servers per instance
+- **Concurrent Servers**: 1,000+ servers per instance
+- **Resource Isolation**: WebAssembly sandbox boundaries
 
-**Memory System Performance**:
+**Embedded Memory System Performance**:
 
-- **Semantic Search**: 10-50ms for 100K entities (embedded backend)
+- **Connection Setup**: 5-10ms per agent execution
+- **Semantic Search**: 10-50ms for 100K entities
 - **Entity Storage**: 5-20ms per entity with embeddings
 - **Memory Baseline**: ~200MB (All-MiniLM-L6-v2 model)
-- **Scaling Limit**: 100K entities recommended for embedded backend
+- **Scaling Limit**: 100K+ entities (embedded), unlimited (external backends)
+
+**Performance Trade-offs**:
+
+- **Cold Start Overhead**: 10-20ms acceptable vs 200-500ms LLM response time
+- **Resource Efficiency**: Perfect utilization vs minimal warm-up optimization
+- **Fault Tolerance**: Instant recovery vs potential warm state loss
 
 ### Performance Optimizations
 
@@ -1478,28 +1512,37 @@ impl Percentage {
 }
 ```
 
-## Deployment Architecture
+## Single Binary Deployment
 
-### Zero-Dependency Deployment (Default)
+### Unified CLI Architecture (ADR-0042)
 
-Caxton is designed for immediate deployment with zero external dependencies by
-default, providing a complete working system out of the box:
+Following ADR-0042, Caxton consolidates all functionality into a single binary
+with subcommands, providing immediate deployment with zero external dependencies:
 
 ```bash
-# Simple deployment - works immediately
-caxton server start
+# Single binary with unified interface
+caxton serve                    # Start server
+caxton agent deploy config.toml # Deploy agent
+caxton status                   # System status
+caxton health                   # Health check
+
+# Production deployment modes
+caxton serve --release --config production.toml
+caxton serve --dev --config dev.toml
 
 # Or with Docker
-docker run -p 8080:8080 -v ./agents:/var/lib/caxton/agents caxton/caxton:latest
+docker run -p 8080:8080 -v ./agents:/var/lib/caxton/agents caxton/caxton:latest serve
 ```
 
-**What happens automatically**:
+**What happens automatically with single binary**:
 
+- Single executable contains all components (server, CLI, memory system)
 - SQLite database created in `/var/lib/caxton/memory.db`
-- All-MiniLM-L6-v2 embedding model downloaded (~23MB)
-- Agent registry initialized
-- Memory system ready for use
-- Configuration agents can be deployed immediately
+- All-MiniLM-L6-v2 embedding model embedded in binary (~23MB)
+- Agent registry and MCP tool registry initialized
+- Memory system ready for immediate use
+- Configuration agents can be deployed through unified CLI
+- No separate binaries or installation steps required
 
 ### Configuration-First Deployment
 
@@ -1660,53 +1703,66 @@ spec:
 
 ## Summary
 
-The Caxton hybrid architecture delivers on the promise of **5-10 minute agent
-creation** while maintaining production-grade capabilities:
+The Caxton architecture delivers on the promise of **5-10 minute agent
+creation** through a complete architectural evolution reflecting 44 ADRs:
 
 ### Core Value Propositions
 
-1. **Configuration-First Experience**: 90% of agents are created through
-   TOML configuration files, eliminating compilation complexity
-2. **Zero Dependencies**: Embedded SQLite+Candle memory system works
-   immediately without external setup
-3. **Hybrid Runtime**: Simple config agents for most use cases, WASM for
-   advanced algorithms
-4. **Security Through Isolation**: MCP tools run in WASM sandboxes while
-   config agents provide rapid development
-5. **Capability-Based Messaging**: Lightweight FIPA messaging with capability
-   routing instead of agent-specific addressing
-6. **Production Ready**: Comprehensive observability, error handling, and
-   deployment patterns
+1. **Configuration-First Experience**: TOML-based agents eliminate 2-4 hour
+   compilation workflows (ADR-0028, ADR-0041)
+2. **On-Demand Execution**: Stateless processes provide perfect fault isolation
+   and eliminate lifecycle complexity (ADR-0044)
+3. **Single Binary Deployment**: Unified CLI following industry patterns
+   simplifies installation and distribution (ADR-0042)
+4. **Zero Dependencies**: Embedded SQLite+Candle memory system works
+   immediately without external setup (ADR-0030)
+5. **Hybrid Security Model**: Configuration agents in host runtime, tools
+   in WebAssembly sandboxes (ADR-0002, ADR-0041)
+6. **Provider-Agnostic LLMs**: LLM providers abstracted as MCP tools for
+   runtime flexibility (ADR-0040)
+7. **Production Ready**: Comprehensive observability, error handling, and
+   operational patterns (ADR-0001)
 
 ### When to Use Each Component
 
-**Choose Simple Agents when**:
+**Choose Configuration Agents when**:
 
-- Building orchestration workflows
-- Combining prompts with tool calls
+- Building orchestration workflows with LLM reasoning
+- Combining prompts with existing tool capabilities
 - Rapid prototyping and iteration needed
-- No custom algorithms required
-- 5-10 minute setup time acceptable
+- No custom algorithms or persistent state required
+- 5-10 minute setup time is critical requirement
+- Perfect fault isolation desired (on-demand execution)
 
-**Deploy MCP Servers when**:
+**Deploy MCP Tool Servers when**:
 
-- Custom tools or functionality needed
+- Custom tools or algorithms needed beyond existing capabilities
 - Performance-critical processing required
-- Language-agnostic development desired
-- Full isolation and resource limits needed
-- Reusable tools across multiple agents
+- Language-specific functionality desired (Python, JavaScript, etc.)
+- Resource isolation and sandboxing required
+- Reusable tools across multiple agents and projects
+- LLM provider integration (OpenAI, Anthropic, local models)
 
-### Architecture Alignment
+### Architecture Evolution and Alignment
 
-This architecture aligns with modern agent platform trends:
+This architecture represents a complete evolution from WebAssembly-first
+(ADR-0002) to configuration-first (ADR-0041) while maintaining security:
 
-- **Claude Code's success**: Proven configuration-driven approach with 100+
-  community agents
-- **Developer Experience**: Prioritizes accessibility over complexity
-- **Type-Driven Design**: All illegal states remain unrepresentable through
-  Rust's type system
+- **Market Validation**: Claude Code's success with 100+ community agents
+  proved configuration-driven model works
+- **Simplified Operations**: On-demand execution eliminates complex lifecycle
+  management while providing perfect fault isolation
+- **Industry Patterns**: Single binary CLI follows Docker, kubectl, Git
+  conventions for improved user experience
+- **Type-Driven Foundation**: All illegal states remain unrepresentable
+  through Rust's type system (ADR-0018, ADR-0020)
+- **Zero-Dependency Promise**: Embedded memory system enables immediate
+  productivity without infrastructure setup
 - **Observability First**: Every operation traced, logged, and measured
-- **Production Scale**: Supports growth from embedded to external backends
+  for production reliability (ADR-0001)
+- **Strategic Scaling**: Embedded backends scale to 100K+ entities with
+  migration paths to external systems
 
-The simple approach enables rapid configuration-based development for agents,
-with deployable WASM MCP servers providing powerful tools and functionality.
+The configuration-first approach with on-demand execution provides the optimal
+balance of simplicity, security, and operational excellence for multi-agent
+systems deployment.

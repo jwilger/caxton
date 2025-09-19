@@ -1,546 +1,729 @@
 # Caxton Requirements Analysis
 
-**Document Version**: 1.0
-**Date**: 2025-09-14
+**Document Version**: 2.0
+**Date**: 2025-09-17
 **Status**: Complete - Ready for Event Modeling Phase
 **Product Manager**: product-manager
 
 ## Executive Summary
 
-Caxton is an agent orchestration application server that enables developers to
-create, deploy, and manage AI agents within 5-10 minutes. The platform
-eliminates platform lock-in, provides intelligent capability-based routing
-between agents, and ensures security through WebAssembly sandboxing for
-third-party tools. This document defines comprehensive functional requirements,
-user stories, and acceptance criteria that will guide the system's development.
+Caxton is an agent orchestration application server that enables rapid deployment and management of multi-agent AI systems. This document defines business requirements from the perspective of external stakeholders: agent developers building multi-agent systems, system administrators operating Caxton in production, and business users expecting reliable AI automation outcomes. Requirements focus on externally-observable system behavior, business rules, and operational guarantees rather than technical implementation details.
 
 ## Vision Statement
 
-**For** developers building AI-powered applications
-**Who** need rapid agent deployment without infrastructure complexity
+**For** organizations needing reliable AI automation
+**Who** require rapid deployment without vendor lock-in
 **The** Caxton platform
 **Is** an agent orchestration server
-**That** provides configuration-driven agents with intelligent routing and
-secure tool execution
-**Unlike** platform-specific solutions requiring hours of setup
-**Our product** enables functional multi-agent systems in 5-10 minutes with
-zero external dependencies
+**That** enables multi-agent systems through configuration and secure tool execution
+**Unlike** cloud-dependent platforms requiring complex setup
+**Our product** delivers working agent systems in under 10 minutes with complete operational control
 
-## Core Problems Being Solved
+## Stakeholder Perspectives
 
-### 1. Platform Lock-in
+### Agent Developers
 
-**Problem**: Current agent platforms tie developers to specific cloud providers
-or frameworks
-**Impact**: Increased costs, reduced flexibility, vendor dependency risks
-**Solution**: Platform-agnostic application server that runs anywhere
+Organizations and individuals building multi-agent AI systems who need:
 
-### 2. Complex Agent Communication
+- **Rapid Deployment**: Functional agent systems within 10 minutes
+- **Platform Freedom**: No vendor lock-in or cloud dependencies
+- **Secure Integration**: Safe execution of third-party tools and capabilities
+- **Operational Simplicity**: Configuration-based development without infrastructure complexity
 
-**Problem**: Direct agent-to-agent communication requires hardcoded routing and
-tight coupling
-**Impact**: Brittle systems, difficult maintenance, poor scalability
-**Solution**: Capability-based intelligent routing that decouples agents
+### System Administrators
 
-### 3. Security and Sandboxing
+Operations professionals managing Caxton in production environments who need:
 
-**Problem**: Third-party tools accessing external systems pose security risks
-**Impact**: Data breaches, resource exhaustion, compliance violations
-**Solution**: WebAssembly MCP servers providing secure sandboxed execution
+- **Operational Control**: Complete visibility and control over agent behavior
+- **Security Compliance**: Auditable security controls and access policies
+- **Performance Reliability**: Predictable performance under operational loads
+- **Resource Management**: Control over computing resource consumption
 
-## Target Users
+### Business Users
 
-### Primary Persona: AI Application Developer
+Organizations deploying AI automation who expect:
 
-- **Background**: Software developer with 2-5 years experience
-- **Goals**: Build production AI applications quickly
-- **Pain Points**: Infrastructure setup, security concerns, platform limitations
-- **Success Criteria**: Deploy working agents in minutes, not hours
+- **Business Continuity**: Reliable agent operations supporting business processes
+- **Cost Predictability**: Transparent resource usage and cost controls
+- **Compliance Assurance**: Meeting regulatory and security requirements
+- **Measurable Outcomes**: Clear metrics demonstrating business value delivery
 
-### Secondary Persona: Enterprise DevOps Engineer
+## Business Context
 
-- **Background**: Operations professional managing production systems
-- **Goals**: Maintain secure, reliable AI infrastructure
-- **Pain Points**: Security auditing, resource management, compliance
-- **Success Criteria**: Pass security audits, maintain SLAs, control costs
+### Market Opportunity
+
+Organizations require AI automation solutions that provide:
+
+- **Independence**: Freedom from vendor platform dependencies
+- **Speed**: Rapid deployment without infrastructure overhead
+- **Security**: Enterprise-grade security controls and compliance
+- **Control**: Full operational visibility and resource management
+
+### Competitive Differentiation
+
+Caxton enables organizations to deploy multi-agent systems with:
+
+- **Zero External Dependencies**: Complete operational independence
+- **Configuration-Driven Development**: No code compilation required
+- **Sandbox Security**: Isolated execution of third-party capabilities
+- **Capability-Based Routing**: Decoupled agent communication patterns
 
 ## Functional Requirements
 
-### FR1: Agent Management
+### FR1: System Deployment and Operation
 
-#### FR1.1: Configuration-Driven Agents
+#### FR1.1: Installation Requirements
 
-Agents SHALL be defined using TOML configuration files without requiring code
-compilation.
+The system SHALL provide a single executable that runs without external service dependencies.
 
-#### FR1.2: Agent Deployment
+#### FR1.2: Startup Time Guarantee
 
-The system SHALL support deploying agents through CLI commands within 30
-seconds.
+The server SHALL start and be ready to accept requests within 30 seconds of launch.
 
-#### FR1.3: Hot Reload
+#### FR1.3: Configuration Updates
 
-Configuration changes SHALL take effect without server restart or agent
-redeployment.
+Configuration changes SHALL take effect without service interruption or data loss.
 
-#### FR1.4: Agent Lifecycle
+#### FR1.4: Service Health Verification
 
-The system SHALL manage agent startup, shutdown, and health monitoring
-automatically.
+The system SHALL provide health check endpoints that accurately report operational status.
 
-### FR2: Capability-Based Routing
+### FR2: Agent Deployment and Management
 
-#### FR2.1: Capability Declaration
+#### FR2.1: Agent Definition Format
 
-Agents SHALL declare their capabilities in configuration without hardcoded
-addresses.
+Agents SHALL be defined using declarative configuration files that specify behavior without requiring code compilation.
 
-#### FR2.2: Intelligent Routing
+#### FR2.2: Agent Deployment Speed
 
-The system SHALL route messages to appropriate agents based on capability
-matching.
+Agent deployment SHALL complete within 30 seconds from configuration submission to operational status.
 
-#### FR2.3: Dynamic Discovery
+#### FR2.3: Agent Status Visibility
 
-Agents SHALL discover available capabilities without prior knowledge of other
-agents.
+The system SHALL provide real-time status information for all deployed agents including health, message counts, and error rates.
 
-#### FR2.4: Routing Performance
+#### FR2.4: Agent Lifecycle Management
 
-Routing decisions SHALL complete within 5ms for 95% of requests.
+The system SHALL automatically handle agent failures through restart policies and health monitoring.
 
-### FR3: WebAssembly MCP Tools
+### FR3: Message Routing and Communication
 
-#### FR3.1: Tool Sandboxing
+#### FR3.1: Capability-Based Addressing
 
-MCP tools SHALL execute in WebAssembly sandboxes with resource limits.
+Messages SHALL be routed based on required capabilities rather than specific agent addresses.
 
-#### FR3.2: Tool Deployment
+#### FR3.2: Routing Performance Standards
 
-MCP servers SHALL be deployable as compiled WASM modules.
+Message routing decisions SHALL complete within 5 milliseconds for 95% of requests.
 
-#### FR3.3: Tool Access Control
+#### FR3.3: Load Distribution
 
-Agents SHALL only access tools explicitly allowed in their configuration.
+When multiple agents provide the same capability, the system SHALL distribute load automatically.
 
-#### FR3.4: Resource Limits
+#### FR3.4: Routing Transparency
 
-The system SHALL enforce CPU, memory, and execution time limits per tool call.
+All routing decisions SHALL be observable through logging and metrics for debugging and auditing.
 
-### FR4: Memory System (Post-MVP)
+### FR4: Security and Resource Control
 
-#### FR4.1: Semantic Search
+#### FR4.1: Tool Execution Sandboxing
 
-The memory system SHALL support content-based search across stored entities.
+Third-party tools SHALL execute in isolated environments with enforced resource limits.
 
-#### FR4.2: Graph Traversal
+#### FR4.2: Access Control Enforcement
 
-The system SHALL enable relationship-based navigation between entities.
+Agents SHALL only access tools and capabilities explicitly granted in their configuration.
 
-#### FR4.3: Isolation Boundaries
+#### FR4.3: Resource Consumption Limits
 
-Memory SHALL be isolatable by agent, workspace, conversation, or global scope.
+The system SHALL enforce configurable limits on CPU, memory, and execution time per tool invocation.
 
-#### FR4.4: Persistence
+#### FR4.4: Security Audit Trail
 
-Memory SHALL survive system restarts and be inspectable by administrators.
+All security-relevant events SHALL be logged with sufficient detail for compliance auditing.
 
-### FR5: Production Readiness
+### FR5: Operational Requirements
 
-#### FR5.1: Fault Tolerance
+#### FR5.1: Performance Guarantees
 
-The system SHALL continue operating when individual agents fail.
+The system SHALL sustain 1,000+ messages per second with 99th percentile latency under 100 milliseconds.
 
-#### FR5.2: Observability
+#### FR5.2: Fault Isolation
 
-The system SHALL expose metrics via OpenTelemetry for external monitoring.
+Individual agent failures SHALL NOT impact the operation of other agents or system functionality.
 
-#### FR5.3: Security Compliance
+#### FR5.3: Monitoring Integration
 
-The system SHALL meet enterprise security requirements for customer-facing
-applications.
+The system SHALL expose operational metrics through standard protocols for integration with monitoring tools.
 
-#### FR5.4: Performance Targets
+#### FR5.4: Data Persistence
 
-The system SHALL handle 1,000+ messages per second with <100ms p99 latency.
+All operational data SHALL survive system restarts and be recoverable after unexpected shutdowns.
 
-## User Stories
+### FR6: Memory and Knowledge Management (Post-MVP)
 
-### Epic 1: 5-10 Minute Setup Experience
+#### FR6.1: Knowledge Storage
 
-#### Story 1.1: Install and Start Server
+Agents SHALL store and retrieve contextual information that persists across conversations and restarts.
 
-**As a** developer
-**I want to** install and start the Caxton server with a single command
-**So that** I can begin agent development immediately
+#### FR6.2: Search Capabilities
 
-**Acceptance Criteria:**
+The system SHALL provide content-based search across stored knowledge with response times under 50 milliseconds.
 
-- [ ] Installation completes in under 60 seconds
-- [ ] Server starts with default configuration
-- [ ] Health endpoint confirms server is running
-- [ ] No external dependencies required
+#### FR6.3: Data Isolation
 
-#### Story 1.2: Deploy First Agent
+Knowledge SHALL be isolated by configured boundaries (agent, workspace, or global scope) with no unauthorized cross-boundary access.
 
-**As a** developer
-**I want to** deploy my first agent using CLI
-**So that** I can test basic functionality
+#### FR6.4: Administrative Access
 
-**Acceptance Criteria:**
+System administrators SHALL have read-only access to inspect and audit all stored knowledge for debugging and compliance.
 
-- [ ] Agent deploys from TOML configuration file
-- [ ] Deployment completes within 30 seconds
-- [ ] Agent status visible through CLI
-- [ ] Agent responds to test messages
+## Operational Requirements
 
-#### Story 1.3: Connect Two Agents
+### OR1: System Availability and Reliability
 
-**As a** developer
-**I want to** deploy two agents that collaborate
-**So that** I can build multi-agent systems
+#### OR1.1: Uptime Requirements
 
-**Acceptance Criteria:**
+The system SHALL maintain 99.9% uptime during business hours with planned maintenance windows not exceeding 4 hours per month.
 
-- [ ] Second agent deploys independently
-- [ ] Agents discover each other's capabilities
-- [ ] Message routing works without hardcoded addresses
-- [ ] Collaboration produces expected output
+#### OR1.2: Recovery Time Objectives
 
-#### Story 1.4: Integrate MCP Tool
+System recovery from unexpected failures SHALL complete within 5 minutes with full operational capacity restored.
 
-**As a** developer
-**I want to** add a WebAssembly MCP tool to my agent
-**So that** I can extend agent capabilities securely
+#### OR1.3: Data Integrity Guarantees
 
-**Acceptance Criteria:**
+All operational data and configurations SHALL be protected from corruption with automated integrity verification.
 
-- [ ] MCP server deploys as WASM module
-- [ ] Agent configuration references MCP tool
-- [ ] Tool executes in sandboxed environment
-- [ ] Resource limits are enforced
+#### OR1.4: Graceful Degradation
 
-### Epic 2: Capability-Based Routing
+When individual components fail, the system SHALL continue operating with reduced functionality rather than complete failure.
 
-#### Story 2.1: Declare Agent Capabilities
+### OR2: Performance and Scalability
 
-**As an** agent developer
-**I want to** declare my agent's capabilities in configuration
-**So that** other agents can discover and use them
+#### OR2.1: Baseline Performance Standards
 
-**Acceptance Criteria:**
+- Message throughput: Minimum 1,000 messages per second sustained
+- Response latency: 99th percentile under 100 milliseconds
+- Resource utilization: CPU under 80%, memory growth linear with load
 
-- [ ] Capabilities defined in TOML configuration
-- [ ] Multiple capabilities per agent supported
-- [ ] Capability metadata includes version and description
-- [ ] No code changes required
+#### OR2.2: Load Testing Requirements
 
-#### Story 2.2: Request by Capability
+The system SHALL maintain performance standards under 150% of expected peak load for 30 minutes continuously.
 
-**As an** agent
-**I want to** request services by capability rather than agent name
-**So that** my implementation remains decoupled
+#### OR2.3: Resource Consumption Predictability
 
-**Acceptance Criteria:**
+Memory and CPU usage SHALL scale predictably with the number of agents and message volume for capacity planning.
 
-- [ ] Messages include required capability
-- [ ] Router finds appropriate agent automatically
-- [ ] Multiple agents can provide same capability
-- [ ] Load balancing between capable agents
+#### OR2.4: Performance Monitoring
 
-#### Story 2.3: Capability Evolution
+Real-time performance metrics SHALL be available for capacity planning and operational decision-making.
 
-**As a** system operator
-**I want to** update agent capabilities without breaking existing flows
-**So that** the system can evolve gracefully
+### OR3: Security and Compliance
 
-**Acceptance Criteria:**
+#### OR3.1: Access Control
 
-- [ ] Capability versions are supported
-- [ ] Backward compatibility maintained
-- [ ] Graceful degradation for missing capabilities
-- [ ] Capability changes don't require restarts
+All administrative operations SHALL require authentication and authorization with role-based access controls.
 
-### Epic 3: WebAssembly MCP Security
+#### OR3.2: Audit Requirements
 
-#### Story 3.1: Deploy MCP Server
+All security-relevant events SHALL be logged immutably with sufficient detail for compliance auditing and forensic analysis.
 
-**As a** tool developer
-**I want to** deploy my tool as a WebAssembly MCP server
-**So that** agents can use it securely
+#### OR3.3: Data Protection
 
-**Acceptance Criteria:**
+Sensitive configuration data and operational information SHALL be protected at rest and in transit using industry-standard encryption.
 
-- [ ] WASM module compiles from Rust/JS/Python/Go
-- [ ] Deployment through CLI or API
-- [ ] Resource limits configurable
-- [ ] Tool capabilities documented
+#### OR3.4: Vulnerability Management
 
-#### Story 3.2: Sandbox Isolation
+The system SHALL provide mechanisms for security updates without operational disruption.
 
-**As a** security administrator
-**I want** MCP tools to run in isolated sandboxes
-**So that** they cannot compromise the system
+## Integration Requirements
 
-**Acceptance Criteria:**
+### IR1: Command Line Interface
 
-- [ ] No direct file system access without permissions
-- [ ] Network access controlled by policy
-- [ ] Memory usage limited per execution
-- [ ] CPU time bounded per call
+#### IR1.1: Administrative Commands
 
-#### Story 3.3: Tool Access Control
+A command-line interface SHALL provide complete system administration capabilities including agent deployment, configuration management, and system monitoring.
 
-**As an** administrator
-**I want to** control which agents can use which tools
-**So that** I can enforce security policies
+#### IR1.2: Scripting Support
 
-**Acceptance Criteria:**
+All CLI operations SHALL support scripting and automation through exit codes, structured output formats, and non-interactive operation modes.
 
-- [ ] Tool allowlists in agent configuration
-- [ ] Runtime enforcement of access controls
-- [ ] Audit logging of tool usage
-- [ ] Policy violations reported
+#### IR1.3: Configuration Management
 
-### Epic 4: Memory System (Post-MVP)
+Configuration files SHALL support version control workflows with validation and rollback capabilities.
 
-#### Story 4.1: Store Agent Memories
+#### IR1.4: Status Reporting
 
-**As an** agent
-**I want to** store and retrieve memories
-**So that** I can maintain context across conversations
+The CLI SHALL provide comprehensive status reporting for all system components with machine-readable output formats.
 
-**Acceptance Criteria:**
+### IR2: Monitoring and Observability
 
-- [ ] Memories persist to embedded SQLite
-- [ ] Semantic search finds relevant memories
-- [ ] Graph relationships between memories
-- [ ] Memories survive restarts
+#### IR2.1: Metrics Export
 
-#### Story 4.2: Workspace Isolation
+System metrics SHALL be available in Prometheus format for integration with standard monitoring infrastructure.
 
-**As a** system administrator
-**I want** memories isolated by workspace
-**So that** data doesn't leak between customers
+#### IR2.2: Structured Logging
 
-**Acceptance Criteria:**
+All log output SHALL use structured formats (JSON) with consistent fields for automated log processing and analysis.
 
-- [ ] Workspace boundaries enforced
-- [ ] No cross-workspace memory access
-- [ ] Per-workspace retention policies
-- [ ] Workspace deletion removes all memories
+#### IR2.3: Health Check Endpoints
 
-#### Story 4.3: Memory Administration
+HTTP health check endpoints SHALL provide detailed component status for load balancer and monitoring integration.
 
-**As an** administrator
-**I want to** inspect and edit agent memories
-**So that** I can debug and correct issues
+#### IR2.4: Distributed Tracing
 
-**Acceptance Criteria:**
+The system SHALL support OpenTelemetry distributed tracing for request flow analysis and performance debugging.
 
-- [ ] Admin UI for memory browsing
-- [ ] Search and filter capabilities
-- [ ] Safe memory editing with audit trail
-- [ ] Bulk operations supported
+### IR3: Configuration and Deployment
 
-### Epic 5: Production Operations
+#### IR3.1: Configuration Validation
 
-#### Story 5.1: Monitor System Health
+All configuration files SHALL be validated before application with clear error messages for invalid configurations.
 
-**As an** operations engineer
-**I want** comprehensive system monitoring
-**So that** I can maintain service reliability
+#### IR3.2: Hot Configuration Reload
 
-**Acceptance Criteria:**
+Configuration changes SHALL take effect without service interruption through graceful reload mechanisms.
 
-- [ ] Prometheus metrics exposed
-- [ ] OpenTelemetry tracing enabled
-- [ ] Health checks for all components
-- [ ] Alert thresholds configurable
+#### IR3.3: Environment Variable Support
 
-#### Story 5.2: Handle Agent Failures
+Critical configuration parameters SHALL be overridable through environment variables for container deployment scenarios.
 
-**As a** system operator
-**I want** the system to handle agent failures gracefully
-**So that** other agents continue operating
+#### IR3.4: Deployment Packaging
 
-**Acceptance Criteria:**
+The system SHALL provide standard deployment packages for common platforms (containers, system packages, cloud images).
 
-- [ ] Failed agents automatically restart
-- [ ] Circuit breakers prevent cascading failures
-- [ ] Error messages routed appropriately
-- [ ] Failure metrics tracked
+## Business Constraints
 
-#### Story 5.3: Scale Under Load
+### BC1: Operational Independence
 
-**As a** DevOps engineer
-**I want** the system to scale with demand
-**So that** performance remains consistent
+#### BC1.1: Zero External Dependencies
 
-**Acceptance Criteria:**
+The core system SHALL operate without external service dependencies for baseline functionality.
 
-- [ ] 1,000+ messages per second sustained
-- [ ] P99 latency under 100ms
-- [ ] Memory usage stable over time
-- [ ] CPU utilization under 80%
+#### BC1.2: Single Binary Deployment
+
+All essential functionality SHALL be available in a single executable for simplified deployment and management.
+
+#### BC1.3: Self-Contained Operation
+
+Default configurations SHALL provide functional multi-agent systems without external configuration or setup requirements.
+
+#### BC1.4: Platform Portability
+
+The system SHALL run on standard Linux, macOS, and Windows environments without modification.
+
+### BC2: Resource Constraints
+
+#### BC2.1: Minimum Hardware Requirements
+
+The system SHALL operate effectively on 2 CPU cores with 4GB RAM for development and small production deployments.
+
+#### BC2.2: Memory Usage Efficiency
+
+Memory consumption SHALL remain stable during extended operation without memory leaks or excessive garbage collection overhead.
+
+#### BC2.3: Storage Requirements
+
+Baseline installation SHALL require less than 100MB storage with predictable growth patterns for operational data.
+
+#### BC2.4: Network Resource Usage
+
+The system SHALL minimize network overhead with efficient protocols and optional compression for high-latency environments.
+
+### BC3: Development and Maintenance
+
+#### BC3.1: Configuration-First Development
+
+Agent behavior SHALL be defined through configuration files without requiring code compilation for standard use cases.
+
+#### BC3.2: Extensibility Boundaries
+
+Third-party extensions SHALL be supported through well-defined interfaces without modifying core system code.
+
+#### BC3.3: Documentation Requirements
+
+All externally-visible behavior SHALL be documented with examples and troubleshooting guidance.
+
+#### BC3.4: Version Compatibility
+
+Configuration file formats SHALL maintain backward compatibility across minor version releases.
 
 ## Success Metrics
 
-### Adoption Metrics
+### Business Value Metrics
 
-- **Time to First Agent**: < 5 minutes (target), < 10 minutes (required)
-- **Developer Satisfaction**: > 4.5/5 rating
-- **Community Growth**: 100+ deployments in first quarter
+#### BV1: Time to Value
 
-### Technical Metrics
+- **Deployment Speed**: Functional multi-agent system operational within 10 minutes from installation
+- **Learning Curve**: New users productive within 30 minutes of first interaction
+- **Configuration Efficiency**: Agent deployment time under 30 seconds per agent
 
-- **Message Throughput**: 1,000+ msg/sec
-- **Routing Latency**: < 5ms p95
-- **Tool Execution Time**: < 50ms p95
-- **Memory Search Time**: < 50ms for 100K entities
+#### BV2: Operational Excellence
 
-### Business Metrics
+- **System Reliability**: 99.9% uptime measured over monthly periods
+- **Performance Consistency**: Sub-100ms response times maintained under operational load
+- **Resource Efficiency**: Stable memory and CPU usage patterns during extended operation
 
-- **Consulting Adoption**: Default choice for AI engagements
-- **Enterprise Deployments**: 5+ production deployments
-- **Security Compliance**: Pass enterprise security audits
+#### BV3: Security and Compliance
 
-## Constraints and Non-Goals
+- **Audit Readiness**: Complete audit trail for all security-relevant events
+- **Compliance Verification**: Successful security audits by enterprise customers
+- **Incident Response**: Zero security breaches attributable to system vulnerabilities
 
-### Constraints
+### Stakeholder Satisfaction Metrics
 
-- **Zero External Dependencies**: Must run without external services for MVP
-- **Single Binary Deployment**: All core functionality in one executable
-- **Resource Efficiency**: Run on 2 CPU cores with 4GB RAM
+#### SS1: Agent Developer Experience
 
-### Non-Goals
+- **Configuration Clarity**: Successful agent deployment without documentation reference
+- **Error Resolution**: Clear diagnostic information enables rapid issue resolution
+- **Extension Capability**: Third-party tool integration without core system modification
 
-- **NOT an LLM Observability Platform**: Use external tools for detailed tracing
-- **NOT an Evaluation Framework**: Recommend union_square for testing
-- **NOT a Model Serving Platform**: Agents call external LLM APIs
-- **NOT a Data Pipeline**: Focus on agent orchestration only
+#### SS2: System Administrator Experience
 
-## MVP Scope Definition
+- **Operational Visibility**: Complete system status available through standard monitoring tools
+- **Maintenance Efficiency**: Routine operations completable through automated scripts
+- **Troubleshooting Support**: Diagnostic information sufficient for rapid problem resolution
 
-### MVP Must Have
+#### SS3: Business User Outcomes
 
-1. **Caxton Server**: Single binary application server
-2. **CLI Tool**: Command-line interface for agent management
-3. **Two Demo Agents**: Configuration-driven agents showing collaboration
-4. **WASM MCP Server**: One working MCP tool demonstrating sandboxing
-5. **Basic Routing**: Capability-based message routing between agents
+- **Service Reliability**: Agent-powered processes maintain business SLA requirements
+- **Cost Predictability**: Resource consumption patterns enable accurate cost planning
+- **Compliance Assurance**: Audit requirements met without additional tooling or processes
 
-### MVP Nice to Have
+## System Boundaries and Scope
 
-- Web dashboard for monitoring
-- Agent templates for common patterns
-- Multiple MCP tools
-- Performance optimizations
+### In Scope: Core Platform Capabilities
 
-### Post-MVP Priority
+#### CS1: Agent Orchestration
 
-1. **Memory System**: Semantic search and graph traversal
-2. **Advanced Routing**: Load balancing and failover
-3. **Enterprise Features**: RBAC, audit logging, compliance
-4. **Scaling**: Multi-node deployment options
+- Multi-agent system deployment and management
+- Capability-based message routing between agents
+- Configuration-driven agent behavior definition
+- Real-time agent status monitoring and health management
 
-## Dependencies and Risks
+#### CS2: Security and Isolation
 
-### Technical Dependencies
+- Sandboxed execution environment for third-party tools
+- Access control and permission management
+- Audit logging and compliance reporting
+- Resource consumption limits and enforcement
 
-- **Rust Ecosystem**: Core server implementation
-- **WebAssembly Runtime**: Wasmtime for sandboxing
-- **SQLite**: Embedded database (post-MVP)
-- **Candle**: ML inference for embeddings (post-MVP)
+#### CS3: Operational Management
 
-### Identified Risks
+- Command-line administrative interface
+- Configuration management and hot reload
+- Performance monitoring and metrics export
+- System health checking and failure recovery
 
-#### Risk 1: WASM Performance Overhead
+### Out of Scope: External Platform Responsibilities
 
-- **Impact**: High - Could prevent production use
+#### OS1: Model and LLM Services
+
+- Large language model hosting and serving
+- Model training, fine-tuning, or optimization
+- LLM API rate limiting or cost management
+- Model evaluation and benchmarking frameworks
+
+#### OS2: Infrastructure and Deployment
+
+- Container orchestration beyond basic packaging
+- Multi-node clustering and distributed deployment
+- Load balancing between Caxton instances
+- Cloud provider-specific deployment automation
+
+#### OS3: Development Tooling
+
+- Agent code generation or template systems
+- Integrated development environments or editors
+- Version control integration beyond configuration files
+- Testing frameworks beyond basic system validation
+
+### Integration Boundaries
+
+#### IB1: External Service Integration
+
+The system SHALL integrate with external services through well-defined interfaces without taking responsibility for external service availability, performance, or security.
+
+#### IB2: Monitoring System Integration
+
+The system SHALL provide standard metrics and logging outputs for integration with external monitoring systems without replacing or duplicating monitoring infrastructure.
+
+#### IB3: Development Workflow Integration
+
+The system SHALL support standard development practices through configuration file formats and CLI tools without prescribing specific development methodologies or tools.
+
+## Delivery Phases and Priorities
+
+### Phase 1: Minimum Viable Platform (MVP)
+
+#### P1.1: Core System Foundation
+
+- Single binary executable with zero external dependencies
+- Command-line interface for all administrative operations
+- Health check endpoints and basic system monitoring
+- Configuration file validation and error reporting
+
+#### P1.2: Basic Agent Operations
+
+- Agent deployment from TOML configuration files
+- Agent lifecycle management (start, stop, health monitoring)
+- Simple message passing between agents
+- Agent status reporting and basic metrics
+
+#### P1.3: Capability-Based Routing
+
+- Agent capability declaration in configuration
+- Message routing based on required capabilities
+- Dynamic capability discovery between agents
+- Basic load distribution for multiple capable agents
+
+#### P1.4: Security Foundation
+
+- Sandboxed execution environment for third-party tools
+- Basic access control for tool usage
+- Audit logging for security-relevant events
+- Resource limit enforcement for tool execution
+
+### Phase 2: Operational Readiness
+
+#### P2.1: Production Monitoring
+
+- Comprehensive metrics export (Prometheus format)
+- Structured logging with machine-readable formats
+- Distributed tracing support for request flow analysis
+- Performance monitoring and alerting integration
+
+#### P2.2: Enhanced Security
+
+- Role-based access control for administrative operations
+- Enhanced audit logging with compliance reporting
+- Advanced resource management and quota enforcement
+- Security update mechanisms without service disruption
+
+#### P2.3: Operational Automation
+
+- Configuration hot reload without service interruption
+- Automated failure detection and recovery
+- Backup and restore capabilities for system state
+- Deployment packaging for common platforms
+
+### Phase 3: Advanced Capabilities (Post-MVP)
+
+#### P3.1: Knowledge Management System
+
+- Persistent agent memory with semantic search
+- Graph-based relationship navigation
+- Workspace-based data isolation
+- Administrative tools for memory management
+
+#### P3.2: Enterprise Features
+
+- Multi-tenant workspace management
+- Advanced audit and compliance reporting
+- Integration with enterprise identity systems
+- Performance optimization for high-scale deployments
+
+## Risk Assessment and Mitigation
+
+### Business Risks
+
+#### BR1: Market Adoption Risk
+
+- **Impact**: High - Product viability depends on user adoption
 - **Probability**: Medium
-- **Mitigation**: Benchmark early, optimize hot paths, allow native tools for
-  performance-critical operations
+- **Business Impact**: Revenue targets not met, competitive disadvantage
+- **Mitigation Strategy**: Early customer validation, rapid iteration based on feedback, focus on demonstrable value delivery
 
-#### Risk 2: Memory System Complexity
+#### BR2: Security Compliance Risk
 
-- **Impact**: High - Core differentiator
-- **Probability**: Medium
-- **Mitigation**: Start with simple key-value, incrementally add graph features
-
-#### Risk 3: Enterprise Security Requirements
-
-- **Impact**: High - Blocks enterprise adoption
+- **Impact**: High - Enterprise customers require security compliance
 - **Probability**: Low
-- **Mitigation**: Early security review, penetration testing, compliance
-  documentation
+- **Business Impact**: Blocked enterprise sales, reputation damage
+- **Mitigation Strategy**: Early security architecture review, third-party security audit, compliance documentation
 
-## Acceptance Test Scenarios
+#### BR3: Performance and Scalability Risk
 
-### Scenario 1: Five-Minute Demo
+- **Impact**: Medium - Could limit production adoption
+- **Probability**: Medium
+- **Business Impact**: Customer churn, negative market perception
+- **Mitigation Strategy**: Performance testing from MVP stage, benchmark against competitor solutions, optimization roadmap
 
-1. Install Caxton server
-2. Start server with default configuration
-3. Deploy data-fetcher agent from template
-4. Deploy data-analyzer agent from template
-5. Deploy WASM MCP tool for chart generation
-6. Send request to data-fetcher
-7. Observe collaboration producing chart
-8. **Success**: Complete flow in under 5 minutes
+### Operational Risks
 
-### Scenario 2: Production Deployment
+#### OR1: Resource Management Risk
 
-1. Deploy Caxton to cloud environment
-2. Configure 10 agents with various capabilities
-3. Deploy 5 MCP tools with resource limits
-4. Generate 1,000 msg/sec load
-5. Monitor metrics and traces
-6. Simulate agent failure
-7. **Success**: System maintains SLA throughout
+- **Impact**: Medium - Could cause production outages
+- **Probability**: Medium
+- **Business Impact**: Customer SLA violations, support burden
+- **Mitigation Strategy**: Comprehensive resource limit testing, gradual rollout with monitoring, clear operational documentation
 
-### Scenario 3: Security Audit
+#### OR2: Configuration Complexity Risk
 
-1. Deploy malicious MCP tool attempting system access
-2. Configure agent with restricted permissions
-3. Attempt cross-workspace memory access
-4. Try resource exhaustion attacks
-5. Review audit logs
-6. **Success**: All attacks contained and logged
+- **Impact**: Medium - Could reduce ease of use
+- **Probability**: High
+- **Business Impact**: Increased support costs, user frustration
+- **Mitigation Strategy**: Extensive user testing, clear documentation, configuration validation with helpful error messages
+
+#### OR3: Integration Compatibility Risk
+
+- **Impact**: Low - Could limit ecosystem integration
+- **Probability**: Low
+- **Business Impact**: Reduced market penetration, competitive disadvantage
+- **Mitigation Strategy**: Standards-based integration points, compatibility testing with common tools, community feedback
+
+### External Dependencies
+
+#### ED1: Technology Ecosystem Dependencies
+
+- **Rust compilation toolchain**: Required for system building and deployment
+- **WebAssembly runtime standards**: Critical for third-party tool execution
+- **Standard protocol compliance**: HTTP, JSON, TOML for interoperability
+
+#### ED2: Market and Community Dependencies
+
+- **Third-party tool availability**: Success depends on ecosystem of available MCP tools
+- **Community adoption**: Platform value increases with user community size
+- **Standards evolution**: Must adapt to evolving AI agent and MCP standards
+
+## Acceptance Validation Scenarios
+
+### Business Outcome Validation
+
+#### AV1: Rapid Deployment Validation
+
+**Objective**: Validate the 10-minute deployment promise for business stakeholders
+
+**Test Scenario**:
+
+1. New user receives Caxton binary and basic documentation
+2. User installs system on clean environment
+3. User deploys two collaborating agents from provided configurations
+4. User verifies agents are successfully communicating and producing expected outputs
+5. **Success Criteria**: Complete functional multi-agent system operational within 10 minutes
+
+**Business Value Demonstrated**: Time-to-value promise met for rapid AI automation deployment
+
+#### AV2: Operational Reliability Validation
+
+**Objective**: Validate production readiness for system administrators
+
+**Test Scenario**:
+
+1. Deploy Caxton in production-like environment with monitoring
+2. Configure realistic agent workload (10 agents, mixed capabilities)
+3. Run sustained load for 24 hours with performance monitoring
+4. Introduce controlled failure scenarios (agent crashes, resource exhaustion)
+5. **Success Criteria**: System maintains 99.9% uptime with automatic recovery from failures
+
+**Business Value Demonstrated**: Production reliability supporting business continuity requirements
+
+#### AV3: Security Compliance Validation
+
+**Objective**: Validate enterprise security requirements for business users
+
+**Test Scenario**:
+
+1. Deploy system with enterprise security configuration
+2. Attempt unauthorized access to agent configurations and data
+3. Test resource exhaustion attacks on sandboxed tools
+4. Verify audit logging captures all security-relevant events
+5. **Success Criteria**: All unauthorized access blocked and logged with compliance-ready audit trail
+
+**Business Value Demonstrated**: Enterprise security standards met for regulatory compliance
+
+### Stakeholder Experience Validation
+
+#### SV1: Agent Developer Experience
+
+**Objective**: Validate configuration-driven development workflow
+
+**Test Scenario**:
+
+1. Developer creates new agent using only TOML configuration
+2. Agent integrates third-party MCP tool for extended capabilities
+3. Agent collaborates with existing agents through capability-based routing
+4. **Success Criteria**: Functional agent deployed without code compilation or infrastructure setup
+
+**Stakeholder Value**: Rapid agent development without technical infrastructure complexity
+
+#### SV2: System Administrator Experience
+
+**Objective**: Validate operational management capabilities
+
+**Test Scenario**:
+
+1. Administrator deploys Caxton in production environment
+2. Administrator configures monitoring integration (Prometheus/OpenTelemetry)
+3. Administrator performs routine operations (agent updates, configuration changes)
+4. Administrator responds to simulated operational issues using provided tooling
+5. **Success Criteria**: Complete operational control achieved through standard administrative interfaces
+
+**Stakeholder Value**: Operational control and visibility meeting enterprise operations standards
+
+#### SV3: Business User Experience
+
+**Objective**: Validate business process integration
+
+**Test Scenario**:
+
+1. Business process configured to use Caxton-hosted agent capabilities
+2. Process runs under realistic business load for evaluation period
+3. Business stakeholders review performance metrics and reliability data
+4. **Success Criteria**: Agent-powered processes meet business SLA requirements with predictable resource consumption
+
+**Stakeholder Value**: Reliable AI automation supporting business process requirements
 
 ## Handoff to Event Modeling Phase
 
-This requirements analysis provides the foundation for collaborative Event
-Modeling. The next phase requires:
+This requirements analysis establishes the business foundation for collaborative Event Modeling. The next phase requires:
 
 1. **Participants**: product-manager, technical-architect, ux-ui-design-expert
-2. **Goal**: Create comprehensive EVENT_MODEL.md following eventmodeling.org
-   methodology
+2. **Goal**: Create comprehensive EVENT_MODEL.md following eventmodeling.org methodology
 3. **Focus Areas**:
-   - User workflows from requirements
-   - System events and state transitions
-   - Command/query boundaries
-   - Read model projections
+   - Stakeholder workflows and business processes
+   - System state changes triggered by external events
+   - Command/query boundaries from business perspective
+   - Business event flows and data projections
 
-Key workflows to model:
+### Key Business Workflows to Model:
 
-- Agent deployment and configuration flow
-- Message routing and capability discovery
-- MCP tool execution with sandboxing
-- Memory storage and retrieval (post-MVP design)
-- System monitoring and administration
+#### BW1: Rapid Deployment Workflow
 
-The Event Model will translate these functional requirements into a visual
-timeline showing how the system evolves through user interactions and system
-events.
+- System installation and initial configuration
+- Agent deployment from configuration files
+- Multi-agent collaboration establishment
+- Business value realization validation
+
+#### BW2: Operational Management Workflow
+
+- System monitoring and health verification
+- Configuration updates without service disruption
+- Failure detection, response, and recovery
+- Performance monitoring and capacity planning
+
+#### BW3: Security and Compliance Workflow
+
+- Tool deployment with security sandboxing
+- Access control configuration and enforcement
+- Audit event generation and compliance reporting
+- Security incident detection and response
+
+#### BW4: Business Process Integration Workflow
+
+- Agent capability discovery and utilization
+- Message routing and load distribution
+- Resource consumption monitoring and control
+- Business SLA monitoring and reporting
+
+The Event Model will translate these business requirements into temporal workflows showing how external stakeholder actions drive system state changes and business value delivery.
 
 ## Revision History
 
-| Version | Date       | Author          | Changes                              |
-| ------- | ---------- | --------------- | ------------------------------------ |
-| 1.0     | 2025-09-14 | product-manager | Initial requirements from user input |
+| Version | Date       | Author          | Changes                                            |
+| ------- | ---------- | --------------- | -------------------------------------------------- |
+| 2.0     | 2025-09-17 | product-manager | Updated to focus on external business requirements |
+| 1.0     | 2025-09-14 | product-manager | Initial requirements from user input               |
 
 ---
 
-**Next Step**: Technical architect should begin EVENT_MODEL collaboration with
-product-manager and ux-ui-design-expert to create the Event Model based on
-these requirements.
+**Next Step**: Technical architect should begin EVENT_MODEL collaboration with product-manager and ux-ui-design-expert to create the Event Model based on these business requirements.
