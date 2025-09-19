@@ -36,6 +36,13 @@ lto = true
 codegen-units = 1
 
 [dependencies]
+anyhow = "1.0.99"
+nutype = "0.6.2"
+serde = { version = "1.0.225", features = ["derive"] }
+thiserror = "2.0.16"
+tokio = { version = "1.47.1", features = ["full"] }
+tracing = "0.1.41"
+uuid = { version = "1.18.1", features = ["v4"] }
 
 [dev-dependencies]
 
