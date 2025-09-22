@@ -56,6 +56,11 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - [ ] Type-Driven Safety: All external inputs parsed at boundaries
 - [ ] Observability First: All operations include tracing and logging
 - [ ] Zero External Dependencies: No new external requirements introduced
+- [ ] Architectural Decision Records: Major decisions documented in docs/adrs
+- [ ] Comprehensive User Documentation: Documentation targets all audiences and stays current
+- [ ] Professional Website Standards: Website consistency maintained with product features
+- [ ] GitHub Pull Request Workflow: Changes go through PR flow with required checks
+- [ ] Pre-commit Hook Compliance: All pre-commit hooks pass, no circumvention
 
 ## Project Structure
 
@@ -230,4 +235,4 @@ _This checklist is updated during execution flow_
 
 ---
 
-_Based on Constitution v1.0.1 - See `.specify/memory/constitution.md`_
+_Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`_
