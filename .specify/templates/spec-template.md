@@ -44,6 +44,14 @@
 
 When creating this spec from a user prompt:
 
+**MANDATORY AGENT DELEGATION**: Requirements analysis MUST be delegated to requirements-analyst agent per Constitutional Principle XI.
+
+```
+Use requirements-analyst to analyze: [user prompt/description]
+```
+
+After reading agent output:
+
 1. **Mark all ambiguities**: Use [NEEDS CLARIFICATION: specific question] for any assumption you'd need to make
 2. **Don't guess**: If the prompt doesn't specify something (e.g., "login system" without auth method), mark it
 3. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item

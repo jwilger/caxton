@@ -61,6 +61,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - [ ] Professional Website Standards: Website consistency maintained with product features
 - [ ] GitHub Pull Request Workflow: Changes go through PR flow with required checks
 - [ ] Pre-commit Hook Compliance: All pre-commit hooks pass, no circumvention
+- [ ] Mandatory Research Agent Delegation: All research tasks delegated to specialized agents
 
 ## Project Structure
 
@@ -118,21 +119,26 @@ ios/ or android/
 
 ## Phase 0: Outline & Research
 
+**MANDATORY AGENT DELEGATION**: ALL research MUST be delegated to specialized agents per Constitutional Principle XI.
+
 1. **Extract unknowns from Technical Context** above:
    - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
-2. **Generate and dispatch research agents**:
+2. **REQUIRED: Delegate to specialized research agents**:
 
    ```
-   For each unknown in Technical Context:
-     Task: "Research {unknown} for {feature context}"
-   For each technology choice:
-     Task: "Find best practices for {tech} in {domain}"
+   Use documentation-expert to research: [technology/pattern questions]
+   Use codebase-scanner to analyze: [existing codebase for integration points]
+   Use requirements-analyst to clarify: [any ambiguous requirements]
    ```
 
-3. **Consolidate findings** in `research.md` using format:
+   **CONSTITUTIONAL VIOLATION**: Main agent performing inline research instead of delegation.
+
+3. **Read agent outputs** from `.claude/docs/[agent-name]-plan.md` files
+
+4. **Consolidate findings** in `research.md` using format:
    - Decision: [what was chosen]
    - Rationale: [why chosen]
    - Alternatives considered: [what else evaluated]
@@ -143,26 +149,37 @@ ios/ or android/
 
 _Prerequisites: research.md complete_
 
-1. **Extract entities from feature spec** → `data-model.md`:
+**MANDATORY AGENT DELEGATION**: Design decisions MUST be delegated to specialized agents per Constitutional Principle XI.
+
+1. **REQUIRED: Delegate design analysis to agents**:
+
+   ```
+   Use implementation-planner to explore: [feature design options based on research]
+   Use test-designer to identify: [testing strategies for this feature]
+   ```
+
+2. **Read agent outputs** from `.claude/docs/[agent-name]-plan.md` files
+
+3. **Extract entities from feature spec** → `data-model.md`:
    - Entity name, fields, relationships
    - Validation rules from requirements
    - State transitions if applicable
 
-2. **Generate API contracts** from functional requirements:
+4. **Generate API contracts** from functional requirements:
    - For each user action → endpoint
    - Use standard REST/GraphQL patterns
    - Output OpenAPI/GraphQL schema to `/contracts/`
 
-3. **Generate contract tests** from contracts:
+5. **Generate contract tests** from contracts:
    - One test file per endpoint
    - Assert request/response schemas
    - Tests must fail (no implementation yet)
 
-4. **Extract test scenarios** from user stories:
+6. **Extract test scenarios** from user stories:
    - Each story → integration test scenario
    - Quickstart test = story validation steps
 
-5. **Update agent file incrementally** (O(1) operation):
+7. **Update agent file incrementally** (O(1) operation):
    - Run `.specify/scripts/bash/update-agent-context.sh claude`
      **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
    - If exists: Add only NEW tech from current plan
@@ -235,4 +252,4 @@ _This checklist is updated during execution flow_
 
 ---
 
-_Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`_
+_Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`_

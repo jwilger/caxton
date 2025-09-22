@@ -1,19 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.2 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles: None (all existing principles preserved)
 - Added sections:
-  * VI. Architectural Decision Records (ADRs)
-  * VII. Comprehensive User Documentation
-  * VIII. Professional Website Standards
-  * IX. GitHub Pull Request Workflow
-  * X. Pre-commit Hook Compliance
+  * XI. Mandatory Research Agent Delegation
 - Removed sections: None
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md - Updated Constitution Check gates and version reference
-  ✅ .specify/templates/spec-template.md - No updates needed (no constitution references)
-  ✅ .specify/templates/tasks-template.md - No updates needed (already TDD-aligned)
-  ✅ .specify/templates/agent-file-template.md - No updates needed (generic template)
+  ✅ .specify/templates/plan-template.md - Added constitutional check, mandated agent delegation in Phase 0 and Phase 1
+  ✅ .specify/templates/spec-template.md - Added mandatory agent delegation for requirements analysis
+  ✅ .specify/templates/tasks-template.md - Added mandatory agent delegation for test strategy planning
 - Follow-up TODOs: None
 -->
 
@@ -61,9 +56,23 @@ GitHub PR flow MUST be used for working on features. GitHub Actions checks MUST 
 
 Pre-commit hooks MUST be used to verify code and documentation quality prior to committing changes. ALL pre-commit hooks MUST pass before a commit is allowed. The `--no-verify` flag or any other means to circumvent pre-commit hooks MUST NOT be used. Code quality and documentation standards are enforced at commit time to maintain consistency.
 
+### XI. Mandatory Research Agent Delegation
+
+ALL research, analysis, and planning tasks MUST be delegated to specialized research agents to preserve main context for implementation. Main agents MUST NOT perform research that specialized agents can handle. Research agents operate in separate context windows and save findings to `.claude/docs/` for main agent consumption. MANDATORY agent delegation rules:
+
+- Requirements clarification → requirements-analyst agent
+- Codebase analysis → codebase-scanner agent
+- Implementation design options → implementation-planner agent
+- Pattern and best practice research → documentation-expert agent
+- Test strategy planning → test-designer agent
+
+Violation of delegation requirements constitutes inefficient context usage and MUST be avoided. Main agents MUST read agent outputs from `.claude/docs/[agent-name]-plan.md` files before proceeding with implementation decisions.
+
 ## Development Workflow
 
 All Caxton platform development MUST follow Test-Driven Development (TDD) with strict Red-Green-Refactor cycles. Platform feature specifications MUST be written before implementation. Type-driven design principles guide all architectural decisions. The platform serves end-users who deploy configuration agents - the platform itself should minimize compilation complexity.
+
+Research phases MUST utilize appropriate specialized agents rather than inline analysis to preserve main context for implementation work. Agent delegation is mandatory for efficient token usage and context preservation.
 
 ## Security Requirements
 
@@ -73,4 +82,4 @@ Hybrid security model: The platform runs end-user configuration agents in host r
 
 Constitution supersedes all other platform development practices. All pull requests MUST verify compliance with constitutional principles. Complexity additions MUST be justified against minimal core philosophy. Use `.claude/docs/` files for runtime development guidance. Amendments require documented justification, community discussion, and migration plan for affected code.
 
-**Version**: 1.1.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22
+**Version**: 1.2.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22

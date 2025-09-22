@@ -113,6 +113,14 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 
 _Applied during main() execution_
 
+**MANDATORY AGENT DELEGATION**: Test strategy planning MUST be delegated to test-designer agent per Constitutional Principle XI.
+
+```
+Use test-designer to identify: [testing needs for feature based on design documents]
+```
+
+After reading agent output:
+
 1. **From Contracts**:
    - Each contract file → contract test task [P]
    - Each endpoint → implementation task
