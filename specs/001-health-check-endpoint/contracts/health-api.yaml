@@ -1,0 +1,168 @@
+openapi: 3.0.3
+info:
+  title: Caxton Health Check API
+  description: Basic health monitoring endpoint for Caxton AI agent platform
+  version: 1.0.0
+  contact:
+    name: Caxton Platform
+    url: https://github.com/jwilger/caxton
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://{host}:{port}
+    description: Configurable server
+    variables:
+      host:
+        default: localhost
+        description: Server hostname or IP address
+      port:
+        default: "8080"
+        description: Server port number
+
+paths:
+  /health:
+    get:
+      summary: Get server health status
+      description: Returns the current health status of the Caxton server
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Server is healthy and operational
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                enum: [application/json]
+              description: Response content type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                healthy:
+                  summary: Healthy server response
+                  value:
+                    status: "OK"
+        "405":
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                method_not_allowed:
+                  summary: Unsupported HTTP method
+                  value:
+                    error: "Method Not Allowed"
+                    message: "Only GET and HEAD methods are supported"
+                    code: 405
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                internal_error:
+                  summary: Server error response
+                  value:
+                    error: "Internal Server Error"
+                    message: "An unexpected error occurred"
+                    code: 500
+
+    head:
+      summary: Check server health status (headers only)
+      description: Returns only headers for health check, no response body
+      operationId: headHealth
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Server is healthy and operational
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                enum: [application/json]
+              description: Response content type (no body)
+        "405":
+          description: Method not allowed
+        "500":
+          description: Internal server error
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: ["OK"]
+          description: Current health status of the server
+          example: "OK"
+      additionalProperties: false
+      description: Health check response indicating server operational status
+
+    HealthStatus:
+      type: string
+      enum: ["OK"]
+      description: Enumeration of possible health status values
+      example: "OK"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Error type or category
+          example: "Method Not Allowed"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Only GET and HEAD methods are supported"
+        code:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 405
+      additionalProperties: false
+      description: Standardized error response format
+
+  parameters:
+    ServerHost:
+      name: host
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-zA-Z0-9.-]+$"
+      description: Server hostname or IP address
+      example: "localhost"
+
+    ServerPort:
+      name: port
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 65535
+      description: Server port number
+      example: 8080
+
+tags:
+  - name: Health
+    description: Server health monitoring endpoints
+
+externalDocs:
+  description: Caxton Platform Documentation
+  url: https://github.com/jwilger/caxton
