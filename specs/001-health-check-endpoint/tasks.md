@@ -1,35 +1,31 @@
 # Tasks: Health Check Endpoint
 
-**Input**: Design documents from `/specs/001-health-check-endpoint/`
-**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
+**Input**: Design documents from `/home/jwilger/projects/caxton/specs/001-health-check-endpoint/`
+**Prerequisites**: plan.md, research.md, data-model.md, contracts/, quickstart.md
 
 ## Execution Flow (main)
 
 ```
 1. Load plan.md from feature directory
-   → Found: axum HTTP framework, nutype domain types, TOML config
-   → Extract: Rust 2024, axum/tokio/serde/nutype stack
+   ✓ Extracted: Rust 2024, Axum framework, single project structure
 2. Load optional design documents:
-   → data-model.md: HealthResponse, HealthStatus, ServerConfig entities
-   → contracts/: health-api.yaml → contract test task
-   → research.md: axum selection, extensible HTTP foundation
+   ✓ data-model.md: HealthResponse, HealthStatus, ServerConfig entities
+   ✓ contracts/health-api.yaml: /health endpoint contract
+   ✓ research.md: Axum framework selection, constitutional testing
 3. Generate tasks by category:
-   → Setup: dependencies, project structure, linting
-   → Tests: contract tests, property tests, integration tests
-   → Core: domain types, HTTP server, health endpoint
-   → Integration: configuration, middleware, error handling
-   → Polish: performance tests, documentation, benchmarks
+   ✓ Setup: project init, dependencies, linting
+   ✓ Tests: outside-in black-box integration tests (Constitutional Principle XII)
+   ✓ Core: domain types, HTTP server, health endpoint
+   ✓ Integration: configuration, observability, error handling
+   ✓ Polish: performance tests, documentation updates
 4. Apply task rules:
-   → Different files = mark [P] for parallel
-   → Same file = sequential (no [P])
-   → Tests before implementation (TDD)
+   ✓ Different files = marked [P] for parallel
+   ✓ Same file = sequential (no [P])
+   ✓ Outside-in tests before implementation (Constitutional mandate)
 5. Number tasks sequentially (T001, T002...)
 6. Generate dependency graph
 7. Create parallel execution examples
-8. Validate task completeness:
-   → health-api.yaml has contract tests ✓
-   → All entities have model implementations ✓
-   → Health endpoint implemented ✓
+8. Validate task completeness
 9. Return: SUCCESS (tasks ready for execution)
 ```
 
@@ -40,176 +36,143 @@
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root (per plan.md)
-- Paths shown below follow Rust single project structure
+- **Single project**: `src/`, `tests/` at repository root
+- Paths assume single project structure per plan.md
 
 ## Phase 3.1: Setup
 
-- [ ] **T001** Add HTTP server dependencies to Cargo.toml (axum, tokio, serde, nutype, toml)
-- [ ] **T002** Create project structure directories: `src/{types,http,api,config}`, `tests/{unit,integration,contract}`
-- [ ] **T003** Configure development environment: update .gitignore for Rust, ensure cargo fmt/clippy
+- [x] T001 Add Axum HTTP framework dependencies to Cargo.toml (axum, tokio, serde, serde_json, nutype)
+- [x] T002 [P] Configure cargo fmt and clippy settings for constitutional compliance
+- [x] T003 [P] Set up basic project structure (src/lib.rs exports for testing)
 
-## Phase 3.2: Domain Types & Property Tests [P]
+## Phase 3.2: Outside-In Black-Box Integration Tests ⚠️ MUST COMPLETE BEFORE 3.3
 
-- [ ] **T004 [P]** Create health domain types in `src/types/health.rs` (HealthResponse, HealthStatus with serde)
-- [ ] **T005 [P]** Create server config types in `src/types/config.rs` (ServerConfig with nutype: HostAddress, ServerPort, EndpointPath)
-- [ ] **T006 [P]** Add property tests for nutype validation in `tests/unit/config_types_test.rs`
-- [ ] **T007 [P]** Add unit tests for health response serialization in `tests/unit/health_types_test.rs`
+**CONSTITUTIONAL PRINCIPLE XII: Outside-In Black-Box Testing Methodology**
 
-## Phase 3.3: Contract Tests [P]
+**CRITICAL: These tests MUST follow the 11-Step Process and MUST FAIL before ANY implementation**
 
-- [ ] **T008 [P]** Create health endpoint contract test in `tests/contract/health_endpoint_test.rs` (validate OpenAPI spec compliance)
-- [ ] **T009 [P]** Create integration test scenarios in `tests/integration/health_integration_test.rs` (GET/HEAD methods, error cases)
+- [x] T004 Write black-box integration test for GET /health endpoint in tests/health_endpoint_test.rs
+- [x] T005 Write black-box integration test for HEAD /health endpoint in tests/health_endpoint_test.rs
+- [x] T006 Write black-box integration test for unsupported HTTP methods (POST/PUT/DELETE) in tests/health_endpoint_test.rs
+- [x] T007 [P] Write black-box performance test for <100ms response requirement in tests/health_performance_test.rs
 
-## Phase 3.4: HTTP Foundation
+**Required for each test**: Run immediately after writing with `cargo test`, fix compilation/linting with smallest changes, maintain single failing test rule
 
-- [ ] **T010** Create axum HTTP server setup in `src/http/server.rs` (tokio runtime, graceful shutdown)
-- [ ] **T011** Create route registration system in `src/http/router.rs` (extensible for future endpoints)
-- [ ] **T012** Create middleware pipeline in `src/http/middleware.rs` (observability, error handling)
+## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
-## Phase 3.5: Configuration Management
+- [ ] T008 [P] Create HealthResponse and HealthStatus types in src/health/types.rs
+- [ ] T009 [P] Create ServerConfig with HostAddress, ServerPort, EndpointPath newtypes in src/config.rs
+- [ ] T010 Create health endpoint handler function in src/health/handler.rs
+- [ ] T011 Create Axum router with /health route registration in src/server.rs
+- [ ] T012 Implement HTTP server initialization and startup in src/main.rs
+- [ ] T013 Export public types through src/lib.rs for testing
+- [ ] T014 Add JSON response serialization with proper Content-Type headers
 
-- [ ] **T013** Create TOML configuration loading in `src/config/server.rs` (parse ServerConfig with validation)
-- [ ] **T014** Create configuration defaults and environment overrides in `src/config/defaults.rs`
-- [ ] **T015** Add configuration validation tests in `tests/unit/config_test.rs`
+## Phase 3.4: Integration
 
-## Phase 3.6: Health Endpoint Implementation
+- [ ] T015 Add OpenTelemetry tracing middleware for observability (Constitutional Principle IV)
+- [ ] T016 Add structured logging for HTTP requests and responses
+- [ ] T017 Add graceful shutdown handling for HTTP server
+- [ ] T018 Add configuration loading with environment variable support
+- [ ] T019 Add error handling for server startup failures
 
-- [ ] **T016** Create health endpoint handler in `src/api/health.rs` (GET/HEAD methods, JSON response)
-- [ ] **T017** Integrate health endpoint with HTTP router in `src/http/router.rs`
-- [ ] **T018** Add error handling for unsupported methods and malformed requests
+## Phase 3.5: Polish
 
-## Phase 3.7: Main Application Integration
+- [ ] T020 [P] Add property-based tests for domain types validation in tests/property_tests.rs
+- [ ] T021 [P] Add benchmarks for response time verification in benches/health_benchmark.rs
+- [ ] T022 [P] Update API documentation in docs/api.md
+- [ ] T023 [P] Update website API reference per Constitutional Principle VIII
+- [ ] T024 Create ADR for HTTP framework selection per Constitutional Principle VI
+- [ ] T025 Run complete integration test suite and validate all requirements
 
-- [ ] **T019** Update main.rs to initialize HTTP server with configuration
-- [ ] **T020** Add server lifecycle management (startup, shutdown, error handling)
-- [ ] **T021** Create library module exports in `src/lib.rs`
+## Dependencies
 
-## Phase 3.8: Performance & Polish [P]
+- Setup (T001-T003) before everything else
+- Outside-in integration tests (T004-T007) before implementation (T008-T019)
+- T008, T009 (types) before T010-T014 (handlers and server)
+- T010 (handler) before T011 (router)
+- T011 (router) before T012 (server startup)
+- T013 (exports) needed for T004-T007 (integration tests)
+- Integration (T015-T019) after core implementation
+- Polish (T020-T025) after everything else
 
-- [ ] **T022 [P]** Add response time benchmarks in `benches/health_performance.rs` (validate sub-100ms requirement)
-- [ ] **T023 [P]** Create load testing script per quickstart.md examples
-- [ ] **T024 [P]** Add comprehensive integration tests from quickstart.md scenarios (curl examples, error cases)
-
-## Dependency Graph
-
-```
-Setup Phase (T001-T003)
-├── Types Phase [P] (T004-T007)
-├── Contract Tests [P] (T008-T009)
-└── Foundation Phase (T010-T012)
-    ├── Config Phase (T013-T015)
-    └── Implementation Phase (T016-T018)
-        └── Integration Phase (T019-T021)
-            └── Polish Phase [P] (T022-T024)
-```
-
-## Parallel Execution Examples
-
-### Phase 3.2: Types Development (Parallel)
-
-```bash
-# All these can run in parallel (different files):
-Task agent: T004 Create health domain types
-Task agent: T005 Create server config types
-Task agent: T006 Add property tests for config validation
-Task agent: T007 Add unit tests for health serialization
-```
-
-### Phase 3.3: Contract Testing (Parallel)
-
-```bash
-# Contract tests can run in parallel (different test files):
-Task agent: T008 Create health endpoint contract test
-Task agent: T009 Create integration test scenarios
-```
-
-### Phase 3.8: Performance & Polish (Parallel)
-
-```bash
-# Final polish tasks can run in parallel:
-Task agent: T022 Add response time benchmarks
-Task agent: T023 Create load testing script
-Task agent: T024 Add comprehensive integration tests
-```
-
-## Task Completion Criteria
-
-### TDD Requirements
-
-- All contract tests (T008-T009) must be written and **failing** before implementation
-- Property tests (T006-T007) must validate nutype domain constraints
-- Integration tests (T024) must cover quickstart.md scenarios
-
-### Performance Requirements
-
-- Response time benchmarks (T022) must validate sub-100ms requirement
-- Load testing (T023) must demonstrate production readiness
-
-### Constitutional Compliance
-
-- Zero external service dependencies ✓ (only Rust crates)
-- Type-driven safety ✓ (nutype domain types, axum type safety)
-- Observability ✓ (middleware pipeline for tracing/logging)
-- ADR documentation ✓ (001-http-framework-selection.md completed)
-
-## Implementation Notes
-
-### File Structure Created
+## Parallel Example
 
 ```
-src/
-├── types/
-│   ├── health.rs       # T004
-│   └── config.rs       # T005
-├── http/
-│   ├── server.rs       # T010
-│   ├── router.rs       # T011, T017
-│   └── middleware.rs   # T012
-├── api/
-│   └── health.rs       # T016
-├── config/
-│   ├── server.rs       # T013
-│   └── defaults.rs     # T014
-├── main.rs             # T019, T020
-└── lib.rs              # T021
+# Phase 3.1 Setup (can run T002-T003 in parallel after T001)
+Task: "Configure cargo fmt and clippy settings for constitutional compliance"
+Task: "Set up basic project structure (src/lib.rs exports for testing)"
 
-tests/
-├── unit/
-│   ├── config_types_test.rs    # T006
-│   ├── health_types_test.rs    # T007
-│   └── config_test.rs          # T015
-├── integration/
-│   └── health_integration_test.rs  # T009, T024
-└── contract/
-    └── health_endpoint_test.rs     # T008
+# Phase 3.2 Integration Tests (T007 can run parallel to T004-T006)
+Task: "Write black-box performance test for <100ms response requirement in tests/health_performance_test.rs"
 
-benches/
-└── health_performance.rs        # T022
+# Phase 3.3 Core Types (T008-T009 can run in parallel)
+Task: "Create HealthResponse and HealthStatus types in src/health/types.rs"
+Task: "Create ServerConfig with HostAddress, ServerPort, EndpointPath newtypes in src/config.rs"
+
+# Phase 3.5 Polish (T020-T024 can run in parallel)
+Task: "Add property-based tests for domain types validation in tests/property_tests.rs"
+Task: "Add benchmarks for response time verification in benches/health_benchmark.rs"
+Task: "Update API documentation in docs/api.md"
+Task: "Update website API reference per Constitutional Principle VIII"
+Task: "Create ADR for HTTP framework selection per Constitutional Principle VI"
 ```
 
-### Testing Strategy
+## Notes
 
-- **Property Tests**: nutype validation rules (ports 1-65535, paths start with '/')
-- **Contract Tests**: OpenAPI spec compliance (GET/HEAD methods, JSON schema)
-- **Integration Tests**: End-to-end HTTP scenarios from quickstart.md
-- **Performance Tests**: Sub-100ms response time validation
+- [P] tasks = different files, no dependencies
+- MUST verify tests fail before implementing (Constitutional Principle XII)
+- Follow 11-step TDD process for each failing test
+- Commit after each task completion
+- Use `cargo test`, `cargo fmt`, `cargo clippy` after each change
 
-### Dependencies Added (T001)
+## Task Generation Rules
 
-```toml
-[dependencies]
-axum = "0.7"
-tokio = { version = "1.0", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-nutype = { version = "0.4", features = ["serde"] }
-toml = "0.8"
+_Applied during main() execution_
 
-[dev-dependencies]
-proptest = "1.0"
-```
+**MANDATORY AGENT DELEGATION**: Test strategy planning delegated to test-designer agent per Constitutional Principle XI.
 
-## Ready for Execution
+**CONSTITUTIONAL PRINCIPLE XII**: All implementation follows Outside-In Black-Box Testing Methodology with 11-Step Process.
 
-All tasks are specific, ordered by dependencies, and marked for parallel execution where appropriate. Each task includes exact file paths and clear completion criteria. The implementation follows TDD principles with tests written before implementation code.
+After reading agent outputs:
+
+1. **From Contracts**:
+   - health-api.yaml → integration test for GET /health (T004)
+   - health-api.yaml → integration test for HEAD /health (T005)
+   - health-api.yaml → error handling tests for unsupported methods (T006)
+
+2. **From Data Model**:
+   - HealthResponse, HealthStatus → type creation task [P] (T008)
+   - ServerConfig, newtypes → configuration type task [P] (T009)
+
+3. **From User Stories (quickstart.md)**:
+   - GET /health usage example → integration test (T004)
+   - HEAD /health usage example → integration test (T005)
+   - Performance requirement → performance test [P] (T007)
+
+4. **Ordering**:
+   - Setup → Outside-In Black-Box Integration Tests → Types → Handlers → Server → Integration → Polish
+   - Integration tests MUST be written BEFORE any implementation code
+   - Dependencies block parallel execution
+   - Follow 11-Step Process for each test
+
+## Validation Checklist
+
+_GATE: Checked by main() before returning_
+
+- [x] All contracts have corresponding black-box integration tests
+- [x] All entities have type creation tasks
+- [x] All integration tests come before implementation
+- [x] Tests follow Constitutional Principle XII (Outside-In Black-Box Testing)
+- [x] Parallel tasks truly independent
+- [x] Each task specifies exact file path
+- [x] No task modifies same file as another [P] task
+
+## Constitutional Compliance Notes
+
+- **Outside-In Black-Box Testing**: T004-T007 test only HTTP interface behavior
+- **11-Step TDD Process**: Each integration test must fail, then implement minimal changes
+- **Single Failing Test Rule**: Only one test failing at any time
+- **Agent Delegation**: Test strategy developed by test-designer agent
+- **Type-Driven Safety**: All domain types use nutype validation (T008-T009)
+- **Observability First**: OpenTelemetry tracing added (T015-T016)
