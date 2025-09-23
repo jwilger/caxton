@@ -66,6 +66,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - [ ] GitHub Pull Request Workflow: Changes go through PR flow with required checks
 - [ ] Pre-commit Hook Compliance: All pre-commit hooks pass, no circumvention
 - [ ] Mandatory Research Agent Delegation: All research tasks delegated to specialized agents
+- [ ] Outside-In Black-Box Testing Methodology: Implementation begins with integration tests following 11-step process
 
 ## Project Structure
 
@@ -256,4 +257,4 @@ _This checklist is updated during execution flow_
 
 ---
 
-_Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`_
+_Based on Constitution v1.3.0 - See `.specify/memory/constitution.md`_

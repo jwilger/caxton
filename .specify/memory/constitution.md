@@ -1,12 +1,13 @@
 <!--
 Sync Impact Report:
-- Version change: 1.2.0 → 1.2.1
-- Modified principles:
-  * V. Zero External Dependencies → V. Zero External Service Dependencies (clarified scope)
-- Added sections: None
+- Version change: 1.2.1 → 1.3.0
+- Modified principles: None renamed
+- Added sections:
+  * XII. Outside-In Black-Box Testing Methodology (new principle)
 - Removed sections: None
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md - Updated Constitution Check section
+  ✅ .specify/templates/plan-template.md - Constitution Check section updated
+  ✅ .specify/templates/tasks-template.md - Testing workflow refined
 - Follow-up TODOs: None
 -->
 
@@ -66,6 +67,28 @@ ALL research, analysis, and planning tasks MUST be delegated to specialized rese
 
 Violation of delegation requirements constitutes inefficient context usage and MUST be avoided. Main agents MUST read agent outputs from `.claude/docs/[agent-name]-plan.md` files before proceeding with implementation decisions.
 
+### XII. Outside-In Black-Box Testing Methodology (NON-NEGOTIABLE)
+
+ALL feature implementation MUST begin with outside-in black-box integration tests that verify only externally visible system behavior. Tests MUST be placed in the `tests/` directory and MUST NOT require changes when internal implementation details change. Integration tests MUST be written BEFORE any types or implementation code.
+
+**MANDATORY 11-Step Process**:
+
+1. Write black-box integration test testing only externally visible behavior
+2. Run test immediately to ensure it fails as expected
+3. If compilation errors exist, fix with smallest possible change, repeat until clean compilation
+4. If linting errors exist, fix with smallest change using automatic tools (`cargo fmt`, `cargo clippy`), repeat until clean
+5. If unexpected logic error, verify test correctness and problem understanding before proceeding
+6. If test failure makes obvious fix clear, skip step 7 and proceed to step 8
+7. If test failure unclear, write deeper unit test, mark previous test as skipped, maintain single failing test
+8. Make smallest implementation change to make failing test pass
+9. Remove hard-coded values from test, ensure total functions, make smallest change for updated test to pass
+10. Leverage type system to make test failure impossible if possible, delete test if compilation prevents failure
+11. Commit progress, remove skipped markers, continue with next test
+
+**Single Failing Test Rule**: Only ONE test MUST be failing at any time. All other tests MUST pass or be explicitly skipped.
+
+**Black-Box Requirement**: Tests MUST verify system behavior through public interfaces only (HTTP endpoints, CLI commands, file outputs) without knowledge of internal implementation structure.
+
 ## Development Workflow
 
 All Caxton platform development MUST follow Test-Driven Development (TDD) with strict Red-Green-Refactor cycles. Platform feature specifications MUST be written before implementation. Type-driven design principles guide all architectural decisions. The platform serves end-users who deploy configuration agents - the platform itself should minimize compilation complexity.
@@ -80,4 +103,4 @@ Hybrid security model: The platform runs end-user configuration agents in host r
 
 Constitution supersedes all other platform development practices. All pull requests MUST verify compliance with constitutional principles. Complexity additions MUST be justified against minimal core philosophy. Use `.claude/docs/` files for runtime development guidance. Amendments require documented justification, community discussion, and migration plan for affected code.
 
-**Version**: 1.2.1 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22
+**Version**: 1.3.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22

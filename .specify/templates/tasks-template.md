@@ -51,14 +51,18 @@
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
 
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+## Phase 3.2: Outside-In Black-Box Integration Tests ⚠️ MUST COMPLETE BEFORE 3.3
 
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
+**CONSTITUTIONAL PRINCIPLE XII: Outside-In Black-Box Testing Methodology**
 
-- [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
-- [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
-- [ ] T006 [P] Integration test user registration in tests/integration/test_registration.py
-- [ ] T007 [P] Integration test auth flow in tests/integration/test_auth.py
+**CRITICAL: These tests MUST follow the 11-Step Process and MUST FAIL before ANY implementation**
+
+- [ ] T004 [P] Write black-box integration test for POST /api/users in tests/test_users_post.py
+- [ ] T005 [P] Write black-box integration test for GET /api/users/{id} in tests/test_users_get.py
+- [ ] T006 [P] Write black-box integration test for user registration flow in tests/test_registration.py
+- [ ] T007 [P] Write black-box integration test for auth flow in tests/test_auth.py
+
+**Required for each test**: Run immediately after writing, fix compilation/linting with smallest changes, maintain single failing test rule
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
@@ -115,6 +119,8 @@ _Applied during main() execution_
 
 **MANDATORY AGENT DELEGATION**: Test strategy planning MUST be delegated to test-designer agent per Constitutional Principle XI.
 
+**CONSTITUTIONAL PRINCIPLE XII**: All implementation MUST follow Outside-In Black-Box Testing Methodology with 11-Step Process.
+
 ```
 Use test-designer to identify: [testing needs for feature based on design documents]
 ```
@@ -134,16 +140,19 @@ After reading agent output:
    - Quickstart scenarios → validation tasks
 
 4. **Ordering**:
-   - Setup → Tests → Models → Services → Endpoints → Polish
+   - Setup → Outside-In Black-Box Integration Tests → Models → Services → Endpoints → Polish
+   - Integration tests MUST be written BEFORE any implementation code
    - Dependencies block parallel execution
+   - Follow 11-Step Process for each test
 
 ## Validation Checklist
 
 _GATE: Checked by main() before returning_
 
-- [ ] All contracts have corresponding tests
+- [ ] All contracts have corresponding black-box integration tests
 - [ ] All entities have model tasks
-- [ ] All tests come before implementation
+- [ ] All integration tests come before implementation
+- [ ] Tests follow Constitutional Principle XII (Outside-In Black-Box Testing)
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
