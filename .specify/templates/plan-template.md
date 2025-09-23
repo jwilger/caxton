@@ -22,11 +22,15 @@
 7. Re-evaluate Constitution Check section
    → If new violations: Refactor design, return to Phase 1
    → Update Progress Tracking: Post-Design Constitution Check
-8. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
-9. STOP - Ready for /tasks command
+8. Create Required ADRs
+   → If Constitution Check identified ADR requirements: Create ADR documents in docs/adrs/
+   → Update Constitution Check to mark ADRs as completed
+   → ADRs must be completed before proceeding to Phase 2
+9. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
+10. STOP - Ready for /tasks command
 ```
 
-**IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+**IMPORTANT**: The /plan command STOPS at step 10. Phases 2-4 are executed by other commands:
 
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)

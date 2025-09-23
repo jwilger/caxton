@@ -56,7 +56,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - [x] Type-Driven Safety: HTTP requests parsed at boundary, HealthResponse type ensures valid JSON
 - [x] Observability First: Health endpoint will include tracing and structured logging
 - [x] Zero External Service Dependencies: Axum/tokio are Rust crates, no external services required
-- [ ] Architectural Decision Records: HTTP framework choice requires ADR documentation
+- [x] Architectural Decision Records: HTTP framework ADR created (001-http-framework-selection.md)
 - [x] Comprehensive User Documentation: Health endpoint documented for all three audiences
 - [x] Professional Website Standards: Basic monitoring capability aligns with platform claims
 - [x] GitHub Pull Request Workflow: Implementation will follow standard PR workflow
