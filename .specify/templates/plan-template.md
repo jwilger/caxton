@@ -55,7 +55,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - [ ] Minimal Core Architecture: Addition justified against core expansion
 - [ ] Type-Driven Safety: All external inputs parsed at boundaries
 - [ ] Observability First: All operations include tracing and logging
-- [ ] Zero External Dependencies: No new external requirements introduced
+- [ ] Zero External Service Dependencies: No new external services required for basic functionality
 - [ ] Architectural Decision Records: Major decisions documented in docs/adrs
 - [ ] Comprehensive User Documentation: Documentation targets all audiences and stays current
 - [ ] Professional Website Standards: Website consistency maintained with product features

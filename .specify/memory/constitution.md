@@ -1,14 +1,12 @@
 <!--
 Sync Impact Report:
-- Version change: 1.1.0 → 1.2.0
-- Modified principles: None (all existing principles preserved)
-- Added sections:
-  * XI. Mandatory Research Agent Delegation
+- Version change: 1.2.0 → 1.2.1
+- Modified principles:
+  * V. Zero External Dependencies → V. Zero External Service Dependencies (clarified scope)
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md - Added constitutional check, mandated agent delegation in Phase 0 and Phase 1
-  ✅ .specify/templates/spec-template.md - Added mandatory agent delegation for requirements analysis
-  ✅ .specify/templates/tasks-template.md - Added mandatory agent delegation for test strategy planning
+  ✅ .specify/templates/plan-template.md - Updated Constitution Check section
 - Follow-up TODOs: None
 -->
 
@@ -32,9 +30,9 @@ Illegal states MUST be unrepresentable in the type system. All external inputs M
 
 Every operation MUST be traced with OpenTelemetry. Structured logging required for all components. Metrics collection mandatory for performance monitoring. Debug information MUST be available without recompilation.
 
-### V. Zero External Dependencies
+### V. Zero External Service Dependencies
 
-Caxton MUST function immediately after single binary installation. Embedded SQLite + Candle memory system by default. External backends (Neo4j, Qdrant) are optional scaling enhancements, not requirements.
+Caxton MUST function immediately after single binary installation without requiring external services. End-users MUST NOT be forced to set up databases, vector stores, event stores, or other external services for basic functionality. Embedded SQLite + Candle memory system by default. External services (Neo4j, Qdrant) are optional scaling enhancements, not requirements. Third-party Rust crates are permitted and encouraged for implementation quality.
 
 ### VI. Architectural Decision Records (ADRs)
 
@@ -82,4 +80,4 @@ Hybrid security model: The platform runs end-user configuration agents in host r
 
 Constitution supersedes all other platform development practices. All pull requests MUST verify compliance with constitutional principles. Complexity additions MUST be justified against minimal core philosophy. Use `.claude/docs/` files for runtime development guidance. Amendments require documented justification, community discussion, and migration plan for affected code.
 
-**Version**: 1.2.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22
+**Version**: 1.2.1 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22
