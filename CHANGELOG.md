@@ -8,6 +8,74 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/jwilger/caxton/compare/v0.1.4...v0.2.0) - 2025-09-27
+
+### Bug Fixes
+
+- *(ci)* GitHub Actions security monitoring workflow fixes - eliminate race conditions and inappropriate container scanning ([#23](https://github.com/jwilger/caxton/pull/23))
+- *(ci)* remove unsupported --format flag from cargo-deny command
+- repair Jekyll website navigation and homepage formatting ([#38](https://github.com/jwilger/caxton/pull/38))
+- *(website)* update navigation URLs to point to existing collection pages
+- *(website)* correct navigation URLs in _config.yml
+- *(website)* preserve whitespace in code blocks
+- *(website)* properly space navbar brand and menu items
+- *(jekyll)* enable relative-links plugin for collections to handle baseurl automatically
+- *(website)* align homepage installation instructions with realistic installation guide
+- *(docs)* correct nonsensical agent terminology from over-simplification
+- *(website)* improve first agent example with proper TOML format
+- *(ci)* handle multiline release body in GitHub Actions env
+- *(website)* remove non-existent main.css reference
+- *(website)* add missing navigation and footer styles
+- *(website)* improve header navigation styling
+- *(nav)* point Get Started link to homepage section
+
+### Documentation
+
+- fix markdown linting violations across entire project
+- *(installation)* remove unrealistic installation promises and fix port configuration
+- *(installation)* remove container instructions and update Rust version requirement
+- remove WASM agent references to focus on configuration agents for 1.0
+- simplify agent terminology and fix multi-agent example
+- *(adr)* add ADR-0032 for TOML agent configuration format
+- remove FIPA references throughout documentation
+- update all documentation to use TOML agent configuration format
+- cleanup ADR organization and fix status inconsistencies
+- major documentation reorganization and architectural decisions
+- *(sdlc)* complete Phase 1 Requirements Analysis and Phase 2 Event Modeling
+- amend constitution to v1.2.0 (mandatory research agent delegation)
+
+### Features
+
+- *(ci)* Advanced CI/CD Pipeline Validation Framework ([#14](https://github.com/jwilger/caxton/pull/14))
+- *(sparc)* implement mandatory PLANNING.md auto-update on story completion ([#21](https://github.com/jwilger/caxton/pull/21))
+- port domain modeling enhancements and memory system improvements ([#27](https://github.com/jwilger/caxton/pull/27))
+- *(website)* add missing Jekyll layout files
+- *(website)* add Jekyll local development environment
+- *(website)* make site logo and title clickable to return to top
+- *(mvp)* implement v0.8 MVP foundation with domain types and deployment
+- implement STORY-001 Basic CLI Foundation ([#40](https://github.com/jwilger/caxton/pull/40))
+- implement STORY-002 Basic Server Runtime ([#41](https://github.com/jwilger/caxton/pull/41))
+- Another complete reset
+- establish Caxton constitutional framework v1.1.0 ([#45](https://github.com/jwilger/caxton/pull/45))
+
+### Miscellaneous Tasks
+
+- update PLANNING.md to mark 53 complete
+- Full CI/CD Pipeline Setup ([#13](https://github.com/jwilger/caxton/pull/13))
+- remove project-specific agents/commands
+- add missing main and lib
+- clean up Cargo.toml dependencies
+
+### Refactoring
+
+- enforce clippy forbid level and remove redundant test ([#31](https://github.com/jwilger/caxton/pull/31))
+- *(website)* convert Jekyll site to pure static HTML
+- major project reset - remove cruft and return to clean foundation ([#39](https://github.com/jwilger/caxton/pull/39))
+
+### Style
+
+- *(website)* improve header logo and spacing
+
 ## [0.1.4](https://github.com/jwilger/caxton/compare/v0.1.3...v0.1.4) - 2025-08-11
 
 ### Bug Fixes
