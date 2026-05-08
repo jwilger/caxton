@@ -2,10 +2,50 @@ This is a web application written using the Phoenix web framework.
 
 ## Project guidelines
 
-- Use `mix precommit` alias when you are done with all changes and fix any pending issues
+- Use `lefthook run pre-commit` when you are done with changes and fix any pending issues. Use `lefthook run ci` for the longer manual/CI gate.
+- Run project commands inside the Nix dev shell by default: `nix develop --command bash -lc '<command>'`. This includes `mix`, `lefthook`, `tea`, `forgejo-mcp`, `node`, `bun`, test runners, formatters, linters, and build tools.
+- Use the ambient shell only for bootstrap/debug commands that intentionally inspect the environment outside the flake, such as checking `nix`, debugging shell startup, inspecting OpenCode itself, or intentionally testing outside the project toolchain.
+- After changing `flake.nix`, immediately run commands through `nix develop --command bash -lc '<command>'` in the current session instead of requiring an OpenCode restart.
+- If quoting or shell semantics fail inside `nix develop`, adjust the invocation rather than falling back to the ambient shell.
 - Use Conventional Commits for commit messages, such as `type(scope): summary`. Prefer common types like `feat`, `fix`, `docs`, `test`, `refactor`, and `chore`.
 - It is fine to use `rtk git` for Git operations. If signed commit output adds verification lines to logs, use `git log --no-show-signature` rather than avoiding `rtk`.
+- This repo uses Forgejo at `git.johnwilger.com`, not GitHub. Use `tea` for issues and pull requests. Do not introduce `gh` workflows.
+- Keep commits and PRs scoped. Stage by explicit path only; never use `git add .`, `git add -A`, `git add -u`, or `git commit -a`.
+- Before starting implementation work for an issue or PR-targeted task, create and switch to the dedicated PR branch first while the working tree is still clean. Do not edit files on `main` for issue work unless the user explicitly requests it.
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
+
+## Architecture
+
+- Keep Phoenix routes, controllers, LiveViews, components, and channels thin. Delegate application behavior to Phoenix contexts.
+- Use contexts as the public application API and as the boundary between web concerns, persistence concerns, and Commanded write-side behavior.
+- Use Ecto schemas, changesets, migrations, constraints, and indexes for Postgres persistence and read models. Enforce invariants at the database boundary when data integrity depends on them.
+- Use Commanded commands, events, aggregates, process managers, projectors, and handlers for write-side decisions and event-sourced workflows.
+- Keep command authorization explicit before dispatch. Do not hide authorization inside unrelated handlers or projectors.
+- Treat events as durable contracts. Prefer additive payload changes, version events when shape changes, and add upcasters or compatibility handling before breaking historical replay.
+- Make handlers, projectors, and process managers idempotent. Assume retries, duplicate messages, partially applied projections, and replay.
+- Keep read-model ownership clear. Ecto read models support queries and UI; Commanded aggregates own write-side invariants and decision history.
+- Avoid speculative behaviours, macros, umbrella boundaries, services, or generic abstractions. Introduce seams when tests or concrete reuse demand them.
+
+## Testing and Verification
+
+- Production Elixir/Phoenix/Commanded behavior requires observed failing ExUnit evidence before production edits.
+- Prefer focused tests first: context tests, aggregate/command tests, projection tests, `DataCase`, `ConnCase`, LiveView tests, and targeted regression tests.
+- Use factories/fixtures that express domain intent. Avoid coupling tests to unrelated implementation details.
+- For database behavior, exercise migrations, constraints, indexes, and transactions where the behavior depends on Postgres semantics.
+- Start with the focused `mix test` command that proves the current behavior or regression.
+- Use `MIX_ENV=test` for test setup, migrations, and compilation when the database is involved.
+- Run `mix format --check-formatted` before handoff.
+- Compile both test and prod code with warnings as errors for full verification: `MIX_ENV=test mix compile --warnings-as-errors --force` and `MIX_ENV=prod mix compile --warnings-as-errors --force`.
+- Run the broader test suite with warnings as errors for full verification: `mix test --warnings-as-errors`.
+- Treat Dialyzer as a required full gate once configured: `mix dialyzer --halt-exit-status`.
+- Run configured static and security checks such as `mix credo --strict` and `mix sobelow` when those tools are present.
+- State any skipped gate and the concrete reason.
+
+## Security
+
+- Do not read or commit secrets. Treat `.env*`, keys, tokens, credentials, production data, and incident material as out of scope unless the user explicitly authorizes a specific read.
+- Changes touching Phoenix authentication, session handling, CSRF, LiveView boundaries, command authorization, event payload PII, Postgres data access, background jobs, webhooks, secrets, dependencies, or deployment must be reviewed for security impact.
+- Check `docs/THREAT-MODEL.md` and relevant security tests when those files exist or when the change introduces a documented threat boundary.
 
 ### Phoenix v1.8 guidelines
 

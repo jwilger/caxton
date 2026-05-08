@@ -1,0 +1,27 @@
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      run: nix develop --command bash -lc 'mix format --check-formatted'
+    compile-test:
+      run: nix develop --command bash -lc 'MIX_ENV=test mix compile --warnings-as-errors --force'
+    stale-tests:
+      run: nix develop --command bash -lc 'pg-start && mix test --stale --warnings-as-errors'
+
+ci:
+  parallel: false
+  commands:
+    format:
+      run: nix develop --command bash -lc 'mix format --check-formatted'
+    compile-test:
+      run: nix develop --command bash -lc 'MIX_ENV=test mix compile --warnings-as-errors --force'
+    compile-prod:
+      run: nix develop --command bash -lc 'MIX_ENV=prod mix compile --warnings-as-errors --force'
+    test:
+      run: nix develop --command bash -lc 'pg-start && mix test --warnings-as-errors'
+    dialyzer:
+      run: nix develop --command bash -lc 'if mix help dialyzer >/dev/null 2>&1; then mix dialyzer --halt-exit-status; else printf "%s\n" "Skipping dialyzer - mix task not installed"; fi'
+    credo:
+      run: nix develop --command bash -lc 'if mix help credo >/dev/null 2>&1; then mix credo --strict; else printf "%s\n" "Skipping credo - mix task not installed"; fi'
+    sobelow:
+      run: nix develop --command bash -lc 'if mix help sobelow >/dev/null 2>&1; then mix sobelow; else printf "%s\n" "Skipping sobelow - mix task not installed"; fi'

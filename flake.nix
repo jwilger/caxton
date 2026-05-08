@@ -22,6 +22,13 @@
           elixir = pkgs.beam28Packages.elixir_1_19;
           postgresql = pkgs.postgresql;
           nodejs = pkgs.nodejs;
+          bun = pkgs.bun;
+          elixirLs = pkgs.beam28Packages.elixir-ls;
+          forgejoMcp = pkgs.forgejo-mcp;
+          lefthook = pkgs.lefthook;
+          nixd = pkgs.nixd;
+          tea = pkgs.tea;
+          typescriptLanguageServer = pkgs.typescript-language-server;
 
           pgStart = pkgs.writeShellApplication {
             name = "pg-start";
@@ -99,8 +106,15 @@
           default = pkgs.mkShell {
             packages = [
               elixir
+              bun
+              elixirLs
+              forgejoMcp
+              lefthook
+              nixd
               postgresql
               nodejs
+              tea
+              typescriptLanguageServer
               pgStart
               pgStop
               pgStatus
@@ -138,10 +152,23 @@
                 "$COREPACK_HOME" \
                 "$(dirname "$PGDATA")"
 
-              mix local.hex --force >/dev/null
-              mix archive.install hex phx_new --force >/dev/null
+              if ! ls "$MIX_HOME"/archives/hex-* >/dev/null 2>&1; then
+                hex_lock="$CAXTON_DEPS_ROOT/elixir/hex-install.lock"
+
+                while ! mkdir "$hex_lock" 2>/dev/null; do
+                  sleep 0.1
+                done
+
+                trap 'rmdir "$hex_lock"' EXIT
+                mix local.hex --if-missing --force >/dev/null
+                rmdir "$hex_lock"
+                trap - EXIT
+              fi
 
               echo "Elixir: $(elixir --version | tail -n 1)"
+              echo "Node: $(node --version)"
+              echo "Bun: $(bun --version)"
+              echo "Lefthook: $(lefthook version)"
               echo "PostgreSQL: $(postgres --version)"
               echo "PostgreSQL env: PGHOST=$PGHOST PGPORT=$PGPORT PGUSER=$PGUSER PGDATA=$PGDATA"
               echo "Start database: pg-start"

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    ".opencode/rules/*.md"
+  ],
+  "default_agent": "phoenix-commanded-implementer",
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "mcp": {
+    "forgejo": {
+      "type": "local",
+      "command": [
+        "nix",
+        "develop",
+        "--command",
+        "bash",
+        "-lc",
+        "exec forgejo-mcp --transport stdio --url https://git.johnwilger.com --token \"$FORGEJO_TOKEN\" --user-agent caxton/forgejo-mcp"
+      ],
+      "environment": {
+        "FORGEJO_USER_AGENT": "caxton/forgejo-mcp"
+      },
+      "enabled": true,
+      "timeout": 10000
+    }
+  },
+  "lsp": {
+    "elixir-ls": {
+      "command": ["nix", "develop", "--command", "elixir-ls"],
+      "extensions": [".ex", ".exs", ".heex"]
+    },
+    "nixd": {
+      "command": ["nix", "develop", "--command", "nixd"],
+      "extensions": [".nix"]
+    }
+  },
+  "permission": {
+    "read": {
+      "*": "allow",
+      ".env": "deny",
+      ".env.*": "deny",
+      "**/*secret*": "ask",
+      "**/*credential*": "ask",
+      "**/*.key": "deny",
+      "**/*.pem": "deny"
+    },
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "task": "allow",
+    "skill": "allow",
+    "todowrite": "allow",
+    "lsp": "allow",
+    "bash": "allow",
+    "edit": {
+      "*": "allow",
+      ".env": "deny",
+      ".env.*": "deny",
+      "**/*secret*": "ask",
+      "**/*credential*": "ask",
+      "**/*.key": "deny",
+      "**/*.pem": "deny"
+    },
+    "external_directory": "ask"
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true
+  },
+  "watcher": {
+    "ignore": [
+      ".dependencies/**",
+      ".opencode/node_modules/**",
+      "_build/**",
+      "deps/**",
+      "priv/static/assets/**"
+    ]
+  },
+  "snapshot": true,
+  "share": "manual"
+}

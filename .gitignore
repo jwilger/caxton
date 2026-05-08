@@ -37,3 +37,10 @@ npm-debug.log
 
 # Local dependency artifacts.
 .dependencies/
+
+# Local OpenCode dependency/runtime artifacts.
+/.opencode/node_modules/
+/.opencode/bun.lock
+/.opencode/package-lock.json
+/.opencode/pnpm-lock.yaml
+/.opencode/yarn.lock
