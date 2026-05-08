@@ -32,11 +32,12 @@
               deps_root="''${CAXTON_DEPS_ROOT:-$PWD/.dependencies}"
               pgdata="''${PGDATA:-$deps_root/postgres/data}"
               pglog="''${PGLOG:-$deps_root/postgres/postgres.log}"
+              pgsocketdir="''${PGSOCKETDIR:-$deps_root/postgres/run}"
               pghost="''${PGHOST:-127.0.0.1}"
               pgport="''${PGPORT:-15432}"
               pguser="''${PGUSER:-postgres}"
 
-              mkdir -p "$(dirname "$pgdata")" "$(dirname "$pglog")"
+              mkdir -p "$(dirname "$pgdata")" "$(dirname "$pglog")" "$pgsocketdir"
 
               if [ ! -s "$pgdata/PG_VERSION" ]; then
                 initdb -D "$pgdata" --encoding=UTF8 --no-locale --auth=trust --username="$pguser"
@@ -47,7 +48,7 @@
                 exit 0
               fi
 
-              pg_ctl -D "$pgdata" -l "$pglog" -o "-c listen_addresses='$pghost' -p $pgport" start
+              pg_ctl -D "$pgdata" -l "$pglog" -o "-c listen_addresses='$pghost' -p $pgport -c unix_socket_directories='$pgsocketdir'" start
 
               psql -h "$pghost" -p "$pgport" -U "$pguser" -d postgres -v ON_ERROR_STOP=1 \
                 -c "ALTER ROLE \"$pguser\" WITH LOGIN SUPERUSER PASSWORD 'postgres';" >/dev/null
