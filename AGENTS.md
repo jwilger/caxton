@@ -4,6 +4,7 @@ This is a web application written using the Phoenix web framework.
 
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use Conventional Commits for commit messages, such as `type(scope): summary`. Prefer common types like `feat`, `fix`, `docs`, `test`, `refactor`, and `chore`.
+- It is fine to use `rtk git` for Git operations. If signed commit output adds verification lines to logs, use `git log --no-show-signature` rather than avoiding `rtk`.
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 
 ### Phoenix v1.8 guidelines
