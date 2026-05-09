@@ -10,6 +10,10 @@ defmodule Caxton.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mix],
+        plt_core_path: "priv/plts"
+      ],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -27,7 +31,13 @@ defmodule Caxton.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [
+        precommit: :test,
+        credo: :dev,
+        dialyzer: :dev,
+        mix_audit: :dev,
+        sobelow: :dev
+      ]
     ]
   end
 
@@ -65,7 +75,11 @@ defmodule Caxton.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -88,7 +102,19 @@ defmodule Caxton.MixProject do
         "esbuild caxton --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      quality: [
+        "format --check-formatted",
+        "credo",
+        "cmd env MIX_ENV=dev mix dialyzer",
+        "sobelow",
+        "deps.audit"
+      ],
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "quality",
+        "test"
+      ]
     ]
   end
 end
