@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   quality-checks:
@@ -143,17 +144,16 @@ jobs:
 
       - name: Log in to Forgejo package registry
         env:
-          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
-          RELEASE_PUBLISH_USERNAME: ${{ secrets.RELEASE_PUBLISH_USERNAME }}
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_PUBLISH_USERNAME: ${{ secrets.RELEASE_PUBLISH_USERNAME || github.actor }}
         run: |
           set -euo pipefail
           if [ -z "${RELEASE_PUBLISH_TOKEN:-}" ]; then
-            printf '%s\n' 'RELEASE_PUBLISH_TOKEN is required to publish release images.' >&2
+            printf '%s\n' 'A release publish token is required to publish release images.' >&2
             exit 1
           fi
-          registry_username="${RELEASE_PUBLISH_USERNAME:-$GITHUB_ACTOR}"
           mkdir -p "$DOCKER_CONFIG"
-          printf '%s' "$RELEASE_PUBLISH_TOKEN" | docker login "$REGISTRY" --username "$registry_username" --password-stdin
+          printf '%s' "$RELEASE_PUBLISH_TOKEN" | docker login "$REGISTRY" --username "$RELEASE_PUBLISH_USERNAME" --password-stdin
 
       - name: Push release image
         run: |
