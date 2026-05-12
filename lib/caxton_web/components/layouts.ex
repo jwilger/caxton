@@ -118,7 +118,8 @@ defmodule CaxtonWeb.Layouts do
   @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
-  See <head> in root.html.heex which applies the theme before page load.
+  Theme events are handled by the bundled app.js entrypoint so the layout can
+  keep a strict Content-Security-Policy without inline scripts.
   """
   def theme_toggle(assigns) do
     ~H"""

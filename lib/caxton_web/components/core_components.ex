@@ -29,6 +29,7 @@ defmodule CaxtonWeb.CoreComponents do
   use Phoenix.Component
   use Gettext, backend: CaxtonWeb.Gettext
 
+  alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -208,7 +209,7 @@ defmodule CaxtonWeb.CoreComponents do
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
+        Form.normalize_value("checkbox", assigns[:value])
       end)
 
     ~H"""

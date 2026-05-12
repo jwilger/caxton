@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  quality-checks:
+    name: Test and quality checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install OS build dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Hex and Rebar
+        run: |
+          set -euo pipefail
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Show toolchain versions
+        run: |
+          set -euo pipefail
+          elixir --version
+          mix --version
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          mix deps.get
+          MIX_ENV=test mix deps.get
+          MIX_ENV=prod mix deps.get --only prod
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Run asset tests
+        run: node --test assets/test/*.mjs
+
+      - name: Compile test code with warnings as errors
+        run: MIX_ENV=test mix compile --warnings-as-errors --force
+
+      - name: Compile prod code with warnings as errors
+        run: MIX_ENV=prod mix compile --warnings-as-errors --force
+
+      - name: Run tests with warnings as errors
+        run: mix test --warnings-as-errors
+
+      - name: Run Dialyzer
+        run: mix dialyzer --halt-exit-status
+
+      - name: Run Credo
+        run: mix credo --strict
+
+      - name: Run Sobelow
+        run: mix sobelow --exit
+
+      - name: Run dependency audit
+        run: mix deps.audit
+
+  release-image:
+    name: Build and publish release image
+    runs-on: docker-release
+    needs: quality-checks
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+    timeout-minutes: 60
+    env:
+      REGISTRY: git.johnwilger.com
+      IMAGE_NAME: git.johnwilger.com/slipstream/caxton
+      DOCKER_CONFIG: ${{ github.workspace }}/.docker-config
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Show Docker version
+        run: docker version
+
+      - name: Verify release tag is on the default branch
+        run: |
+          set -euo pipefail
+          default_branch="${DEFAULT_BRANCH:-main}"
+          git fetch --no-tags origin "refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
+          release_commit="$(git rev-list -n 1 "${GITHUB_SHA}")"
+          git merge-base --is-ancestor "$release_commit" "origin/${default_branch}"
+
+      - name: Build release image
+        run: |
+          set -euo pipefail
+          release_tag="${GITHUB_REF_NAME}"
+          release_commit="$(git rev-list -n 1 "${GITHUB_SHA}")"
+          docker build \
+            --pull \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label "org.opencontainers.image.revision=${release_commit}" \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.version=${release_tag}" \
+            --tag "${IMAGE_NAME}:${release_tag}" \
+            --tag "${IMAGE_NAME}:latest" \
+            .
+
+      - name: Log in to Forgejo package registry
+        env:
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          RELEASE_PUBLISH_USERNAME: ${{ secrets.RELEASE_PUBLISH_USERNAME }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_PUBLISH_TOKEN:-}" ]; then
+            printf '%s\n' 'RELEASE_PUBLISH_TOKEN is required to publish release images.' >&2
+            exit 1
+          fi
+          registry_username="${RELEASE_PUBLISH_USERNAME:-$GITHUB_ACTOR}"
+          mkdir -p "$DOCKER_CONFIG"
+          printf '%s' "$RELEASE_PUBLISH_TOKEN" | docker login "$REGISTRY" --username "$registry_username" --password-stdin
+
+      - name: Push release image
+        run: |
+          set -euo pipefail
+          release_tag="${GITHUB_REF_NAME}"
+          docker push "${IMAGE_NAME}:${release_tag}"
+          docker push "${IMAGE_NAME}:latest"
+
+      - name: Remove Docker registry credentials
+        if: ${{ always() }}
+        run: rm -rf "$DOCKER_CONFIG"
