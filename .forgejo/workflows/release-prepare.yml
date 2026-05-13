@@ -1,0 +1,115 @@
+name: Prepare release PR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release-prepare:
+    runs-on: docker-release
+    if: "${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: release') }}"
+    steps:
+      - name: Install or reuse Nix
+        run: |
+          set -euo pipefail
+          NIX_BIN_DIR="/nix/var/nix/profiles/default/bin"
+          if [ ! -x "$NIX_BIN_DIR/nix" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf -L \
+              https://install.determinate.systems/nix \
+              | sh -s -- install linux \
+                --init none \
+                --no-confirm \
+                --extra-conf "experimental-features = nix-command flakes" \
+                --extra-conf "accept-flake-config = true"
+          fi
+          if ! getent group nixbld > /dev/null; then
+            groupadd -r nixbld
+          fi
+          for i in $(seq 1 32); do
+            if ! id -u "nixbld$i" > /dev/null 2>&1; then
+              useradd -r -g nixbld -G nixbld -d /var/empty \
+                -s /usr/sbin/nologin -c "Nix build user $i" "nixbld$i"
+            fi
+          done
+          echo "$NIX_BIN_DIR" >> "$GITHUB_PATH"
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - env:
+          RELEASE_PREPARE_TOKEN: ${{ secrets.RELEASE_PREPARE_TOKEN }}
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+          RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
+          RELEASE_BOT_EMAIL: ${{ vars.RELEASE_BOT_EMAIL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_PREPARE_TOKEN:-}" ]; then
+            printf 'missing RELEASE_PREPARE_TOKEN\n' >&2
+            exit 1
+          fi
+          if [ -z "${RELEASE_SIGNING_KEY:-}" ]; then
+            printf 'missing RELEASE_SIGNING_KEY\n' >&2
+            exit 1
+          fi
+          if [ -z "${RELEASE_BOT_NAME:-}" ] || [ -z "${RELEASE_BOT_EMAIL:-}" ]; then
+            printf 'missing release bot identity\n' >&2
+            exit 1
+          fi
+          signing_key="${RUNNER_TEMP:-/tmp}/release-signing-key"
+          printf '%s\n' "$RELEASE_SIGNING_KEY" > "$signing_key"
+          chmod 600 "$signing_key"
+          export GIT_AUTHOR_NAME="$RELEASE_BOT_NAME"
+          export GIT_AUTHOR_EMAIL="$RELEASE_BOT_EMAIL"
+          export GIT_COMMITTER_NAME="$RELEASE_BOT_NAME"
+          export GIT_COMMITTER_EMAIL="$RELEASE_BOT_EMAIL"
+          export GIT_CONFIG_COUNT=4
+          export GIT_CONFIG_KEY_0=gpg.format
+          export GIT_CONFIG_VALUE_0=ssh
+          export GIT_CONFIG_KEY_1=user.signingkey
+          export GIT_CONFIG_VALUE_1="$signing_key"
+          export GIT_CONFIG_KEY_2=commit.gpgsign
+          export GIT_CONFIG_VALUE_2=true
+          export GIT_CONFIG_KEY_3=url.https://release:${RELEASE_PREPARE_TOKEN}@git.johnwilger.com/.insteadOf
+          export GIT_CONFIG_VALUE_3=https://git.johnwilger.com/
+          git fetch --tags
+          release_plan="$(nix develop --command scripts/release plan --workspace .)"
+          RELEASE_VERSION="$(printf '%s\n' "$release_plan" | awk -F= '$1 == "version" { print $2 }')"
+          RELEASE_TYPE="$(printf '%s\n' "$release_plan" | awk -F= '$1 == "release_type" { print $2 }')"
+          if [ -z "$RELEASE_VERSION" ] || [ -z "$RELEASE_TYPE" ]; then
+            printf 'release plan did not produce a version and release type\n' >&2
+            exit 1
+          fi
+          branch="release/v$RELEASE_VERSION"
+          git switch -C "$branch"
+          nix develop --command scripts/release prepare --workspace . --version "$RELEASE_VERSION" --date "$(date +%F)"
+          git add mix.exs mix.lock CHANGELOG.md
+          if git diff --cached --quiet; then
+            printf 'release metadata already up to date for v%s\n' "$RELEASE_VERSION"
+            exit 0
+          fi
+          git commit -m "chore: release v$RELEASE_VERSION"
+          git push --force-with-lease origin "$branch"
+          export GITEA_SERVER_URL="https://git.johnwilger.com"
+          export GITEA_SERVER_TOKEN="$RELEASE_PREPARE_TOKEN"
+          tea_login="caxton-release-${GITHUB_RUN_ID:-$$}"
+          nix develop --command tea login add --name "$tea_login" --url "$GITEA_SERVER_URL" --token "$GITEA_SERVER_TOKEN"
+          open_prs="$(nix develop --command tea api --login "$tea_login" 'repos/Slipstream/caxton/pulls?state=open')"
+          superseded_prs="$(printf '%s\n' "$open_prs" | nix develop --command jq -r --arg branch "$branch" '.[] | select(.head.ref | startswith("release/v")) | select(.head.ref != $branch) | .number')"
+          for superseded_pr in $superseded_prs; do
+            nix develop --command tea pr close --login "$tea_login" --repo Slipstream/caxton "$superseded_pr"
+          done
+          existing_pr="$(printf '%s\n' "$open_prs" | nix develop --command jq -r --arg branch "$branch" '.[] | select(.head.ref == $branch) | .number' | head -n 1)"
+          if [ -z "$existing_pr" ]; then
+            nix develop --command tea pr create --login "$tea_login" --repo Slipstream/caxton --head "$branch" --base main --title "chore: release v$RELEASE_VERSION" --description "Prepare release v$RELEASE_VERSION.
+
+            CI publishes release-candidate Docker image links on the PR; final release entries are created only after merge to main."
+          else
+            printf 'release PR already open: #%s\n' "$existing_pr"
+            nix develop --command tea pr edit --login "$tea_login" --repo Slipstream/caxton "$existing_pr" --description "Prepare release v$RELEASE_VERSION.
+
+            CI publishes release-candidate Docker image links on the PR; final release entries are created only after merge to main."
+          fi

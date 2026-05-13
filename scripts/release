@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'usage: scripts/release <plan|prepare> --workspace <path> [--version <version>] [--date <date>] [--release-type <patch|minor|major>] [--dry-run]\n' >&2
+}
+
+command="${1:-}"
+if [[ -z "$command" ]]; then
+  usage
+  exit 2
+fi
+shift
+
+workspace="."
+version=""
+date=""
+dry_run=false
+release_type_override=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --workspace)
+      workspace="${2:-}"
+      shift 2
+      ;;
+    --version)
+      version="${2:-}"
+      shift 2
+      ;;
+    --date)
+      date="${2:-}"
+      shift 2
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    --release-type)
+      release_type_override="${2:-}"
+      shift 2
+      ;;
+    *)
+      usage
+      exit 2
+      ;;
+  esac
+done
+
+case "$command" in
+  plan)
+    python3 - "$workspace" "$workspace/mix.exs" "$release_type_override" <<'PY'
+import pathlib
+import re
+import subprocess
+import sys
+
+workspace = pathlib.Path(sys.argv[1])
+mix_exs = pathlib.Path(sys.argv[2])
+release_type_override = sys.argv[3]
+
+
+def git_output(*args):
+    return subprocess.check_output(
+        ["git", "-C", str(workspace), *args],
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+
+
+def previous_release_tag():
+    try:
+        return git_output("describe", "--tags", "--match", "v[0-9]*", "--abbrev=0").strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ""
+
+
+def commits_since_previous_release(tag):
+    revision = f"{tag}..HEAD" if tag else "HEAD"
+    try:
+        raw = git_output("log", "--no-show-signature", "--reverse", "--format=%s%x00%B%x1e", revision)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+    commits = []
+    for record in raw.split("\x1e"):
+        record = record.strip("\n")
+        if not record:
+            continue
+        subject, _, body = record.partition("\x00")
+        commits.append((subject.strip(), body))
+    return commits
+
+
+version_match = re.search(r'(?m)^\s*version:\s*"(?P<version>[^"]+)"', mix_exs.read_text())
+if not version_match:
+    raise SystemExit("project version not found")
+major, minor, patch = [int(part) for part in version_match.group("version").split(".")]
+baseline_tag = previous_release_tag()
+conventional = re.compile(r"^(?P<kind>[a-zA-Z]+)(?:\([^)]+\))?(?P<breaking>!)?: .+$")
+release_type = "patch"
+for subject, body in commits_since_previous_release(baseline_tag):
+    match = conventional.match(subject)
+    kind = match.group("kind").lower() if match else ""
+    breaking = bool(match and match.group("breaking")) or "BREAKING CHANGE:" in body
+    if breaking:
+        release_type = "major" if major > 0 else "minor"
+        break
+    if kind == "feat" and release_type == "patch":
+        release_type = "minor"
+
+if release_type_override:
+    if release_type_override not in {"patch", "minor", "major"}:
+        raise SystemExit("release type must be patch, minor, or major")
+    release_type = release_type_override
+
+if release_type == "major":
+    major += 1
+    minor = 0
+    patch = 0
+elif release_type == "minor":
+    minor += 1
+    patch = 0
+else:
+    patch += 1
+
+print(f"version={major}.{minor}.{patch}")
+print(f"release_type={release_type}")
+print(f"baseline_tag={baseline_tag}")
+PY
+    ;;
+  prepare)
+    if [[ -z "$version" ]]; then
+      usage
+      exit 2
+    fi
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      printf 'release version must be semantic x.y.z\n' >&2
+      exit 2
+    fi
+    if [[ -z "$date" ]]; then
+      date="$(date +%F)"
+    fi
+    if [[ "$dry_run" == true ]]; then
+      printf '+version: "%s"\n' "$version"
+      printf '+## [%s] - %s\n' "$version" "$date"
+      exit 0
+    fi
+    python3 - "$workspace" "$workspace/mix.exs" "$workspace/CHANGELOG.md" "$version" "$date" <<'PY'
+import pathlib
+import re
+import subprocess
+import sys
+
+workspace = pathlib.Path(sys.argv[1])
+mix_exs = pathlib.Path(sys.argv[2])
+changelog = pathlib.Path(sys.argv[3])
+version = sys.argv[4]
+date = sys.argv[5]
+
+
+def git_output(*args):
+    return subprocess.check_output(
+        ["git", "-C", str(workspace), *args],
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+
+
+def previous_release_tag():
+    try:
+        return git_output("describe", "--tags", "--match", "v[0-9]*", "--abbrev=0").strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return ""
+
+
+def commits_since_previous_release():
+    tag = previous_release_tag()
+    revision = f"{tag}..HEAD" if tag else "HEAD"
+    try:
+        raw = git_output("log", "--no-show-signature", "--reverse", "--format=%s%x00%B%x1e", revision)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+    commits = []
+    for record in raw.split("\x1e"):
+        record = record.strip("\n")
+        if not record:
+            continue
+        subject, _, body = record.partition("\x00")
+        commits.append((subject.strip(), body))
+    return commits
+
+
+def release_notes(existing_changelog_entries):
+    headings = [
+        ("feat", "Added"),
+        ("changed", "Changed"),
+        ("deprecated", "Deprecated"),
+        ("fix", "Fixed"),
+        ("security", "Security"),
+        ("other", "Other"),
+    ]
+    grouped = {key: [] for key, _ in headings}
+    conventional = re.compile(r"^(?P<kind>[a-zA-Z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?: (?P<message>.+)$")
+    for subject, body in commits_since_previous_release():
+        match = conventional.match(subject)
+        if match:
+            kind = match.group("kind").lower()
+            scope = match.group("scope")
+            breaking = bool(match.group("breaking")) or "BREAKING CHANGE:" in body
+            message = match.group("message")
+        else:
+            kind = "other"
+            scope = None
+            breaking = "BREAKING CHANGE:" in body
+            message = subject
+        bucket = kind if kind in grouped and kind != "other" else "other"
+        parts = ["-"]
+        if breaking:
+            parts.append("[**breaking**]")
+        if scope:
+            parts.append(f"*({scope})*")
+        parts.append(message)
+        note = " ".join(parts)
+        if note not in existing_changelog_entries:
+            grouped[bucket].append(note)
+    lines = []
+    for key, heading in headings:
+        if grouped[key]:
+            lines.extend([f"### {heading}", "", *grouped[key], ""])
+    return "\n".join(lines).rstrip()
+
+
+mix_text = mix_exs.read_text()
+updated_mix, replacements = re.subn(
+    r'(?m)^(\s*version:\s*")[^"]+(",\s*)$',
+    rf'\g<1>{version}\2',
+    mix_text,
+    count=1,
+)
+if replacements != 1:
+    raise SystemExit("project version not found")
+mix_exs.write_text(updated_mix)
+
+changelog_text = changelog.read_text()
+existing_changelog_entries = {
+    line.strip()
+    for line in changelog_text.splitlines()
+    if line.startswith("- ")
+}
+notes = release_notes(existing_changelog_entries)
+release_section = f"## [{version}] - {date}"
+if notes:
+    release_section = f"{release_section}\n\n{notes}"
+marker = "<!-- release-prepare inserts generated release sections below this line -->"
+if marker not in changelog_text:
+    raise SystemExit("changelog release insertion marker not found")
+changelog.write_text(changelog_text.replace(marker, f"{marker}\n\n{release_section}", 1))
+PY
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac

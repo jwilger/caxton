@@ -11,19 +11,20 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## CI and releases
 
-Forgejo Actions runs the project quality gates on pull requests. Pushing a tag
-that starts with `v` skips the quality gates, pulls the already-tested image for
-the tagged commit, and promotes it to:
+Forgejo Actions runs the project quality gates on pull requests. Release PRs
+opened from `release/v*` branches by the configured release bot additionally
+build and publish a release-candidate image at
+`git.johnwilger.com/slipstream/caxton-pr:release-v<version>-<sha>` and write
+that image link back to the PR body. After the release PR merges to `main`, the
+release publisher promotes that reviewed image digest to:
 
-* `git.johnwilger.com/slipstream/caxton:<tag>`
+* `git.johnwilger.com/slipstream/caxton:<version>`
 * `git.johnwilger.com/slipstream/caxton:latest`
 
 The release workflow requires a repository secret named
 `RELEASE_PUBLISH_TOKEN` with permission to push container packages to
-`git.johnwilger.com`. If that token belongs to a service account instead of the
-tag-pushing actor, also set `RELEASE_PUBLISH_USERNAME` to the token owner's
-username. Protect `v*` tags in Forgejo so only release maintainers can publish
-images.
+`git.johnwilger.com` and a repository variable named `RELEASE_BOT_NAME` for the
+trusted release identity.
 
 The image starts the Phoenix release with `PHX_SERVER=true`. At runtime, provide
 the production environment variables required by `config/runtime.exs`, including

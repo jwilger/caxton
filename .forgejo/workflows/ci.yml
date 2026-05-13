@@ -3,13 +3,9 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   compile-dev:
@@ -238,64 +234,228 @@ jobs:
       - name: Run dependency audit
         run: mix deps.audit
 
-  release-image:
-    name: Promote release image
+  pr-artifact-build:
+    name: Build release PR image artifact
     runs-on: docker-release
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-    timeout-minutes: 60
+    needs: quality-checks
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
     env:
-      REGISTRY: git.johnwilger.com
-      IMAGE_NAME: git.johnwilger.com/slipstream/caxton
-      DOCKER_CONFIG: ${{ github.workspace }}/.docker-config
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - name: Skip non-release PR artifact build
+        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME) }}
+        run: |
+          printf 'Skipping release PR artifact build for ordinary non-release PR.\n'
+
+      - uses: actions/checkout@v4
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
         with:
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Show Docker version
-        run: docker version
-
-      - name: Verify release tag is on the default branch
+      - name: Build release PR Docker image archive
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
         run: |
           set -euo pipefail
-          default_branch="${DEFAULT_BRANCH:-main}"
-          git fetch --no-tags origin "refs/heads/${default_branch}:refs/remotes/origin/${default_branch}"
-          release_commit="$(git rev-list -n 1 "${GITHUB_SHA}")"
-          git merge-base --is-ancestor "$release_commit" "origin/${default_branch}"
+          mkdir -p pr-publication-artifacts
+          RELEASE_VERSION="$(python3 - <<'PY'
+          import pathlib
+          import re
 
-      - name: Log in to Forgejo package registry
-        env:
-          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN || secrets.GITHUB_TOKEN }}
-          RELEASE_PUBLISH_USERNAME: ${{ secrets.RELEASE_PUBLISH_USERNAME || github.actor }}
-        run: |
-          set -euo pipefail
-          if [ -z "${RELEASE_PUBLISH_TOKEN:-}" ]; then
-            printf '%s\n' 'A release publish token is required to publish release images.' >&2
+          match = re.search(r'(?m)^\s*version:\s*"(?P<version>[^"]+)"', pathlib.Path("mix.exs").read_text())
+          if not match:
+              raise SystemExit("project version not found in mix.exs")
+          print(match.group("version"))
+          PY
+          )"
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            printf 'release version was not semantic: %s\n' "$RELEASE_VERSION" >&2
             exit 1
           fi
-          mkdir -p "$DOCKER_CONFIG"
-          printf '%s' "$RELEASE_PUBLISH_TOKEN" | docker login "$REGISTRY" --username "$RELEASE_PUBLISH_USERNAME" --password-stdin
+          docker build --pull --tag caxton-pr-artifact:release-v$RELEASE_VERSION-$PR_HEAD_SHA .
+          docker save caxton-pr-artifact:release-v$RELEASE_VERSION-$PR_HEAD_SHA -o pr-publication-artifacts/caxton-image.tar
+          printf 'PR_NUMBER=%s\nPR_HEAD_SHA=%s\nRELEASE_VERSION=%s\n' "$PR_NUMBER" "$PR_HEAD_SHA" "$RELEASE_VERSION" > pr-publication-artifacts/pr-metadata.env
 
-      - name: Promote tested image to release tags
+      - uses: actions/upload-artifact@v3
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        with:
+          name: pr-publication-artifacts
+          path: pr-publication-artifacts
+
+  pr-packages:
+    name: Publish release PR packages
+    runs-on: ubuntu-24.04
+    needs: pr-artifact-build
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Skip non-release PR artifact publication
+        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME) }}
+        run: |
+          printf 'Skipping release PR artifact publication for ordinary non-release PR.\n'
+
+      - uses: actions/download-artifact@v3
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        with:
+          name: pr-publication-artifacts
+          path: pr-publication-artifacts
+
+      - name: Install or reuse Nix
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
         run: |
           set -euo pipefail
-          release_tag="${GITHUB_REF_NAME}"
-          release_commit="$(git rev-list -n 1 "${GITHUB_SHA}")"
-          tested_image="${IMAGE_NAME}:${release_commit}"
-          docker pull "$tested_image"
-          docker tag "$tested_image" "${IMAGE_NAME}:${release_tag}"
-          docker tag "$tested_image" "${IMAGE_NAME}:latest"
+          NIX_BIN_DIR="/nix/var/nix/profiles/default/bin"
+          if [ -x "$NIX_BIN_DIR/nix" ]; then
+            echo "Nix already present at $NIX_BIN_DIR (volume cache hit)"
+          else
+            echo "Installing Nix (cold start or fresh volume)"
+            curl --proto '=https' --tlsv1.2 -sSf -L \
+              https://install.determinate.systems/nix \
+              | sh -s -- install linux \
+                --init none \
+                --no-confirm \
+                --extra-conf "experimental-features = nix-command flakes" \
+                --extra-conf "accept-flake-config = true"
+          fi
+          if ! getent group nixbld > /dev/null; then
+            groupadd -r nixbld
+          fi
+          for i in $(seq 1 32); do
+            if ! id -u "nixbld$i" > /dev/null 2>&1; then
+              useradd -r -g nixbld -G nixbld -d /var/empty \
+                -s /usr/sbin/nologin -c "Nix build user $i" "nixbld$i"
+            fi
+          done
+          PATH="$NIX_BIN_DIR:$PATH" nix profile install \
+            nixpkgs#skopeo \
+            nixpkgs#jq \
+            nixpkgs#curl \
+            nixpkgs#coreutils \
+            nixpkgs#gawk \
+            nixpkgs#gnused
+          echo "$NIX_BIN_DIR" >> "$GITHUB_PATH"
 
-      - name: Push release image
+      - name: Resolve trusted PR package tools
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
         run: |
           set -euo pipefail
-          release_tag="${GITHUB_REF_NAME}"
-          docker push "${IMAGE_NAME}:${release_tag}"
-          docker push "${IMAGE_NAME}:latest"
+          SKOPEO=/nix/var/nix/profiles/default/bin/skopeo
+          JQ=/nix/var/nix/profiles/default/bin/jq
+          CURL=/nix/var/nix/profiles/default/bin/curl
+          MKTEMP=/nix/var/nix/profiles/default/bin/mktemp
+          CAT=/nix/var/nix/profiles/default/bin/cat
+          AWK=/nix/var/nix/profiles/default/bin/awk
+          SED=/nix/var/nix/profiles/default/bin/sed
+          MKDIR=/nix/var/nix/profiles/default/bin/mkdir
+          [ -x "$SKOPEO" ]
+          [ -x "$JQ" ]
+          [ -x "$CURL" ]
+          [ -x "$MKTEMP" ]
+          [ -x "$CAT" ]
+          [ -x "$AWK" ]
+          [ -x "$SED" ]
+          [ -x "$MKDIR" ]
+          printf 'SKOPEO=%s\n' "$SKOPEO" >> "$GITHUB_ENV"
+          printf 'JQ=%s\n' "$JQ" >> "$GITHUB_ENV"
+          printf 'CURL=%s\n' "$CURL" >> "$GITHUB_ENV"
+          printf 'MKTEMP=%s\n' "$MKTEMP" >> "$GITHUB_ENV"
+          printf 'CAT=%s\n' "$CAT" >> "$GITHUB_ENV"
+          printf 'AWK=%s\n' "$AWK" >> "$GITHUB_ENV"
+          printf 'SED=%s\n' "$SED" >> "$GITHUB_ENV"
+          printf 'MKDIR=%s\n' "$MKDIR" >> "$GITHUB_ENV"
 
-      - name: Remove Docker registry credentials
-        if: ${{ always() }}
-        run: rm -rf "$DOCKER_CONFIG"
+      - name: Publish release PR Docker image package
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        env:
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
+        run: |
+          set -euo pipefail
+          unset BASH_ENV ENV LD_PRELOAD LD_LIBRARY_PATH DYLD_INSERT_LIBRARIES PYTHONPATH PERL5LIB RUBYLIB NODE_OPTIONS
+          PR_HEAD_SHA=""
+          RELEASE_VERSION=""
+          while IFS='=' read -r key value; do
+            case "$key" in
+              PR_NUMBER) PR_NUMBER="$value" ;;
+              PR_HEAD_SHA) PR_HEAD_SHA="$value" ;;
+              RELEASE_VERSION) RELEASE_VERSION="$value" ;;
+            esac
+          done < pr-publication-artifacts/pr-metadata.env
+          if [ -z "$RELEASE_VERSION" ]; then
+            printf 'release PR artifact metadata did not include RELEASE_VERSION\n' >&2
+            exit 1
+          fi
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            printf 'invalid release PR artifact metadata\n' >&2
+            exit 1
+          fi
+          if [ -z "${RELEASE_PUBLISH_TOKEN:-}" ] || [ -z "${RELEASE_BOT_NAME:-}" ]; then
+            printf 'missing RELEASE_PUBLISH_TOKEN or RELEASE_BOT_NAME for PR package publication\n' >&2
+            exit 1
+          fi
+          "$MKDIR" -p "$HOME/.config/containers"
+          "$CAT" > "$HOME/.config/containers/policy.json" <<'EOF'
+          {"default":[{"type":"insecureAcceptAnything"}]}
+          EOF
+          published_image="docker://git.johnwilger.com/slipstream/caxton-pr:release-v$RELEASE_VERSION-$PR_HEAD_SHA"
+          "$SKOPEO" copy --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_image"
+          release_image_digest="$("$SKOPEO" inspect --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$published_image" | "$JQ" -r '.Digest')"
+          if [[ ! "$release_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            printf 'published release PR image digest was not sha256-shaped: %s\n' "$release_image_digest" >&2
+            exit 1
+          fi
+          printf 'RELEASE_IMAGE_DIGEST=%s\n' "$release_image_digest" >> "$GITHUB_ENV"
+
+      - name: Update PR description with package links
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        env:
+          GITEA_SERVER_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          GITEA_SERVER_URL: https://git.johnwilger.com
+          CURRENT_PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          unset BASH_ENV ENV LD_PRELOAD LD_LIBRARY_PATH DYLD_INSERT_LIBRARIES PYTHONPATH PERL5LIB RUBYLIB NODE_OPTIONS
+          PR_HEAD_SHA=""
+          RELEASE_VERSION=""
+          while IFS='=' read -r key value; do
+            case "$key" in
+              PR_NUMBER) PR_NUMBER="$value" ;;
+              PR_HEAD_SHA) PR_HEAD_SHA="$value" ;;
+              RELEASE_VERSION) RELEASE_VERSION="$value" ;;
+            esac
+          done < pr-publication-artifacts/pr-metadata.env
+          if [ -z "$RELEASE_VERSION" ]; then
+            printf 'release PR artifact metadata did not include RELEASE_VERSION\n' >&2
+            exit 1
+          fi
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ ! "${RELEASE_IMAGE_DIGEST:-}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            printf 'invalid release PR artifact metadata\n' >&2
+            exit 1
+          fi
+          body_file="$($MKTEMP)"
+          block_file="$($MKTEMP)"
+          "$CAT" > "$block_file" <<EOF
+          <!-- caxton:artifact-links:start -->
+          PR artifacts for $PR_HEAD_SHA:
+
+          Docker image: git.johnwilger.com/slipstream/caxton-pr:release-v$RELEASE_VERSION-$PR_HEAD_SHA
+          Docker image digest: $RELEASE_IMAGE_DIGEST
+          <!-- caxton:artifact-links:end -->
+          EOF
+          printf '%s\n' "$CURRENT_PR_BODY" | "$AWK" '
+            /<!-- caxton:artifact-links:start -->/ { skipping = 1; next }
+            /<!-- caxton:artifact-links:end -->/ { skipping = 0; next }
+            !skipping { print }
+          ' | "$SED" -e :a -e '/^\n*$/{$d;N;ba' -e '}' > "$body_file"
+          if [ -s "$body_file" ]; then
+            printf '\n\n' >> "$body_file"
+          fi
+          "$CAT" "$block_file" >> "$body_file"
+          "$JQ" -n --arg body "$("$CAT" "$body_file")" '{body: $body}' > "$body_file.json"
+          "$CURL" -fsS -X PATCH \
+            -H "Authorization: token $GITEA_SERVER_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @"$body_file.json" \
+            "$GITEA_SERVER_URL/api/v1/repos/Slipstream/caxton/pulls/$PR_NUMBER"

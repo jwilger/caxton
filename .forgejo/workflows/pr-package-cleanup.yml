@@ -1,0 +1,148 @@
+name: Clean PR packages
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-pr-packages:
+    name: Delete packages for merged PRs
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.pull_request.merged == true || github.event_name == 'schedule' }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Install or reuse Nix
+        run: |
+          set -euo pipefail
+          NIX_BIN_DIR="/nix/var/nix/profiles/default/bin"
+          if [ -x "$NIX_BIN_DIR/nix" ]; then
+            echo "Nix already present at $NIX_BIN_DIR (volume cache hit)"
+          else
+            echo "Installing Nix (cold start or fresh volume)"
+            curl --proto '=https' --tlsv1.2 -sSf -L \
+              https://install.determinate.systems/nix \
+              | sh -s -- install linux \
+                --init none \
+                --no-confirm \
+                --extra-conf "experimental-features = nix-command flakes" \
+                --extra-conf "accept-flake-config = true"
+          fi
+          if ! getent group nixbld > /dev/null; then
+            groupadd -r nixbld
+          fi
+          for i in $(seq 1 32); do
+            if ! id -u "nixbld$i" > /dev/null 2>&1; then
+              useradd -r -g nixbld -G nixbld -d /var/empty \
+                -s /usr/sbin/nologin -c "Nix build user $i" "nixbld$i"
+            fi
+          done
+          PATH="$NIX_BIN_DIR:$PATH" nix profile install \
+            nixpkgs#jq \
+            nixpkgs#curl \
+            nixpkgs#coreutils
+          echo "$NIX_BIN_DIR" >> "$GITHUB_PATH"
+
+      - name: Resolve trusted cleanup tools
+        run: |
+          set -euo pipefail
+          JQ=/nix/var/nix/profiles/default/bin/jq
+          CURL=/nix/var/nix/profiles/default/bin/curl
+          CAT=/nix/var/nix/profiles/default/bin/cat
+          MKTEMP=/nix/var/nix/profiles/default/bin/mktemp
+          [ -x "$JQ" ]
+          [ -x "$CURL" ]
+          [ -x "$CAT" ]
+          [ -x "$MKTEMP" ]
+          printf 'JQ=%s\n' "$JQ" >> "$GITHUB_ENV"
+          printf 'CURL=%s\n' "$CURL" >> "$GITHUB_ENV"
+          printf 'CAT=%s\n' "$CAT" >> "$GITHUB_ENV"
+          printf 'MKTEMP=%s\n' "$MKTEMP" >> "$GITHUB_ENV"
+
+      - name: Delete release PR Docker packages
+        env:
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
+        run: |
+          set -euo pipefail
+          unset BASH_ENV ENV LD_PRELOAD LD_LIBRARY_PATH DYLD_INSERT_LIBRARIES PYTHONPATH PERL5LIB RUBYLIB NODE_OPTIONS
+          delete_package() {
+            url="$1"
+            http_code="$(${CURL} -sS -o /tmp/caxton-delete-package-response -w "%{http_code}" -X DELETE -u "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$url")"
+            case "$http_code" in
+              2*|404)
+                ;;
+              *)
+                printf 'package delete failed with HTTP %s for %s\n' "$http_code" "$url" >&2
+                "${CAT}" /tmp/caxton-delete-package-response >&2
+                deletion_failures=$((deletion_failures + 1))
+                ;;
+            esac
+          }
+          list_package_versions() {
+            versions_file="$1"
+            page=1
+            : > "$versions_file"
+            while :; do
+              url="https://git.johnwilger.com/api/v1/packages/Slipstream?type=container&q=caxton-pr&limit=100&page=${page}"
+              response_file="$(${MKTEMP})"
+              http_code="$(${CURL} -sS -o "$response_file" -w "%{http_code}" -u "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$url")"
+              case "$http_code" in
+                2*)
+                  "${JQ}" -r --arg package_name "caxton-pr" '.[] | select(.name == $package_name) | .version' "$response_file" >> "$versions_file"
+                  [ "$("${JQ}" 'length' "$response_file")" -eq 0 ] && break
+                  ;;
+                404)
+                  break
+                  ;;
+                *)
+                  printf 'package version list failed with HTTP %s for %s\n' "$http_code" "$url" >&2
+                  "${CAT}" "$response_file" >&2
+                  return 1
+                  ;;
+              esac
+              page=$((page + 1))
+            done
+          }
+          pr_is_merged() {
+            pr_number="$1"
+            http_code="$(${CURL} -sS -o /tmp/caxton-pr-response -w "%{http_code}" -u "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "https://git.johnwilger.com/api/v1/repos/Slipstream/caxton/pulls/$pr_number")"
+            case "$http_code" in
+              2*) "${JQ}" -e '.merged == true' /tmp/caxton-pr-response > /dev/null ;;
+              404) return 1 ;;
+              *)
+                printf 'PR lookup failed with HTTP %s for PR %s\n' "$http_code" "$pr_number" >&2
+                "${CAT}" /tmp/caxton-pr-response >&2
+                deletion_failures=$((deletion_failures + 1))
+                return 1
+                ;;
+            esac
+          }
+          deletion_failures=0
+          [ "$JQ" = /nix/var/nix/profiles/default/bin/jq ]
+          container_versions_file="$(${MKTEMP})"
+          if ! list_package_versions "$container_versions_file"; then
+            deletion_failures=$((deletion_failures + 1))
+          fi
+          if [ "${GITHUB_EVENT_NAME:-}" = "schedule" ]; then
+            while IFS= read -r caxton_pr_version; do
+              version="$caxton_pr_version"
+              pr_number="${version#pr-}"
+              pr_number="${pr_number%%-*}"
+              container_prefix="pr-${pr_number}-"
+              [ -n "$version" ] && [ "${version#"$container_prefix"}" != "$version" ] && pr_is_merged "$pr_number" && delete_package "https://git.johnwilger.com/api/v1/packages/Slipstream/container/caxton-pr/$version"
+            done < "$container_versions_file"
+          else
+            while IFS= read -r caxton_pr_version; do
+              version="$caxton_pr_version"
+              [ -n "$version" ] && [ "${version#"pr-$PR_NUMBER-"}" != "$version" ] && delete_package "https://git.johnwilger.com/api/v1/packages/Slipstream/container/caxton-pr/$version"
+            done < "$container_versions_file"
+          fi
+          if [ "$deletion_failures" -ne 0 ]; then
+            exit 1
+          fi
