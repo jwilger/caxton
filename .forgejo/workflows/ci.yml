@@ -259,18 +259,121 @@ jobs:
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Skip non-release PR artifact build
-        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME) }}
+        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           printf 'Skipping release PR artifact build for ordinary non-release PR.\n'
 
       - uses: actions/checkout@v4
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate release PR artifact provenance
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          RELEASE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          RELEASE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_BOT_NAME:-}" ]; then
+            printf 'missing RELEASE_BOT_NAME repository variable\n' >&2
+            exit 1
+          fi
+          if [ "$(git log -1 --format=%an "$RELEASE_HEAD_SHA")" != "$RELEASE_BOT_NAME" ]; then
+            printf 'release PR head commit author was not %s\n' "$RELEASE_BOT_NAME" >&2
+            exit 1
+          fi
+          if [[ "$(git log -1 --format=%s "$RELEASE_HEAD_SHA")" == "chore: release v"* ]]; then
+            :
+          else
+            printf 'release PR head commit message was not a release commit\n' >&2
+            exit 1
+          fi
+          changed_files="$(git diff --name-only "$RELEASE_BASE_SHA" "$RELEASE_HEAD_SHA")"
+          if [ -z "$changed_files" ]; then
+            printf 'release PR did not change release metadata\n' >&2
+            exit 1
+          fi
+          while IFS= read -r changed_file; do
+            case "$changed_file" in
+              mix.exs|CHANGELOG.md)
+                ;;
+              *)
+                printf 'refusing token-bearing PR package publish for release PR file: %s\n' "$changed_file" >&2
+                exit 1
+                ;;
+            esac
+          done <<< "$changed_files"
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          import sys
+
+          base_sha = os.environ["RELEASE_BASE_SHA"]
+          head_sha = os.environ["RELEASE_HEAD_SHA"]
+          release_branch = os.environ["RELEASE_BRANCH"]
+
+
+          def git_show(revision, path):
+              return subprocess.check_output(
+                  ["git", "show", f"{revision}:{path}"],
+                  text=True,
+              )
+
+
+          def fail(message):
+              print(message, file=sys.stderr)
+              raise SystemExit(1)
+
+
+          version_pattern = re.compile(r'(?m)^(\s*version:\s*")(?P<version>[^"]+)(",\s*)$')
+          base_mix = git_show(base_sha, "mix.exs")
+          head_mix = git_show(head_sha, "mix.exs")
+          base_version = version_pattern.search(base_mix)
+          head_version = version_pattern.search(head_mix)
+          if not base_version or not head_version:
+              fail("project version not found in release PR mix.exs")
+          release_version = head_version.group("version")
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", release_version):
+              fail(f"release version was not semantic: {release_version}")
+          expected_mix = (
+              base_mix[: base_version.start()]
+              + base_version.group(1)
+              + release_version
+              + base_version.group(3)
+              + base_mix[base_version.end() :]
+          )
+          if head_mix != expected_mix:
+              fail("release PR mix.exs changed more than the project version")
+          if release_branch != f"release/v{release_version}":
+              fail("release PR branch did not match the release version")
+
+          marker = "<!-- release-prepare inserts generated release sections below this line -->"
+          base_changelog = git_show(base_sha, "CHANGELOG.md")
+          head_changelog = git_show(head_sha, "CHANGELOG.md")
+          marker_index = base_changelog.find(marker)
+          if marker_index < 0:
+              fail("changelog release insertion marker not found")
+          prefix_end = marker_index + len(marker)
+          prefix = base_changelog[:prefix_end]
+          suffix = base_changelog[prefix_end:]
+          if not head_changelog.startswith(prefix) or not head_changelog.endswith(suffix):
+              fail("release PR changelog changed outside the generated release section")
+          inserted = head_changelog[len(prefix) : len(head_changelog) - len(suffix) if suffix else len(head_changelog)]
+          section_pattern = re.compile(
+              rf"\n\n## \[{re.escape(release_version)}\] - \d{{4}}-\d{{2}}-\d{{2}}(?:\n\n[\s\S]+)?$"
+          )
+          if not section_pattern.fullmatch(inserted):
+              fail("release PR changelog did not add the expected generated release section")
+          PY
 
       - name: Build release PR Docker image archive
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set -euo pipefail
           mkdir -p pr-publication-artifacts
@@ -293,7 +396,7 @@ jobs:
           printf 'PR_NUMBER=%s\nPR_HEAD_SHA=%s\nRELEASE_VERSION=%s\n' "$PR_NUMBER" "$PR_HEAD_SHA" "$RELEASE_VERSION" > pr-publication-artifacts/pr-metadata.env
 
       - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           name: pr-publication-artifacts
           path: pr-publication-artifacts
@@ -307,18 +410,18 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - name: Skip non-release PR artifact publication
-        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME) }}
+        if: ${{ !(startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           printf 'Skipping release PR artifact publication for ordinary non-release PR.\n'
 
       - uses: actions/download-artifact@v3
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           name: pr-publication-artifacts
           path: pr-publication-artifacts
 
       - name: Install or reuse Nix
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set -euo pipefail
           NIX_BIN_DIR="/nix/var/nix/profiles/default/bin"
@@ -353,7 +456,7 @@ jobs:
           echo "$NIX_BIN_DIR" >> "$GITHUB_PATH"
 
       - name: Resolve trusted PR package tools
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set -euo pipefail
           SKOPEO=/nix/var/nix/profiles/default/bin/skopeo
@@ -382,7 +485,7 @@ jobs:
           printf 'MKDIR=%s\n' "$MKDIR" >> "$GITHUB_ENV"
 
       - name: Publish release PR Docker image package
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
           RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
@@ -424,7 +527,7 @@ jobs:
           printf 'RELEASE_IMAGE_DIGEST=%s\n' "$release_image_digest" >> "$GITHUB_ENV"
 
       - name: Update PR description with package links
-        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == vars.RELEASE_BOT_NAME }}
+        if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           GITEA_SERVER_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
           GITEA_SERVER_URL: https://git.johnwilger.com

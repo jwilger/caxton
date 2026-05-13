@@ -12,8 +12,8 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 ## CI and releases
 
 Forgejo Actions runs the project quality gates on pull requests. Release PRs
-opened from `release/v*` branches by the configured release bot additionally
-build and publish a release-candidate image at
+opened from same-repository `release/v*` branches with a release-bot-authored
+release metadata commit additionally build and publish a release-candidate image at
 `git.johnwilger.com/slipstream/caxton-pr:release-v<version>-<sha>` and write
 that image link back to the PR body. After the release PR merges to `main`, the
 release publisher promotes that reviewed image digest to:
