@@ -12,9 +12,152 @@ permissions:
   packages: write
 
 jobs:
+  compile-dev:
+    name: Compile dev code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install OS build dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Hex and Rebar
+        run: |
+          set -euo pipefail
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          mix deps.get
+
+      - name: Compile dev code with warnings as errors
+        run: mix compile --warnings-as-errors --force
+
+      - name: Upload dev compilation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-dev-${{ github.sha }}
+          path: |
+            deps
+            _build/dev
+          retention-days: 1
+
+  compile-test:
+    name: Compile test code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install OS build dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Hex and Rebar
+        run: |
+          set -euo pipefail
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          mix deps.get
+          MIX_ENV=test mix deps.get
+
+      - name: Compile test code with warnings as errors
+        run: MIX_ENV=test mix compile --warnings-as-errors --force
+
+      - name: Upload test compilation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-test-${{ github.sha }}
+          path: |
+            deps
+            _build/test
+          retention-days: 1
+
+  compile-prod:
+    name: Compile prod code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install OS build dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Hex and Rebar
+        run: |
+          set -euo pipefail
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          MIX_ENV=prod mix deps.get --only prod
+
+      - name: Compile prod code with warnings as errors
+        run: MIX_ENV=prod mix compile --warnings-as-errors --force
+
+      - name: Upload prod compilation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-prod-${{ github.sha }}
+          path: |
+            deps
+            _build/prod
+          retention-days: 1
+
   quality-checks:
     name: Test and quality checks
     runs-on: ubuntu-24.04
+    needs:
+      - compile-dev
+      - compile-test
+      - compile-prod
     timeout-minutes: 60
     services:
       postgres:
@@ -69,19 +212,12 @@ jobs:
           set -euo pipefail
           mix deps.get
           MIX_ENV=test mix deps.get
-          MIX_ENV=prod mix deps.get --only prod
 
       - name: Check formatting
         run: mix format --check-formatted
 
       - name: Run asset tests
         run: node --test assets/test/*.mjs
-
-      - name: Compile test code with warnings as errors
-        run: MIX_ENV=test mix compile --warnings-as-errors --force
-
-      - name: Compile prod code with warnings as errors
-        run: MIX_ENV=prod mix compile --warnings-as-errors --force
 
       - name: Run tests with warnings as errors
         run: mix test --warnings-as-errors
@@ -101,7 +237,9 @@ jobs:
   release-image:
     name: Build and publish release image
     runs-on: docker-release
-    needs: quality-checks
+    needs:
+      - compile-prod
+      - quality-checks
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
     timeout-minutes: 60
     env:

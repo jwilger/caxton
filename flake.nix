@@ -165,13 +165,6 @@
                 trap - EXIT
               fi
 
-              echo "Elixir: $(elixir --version | tail -n 1)"
-              echo "Node: $(node --version)"
-              echo "Bun: $(bun --version)"
-              echo "Lefthook: $(lefthook version)"
-              echo "PostgreSQL: $(postgres --version)"
-              echo "PostgreSQL env: PGHOST=$PGHOST PGPORT=$PGPORT PGUSER=$PGUSER PGDATA=$PGDATA"
-              echo "Start database: pg-start"
             '';
           };
         });
