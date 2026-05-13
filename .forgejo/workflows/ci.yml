@@ -46,13 +46,14 @@ jobs:
       - name: Compile dev code with warnings as errors
         run: mix compile --warnings-as-errors --force
 
+      - name: Pack dev compilation artifact
+        run: tar -czf compiled-dev.tar.gz deps _build/dev
+
       - name: Upload dev compilation artifact
         uses: actions/upload-artifact@v3
         with:
           name: compiled-dev-${{ github.sha }}
-          path: |
-            deps
-            _build/dev
+          path: compiled-dev.tar.gz
           retention-days: 1
 
   compile-test:
@@ -94,13 +95,14 @@ jobs:
       - name: Compile test code with warnings as errors
         run: MIX_ENV=test mix compile --warnings-as-errors --force
 
+      - name: Pack test compilation artifact
+        run: tar -czf compiled-test.tar.gz deps _build/test
+
       - name: Upload test compilation artifact
         uses: actions/upload-artifact@v3
         with:
           name: compiled-test-${{ github.sha }}
-          path: |
-            deps
-            _build/test
+          path: compiled-test.tar.gz
           retention-days: 1
 
   compile-prod:
@@ -141,13 +143,14 @@ jobs:
       - name: Compile prod code with warnings as errors
         run: MIX_ENV=prod mix compile --warnings-as-errors --force
 
+      - name: Pack prod compilation artifact
+        run: tar -czf compiled-prod.tar.gz deps _build/prod
+
       - name: Upload prod compilation artifact
         uses: actions/upload-artifact@v3
         with:
           name: compiled-prod-${{ github.sha }}
-          path: |
-            deps
-            _build/prod
+          path: compiled-prod.tar.gz
           retention-days: 1
 
   quality-checks:
@@ -207,11 +210,23 @@ jobs:
           elixir --version
           mix --version
 
-      - name: Install dependencies
-        run: |
-          set -euo pipefail
-          mix deps.get
-          MIX_ENV=test mix deps.get
+      - name: Restore compiled dev artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: compiled-dev-${{ github.sha }}
+          path: ci-artifacts
+
+      - name: Unpack compiled dev artifact
+        run: tar -xzf ci-artifacts/compiled-dev.tar.gz
+
+      - name: Restore compiled test artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: compiled-test-${{ github.sha }}
+          path: ci-artifacts
+
+      - name: Unpack compiled test artifact
+        run: tar -xzf ci-artifacts/compiled-test.tar.gz
 
       - name: Check formatting
         run: mix format --check-formatted
