@@ -12,8 +12,8 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 ## CI and releases
 
 Forgejo Actions runs the project quality gates on pull requests. Pushing a tag
-that starts with `v` runs the same gates, builds the release Docker image, and
-pushes it to:
+that starts with `v` skips the quality gates, pulls the already-tested image for
+the tagged commit, and promotes it to:
 
 * `git.johnwilger.com/slipstream/caxton:<tag>`
 * `git.johnwilger.com/slipstream/caxton:latest`
