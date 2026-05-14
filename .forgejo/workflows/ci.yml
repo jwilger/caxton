@@ -391,9 +391,14 @@ jobs:
             printf 'release version was not semantic: %s\n' "$RELEASE_VERSION" >&2
             exit 1
           fi
-          docker build --pull --tag caxton-pr-artifact:release-v$RELEASE_VERSION-$PR_HEAD_SHA .
-          docker save caxton-pr-artifact:release-v$RELEASE_VERSION-$PR_HEAD_SHA -o pr-publication-artifacts/caxton-image.tar
-          printf 'PR_NUMBER=%s\nPR_HEAD_SHA=%s\nRELEASE_VERSION=%s\n' "$PR_NUMBER" "$PR_HEAD_SHA" "$RELEASE_VERSION" > pr-publication-artifacts/pr-metadata.env
+          if [[ ! "${GITHUB_RUN_NUMBER:-}" =~ ^[0-9]+$ ]]; then
+            printf 'workflow run number was not numeric: %s\n' "${GITHUB_RUN_NUMBER:-}" >&2
+            exit 1
+          fi
+          RELEASE_RC_TAG="$RELEASE_VERSION-rc.$GITHUB_RUN_NUMBER"
+          docker build --pull --tag "caxton-artifact:$PR_HEAD_SHA" .
+          docker save "caxton-artifact:$PR_HEAD_SHA" -o pr-publication-artifacts/caxton-image.tar
+          printf 'PR_NUMBER=%s\nPR_HEAD_SHA=%s\nRELEASE_VERSION=%s\nRELEASE_RC_TAG=%s\n' "$PR_NUMBER" "$PR_HEAD_SHA" "$RELEASE_VERSION" "$RELEASE_RC_TAG" > pr-publication-artifacts/pr-metadata.env
 
       - uses: actions/upload-artifact@v3
         if: ${{ startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -494,18 +499,20 @@ jobs:
           unset BASH_ENV ENV LD_PRELOAD LD_LIBRARY_PATH DYLD_INSERT_LIBRARIES PYTHONPATH PERL5LIB RUBYLIB NODE_OPTIONS
           PR_HEAD_SHA=""
           RELEASE_VERSION=""
+          RELEASE_RC_TAG=""
           while IFS='=' read -r key value; do
             case "$key" in
               PR_NUMBER) PR_NUMBER="$value" ;;
               PR_HEAD_SHA) PR_HEAD_SHA="$value" ;;
               RELEASE_VERSION) RELEASE_VERSION="$value" ;;
+              RELEASE_RC_TAG) RELEASE_RC_TAG="$value" ;;
             esac
           done < pr-publication-artifacts/pr-metadata.env
           if [ -z "$RELEASE_VERSION" ]; then
             printf 'release PR artifact metadata did not include RELEASE_VERSION\n' >&2
             exit 1
           fi
-          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ ! "$RELEASE_RC_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?-rc\.[0-9]+$ ]]; then
             printf 'invalid release PR artifact metadata\n' >&2
             exit 1
           fi
@@ -513,15 +520,26 @@ jobs:
             printf 'missing RELEASE_PUBLISH_TOKEN or RELEASE_BOT_NAME for PR package publication\n' >&2
             exit 1
           fi
+          auth_file="${RUNNER_TEMP:-/tmp}/caxton-registry-auth.json"
+          umask 077
+          : > "$auth_file"
+          printf '%s\n' "$RELEASE_PUBLISH_TOKEN" | "$SKOPEO" login --authfile "$auth_file" --username "$RELEASE_BOT_NAME" --password-stdin git.johnwilger.com
           "$MKDIR" -p "$HOME/.config/containers"
           "$CAT" > "$HOME/.config/containers/policy.json" <<'EOF'
           {"default":[{"type":"insecureAcceptAnything"}]}
           EOF
-          published_image="docker://git.johnwilger.com/slipstream/caxton-pr:release-v$RELEASE_VERSION-$PR_HEAD_SHA"
-          "$SKOPEO" copy --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_image"
-          release_image_digest="$("$SKOPEO" inspect --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$published_image" | "$JQ" -r '.Digest')"
+          published_sha_image="docker://git.johnwilger.com/slipstream/caxton:$PR_HEAD_SHA"
+          published_rc_image="docker://git.johnwilger.com/slipstream/caxton:$RELEASE_RC_TAG"
+          "$SKOPEO" copy --dest-authfile "$auth_file" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_sha_image"
+          "$SKOPEO" copy --dest-authfile "$auth_file" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_rc_image"
+          release_image_digest="$("$SKOPEO" inspect --authfile "$auth_file" "$published_sha_image" | "$JQ" -r '.Digest')"
+          release_rc_image_digest="$("$SKOPEO" inspect --authfile "$auth_file" "$published_rc_image" | "$JQ" -r '.Digest')"
           if [[ ! "$release_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             printf 'published release PR image digest was not sha256-shaped: %s\n' "$release_image_digest" >&2
+            exit 1
+          fi
+          if [ "$release_rc_image_digest" != "$release_image_digest" ]; then
+            printf 'published release PR image tags resolved to different digests: %s != %s\n' "$release_rc_image_digest" "$release_image_digest" >&2
             exit 1
           fi
           printf 'RELEASE_IMAGE_DIGEST=%s\n' "$release_image_digest" >> "$GITHUB_ENV"
@@ -537,18 +555,20 @@ jobs:
           unset BASH_ENV ENV LD_PRELOAD LD_LIBRARY_PATH DYLD_INSERT_LIBRARIES PYTHONPATH PERL5LIB RUBYLIB NODE_OPTIONS
           PR_HEAD_SHA=""
           RELEASE_VERSION=""
+          RELEASE_RC_TAG=""
           while IFS='=' read -r key value; do
             case "$key" in
               PR_NUMBER) PR_NUMBER="$value" ;;
               PR_HEAD_SHA) PR_HEAD_SHA="$value" ;;
               RELEASE_VERSION) RELEASE_VERSION="$value" ;;
+              RELEASE_RC_TAG) RELEASE_RC_TAG="$value" ;;
             esac
           done < pr-publication-artifacts/pr-metadata.env
           if [ -z "$RELEASE_VERSION" ]; then
             printf 'release PR artifact metadata did not include RELEASE_VERSION\n' >&2
             exit 1
           fi
-          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ ! "${RELEASE_IMAGE_DIGEST:-}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]] || [[ ! "$PR_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ ! "$RELEASE_RC_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?-rc\.[0-9]+$ ]] || [[ ! "${RELEASE_IMAGE_DIGEST:-}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             printf 'invalid release PR artifact metadata\n' >&2
             exit 1
           fi
@@ -558,7 +578,8 @@ jobs:
           <!-- caxton:artifact-links:start -->
           PR artifacts for $PR_HEAD_SHA:
 
-          Docker image: git.johnwilger.com/slipstream/caxton-pr:release-v$RELEASE_VERSION-$PR_HEAD_SHA
+          Docker image SHA tag: git.johnwilger.com/slipstream/caxton:$PR_HEAD_SHA
+          Docker image release candidate tag: git.johnwilger.com/slipstream/caxton:$RELEASE_RC_TAG
           Docker image digest: $RELEASE_IMAGE_DIGEST
           <!-- caxton:artifact-links:end -->
           EOF

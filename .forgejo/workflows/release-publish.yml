@@ -191,10 +191,12 @@ jobs:
           import os
           import re
           body = os.environ["RELEASE_COMMIT_BODY"]
-          sha = re.search(r'(?:PR artifacts for ([0-9a-fA-F]{40}):|caxton-pr:release-v[^ ]*?-([0-9a-fA-F]{40}))', body)
+          sha = re.search(r'PR artifacts for ([0-9a-fA-F]{40}):', body)
+          if not sha:
+              sha = re.search(r'caxton:(?:release-v[^\s]*?-)?([0-9a-fA-F]{40})', body)
           digest = re.search(r'Docker image digest:\s*(sha256:[0-9a-f]{64})', body)
           reviewed = re.search(r'Reviewed-on:\s*https://git\.johnwilger\.com/Slipstream/caxton/pulls/(\d+)', body)
-          print(f"RELEASE_PR_HEAD_SHA={sha.group(1) or sha.group(2) if sha else ''}")
+          print(f"RELEASE_PR_HEAD_SHA={sha.group(1) if sha else ''}")
           print(f"RELEASE_IMAGE_DIGEST={digest.group(1) if digest else ''}")
           print(f"RELEASE_PR_NUMBER={reviewed.group(1) if reviewed else ''}")
           PY
@@ -272,9 +274,13 @@ jobs:
             printf 'missing RELEASE_BOT_NAME repository variable\n' >&2
             exit 1
           fi
-          release_pr_source_digest_image="docker://git.johnwilger.com/slipstream/caxton-pr@$RELEASE_IMAGE_DIGEST"
-          "$SKOPEO" copy --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:$RELEASE_VERSION"
-          "$SKOPEO" copy --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:latest"
+          auth_file="${RUNNER_TEMP:-/tmp}/caxton-registry-auth.json"
+          umask 077
+          : > "$auth_file"
+          printf '%s\n' "$RELEASE_PUBLISH_TOKEN" | "$SKOPEO" login --authfile "$auth_file" --username "$RELEASE_BOT_NAME" --password-stdin git.johnwilger.com
+          release_pr_source_digest_image="docker://git.johnwilger.com/slipstream/caxton@$RELEASE_IMAGE_DIGEST"
+          "$SKOPEO" copy --src-authfile "$auth_file" --dest-authfile "$auth_file" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:$RELEASE_VERSION"
+          "$SKOPEO" copy --src-authfile "$auth_file" --dest-authfile "$auth_file" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:latest"
 
       - name: Create Forgejo Release
         if: ${{ github.event_name == 'workflow_dispatch' || env.SHOULD_PUBLISH_RELEASE == 'true' }}
