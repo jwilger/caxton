@@ -520,20 +520,16 @@ jobs:
             printf 'missing RELEASE_PUBLISH_TOKEN or RELEASE_BOT_NAME for PR package publication\n' >&2
             exit 1
           fi
-          auth_file="${RUNNER_TEMP:-/tmp}/caxton-registry-auth.json"
-          umask 077
-          : > "$auth_file"
-          printf '%s\n' "$RELEASE_PUBLISH_TOKEN" | "$SKOPEO" login --authfile "$auth_file" --username "$RELEASE_BOT_NAME" --password-stdin git.johnwilger.com
           "$MKDIR" -p "$HOME/.config/containers"
           "$CAT" > "$HOME/.config/containers/policy.json" <<'EOF'
           {"default":[{"type":"insecureAcceptAnything"}]}
           EOF
           published_sha_image="docker://git.johnwilger.com/slipstream/caxton:$PR_HEAD_SHA"
           published_rc_image="docker://git.johnwilger.com/slipstream/caxton:$RELEASE_RC_TAG"
-          "$SKOPEO" copy --dest-authfile "$auth_file" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_sha_image"
-          "$SKOPEO" copy --dest-authfile "$auth_file" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_rc_image"
-          release_image_digest="$("$SKOPEO" inspect --authfile "$auth_file" "$published_sha_image" | "$JQ" -r '.Digest')"
-          release_rc_image_digest="$("$SKOPEO" inspect --authfile "$auth_file" "$published_rc_image" | "$JQ" -r '.Digest')"
+          "$SKOPEO" copy --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_sha_image"
+          "$SKOPEO" copy --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" docker-archive:pr-publication-artifacts/caxton-image.tar "$published_rc_image"
+          release_image_digest="$("$SKOPEO" inspect --creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$published_sha_image" | "$JQ" -r '.Digest')"
+          release_rc_image_digest="$("$SKOPEO" inspect --creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$published_rc_image" | "$JQ" -r '.Digest')"
           if [[ ! "$release_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             printf 'published release PR image digest was not sha256-shaped: %s\n' "$release_image_digest" >&2
             exit 1

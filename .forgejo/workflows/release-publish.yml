@@ -274,13 +274,9 @@ jobs:
             printf 'missing RELEASE_BOT_NAME repository variable\n' >&2
             exit 1
           fi
-          auth_file="${RUNNER_TEMP:-/tmp}/caxton-registry-auth.json"
-          umask 077
-          : > "$auth_file"
-          printf '%s\n' "$RELEASE_PUBLISH_TOKEN" | "$SKOPEO" login --authfile "$auth_file" --username "$RELEASE_BOT_NAME" --password-stdin git.johnwilger.com
           release_pr_source_digest_image="docker://git.johnwilger.com/slipstream/caxton@$RELEASE_IMAGE_DIGEST"
-          "$SKOPEO" copy --src-authfile "$auth_file" --dest-authfile "$auth_file" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:$RELEASE_VERSION"
-          "$SKOPEO" copy --src-authfile "$auth_file" --dest-authfile "$auth_file" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:latest"
+          "$SKOPEO" copy --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:$RELEASE_VERSION"
+          "$SKOPEO" copy --src-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" --dest-creds "${RELEASE_BOT_NAME}:$RELEASE_PUBLISH_TOKEN" "$release_pr_source_digest_image" "docker://git.johnwilger.com/slipstream/caxton:latest"
 
       - name: Create Forgejo Release
         if: ${{ github.event_name == 'workflow_dispatch' || env.SHOULD_PUBLISH_RELEASE == 'true' }}
