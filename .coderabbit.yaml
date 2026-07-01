@@ -1,0 +1,17 @@
+reviews:
+  request_changes_workflow: true
+  path_filters:
+    - "!assets/vendor/**"
+  path_instructions:
+    - path: "**/*.ex"
+      instructions: >-
+        This is an Elixir / Phoenix (LiveView, Ecto) application. Apply
+        Elixir-idiomatic review conventions (pattern matching, pipelines,
+        `with` for control flow, supervision-tree/OTP concerns) rather than
+        generic imperative-language review conventions.
+    - path: "**/*.exs"
+      instructions: >-
+        This is an Elixir / Phoenix (LiveView, Ecto) application. Apply
+        Elixir-idiomatic review conventions (pattern matching, pipelines,
+        `with` for control flow, supervision-tree/OTP concerns) rather than
+        generic imperative-language review conventions.
