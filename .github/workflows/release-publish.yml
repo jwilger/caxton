@@ -173,15 +173,33 @@ jobs:
           printf 'RELEASE_PR_HEAD_SHA=%s\n' "$RELEASE_PR_HEAD_SHA" >> "$GITHUB_ENV"
           printf 'RELEASE_IMAGE_DIGEST=%s\n' "$RELEASE_IMAGE_DIGEST" >> "$GITHUB_ENV"
 
-      - name: Promote release PR image to permanent tags
+      - name: Install skopeo
         if: ${{ github.event_name == 'workflow_dispatch' || env.SHOULD_PUBLISH_RELEASE == 'true' }}
         run: |
           set -euo pipefail
+          if ! command -v skopeo >/dev/null 2>&1; then
+            if [ "$(id -u)" -eq 0 ]; then
+              apt-get update
+              apt-get install -y --no-install-recommends skopeo
+            else
+              sudo apt-get update
+              sudo apt-get install -y --no-install-recommends skopeo
+            fi
+          fi
+
+      - name: Promote release PR image to permanent tags
+        if: ${{ github.event_name == 'workflow_dispatch' || env.SHOULD_PUBLISH_RELEASE == 'true' }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
           IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker buildx imagetools create \
-            --tag "$IMAGE:$RELEASE_VERSION" \
-            --tag "$IMAGE:latest" \
-            "$IMAGE@$RELEASE_IMAGE_DIGEST"
+          creds="$GHCR_ACTOR:$GHCR_TOKEN"
+          skopeo copy --src-creds "$creds" --dest-creds "$creds" \
+            "docker://$IMAGE@$RELEASE_IMAGE_DIGEST" "docker://$IMAGE:$RELEASE_VERSION"
+          skopeo copy --src-creds "$creds" --dest-creds "$creds" \
+            "docker://$IMAGE@$RELEASE_IMAGE_DIGEST" "docker://$IMAGE:latest"
 
       - name: Extract changelog section for this release
         if: ${{ github.event_name == 'workflow_dispatch' || env.SHOULD_PUBLISH_RELEASE == 'true' }}
