@@ -72,7 +72,7 @@ jobs:
 
       - name: Create signed release commit and push branch
         if: ${{ steps.diff.outputs.changed == 'true' }}
-        uses: slipstream-code-new/gha-workflows/.github/actions/release-sign-commit@main
+        uses: slipstream-eng/gha-workflows/.github/actions/release-sign-commit@main
         with:
           release-signing-key: ${{ secrets.RELEASE_SIGNING_KEY }}
           release-signing-name: ${{ vars.RELEASE_BOT_NAME }}
