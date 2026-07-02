@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   release-prepare:
-    runs-on: [self-hosted, self-hosted-gregor]
+    runs-on: ubuntu-latest
     if: "${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: release') }}"
     permissions:
       contents: write
@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags
-          release_plan="$(nix develop --command scripts/release plan --workspace .)"
+          release_plan="$(scripts/release plan --workspace .)"
           version="$(printf '%s\n' "$release_plan" | awk -F= '$1 == "version" { print $2 }')"
           release_type="$(printf '%s\n' "$release_plan" | awk -F= '$1 == "release_type" { print $2 }')"
           if [ -z "$version" ] || [ -z "$release_type" ]; then
@@ -55,7 +55,7 @@ jobs:
           RELEASE_VERSION: ${{ steps.plan.outputs.version }}
         run: |
           set -euo pipefail
-          nix develop --command scripts/release prepare --workspace . --version "$RELEASE_VERSION" --date "$(date +%F)"
+          scripts/release prepare --workspace . --version "$RELEASE_VERSION" --date "$(date +%F)"
 
       - name: Check for release metadata changes
         id: diff
