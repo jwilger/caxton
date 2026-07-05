@@ -361,7 +361,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      PGHOST: postgres
+      PGHOST: 127.0.0.1
       PGPORT: "5432"
       PGUSER: postgres
       PGPASSWORD: postgres
