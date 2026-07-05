@@ -1,9 +1,9 @@
-# Forgejo
+# GitHub
 
-This repo uses Forgejo at `git.johnwilger.com`, not GitHub. Use `tea` for issues and pull requests. Do not introduce `gh` workflows.
+This repo is hosted at `github.com/jwilger/caxton`. Use `gh` for issues, pull requests, review comments, and workflow checks.
 
-Before selecting or starting "the next issue", query Forgejo dependency state rather than relying on list order, milestone order, or issue numbers. An issue is available only when it is open and every issue returned by `GET /repos/{owner}/{repo}/issues/{index}/dependencies` is closed. If multiple issues are available, prefer the lowest-numbered non-roadmap implementation issue unless the user explicitly asks to finish roadmap-management work first. Report the available issue set and chosen issue before creating the branch.
+Before selecting or starting "the next issue", query GitHub issue state rather than relying on local notes, milestone order, or issue numbers. If multiple issues are available, prefer the lowest-numbered non-roadmap implementation issue unless the user explicitly asks to finish roadmap-management work first. Report the available issue set and chosen issue before creating the branch.
 
-If body-level `Depends on:` references and Forgejo dependency relationships disagree, stop implementation work and resolve or report the dependency mismatch first. Roadmap bodies should link dependency keys to their Forgejo issues so humans and agents can cross-check the graph.
+If body-level `Depends on:` references are present, cross-check those referenced GitHub issues before starting implementation. Stop and report the mismatch if dependency notes contradict issue state.
 
-Inline review feedback must be answered on the inline thread first. For Forgejo API replies, copy the original comment `position` into the reply payload as `new_position` and set `old_position` to `0`.
+Inline review feedback must be answered on the inline thread first. Use GitHub review-thread replies for inline comments, not a top-level PR comment.
