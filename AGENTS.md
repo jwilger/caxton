@@ -3,13 +3,13 @@ This is a web application written using the Phoenix web framework.
 ## Project guidelines
 
 - Use `lefthook run pre-commit` when you are done with changes and fix any pending issues. Use `lefthook run ci` for the longer manual/CI gate.
-- Run project commands inside the Nix dev shell by default: `nix develop --command bash -lc '<command>'`. This includes `mix`, `lefthook`, `tea`, `forgejo-mcp`, `node`, `bun`, test runners, formatters, linters, and build tools.
+- Run project commands inside the Nix dev shell by default: `nix develop --command bash -lc '<command>'`. This includes `mix`, `lefthook`, `gh`, `node`, `bun`, test runners, formatters, linters, and build tools.
 - Use the ambient shell only for bootstrap/debug commands that intentionally inspect the environment outside the flake, such as checking `nix`, debugging shell startup, inspecting OpenCode itself, or intentionally testing outside the project toolchain.
 - After changing `flake.nix`, immediately run commands through `nix develop --command bash -lc '<command>'` in the current session instead of requiring an OpenCode restart.
 - If quoting or shell semantics fail inside `nix develop`, adjust the invocation rather than falling back to the ambient shell.
 - Use Conventional Commits for commit messages, such as `type(scope): summary`. Prefer common types like `feat`, `fix`, `docs`, `test`, `refactor`, and `chore`.
 - It is fine to use `rtk git` for Git operations. If signed commit output adds verification lines to logs, use `git log --no-show-signature` rather than avoiding `rtk`.
-- This repo uses Forgejo at `git.johnwilger.com`, not GitHub. Use `tea` for issues and pull requests. Do not introduce `gh` workflows.
+- This repo is hosted at `github.com/jwilger/caxton`. Use `gh` for issues, pull requests, review comments, and workflow checks.
 - Keep commits and PRs scoped. Stage by explicit path only; never use `git add .`, `git add -A`, `git add -u`, or `git commit -a`.
 - Before starting implementation work for an issue or PR-targeted task, create and switch to the dedicated PR branch first while the working tree is still clean. Do not edit files on `main` for issue work unless the user explicitly requests it.
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
