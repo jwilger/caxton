@@ -1,0 +1,35 @@
+queue_rules:
+  - name: default
+    merge_method: squash
+    branch_protection_injection_mode: queue
+    queue_conditions: &default_conditions
+      - "base = main"
+      - "-draft"
+      - "-conflict"
+      - "#approved-reviews-by >= 1"
+      - "#changes-requested-reviews-by = 0"
+      - "github-review-approved"
+      - "github-require-last-push-approval"
+      - "github-code-owner-review-satisfied"
+      - "check-success = Check formatting"
+      - "check-success = Compile dev code"
+      - "check-success = Compile prod code"
+      - "check-success = Compile test code"
+      - "check-success = Run Credo"
+      - "check-success = Run Dialyzer"
+      - "check-success = Run Sobelow"
+      - "check-success = Run asset tests"
+      - "check-success = Run dependency audit"
+      - "check-success = Run tests"
+    merge_conditions: *default_conditions
+
+merge_protections_settings:
+  reporting_method: check-runs
+  auto_merge_conditions:
+    - "base = main"
+
+merge_protections:
+  - name: default
+    if:
+      - "base = main"
+    success_conditions: *default_conditions
