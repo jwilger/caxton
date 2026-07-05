@@ -24,6 +24,9 @@ permissions:
 jobs:
   submit:
     name: Submit PR to Trunk
+    concurrency:
+      group: trunk-submit-${{ github.repository }}-${{ github.event.pull_request.number || inputs.pr_number }}
+      cancel-in-progress: false
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
