@@ -11,20 +11,19 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## CI and releases
 
-Forgejo Actions runs the project quality gates on pull requests. Release PRs
+GitHub Actions runs the project quality gates on pull requests. Release PRs
 opened from same-repository `release/v*` branches with a release-bot-authored
 release metadata commit additionally build and publish a release-candidate image
-to the `git.johnwilger.com/slipstream/caxton` package with both the reviewed
+to the `ghcr.io/jwilger/caxton` package with both the reviewed
 commit SHA tag and a `<version>-rc.<build-number>` tag, then write those image
 links back to the PR body. After the release PR merges to `main`, the release
 publisher promotes that reviewed image digest to:
 
-* `git.johnwilger.com/slipstream/caxton:<version>`
-* `git.johnwilger.com/slipstream/caxton:latest`
+* `ghcr.io/jwilger/caxton:<version>`
+* `ghcr.io/jwilger/caxton:latest`
 
-The release workflow requires a repository secret named
-`RELEASE_PUBLISH_TOKEN` with permission to push container packages to
-`git.johnwilger.com` and a repository variable named `RELEASE_BOT_NAME` for the
+The release workflow uses the built-in `GITHUB_TOKEN` with `packages: write` to
+publish GHCR images and a repository variable named `RELEASE_BOT_NAME` for the
 trusted release identity.
 
 The image starts the Phoenix release with `PHX_SERVER=true`. At runtime, provide

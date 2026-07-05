@@ -8,24 +8,6 @@
   "skills": {
     "paths": [".opencode/skills"]
   },
-  "mcp": {
-    "forgejo": {
-      "type": "local",
-      "command": [
-        "nix",
-        "develop",
-        "--command",
-        "bash",
-        "-lc",
-        "exec forgejo-mcp --transport stdio --url https://git.johnwilger.com --token \"$FORGEJO_TOKEN\" --user-agent caxton/forgejo-mcp"
-      ],
-      "environment": {
-        "FORGEJO_USER_AGENT": "caxton/forgejo-mcp"
-      },
-      "enabled": true,
-      "timeout": 10000
-    }
-  },
   "lsp": {
     "elixir-ls": {
       "command": ["nix", "develop", "--command", "elixir-ls"],
