@@ -22,20 +22,13 @@ jobs:
         uses: 1password/load-secrets-action@v4
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          GH_AUTOMATION_APP_PRIVATE_KEY: op://Github Secrets/GH_AUTOMATION_APP_PRIVATE_KEY/credential
+          GH_RELEASE_AUTOMATION_TOKEN: op://Github Secrets/GH_RELEASE_AUTOMATION_TOKEN/credential
           RELEASE_SIGNING_KEY: op://Github Secrets/RELEASE_SIGNING_KEY/private key?ssh-format=openssh
-
-      - name: Mint GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.GH_AUTOMATION_APP_ID }}
-          private-key: ${{ steps.load_secrets.outputs.GH_AUTOMATION_APP_PRIVATE_KEY }}
 
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.load_secrets.outputs.GH_RELEASE_AUTOMATION_TOKEN }}
           fetch-depth: 0
 
       - name: Compute release plan
@@ -85,7 +78,7 @@ jobs:
           release-signing-key: ${{ steps.load_secrets.outputs.RELEASE_SIGNING_KEY }}
           release-signing-name: ${{ vars.RELEASE_BOT_NAME }}
           release-signing-email: ${{ vars.RELEASE_BOT_EMAIL }}
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ steps.load_secrets.outputs.GH_RELEASE_AUTOMATION_TOKEN }}
           version-override: ${{ steps.plan.outputs.version }}
           commit-message: "chore: release v{version}"
           create-tag: "false"
@@ -94,7 +87,7 @@ jobs:
       - name: Open or update release PR
         if: ${{ steps.diff.outputs.changed == 'true' }}
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.load_secrets.outputs.GH_RELEASE_AUTOMATION_TOKEN }}
           RELEASE_VERSION: ${{ steps.plan.outputs.version }}
           RELEASE_BRANCH: ${{ steps.plan.outputs.branch }}
         run: |
