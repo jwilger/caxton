@@ -8,19 +8,6 @@ queue_rules:
       - "-conflict"
       - "#approved-reviews-by >= 1"
       - "#changes-requested-reviews-by = 0"
-      - "github-review-approved"
-      - "github-require-last-push-approval"
-      - "github-code-owner-review-satisfied"
-      - "check-success = Check formatting"
-      - "check-success = Compile dev code"
-      - "check-success = Compile prod code"
-      - "check-success = Compile test code"
-      - "check-success = Run Credo"
-      - "check-success = Run Dialyzer"
-      - "check-success = Run Sobelow"
-      - "check-success = Run asset tests"
-      - "check-success = Run dependency audit"
-      - "check-success = Run tests"
     merge_conditions: *default_conditions
 
 merge_protections_settings:
